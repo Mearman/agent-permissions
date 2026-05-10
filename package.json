@@ -3,28 +3,47 @@
   "version": "0.1.0",
   "description": "Cross-agent permission policy specification for AI coding agents",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": {
+        "import": "./dist/index.d.mts",
+        "require": "./dist/index.d.cts"
+      },
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./schema": {
-      "types": "./dist/schema.d.ts",
-      "import": "./dist/schema.js"
-    }
+      "types": {
+        "import": "./dist/schema.d.mts",
+        "require": "./dist/schema.d.cts"
+      },
+      "import": "./dist/schema.mjs",
+      "require": "./dist/schema.cjs",
+      "default": "./dist/schema.cjs"
+    },
+    "./agent-permissions.schema.json": "./agent-permissions.schema.json"
   },
   "files": [
     "dist",
     "agent-permissions.schema.json"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build:schema": "node --experimental-strip-types src/build-schema.ts",
-    "build": "tsc && pnpm build:schema",
+    "build": "tsdown && pnpm build:schema",
+    "dev": "tsdown --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "lint:pkg": "publint && attw --pack .",
+    "prepublishOnly": "pnpm build && pnpm test && pnpm lint:pkg"
   },
   "keywords": [
     "agents",
@@ -32,11 +51,17 @@
     "ai",
     "coding-agent",
     "claude-code",
+    "codex",
+    "opencode",
     "cross-agent",
     "policy"
   ],
   "author": "",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR-ORG/agent-permissions-spec.git"
+  },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
@@ -48,7 +73,11 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
     "@types/node": "^25.6.2",
+    "publint": "^0.3.20",
+    "rolldown": "^1.0.0",
+    "tsdown": "^0.22.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"
   }

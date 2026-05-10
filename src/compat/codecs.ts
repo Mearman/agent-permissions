@@ -19,7 +19,7 @@ import * as z from "zod";
 import {
   agentPermissionPolicy,
   type AgentPermissionPolicy,
-} from "../schema.ts";
+} from "../schema.js";
 
 // ---------------------------------------------------------------------------
 // Canonical agent identifiers
