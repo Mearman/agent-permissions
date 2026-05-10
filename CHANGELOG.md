@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/Mearman/agent-permissions/compare/v1.0.0...v1.0.1) (2026-05-10)
+
+### Chores
+
+* bump version to 1.0.1 ([8cdd4ec](https://github.com/Mearman/agent-permissions/commit/8cdd4ec45d4fb3a3c34c4f4a611e10477b7221dd))
+
 ## 1.0.0 (2026-05-10)
 
 ### Features
