@@ -41,3 +41,11 @@ export {
 } from "./compat/codecs.ts";
 
 export type { AgentId, Codecs } from "./compat/codecs.ts";
+
+export {
+  evaluate,
+  type PermissionDecision,
+  type PermissionPolicy,
+} from "./evaluate.ts";
+
+export { loadPolicy, type PolicyLoadOptions } from "./loader.ts";
