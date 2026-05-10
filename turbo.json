@@ -22,6 +22,10 @@
       "dependsOn": ["_typecheck", "_lint", "_build"],
       "outputs": []
     },
+    "_test:coverage": {
+      "dependsOn": ["_typecheck"],
+      "outputs": []
+    },
     "_validate": {
       "dependsOn": ["_check", "_test"],
       "outputs": []
