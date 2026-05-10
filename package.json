@@ -1,5 +1,5 @@
 {
-  "name": "agent-permissions-spec",
+  "name": "agent-perms",
   "version": "0.1.0",
   "description": "Cross-agent permission policy specification for AI coding agents",
   "type": "module",
@@ -58,9 +58,10 @@
   ],
   "author": "",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/Mearman/agent-permissions-spec#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR-ORG/agent-permissions-spec.git"
+    "url": "git+https://github.com/Mearman/agent-permissions-spec.git"
   },
   "devEngines": {
     "packageManager": {

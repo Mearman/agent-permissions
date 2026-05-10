@@ -128,7 +128,7 @@ deny rules (all sources merged) → ask rules → allow rules → defaultMode
 Bidirectional codecs convert between the canonical format and each agent's native config:
 
 ```typescript
-import { claudeCodeCodec, codexCodec, opencodeCodec, crushCodec } from "agent-permissions-spec";
+import { claudeCodeCodec, codexCodec, opencodeCodec, crushCodec } from "agent-perms";
 import { z } from "zod";
 
 // Decode agent-native → canonical
@@ -163,7 +163,7 @@ This works because the canonical spec accepts Claude Code's rule syntax, mode va
 ## Installation
 
 ```bash
-pnpm add agent-permissions-spec
+pnpm add agent-perms
 ```
 
 ### Programmatic usage
@@ -174,7 +174,7 @@ import {
   claudeCodeCodec,
   codexCodec,
   z,
-} from "agent-permissions-spec";
+} from "agent-perms";
 
 // Validate a policy file
 const result = agentPermissionPolicy.safeParse(parsedJson);
@@ -191,7 +191,7 @@ const codexConfig = z.encode(codexCodec, policy);
 
 ```json
 {
-  "$schema": "./node_modules/agent-permissions-spec/agent-permissions.schema.json"
+  "$schema": "./node_modules/agent-perms/agent-permissions.schema.json"
 }
 ```
 
@@ -202,7 +202,7 @@ Or reference the schema in `.vscode/settings.json` for automatic association:
   "json.schemas": [
     {
       "fileMatch": [".agents/permissions.json", ".agents/permissions.local.json"],
-      "url": "./node_modules/agent-permissions-spec/agent-permissions.schema.json"
+      "url": "./node_modules/agent-perms/agent-permissions.schema.json"
     }
   ]
 }
@@ -240,7 +240,7 @@ See [`spec/examples/full.json`](spec/examples/full.json).
 ```bash
 pnpm install          # Install dependencies
 pnpm test             # Run tests (142 tests)
-pnpm build:schema     # Compile Zod → JSON Schema
+pnpm build            # Build ESM + CJS + types + JSON Schema
 ```
 
 ### Schema source of truth
