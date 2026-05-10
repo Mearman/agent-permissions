@@ -14,6 +14,7 @@ import {
   ClaudeCodePermissionMode,
   CodexApprovalMode,
   CodexSandboxMode,
+  OpenCodePermissionTools,
 } from "../compat/enums.ts";
 
 // ---------------------------------------------------------------------------
@@ -45,7 +46,6 @@ describe("SDK alignment — Claude Code", () => {
   it("PermissionBehavior values match our permission tier names", () => {
     const tierNames = ["allow", "deny", "ask"];
     const ours = new Set(zodEnumValues(permissionMode));
-    // Tier names aren't modes — just verify the enum schema exists and is non-empty
     assert.ok(ours.size > 0);
     assert.strictEqual(tierNames.length, 3);
   });
@@ -57,7 +57,6 @@ describe("SDK alignment — Claude Code", () => {
 
 describe("SDK alignment — Codex", () => {
   it("our codec covers every Codex SDK ApprovalMode value", () => {
-    // All four approval modes must be mappable by the codec
     const approvalModes = zodEnumValues(CodexApprovalMode);
     assert.strictEqual(approvalModes.length, 4);
     assert.ok(approvalModes.includes("never"));
@@ -79,6 +78,32 @@ describe("SDK alignment — Codex", () => {
       assert.ok(
         ourModes.has(ourMode),
         `Our schema is missing sandbox mode "${ourMode}" (mapped from Codex "${sdkMode}")`,
+      );
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// OpenCode SDK
+// ---------------------------------------------------------------------------
+
+describe("SDK alignment — OpenCode", () => {
+  it("our codec handles every OpenCode SDK permission tool", () => {
+    // These are the tools from AgentConfig.permission in the SDK
+    const sdkTools = zodEnumValues(OpenCodePermissionTools);
+    // Our codec's ocToCanonical must handle all of them
+    const codecMappedTools = new Set([
+      "bash",
+      "edit",
+      "webfetch",
+      "external_directory",
+      // doom_loop is unmapped — intentionally skipped in codec (OC_UNMAPPED_TOOLS)
+    ]);
+    for (const tool of sdkTools) {
+      if (tool === "doom_loop") continue; // documented unmapped
+      assert.ok(
+        codecMappedTools.has(tool),
+        `Our codec is missing OpenCode permission tool: ${tool}`,
       );
     }
   });

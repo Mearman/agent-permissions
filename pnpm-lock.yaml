@@ -229,6 +229,9 @@ importers:
       '@openai/codex-sdk':
         specifier: ^0.130.0
         version: 0.130.0
+      '@opencode-ai/sdk':
+        specifier: ^1.14.41
+        version: 1.14.41
       '@semantic-release/changelog':
         specifier: ^6.0.3
         version: 6.0.3(semantic-release@25.0.3(typescript@6.0.3))
@@ -691,6 +694,9 @@ packages:
     engines: {node: '>=16'}
     cpu: [x64]
     os: [win32]
+
+  '@opencode-ai/sdk@1.14.41':
+    resolution: {integrity: sha512-RYb2dCUv0TWIvBNnnO6ANbAPYri6rKuWizSoVFw/Pw+SCDj9ASHM5gAZ+jkskp8gYMfLLHe/Fpkun/9mr8m0IQ==}
 
   '@oxc-project/types@0.129.0':
     resolution: {integrity: sha512-3oz8m3FGdr2nDXVqmFUw7jolKliC4MoyXYIG2c7gpjBnzUWQpUGIYcXYKxTdTi+N2jusvt610ckTMkxdwHkYEg==}
@@ -3365,6 +3371,10 @@ snapshots:
 
   '@openai/codex@0.130.0-win32-x64':
     optional: true
+
+  '@opencode-ai/sdk@1.14.41':
+    dependencies:
+      cross-spawn: 7.0.6
 
   '@oxc-project/types@0.129.0': {}
 

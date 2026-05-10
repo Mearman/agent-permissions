@@ -24,6 +24,8 @@ import type {
   SandboxMode as CodexSdkSandboxMode,
 } from "@openai/codex-sdk";
 
+import type { AgentConfig as OpenCodeAgentConfig } from "@opencode-ai/sdk";
+
 // ---------------------------------------------------------------------------
 // Permission behaviour (allow / deny / ask)
 // ---------------------------------------------------------------------------
@@ -32,6 +34,24 @@ import type {
 export const PermissionBehavior = z.enum(["allow", "deny", "ask"]);
 
 export type PermissionBehavior = z.infer<typeof PermissionBehavior>;
+
+// ---------------------------------------------------------------------------
+// OpenCode — permission tool names
+// ---------------------------------------------------------------------------
+
+/**
+ * Tool names that appear in OpenCode's `AgentConfig.permission` block.
+ * Sourced from `@opencode-ai/sdk` `AgentConfig.permission` type.
+ */
+export const OpenCodePermissionTools = z.enum([
+  "bash",
+  "doom_loop",
+  "edit",
+  "external_directory",
+  "webfetch",
+]);
+
+export type OpenCodePermissionTool = z.infer<typeof OpenCodePermissionTools>;
 
 // ---------------------------------------------------------------------------
 // Claude Code — PermissionMode
@@ -135,3 +155,29 @@ type _AssertCodexSandbox = [CodexSandboxMode] extends [CodexSdkSandboxMode]
     ? true
     : "SDK has sandbox modes missing from CodexSandboxMode"
   : "CodexSandboxMode has sandbox modes missing from SDK";
+
+// ---------------------------------------------------------------------------
+// OpenCode alignment
+// ---------------------------------------------------------------------------
+// Extract the action type from the SDK's AgentConfig.permission block.
+// The SDK uses the same "ask" | "allow" | "deny" triad for each tool.
+type OpenCodeAction = NonNullable<OpenCodeAgentConfig["permission"]>["edit"];
+
+type _AssertOpenCodeBehavior = [PermissionBehavior] extends [OpenCodeAction]
+  ? [OpenCodeAction] extends [PermissionBehavior]
+    ? true
+    : "OpenCode SDK has actions missing from PermissionBehavior"
+  : "PermissionBehavior has actions missing from OpenCode SDK";
+
+// Verify our OpenCodePermissionTools enum covers every tool in the SDK's
+// permission block. Extract tool names from the permission object keys.
+type OpenCodePermissionKeys = keyof NonNullable<
+  OpenCodeAgentConfig["permission"]
+>;
+
+type _AssertOpenCodeTools =
+  OpenCodePermissionTool extends OpenCodePermissionKeys
+    ? OpenCodePermissionKeys extends OpenCodePermissionTool
+      ? true
+      : "OpenCode SDK has permission tools missing from OpenCodePermissionTools"
+    : "OpenCodePermissionTools has tools missing from OpenCode SDK";
