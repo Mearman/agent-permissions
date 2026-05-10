@@ -44,8 +44,7 @@
     "validate": "turbo run _validate",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run",
-    "prepare": "husky",
-    "prepublishOnly": "pnpm validate"
+    "prepare": "husky"
   },
   "keywords": [
     "agents",
