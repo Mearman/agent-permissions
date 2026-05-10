@@ -119,13 +119,13 @@
             ]
           },
           "pattern": {
-            "type": "string",
-            "description": "Pattern to match against tool input.",
+            "description": "Pattern to match against tool input. When absent, matches any input.",
             "examples": [
               "npm run *",
               "./config/**",
               "git push --force:*"
-            ]
+            ],
+            "type": "string"
           },
           "tier": {
             "type": "string",
@@ -154,13 +154,12 @@
         },
         "required": [
           "tool",
-          "pattern",
           "tier"
         ],
         "additionalProperties": false,
-        "description": "Conditional permission rule. First matching rule wins."
+        "description": "Permission rule. Evaluated deny-first: all deny rules, then ask, then allow."
       },
-      "description": "Conditional rules — pattern matching on tool input. First matching rule wins; falls back to permission tier arrays."
+      "description": "Permission rules. Evaluated deny-first: all deny rules checked, then ask, then allow. Falls back to defaultMode when no rule matches."
     },
     "profiles": {
       "type": "object",
