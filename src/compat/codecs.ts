@@ -147,21 +147,18 @@ const opencodeNative = z.union([
       bash: ocRule.optional(),
       task: ocRule.optional(),
       external_directory: ocRule.optional(),
-      todowrite: ocRule.optional(),
-      question: ocRule.optional(),
-      webfetch: ocRule.optional(),
-      websearch: ocRule.optional(),
-      codesearch: ocRule.optional(),
-      repo_clone: ocRule.optional(),
-      repo_overview: ocRule.optional(),
+      todowrite: ocAction.optional(),
+      question: ocAction.optional(),
+      webfetch: ocAction.optional(),
+      websearch: ocAction.optional(),
       lsp: ocRule.optional(),
-      doom_loop: ocRule.optional(),
+      doom_loop: ocAction.optional(),
       skill: ocRule.optional(),
     })
     .strict(),
 ]);
 
-type OpenCodeNative = z.infer<typeof opencodeNative>;
+
 
 /**
  * Map OpenCode tool names to our canonical names.
@@ -309,7 +306,7 @@ export const opencodeCodec = z.codec(opencodeNative, agentPermissionPolicy, {
   encode(canonical) {
     const perms = canonical.permissions;
 
-    if (!perms) return { bash: "ask" } satisfies OpenCodeNative;
+    if (!perms) return { bash: "ask" };
 
     const result: Record<string, Record<string, "allow" | "deny" | "ask">> = {};
 
@@ -375,18 +372,21 @@ const crushToCanonical: Record<string, string> = {
   ls: "Glob",
   grep: "Grep",
   edit: "Edit",
+  multiedit: "Edit",
   write: "Write",
   bash: "Bash",
   fetch: "WebFetch",
+  agentic_fetch: "WebFetch",
   glob: "Glob",
-  diagnostics: "Read", // ~read-only
-  sourcegraph: "Grep", // ~search
+  download: "WebFetch",
+  sourcegraph: "Grep",
   agent: "Agent",
+  todos: "Agent",
 };
 
 const canonicalToCrush: Record<string, string> = {
   Read: "view",
-  Glob: "ls",
+  Glob: "glob",
   Grep: "grep",
   Edit: "edit",
   Write: "write",

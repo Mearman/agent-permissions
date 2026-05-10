@@ -354,7 +354,7 @@ describe("crushCodec", () => {
   describe("decode (Crush → canonical)", () => {
     it("maps lowercase tool names to canonical PascalCase", () => {
       const result = crushCodec.decode({
-        allowed_tools: ["view", "ls", "grep", "edit", "bash"],
+        allowed_tools: ["view", "glob", "grep", "edit", "bash"],
       });
       assert.ok(result.permissions !== undefined);
       assert.deepStrictEqual(result.permissions.allow, [
@@ -402,7 +402,9 @@ describe("crushCodec", () => {
 
   describe("round-trip (native → canonical → native)", () => {
     it("preserves bare tool names through full cycle", () => {
-      const native = { allowed_tools: ["view", "ls", "grep", "edit", "bash"] };
+      const native = {
+        allowed_tools: ["view", "glob", "grep", "edit", "bash"],
+      };
       const canonical = crushCodec.decode(native);
       assert.deepStrictEqual(
         z.encode(crushCodec, canonical).allowed_tools,
