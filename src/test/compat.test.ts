@@ -328,6 +328,35 @@ describe("opencodeCodec", () => {
       expect(reDecoded.permissions?.deny).toContain("Edit");
       expect(reDecoded.permissions?.deny).toContain("WebFetch");
     });
+
+    it("preserves external_directory through full cycle via sandbox", () => {
+      const native = {
+        bash: { "*": "ask" },
+        external_directory: {
+          "~/projects/lib": "allow",
+          "/tmp/cache": "allow",
+        },
+      };
+      const canonical = opencodeCodec.decode(native);
+      expect(canonical.sandbox?.writableRoots).toEqual([
+        "~/projects/lib",
+        "/tmp/cache",
+      ]);
+      expect(canonical.permissions?.additionalDirectories).toEqual([
+        "~/projects/lib",
+        "/tmp/cache",
+      ]);
+
+      const reEncoded = z.encode(opencodeCodec, canonical);
+      // sandbox.writableRoots → external_directory on encode
+      if (typeof reEncoded === "object" && reEncoded !== null) {
+        const extDir = (reEncoded as Record<string, unknown>).external_directory;
+        expect(extDir).toEqual({
+          "~/projects/lib": "allow",
+          "/tmp/cache": "allow",
+        });
+      }
+    });
   });
 });
 
@@ -465,13 +494,13 @@ describe("codexCodec", () => {
       expect(result.defaultMode).toBe("autonomous");
     });
 
-    it("maps sandbox_workspace_write.writable_roots to additionalDirectories", () => {
+    it("maps sandbox_workspace_write.writable_roots to sandbox.writableRoots", () => {
       const result = codexCodec.decode({
         sandbox_workspace_write: {
           writable_roots: ["/tmp/build-cache", "../shared-libs"],
         },
       });
-      expect(result.permissions?.additionalDirectories).toEqual([
+      expect(result.sandbox?.writableRoots).toEqual([
         "/tmp/build-cache",
         "../shared-libs",
       ]);
@@ -588,8 +617,8 @@ describe("codexCodec", () => {
 
     it("maps additionalDirectories to writable_roots", () => {
       const encoded = z.encode(codexCodec, {
-        permissions: {
-          additionalDirectories: ["/tmp/build-cache"],
+        sandbox: {
+          writableRoots: ["/tmp/build-cache"],
         },
       });
       expect(encoded.sandbox_workspace_write?.writable_roots).toEqual([
@@ -653,7 +682,7 @@ describe("codexCodec", () => {
         },
       };
       const canonical = codexCodec.decode(native);
-      expect(canonical.permissions?.additionalDirectories).toEqual([
+      expect(canonical.sandbox?.writableRoots).toEqual([
         "/tmp/build-cache",
         "../shared-libs",
       ]);
@@ -748,6 +777,103 @@ describe("codexCodec", () => {
       const reEncoded = z.encode(codexCodec, canonical);
       expect(reEncoded.sandbox_mode).toBe("read-only");
       expect(reEncoded.approval_policy).toBe("untrusted");
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // New feature round-trips
+  // -----------------------------------------------------------------------
+
+  describe("sandbox round-trip", () => {
+    it("preserves full sandbox config through cycle", () => {
+      const native = {
+        approval_policy: "on-request" as const,
+        sandbox_mode: "workspace-write" as const,
+        sandbox_workspace_write: {
+          writable_roots: ["/tmp/cache"],
+          network_access: false,
+        },
+      };
+      const canonical = codexCodec.decode(native);
+      expect(canonical.sandbox?.mode).toBe("workspace-write");
+      expect(canonical.sandbox?.writableRoots).toEqual(["/tmp/cache"]);
+      expect(canonical.sandbox?.networkAccess).toBe(false);
+
+      const reEncoded = z.encode(codexCodec, canonical);
+      expect(reEncoded.sandbox_mode).toBe("workspace-write");
+      expect(reEncoded.sandbox_workspace_write?.writable_roots).toEqual(["/tmp/cache"]);
+      expect(reEncoded.sandbox_workspace_write?.network_access).toBe(false);
+    });
+
+    it("preserves danger-full-access sandbox through cycle", () => {
+      const native = {
+        approval_policy: "never" as const,
+        sandbox_mode: "danger-full-access" as const,
+      };
+      const canonical = codexCodec.decode(native);
+      expect(canonical.sandbox?.mode).toBe("full-access");
+      expect(canonical.defaultMode).toBe("autonomous");
+
+      const reEncoded = z.encode(codexCodec, canonical);
+      expect(reEncoded.sandbox_mode).toBe("danger-full-access");
+      expect(reEncoded.approval_policy).toBe("never");
+    });
+  });
+
+  describe("named profiles round-trip", () => {
+    it("preserves named profiles through cycle", () => {
+      const native = {
+        approval_policy: "on-request" as const,
+        permissions: {
+          strict: {
+            filesystem: { "/secrets": "none" },
+          },
+          relaxed: {
+            filesystem: { "/secrets": "write", "/config": "read" },
+          },
+        },
+        default_permissions: "strict",
+      };
+      const canonical = codexCodec.decode(native);
+      expect(canonical.profiles?.strict).toBeDefined();
+      expect(canonical.profiles?.relaxed).toBeDefined();
+      expect(canonical.activeProfile).toBe("strict");
+
+      const reEncoded = z.encode(codexCodec, canonical);
+      expect(reEncoded.permissions).toBeDefined();
+      expect(reEncoded.default_permissions).toBe("strict");
+      const profiles = reEncoded.permissions as Record<string, any>;
+      expect(profiles.strict.filesystem["/secrets"]).toBe("none");
+      expect(profiles.relaxed.filesystem["/config"]).toBe("read");
+    });
+  });
+
+  describe("network round-trip", () => {
+    it("preserves network domains through cycle", () => {
+      const native = {
+        approval_policy: "on-request" as const,
+        permissions: {
+          default: {
+            network: {
+              domains: {
+                "api.example.com": "allow",
+                "evil.com": "deny",
+              },
+            },
+          },
+        },
+        default_permissions: "default",
+      };
+      const canonical = codexCodec.decode(native);
+      expect(canonical.network?.domains).toEqual({
+        "api.example.com": "allow",
+        "evil.com": "deny",
+      });
+
+      const reEncoded = z.encode(codexCodec, canonical);
+      const profile = (reEncoded.permissions as Record<string, any>)?.default;
+      expect(profile.network.domains["api.example.com"]).toBe("allow");
+      expect(profile.network.domains["evil.com"]).toBe("deny");
     });
   });
 });

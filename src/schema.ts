@@ -248,8 +248,167 @@ export const delegation = z
           "Whether subagents can request elevated permissions from their parent.",
         default: true,
       }),
+
+    /**
+     * Per-agent permission overrides. Keys are agent names or glob patterns
+     * matching agent identifiers. Values are inline permission tiers that
+     * replace (not merge with) the parent policy for that agent.
+     *
+     * Maps to OpenCode's per-agent markdown frontmatter and Codex's
+     * `apps.<name>.tools` config.
+     */
+    agents: z
+      .record(z.string(), permissionTiers)
+      .meta({
+        description:
+          "Per-agent permission overrides. Keys are agent names or glob patterns. " +
+          "Values replace (not merge with) the parent policy for that agent.",
+        examples: [
+          {
+            "review": { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
+            "docs": { allow: ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"] },
+          },
+        ],
+      }),
   })
   .partial();
+
+// ---------------------------------------------------------------------------
+// Top-level schema
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Sandbox configuration
+// ---------------------------------------------------------------------------
+
+/**
+ * Sandbox mode — OS-level isolation for agent tool execution.
+ *
+ * When set, the agent harness should enforce filesystem and network
+ * boundaries at the OS level (sandbox, container, namespace, etc).
+ * This is orthogonal to permission rules — rules control what the agent
+ * *asks* to do; sandbox controls what the OS *allows* it to do.
+ *
+ * Maps to Codex's `sandbox_mode` field.
+ */
+export const sandboxMode = z
+  .enum(["readonly", "workspace-write", "full-access"])
+  .meta({
+    description:
+      "OS-level sandbox isolation mode. " +
+      "readonly: filesystem is read-only. " +
+      "workspace-write: writes confined to project directory + writableRoots. " +
+      "full-access: no OS-level restrictions.",
+    default: "workspace-write",
+  });
+
+export const sandbox = z
+  .object({
+    /**
+     * Sandbox isolation mode.
+     */
+    mode: sandboxMode.meta({
+      description: "Sandbox isolation mode.",
+    }),
+
+    /**
+     * Additional paths the agent may write to (beyond project root).
+     * Only meaningful when mode is `workspace-write`.
+     */
+    writableRoots: z
+      .array(z.string())
+      .meta({
+        description:
+          "Additional paths the agent may write to (beyond project root). " +
+          "Only meaningful when mode is `workspace-write`.",
+        examples: ["/tmp/build-cache", "../shared-libs"],
+      }),
+
+    /**
+     * Whether the agent may make network requests from within the sandbox.
+     * When false, network access is blocked at the OS level.
+     * Maps to Codex's `sandbox_workspace_write.network_access`.
+     */
+    networkAccess: z
+      .boolean()
+      .meta({
+        description:
+          "Whether the agent may make network requests from within the sandbox. " +
+          "When false, network access is blocked at the OS level.",
+        default: true,
+      }),
+  })
+  .partial()
+  .strict()
+  .meta({
+    description:
+      "OS-level sandbox configuration. Controls filesystem and network " +
+      "isolation for agent tool execution, enforced by the harness runtime.",
+  });
+
+// ---------------------------------------------------------------------------
+// Named profiles
+// ---------------------------------------------------------------------------
+
+/**
+ * Named permission profiles that can be selected at session start.
+ *
+ * Maps to Codex's `permissions.<name>` + `default_permissions` fields.
+ * Agents that don't support named profiles should use the profile
+ * specified by `activeProfile` (or `"default"` if unset).
+ */
+export const profiles = z
+  .record(z.string(), permissionTiers)
+  .meta({
+    description:
+      "Named permission profiles. Each profile is a complete set of permission tiers. " +
+      "Select one at session start via `activeProfile`.",
+    examples: [
+      {
+        strict: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
+        relaxed: { allow: ["Read", "Write", "Edit", "Bash(git:*)", "Bash(npm:*)"] },
+      },
+    ],
+  });
+
+// ---------------------------------------------------------------------------
+// Network controls
+// ---------------------------------------------------------------------------
+
+export const network = z
+  .object({
+    /**
+     * Whether network access is permitted at all.
+     * When false, WebFetch and WebSearch are denied regardless of allow rules.
+     */
+    enabled: z
+      .boolean()
+      .meta({
+        description:
+          "Whether network access is permitted at all. When false, " +
+          "WebFetch and WebSearch are denied regardless of allow rules.",
+        default: true,
+      }),
+
+    /**
+     * Domain-level allow/deny rules for HTTP(S) requests.
+     * Maps to both Codex's `network.domains` and Claude Code's
+     * `WebFetch(domain:...)` rules.
+     */
+    domains: z
+      .record(z.string(), z.enum(["allow", "deny"]))
+      .meta({
+        description:
+          "Domain-level allow/deny rules for HTTP(S) requests. " +
+          "Supplements the WebFetch(domain:...) permission rules.",
+        examples: [{ "api.example.com": "allow", "evil.com": "deny" }],
+      }),
+  })
+  .partial()
+  .strict()
+  .meta({
+    description: "Network access controls.",
+  });
 
 // ---------------------------------------------------------------------------
 // Top-level schema
@@ -265,6 +424,15 @@ export const agentPermissionPolicy = z
     /** Default permission mode when starting a session. */
     defaultMode: permissionMode,
 
+    /** Name of the active profile from `profiles`. */
+    activeProfile: z
+      .string()
+      .meta({
+        description:
+          "Name of the active profile from `profiles`. If unset, use the " +
+          "top-level permission tiers directly.",
+      }),
+
     /** Tool permission rules — evaluated in deny → ask → allow order. */
     permissions: permissionTiers.meta({
       description:
@@ -279,9 +447,24 @@ export const agentPermissionPolicy = z
           "Conditional rules — pattern matching on tool input. First matching rule wins; falls back to permission tier arrays.",
       }),
 
+    /** Named permission profiles — selectable at session start. */
+    profiles: profiles.meta({
+      description: "Named permission profiles.",
+    }),
+
     /** Agent delegation controls — what subagents may do. */
     delegation: delegation.meta({
       description: "Agent delegation controls — what subagents may do.",
+    }),
+
+    /** OS-level sandbox configuration. */
+    sandbox: sandbox.meta({
+      description: "OS-level sandbox configuration.",
+    }),
+
+    /** Network access controls. */
+    network: network.meta({
+      description: "Network access controls.",
     }),
 
     /** Environment variables injected into all agent sessions. */
@@ -310,3 +493,7 @@ export type ConditionalRule = z.infer<typeof conditionalRule>;
 export type RuleCondition = z.infer<typeof ruleCondition>;
 export type Delegation = z.infer<typeof delegation>;
 export type PermissionMode = z.infer<typeof permissionMode>;
+export type SandboxMode = z.infer<typeof sandboxMode>;
+export type Sandbox = z.infer<typeof sandbox>;
+export type Profiles = z.infer<typeof profiles>;
+export type Network = z.infer<typeof network>;

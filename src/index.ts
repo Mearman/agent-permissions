@@ -13,6 +13,10 @@ export {
   conditionalRule,
   ruleCondition,
   delegation,
+  sandboxMode,
+  sandbox,
+  profiles,
+  network,
 } from "./schema.ts";
 
 export type {
@@ -22,6 +26,10 @@ export type {
   RuleCondition,
   Delegation,
   PermissionMode,
+  SandboxMode,
+  Sandbox,
+  Profiles,
+  Network,
 } from "./schema.ts";
 
 export {

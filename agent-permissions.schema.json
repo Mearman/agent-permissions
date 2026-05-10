@@ -23,6 +23,10 @@
       "description": "Default permission mode. Agent Permission Policy modes: standard, autonomous, restricted, readonly. Claude Code compatible modes: plan, dontAsk, acceptEdits, bypassPermissions, default.",
       "default": "standard"
     },
+    "activeProfile": {
+      "type": "string",
+      "description": "Name of the active profile from `profiles`. If unset, use the top-level permission tiers directly."
+    },
     "permissions": {
       "type": "object",
       "properties": {
@@ -156,6 +160,106 @@
       },
       "description": "Conditional rules — pattern matching on tool input. First matching rule wins; falls back to permission tier arrays."
     },
+    "profiles": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "allow": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tools auto-approved without prompting. Evaluated after deny rules.",
+            "examples": [
+              "Bash(git status)",
+              "Bash(npm run test:*)",
+              "Read",
+              "Grep"
+            ]
+          },
+          "deny": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tools always denied — short-circuits before allow and ask. A deny cannot be overridden by an allow in any other source.",
+            "examples": [
+              "Bash(sudo:*)",
+              "Bash(rm -rf /)",
+              "Read(./.env)"
+            ]
+          },
+          "ask": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tools that always prompt, even in autonomous mode. Evaluated after deny but before allow.",
+            "examples": [
+              "Bash(git push:*)",
+              "Bash(npm publish:*)"
+            ]
+          },
+          "additionalDirectories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Directories beyond project root that agents may access.",
+            "examples": [
+              "../shared-libs/",
+              "/tmp/build-cache"
+            ]
+          },
+          "defaultMode": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "autonomous",
+              "restricted",
+              "readonly",
+              "plan",
+              "dontAsk",
+              "acceptEdits",
+              "bypassPermissions",
+              "default"
+            ],
+            "description": "Default permission mode. Accepted here for Claude Code compatibility, or at the top level for the canonical placement.",
+            "default": "standard"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Named permission profiles.",
+      "examples": [
+        {
+          "strict": {
+            "deny": [
+              "Write",
+              "Edit",
+              "Bash"
+            ],
+            "allow": [
+              "Read",
+              "Grep"
+            ]
+          },
+          "relaxed": {
+            "allow": [
+              "Read",
+              "Write",
+              "Edit",
+              "Bash(git:*)",
+              "Bash(npm:*)"
+            ]
+          }
+        }
+      ]
+    },
     "delegation": {
       "type": "object",
       "properties": {
@@ -181,10 +285,173 @@
           "type": "boolean",
           "description": "Whether subagents can request elevated permissions from their parent.",
           "default": true
+        },
+        "agents": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Tools auto-approved without prompting. Evaluated after deny rules.",
+                "examples": [
+                  "Bash(git status)",
+                  "Bash(npm run test:*)",
+                  "Read",
+                  "Grep"
+                ]
+              },
+              "deny": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Tools always denied — short-circuits before allow and ask. A deny cannot be overridden by an allow in any other source.",
+                "examples": [
+                  "Bash(sudo:*)",
+                  "Bash(rm -rf /)",
+                  "Read(./.env)"
+                ]
+              },
+              "ask": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Tools that always prompt, even in autonomous mode. Evaluated after deny but before allow.",
+                "examples": [
+                  "Bash(git push:*)",
+                  "Bash(npm publish:*)"
+                ]
+              },
+              "additionalDirectories": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Directories beyond project root that agents may access.",
+                "examples": [
+                  "../shared-libs/",
+                  "/tmp/build-cache"
+                ]
+              },
+              "defaultMode": {
+                "type": "string",
+                "enum": [
+                  "standard",
+                  "autonomous",
+                  "restricted",
+                  "readonly",
+                  "plan",
+                  "dontAsk",
+                  "acceptEdits",
+                  "bypassPermissions",
+                  "default"
+                ],
+                "description": "Default permission mode. Accepted here for Claude Code compatibility, or at the top level for the canonical placement.",
+                "default": "standard"
+              }
+            },
+            "additionalProperties": false
+          },
+          "description": "Per-agent permission overrides. Keys are agent names or glob patterns. Values replace (not merge with) the parent policy for that agent.",
+          "examples": [
+            {
+              "review": {
+                "deny": [
+                  "Write",
+                  "Edit",
+                  "Bash"
+                ],
+                "allow": [
+                  "Read",
+                  "Grep"
+                ]
+              },
+              "docs": {
+                "allow": [
+                  "Read",
+                  "Write(./docs/**)",
+                  "Bash(mdbook build:*)"
+                ]
+              }
+            }
+          ]
         }
       },
       "additionalProperties": false,
       "description": "Agent delegation controls — what subagents may do."
+    },
+    "sandbox": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "readonly",
+            "workspace-write",
+            "full-access"
+          ],
+          "description": "Sandbox isolation mode.",
+          "default": "workspace-write"
+        },
+        "writableRoots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Additional paths the agent may write to (beyond project root). Only meaningful when mode is `workspace-write`.",
+          "examples": [
+            "/tmp/build-cache",
+            "../shared-libs"
+          ]
+        },
+        "networkAccess": {
+          "type": "boolean",
+          "description": "Whether the agent may make network requests from within the sandbox. When false, network access is blocked at the OS level.",
+          "default": true
+        }
+      },
+      "additionalProperties": false,
+      "description": "OS-level sandbox configuration."
+    },
+    "network": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether network access is permitted at all. When false, WebFetch and WebSearch are denied regardless of allow rules.",
+          "default": true
+        },
+        "domains": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "allow",
+              "deny"
+            ]
+          },
+          "description": "Domain-level allow/deny rules for HTTP(S) requests. Supplements the WebFetch(domain:...) permission rules.",
+          "examples": [
+            {
+              "api.example.com": "allow",
+              "evil.com": "deny"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "description": "Network access controls."
     },
     "env": {
       "type": "object",

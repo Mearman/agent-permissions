@@ -1,6 +1,7 @@
 {
   "$schema": "./agent-permissions.schema.json",
   "defaultMode": "standard",
+  "activeProfile": "development",
   "permissions": {
     "allow": [
       "Bash(git status)",
@@ -44,13 +45,66 @@
       "when": { "branch": "main" }
     }
   ],
+  "profiles": {
+    "development": {
+      "allow": [
+        "Read",
+        "Write",
+        "Edit",
+        "Bash(git:*)",
+        "Bash(npm:*)",
+        "Grep",
+        "Glob"
+      ],
+      "deny": [
+        "Bash(sudo:*)",
+        "Bash(rm -rf /)"
+      ]
+    },
+    "review": {
+      "allow": ["Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)"],
+      "deny": ["Write", "Edit", "Bash"]
+    },
+    "ci": {
+      "allow": [
+        "Read",
+        "Write",
+        "Edit",
+        "Bash(npm run:*)",
+        "Bash(git checkout:*)"
+      ],
+      "deny": ["Bash(sudo:*)"],
+      "defaultMode": "autonomous"
+    }
+  },
   "delegation": {
     "maxDepth": 2,
     "nonDelegable": [
       "Bash(sudo:*)",
       "Write(./.agents/**)"
     ],
-    "bubbleUp": true
+    "bubbleUp": true,
+    "agents": {
+      "review": {
+        "deny": ["Write", "Edit", "Bash"],
+        "allow": ["Read", "Grep"]
+      },
+      "docs": {
+        "allow": ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"]
+      }
+    }
+  },
+  "sandbox": {
+    "mode": "workspace-write",
+    "writableRoots": ["/tmp/build-cache"],
+    "networkAccess": true
+  },
+  "network": {
+    "enabled": true,
+    "domains": {
+      "api.example.com": "allow",
+      "evil.com": "deny"
+    }
   },
   "env": {
     "NODE_ENV": "development",
