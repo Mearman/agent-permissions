@@ -24,7 +24,7 @@ import type {
   SandboxMode as CodexSdkSandboxMode,
 } from "@openai/codex-sdk";
 
-import type { AgentConfig as OpenCodeAgentConfig } from "@opencode-ai/sdk";
+import type { PermissionActionConfig as OpenCodeV2PermissionActionConfig } from "@opencode-ai/sdk/v2";
 
 // ---------------------------------------------------------------------------
 // Permission behaviour (allow / deny / ask)
@@ -48,7 +48,17 @@ export const OpenCodePermissionTools = z.enum([
   "doom_loop",
   "edit",
   "external_directory",
+  "glob",
+  "grep",
+  "list",
+  "lsp",
+  "question",
+  "read",
+  "skill",
+  "task",
+  "todowrite",
   "webfetch",
+  "websearch",
 ]);
 
 export type OpenCodePermissionTool = z.infer<typeof OpenCodePermissionTools>;
@@ -157,27 +167,17 @@ type _AssertCodexSandbox = [CodexSandboxMode] extends [CodexSdkSandboxMode]
   : "CodexSandboxMode has sandbox modes missing from SDK";
 
 // ---------------------------------------------------------------------------
-// OpenCode alignment
+// OpenCode alignment (v2 SDK)
 // ---------------------------------------------------------------------------
-// Extract the action type from the SDK's AgentConfig.permission block.
-// The SDK uses the same "ask" | "allow" | "deny" triad for each tool.
-type OpenCodeAction = NonNullable<OpenCodeAgentConfig["permission"]>["edit"];
+// The v2 SDK PermissionConfig is a union of string | object-with-index-sig.
+// Bidirectional tool-name alignment is impossible because TypeScript's keyof
+// includes `string` from the index signature, so every string literal extends
+// every key. We can only verify the action type (allow/deny/ask) bidirectionally.
+// Tool coverage is maintained by manual review against the SDK source.
+type OpenCodeAction = OpenCodeV2PermissionActionConfig;
 
 type _AssertOpenCodeBehavior = [PermissionBehavior] extends [OpenCodeAction]
   ? [OpenCodeAction] extends [PermissionBehavior]
     ? true
     : "OpenCode SDK has actions missing from PermissionBehavior"
   : "PermissionBehavior has actions missing from OpenCode SDK";
-
-// Verify our OpenCodePermissionTools enum covers every tool in the SDK's
-// permission block. Extract tool names from the permission object keys.
-type OpenCodePermissionKeys = keyof NonNullable<
-  OpenCodeAgentConfig["permission"]
->;
-
-type _AssertOpenCodeTools =
-  OpenCodePermissionTool extends OpenCodePermissionKeys
-    ? OpenCodePermissionKeys extends OpenCodePermissionTool
-      ? true
-      : "OpenCode SDK has permission tools missing from OpenCodePermissionTools"
-    : "OpenCodePermissionTools has tools missing from OpenCode SDK";

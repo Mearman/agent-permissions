@@ -16,6 +16,7 @@ import {
   CodexSandboxMode,
   OpenCodePermissionTools,
 } from "../compat/enums.ts";
+import { opencodeCodec } from "../compat/codecs.ts";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -89,21 +90,17 @@ describe("SDK alignment — Codex", () => {
 
 describe("SDK alignment — OpenCode", () => {
   it("our codec handles every OpenCode SDK permission tool", () => {
-    // These are the tools from AgentConfig.permission in the SDK
     const sdkTools = zodEnumValues(OpenCodePermissionTools);
-    // Our codec's ocToCanonical must handle all of them
-    const codecMappedTools = new Set([
-      "bash",
-      "edit",
-      "webfetch",
-      "external_directory",
-      // doom_loop is unmapped — intentionally skipped in codec (OC_UNMAPPED_TOOLS)
-    ]);
+    // Our codec's ocToCanonical map covers mapped tools; OC_UNMAPPED_TOOLS are
+    // intentionally skipped during decode.
+    const unmapped = new Set(["doom_loop", "question", "todowrite", "skill"]);
+    // Decode a policy with each tool set to "allow" — if the tool is in the
+    // codec schema, it will decode without error. Unmapped tools are skipped.
     for (const tool of sdkTools) {
-      if (tool === "doom_loop") continue; // documented unmapped
-      assert.ok(
-        codecMappedTools.has(tool),
-        `Our codec is missing OpenCode permission tool: ${tool}`,
+      if (unmapped.has(tool)) continue;
+      assert.doesNotThrow(
+        () => opencodeCodec.decode({ [tool]: "allow" }),
+        `OpenCode codec should accept SDK permission tool: ${tool}`,
       );
     }
   });
