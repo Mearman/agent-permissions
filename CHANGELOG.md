@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/Mearman/agent-permissions/compare/v1.1.0...v1.2.0) (2026-05-10)
+
+### Features
+
+* add test coverage with node --experimental-test-coverage ([3d2784e](https://github.com/Mearman/agent-permissions/commit/3d2784efbab42e94367a690bcad036c3ecb23f0d))
+
 ## [1.1.0](https://github.com/Mearman/agent-permissions/compare/v1.0.1...v1.1.0) (2026-05-10)
 
 ### Features
