@@ -250,26 +250,24 @@ describe("Claude Code compatibility", () => {
       ).toBe(true);
     });
 
-    it("does NOT reject defaultMode inside permissions (Claude Code's placement) — strings are strings", () => {
-      // Our schema has permissions.allow/deny/ask/additionalDirectories as string arrays.
-      // Claude Code puts defaultMode *inside* the permissions object, but our schema
-      // doesn't have a defaultMode field there — it's a top-level field.
-      // Since our schema uses strict mode, unknown keys inside permissions are rejected.
-      const result = agentPermissionPolicy.safeParse({
-        permissions: {
-          allow: ["Read"],
-          defaultMode: "dontAsk", // This is Claude Code's placement
-        },
-      });
-      expect(result.success).toBe(false);
+    it("accepts defaultMode inside permissions (Claude Code's placement)", () => {
+      // Claude Code puts defaultMode inside the permissions object.
+      // Our schema accepts it in both positions for zero-translation migration.
+      expect(
+        agentPermissionPolicy.safeParse({
+          permissions: {
+            allow: ["Read"],
+            defaultMode: "dontAsk",
+          },
+        }).success,
+      ).toBe(true);
     });
   });
 
   describe("migration: jq '.permissions' produces valid input", () => {
     it("accepts the exact output of extracting Claude Code's permissions block", () => {
       // This simulates: jq '.permissions' .claude/settings.json > .agents/permissions.json
-      // Note: Claude Code's defaultMode lives inside permissions, which our schema
-      // places at the top level. A migration script would need to extract it.
+      // No translation needed — defaultMode inside permissions is accepted.
       const claudeCodePermissions = {
         allow: [
           "Bash(du:*)",
@@ -287,6 +285,7 @@ describe("Claude Code compatibility", () => {
           "Bash(git push:*)",
           "Write(eslint.config.ts)",
         ],
+        defaultMode: "dontAsk",
       };
 
       const result = agentPermissionPolicy.safeParse({

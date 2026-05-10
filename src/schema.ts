@@ -12,6 +12,51 @@
 import * as z from "zod";
 
 // ---------------------------------------------------------------------------
+// Permission modes
+// ---------------------------------------------------------------------------
+
+/**
+ * Default permission mode when starting an agent session.
+ *
+ * Agent Permission Policy modes:
+ * - `standard`: Prompt for unsafe operations (default)
+ * - `autonomous`: Auto-approve unless deny/ask rules match
+ * - `restricted`: Prompt for all operations
+ * - `readonly`: Only allow read-only tools
+ *
+ * Claude Code compatible modes (accepted for zero-translation migration):
+ * - `plan`: Plan-only mode (maps to `restricted`)
+ * - `dontAsk`: Auto-approve (maps to `autonomous`)
+ * - `acceptEdits`: Accept edits without prompt (maps to `standard`)
+ * - `bypassPermissions`: Bypass all permission checks (maps to `autonomous`)
+ * - `default`: Agent default behaviour (maps to `standard`)
+ *
+ * **Security note**: `autonomous`, `bypassPermissions`, and `dontAsk` are only
+ * trusted from personal (`permissions.local.json`) or managed (enterprise)
+ * sources — NOT from committed `permissions.json`.
+ */
+export const permissionMode = z
+  .enum([
+    // APP modes
+    "standard",
+    "autonomous",
+    "restricted",
+    "readonly",
+    // Claude Code compatible modes
+    "plan",
+    "dontAsk",
+    "acceptEdits",
+    "bypassPermissions",
+    "default",
+  ])
+  .meta({
+    description:
+      "Default permission mode. Agent Permission Policy modes: standard, autonomous, restricted, readonly. " +
+      "Claude Code compatible modes: plan, dontAsk, acceptEdits, bypassPermissions, default.",
+    default: "standard",
+  });
+
+// ---------------------------------------------------------------------------
 // Permission rule pattern
 // ---------------------------------------------------------------------------
 
@@ -94,6 +139,17 @@ export const permissionTiers = z
           "Directories beyond project root that agents may access.",
         examples: ["../shared-libs/", "/tmp/build-cache"],
       }),
+
+    /**
+     * Default permission mode. Also accepted at the top level.
+     * Included here for Claude Code compatibility — Claude Code places
+     * defaultMode inside the permissions object.
+     */
+    defaultMode: permissionMode.meta({
+      description:
+        "Default permission mode. Accepted here for Claude Code compatibility, " +
+        "or at the top level for the canonical placement.",
+    }),
   })
   .partial()
   .strict();
@@ -194,51 +250,6 @@ export const delegation = z
       }),
   })
   .partial();
-
-// ---------------------------------------------------------------------------
-// Permission modes
-// ---------------------------------------------------------------------------
-
-/**
- * Default permission mode when starting an agent session.
- *
- * Agent Permission Policy modes:
- * - `standard`: Prompt for unsafe operations (default)
- * - `autonomous`: Auto-approve unless deny/ask rules match
- * - `restricted`: Prompt for all operations
- * - `readonly`: Only allow read-only tools
- *
- * Claude Code compatible modes (accepted for zero-translation migration):
- * - `plan`: Plan-only mode (maps to `restricted`)
- * - `dontAsk`: Auto-approve (maps to `autonomous`)
- * - `acceptEdits`: Accept edits without prompt (maps to `standard`)
- * - `bypassPermissions`: Bypass all permission checks (maps to `autonomous`)
- * - `default`: Agent default behaviour (maps to `standard`)
- *
- * **Security note**: `autonomous`, `bypassPermissions`, and `dontAsk` are only
- * trusted from personal (`permissions.local.json`) or managed (enterprise)
- * sources — NOT from committed `permissions.json`.
- */
-export const permissionMode = z
-  .enum([
-    // APP modes
-    "standard",
-    "autonomous",
-    "restricted",
-    "readonly",
-    // Claude Code compatible modes
-    "plan",
-    "dontAsk",
-    "acceptEdits",
-    "bypassPermissions",
-    "default",
-  ])
-  .meta({
-    description:
-      "Default permission mode. Agent Permission Policy modes: standard, autonomous, restricted, readonly. " +
-      "Claude Code compatible modes: plan, dontAsk, acceptEdits, bypassPermissions, default.",
-    default: "standard",
-  });
 
 // ---------------------------------------------------------------------------
 // Top-level schema

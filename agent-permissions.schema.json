@@ -72,6 +72,22 @@
             "../shared-libs/",
             "/tmp/build-cache"
           ]
+        },
+        "defaultMode": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "autonomous",
+            "restricted",
+            "readonly",
+            "plan",
+            "dontAsk",
+            "acceptEdits",
+            "bypassPermissions",
+            "default"
+          ],
+          "description": "Default permission mode. Accepted here for Claude Code compatibility, or at the top level for the canonical placement.",
+          "default": "standard"
         }
       },
       "additionalProperties": false,
