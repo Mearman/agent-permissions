@@ -210,10 +210,10 @@ Bidirectional codecs convert between the canonical format and each agent's nativ
 import { claudeCodeCodec, codexCodec } from "agent-perms/compat/codecs";
 
 // Decode agent-native → canonical
-const policy = claudeCodeCodec.parse(claudeSettings.permissions);
+const policy = claudeCodeCodec.decode(claudeSettings.permissions);
 
 // Encode canonical → agent-native
-const codexConfig = codexCodec.parse(canonicalPolicy);
+const codexConfig = codexCodec.encode(canonicalPolicy);
 ```
 
 | Agent | Native format | Codec | Fidelity |
