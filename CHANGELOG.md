@@ -1,3 +1,22 @@
+## [2.0.0](https://github.com/Mearman/agent-permissions/compare/v1.2.0...v2.0.0) (2026-05-10)
+
+### ⚠ BREAKING CHANGES
+
+* consumers must now import from specific subpaths:
+  - `agent-perms/schema` — Zod schemas and types
+  - `agent-perms/evaluate` — deny-first evaluator
+  - `agent-perms/loader` — multi-layer policy loader
+  - `agent-perms/compat/codecs` — bidirectional codecs
+  - `agent-perms/compat/enums` — SDK-aligned enums
+
+Wildcard export `./*` maps to `./dist/*.mjs` / `./dist/*.cjs`.
+tsdown builds all source files as separate entry points.
+No more barrel coupling — each module is independently importable.
+
+### Features
+
+* remove barrel index.ts, use wildcard package exports ([f072eaa](https://github.com/Mearman/agent-permissions/commit/f072eaa07e62fbdd31b419df0c1b341e7ffa0e0b))
+
 ## [1.2.0](https://github.com/Mearman/agent-permissions/compare/v1.1.0...v1.2.0) (2026-05-10)
 
 ### Features
