@@ -1,3 +1,9 @@
+## [3.0.6](https://github.com/Mearman/agent-permissions/compare/v3.0.5...v3.0.6) (2026-05-10)
+
+### Documentation
+
+* show rules in quick-start example, add unconditional rule example ([b5352d3](https://github.com/Mearman/agent-permissions/commit/b5352d343f619bc7cdded9e16f412e15f84c5bc1))
+
 ## [3.0.5](https://github.com/Mearman/agent-permissions/compare/v3.0.4...v3.0.5) (2026-05-10)
 
 ### Chores
