@@ -1,12 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { agentPermissionPolicy } from "../schema.ts";
 
-const examplesDir = path.resolve(
-  import.meta.dirname,
-  "../../spec/examples",
-);
+const examplesDir = path.resolve(import.meta.dirname, "../../spec/examples");
 
 describe("agentPermissionPolicy", () => {
   describe("example files", () => {
@@ -15,42 +13,42 @@ describe("agentPermissionPolicy", () => {
         const content = fs.readFileSync(path.join(examplesDir, file), "utf-8");
         const data = JSON.parse(content);
         const result = agentPermissionPolicy.safeParse(data);
-        expect(result.success).toBe(true);
+        assert.ok(result.success, `Expected ${file} to validate`);
       });
     }
   });
 
   describe("minimal policy", () => {
     it("accepts an empty object", () => {
-      expect(agentPermissionPolicy.safeParse({}).success).toBe(true);
+      assert.ok(agentPermissionPolicy.safeParse({}).success);
     });
 
     it("accepts only permissions.allow", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({
           permissions: { allow: ["Read", "Grep"] },
         }).success,
-      ).toBe(true);
+      );
     });
 
     it("accepts only permissions.deny", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({
           permissions: { deny: ["Bash(sudo:*)"] },
         }).success,
-      ).toBe(true);
+      );
     });
 
     it("accepts only defaultMode", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({ defaultMode: "readonly" }).success,
-      ).toBe(true);
+      );
     });
 
     it("accepts only env", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({ env: { FOO: "bar" } }).success,
-      ).toBe(true);
+      );
     });
   });
 
@@ -96,21 +94,21 @@ describe("agentPermissionPolicy", () => {
         },
         env: { NODE_ENV: "development" },
       });
-      expect(result.success).toBe(true);
+      assert.ok(result.success);
     });
   });
 
   describe("conditional rules", () => {
     it("accepts a rule without when", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({
           rules: [{ tool: "Bash", pattern: "npm run *", tier: "allow" }],
         }).success,
-      ).toBe(true);
+      );
     });
 
     it("accepts a rule with partial when (cwd only)", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({
           rules: [
             {
@@ -121,11 +119,11 @@ describe("agentPermissionPolicy", () => {
             },
           ],
         }).success,
-      ).toBe(true);
+      );
     });
 
     it("accepts a rule with partial when (branch only)", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({
           rules: [
             {
@@ -136,104 +134,91 @@ describe("agentPermissionPolicy", () => {
             },
           ],
         }).success,
-      ).toBe(true);
+      );
     });
   });
 
   describe("validation failures", () => {
     it("rejects unknown permission mode", () => {
-      const result = agentPermissionPolicy.safeParse({
-        defaultMode: "yolo",
-      });
-      expect(result.success).toBe(false);
+      assert.ok(!agentPermissionPolicy.safeParse({ defaultMode: "yolo" }).success);
     });
 
     it("rejects unknown top-level key", () => {
-      const result = agentPermissionPolicy.safeParse({
-        unknownField: true,
-      });
-      expect(result.success).toBe(false);
+      assert.ok(!agentPermissionPolicy.safeParse({ unknownField: true }).success);
     });
 
     it("rejects non-string permission rules", () => {
-      const result = agentPermissionPolicy.safeParse({
-        permissions: { allow: [123] },
-      });
-      expect(result.success).toBe(false);
+      assert.ok(!agentPermissionPolicy.safeParse({ permissions: { allow: [123] } }).success);
     });
 
     it("rejects rule without required tool field", () => {
-      const result = agentPermissionPolicy.safeParse({
-        rules: [{ pattern: "npm run *", tier: "allow" }],
-      });
-      expect(result.success).toBe(false);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({
+          rules: [{ pattern: "npm run *", tier: "allow" }],
+        }).success,
+      );
     });
 
     it("rejects rule with invalid tier", () => {
-      const result = agentPermissionPolicy.safeParse({
-        rules: [{ tool: "Bash", pattern: "npm run *", tier: "maybe" }],
-      });
-      expect(result.success).toBe(false);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({
+          rules: [{ tool: "Bash", pattern: "npm run *", tier: "maybe" }],
+        }).success,
+      );
     });
 
     it("rejects negative maxDepth", () => {
-      const result = agentPermissionPolicy.safeParse({
-        delegation: { maxDepth: -1 },
-      });
-      expect(result.success).toBe(false);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({ delegation: { maxDepth: -1 } }).success,
+      );
     });
 
     it("rejects non-string env values", () => {
-      const result = agentPermissionPolicy.safeParse({
-        env: { PORT: 3000 },
-      });
-      expect(result.success).toBe(false);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({ env: { PORT: 3000 } }).success,
+      );
     });
 
     it("rejects unknown sandbox mode", () => {
-      const result = agentPermissionPolicy.safeParse({
-        sandbox: { mode: "containerised" },
-      });
-      expect(result.success).toBe(false);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({ sandbox: { mode: "containerised" } }).success,
+      );
     });
 
     it("rejects unknown keys in sandbox", () => {
-      const result = agentPermissionPolicy.safeParse({
-        sandbox: { mode: "workspace-write", container: "docker" },
-      });
-      expect(result.success).toBe(false);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({
+          sandbox: { mode: "workspace-write", container: "docker" },
+        }).success,
+      );
     });
 
     it("rejects unknown keys in network", () => {
-      const result = agentPermissionPolicy.safeParse({
-        network: { proxy: "http://localhost:8080" },
-      });
-      expect(result.success).toBe(false);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({
+          network: { proxy: "http://localhost:8080" },
+        }).success,
+      );
     });
 
     it("rejects invalid domain action", () => {
-      const result = agentPermissionPolicy.safeParse({
-        network: { domains: { "example.com": "block" } },
-      });
-      expect(result.success).toBe(false);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({
+          network: { domains: { "example.com": "block" } },
+        }).success,
+      );
     });
   });
 
-  // -----------------------------------------------------------------------
-  // New feature tests
-  // -----------------------------------------------------------------------
-
   describe("sandbox configuration", () => {
     it("accepts sandbox with mode only", () => {
-      expect(
-        agentPermissionPolicy.safeParse({
-          sandbox: { mode: "readonly" },
-        }).success,
-      ).toBe(true);
+      assert.ok(
+        agentPermissionPolicy.safeParse({ sandbox: { mode: "readonly" } }).success,
+      );
     });
 
     it("accepts sandbox with writableRoots", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({
           sandbox: {
             mode: "workspace-write",
@@ -241,41 +226,41 @@ describe("agentPermissionPolicy", () => {
             networkAccess: false,
           },
         }).success,
-      ).toBe(true);
+      );
     });
 
     it("accepts sandbox with networkAccess disabled", () => {
-      const result = agentPermissionPolicy.safeParse({
-        sandbox: { mode: "full-access", networkAccess: false },
-      });
-      expect(result.success).toBe(true);
+      assert.ok(
+        agentPermissionPolicy.safeParse({
+          sandbox: { mode: "full-access", networkAccess: false },
+        }).success,
+      );
     });
   });
 
   describe("named profiles", () => {
     it("accepts profiles with activeProfile", () => {
-      const result = agentPermissionPolicy.safeParse({
-        profiles: {
-          strict: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
-          relaxed: { allow: ["Read", "Write", "Edit", "Bash(git:*)"] },
-        },
-        activeProfile: "strict",
-      });
-      expect(result.success).toBe(true);
+      assert.ok(
+        agentPermissionPolicy.safeParse({
+          profiles: {
+            strict: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
+            relaxed: { allow: ["Read", "Write", "Edit", "Bash(git:*)"] },
+          },
+          activeProfile: "strict",
+        }).success,
+      );
     });
 
     it("accepts profiles without activeProfile", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({
-          profiles: {
-            default: { allow: ["Read"] },
-          },
+          profiles: { default: { allow: ["Read"] } },
         }).success,
-      ).toBe(true);
+      );
     });
 
     it("accepts profile with all tier fields", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({
           profiles: {
             full: {
@@ -287,51 +272,50 @@ describe("agentPermissionPolicy", () => {
             },
           },
         }).success,
-      ).toBe(true);
+      );
     });
   });
 
   describe("network controls", () => {
     it("accepts network enabled only", () => {
-      expect(
-        agentPermissionPolicy.safeParse({
-          network: { enabled: false },
-        }).success,
-      ).toBe(true);
+      assert.ok(
+        agentPermissionPolicy.safeParse({ network: { enabled: false } }).success,
+      );
     });
 
     it("accepts network with domain rules", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({
           network: {
             enabled: true,
             domains: { "api.example.com": "allow", "evil.com": "deny" },
           },
         }).success,
-      ).toBe(true);
+      );
     });
   });
 
   describe("per-agent delegation overrides", () => {
     it("accepts delegation with agents", () => {
-      const result = agentPermissionPolicy.safeParse({
-        delegation: {
-          maxDepth: 3,
-          agents: {
-            review: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
-            docs: { allow: ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"] },
+      assert.ok(
+        agentPermissionPolicy.safeParse({
+          delegation: {
+            maxDepth: 3,
+            agents: {
+              review: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
+              docs: { allow: ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"] },
+            },
           },
-        },
-      });
-      expect(result.success).toBe(true);
+        }).success,
+      );
     });
 
     it("accepts empty agents record", () => {
-      expect(
+      assert.ok(
         agentPermissionPolicy.safeParse({
           delegation: { agents: {} },
         }).success,
-      ).toBe(true);
+      );
     });
   });
 });

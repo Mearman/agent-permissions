@@ -39,8 +39,8 @@
     "build:schema": "node --experimental-strip-types src/build-schema.ts",
     "build": "tsdown && pnpm build:schema",
     "dev": "tsdown --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "node --experimental-strip-types --test src/test/*.test.ts",
+    "test:watch": "node --experimental-strip-types --test --watch src/test/*.test.ts",
     "check": "tsc --noEmit",
     "lint:pkg": "publint && attw --pack .",
     "prepublishOnly": "pnpm build && pnpm test && pnpm lint:pkg"
@@ -78,7 +78,6 @@
     "publint": "^0.3.20",
     "rolldown": "^1.0.0",
     "tsdown": "^0.22.0",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "typescript": "^6.0.3"
   }
 }

@@ -17,7 +17,7 @@ export {
   sandbox,
   profiles,
   network,
-} from "./schema.js";
+} from "./schema.ts";
 
 export type {
   AgentPermissionPolicy,
@@ -30,7 +30,7 @@ export type {
   Sandbox,
   Profiles,
   Network,
-} from "./schema.js";
+} from "./schema.ts";
 
 export {
   claudeCodeCodec,
@@ -38,6 +38,6 @@ export {
   opencodeCodec,
   crushCodec,
   CODECS,
-} from "./compat/codecs.js";
+} from "./compat/codecs.ts";
 
-export type { AgentId, Codecs } from "./compat/codecs.js";
+export type { AgentId, Codecs } from "./compat/codecs.ts";
