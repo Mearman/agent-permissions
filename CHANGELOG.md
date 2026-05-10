@@ -1,3 +1,9 @@
+## [2.0.1](https://github.com/Mearman/agent-permissions/compare/v2.0.0...v2.0.1) (2026-05-10)
+
+### Bug Fixes
+
+* **ci:** remove prepublishOnly — CI validates before release ([d5d5a32](https://github.com/Mearman/agent-permissions/commit/d5d5a329f9b970f27b9e8e5b9b876fda0b6f90eb))
+
 ## [2.0.0](https://github.com/Mearman/agent-permissions/compare/v1.2.0...v2.0.0) (2026-05-10)
 
 ### ⚠ BREAKING CHANGES
