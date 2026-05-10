@@ -1,3 +1,29 @@
+## [4.0.0](https://github.com/Mearman/agent-permissions/compare/v3.0.6...v4.0.0) (2026-05-10)
+
+### ⚠ BREAKING CHANGES
+
+* PermissionPolicy now uses rules[] instead of permissions.allow/deny/ask.
+The permissions field is still accepted by the schema (zero-translation migration preserved)
+but the loader normalises it into rules on output.
+
+- Schema: conditionalRule → Rule (pattern is optional, no longer conditional)
+- Schema: PascalCase for both const and type (declaration merging)
+- Evaluator: processes unified rules array, deny → ask → allow
+- Loader: normalises permissions string arrays into Rule objects
+- normaliseStringRule() exported for converting string rules to structured rules
+
+### Features
+
+* unify rules and permissions into single rules array ([d33ee13](https://github.com/Mearman/agent-permissions/commit/d33ee138065ba076abef644c86613d8c56d8bee1))
+
+### Documentation
+
+* rewrite README and examples for unified rules format ([96a08b2](https://github.com/Mearman/agent-permissions/commit/96a08b2bb29212ab4813778b4df4dea3867ea5b1))
+
+### Chores
+
+* regenerate JSON Schema from unified rules schema ([6ac886a](https://github.com/Mearman/agent-permissions/commit/6ac886a73c5281f740f2bd0f6267e04971d6069f))
+
 ## [3.0.6](https://github.com/Mearman/agent-permissions/compare/v3.0.5...v3.0.6) (2026-05-10)
 
 ### Documentation
