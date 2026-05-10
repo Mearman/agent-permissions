@@ -1,3 +1,11 @@
+## [3.0.2](https://github.com/Mearman/agent-permissions/compare/v3.0.1...v3.0.2) (2026-05-10)
+
+### Documentation
+
+* add npm version, license, and CI badges ([9276865](https://github.com/Mearman/agent-permissions/commit/9276865d4d58fee6ce4de5ac67861dcfbcb6376d))
+* fix codec API to use .decode()/.encode() ([dbd701e](https://github.com/Mearman/agent-permissions/commit/dbd701e76a7445577a31c91fff4244b5cec39a80))
+* rewrite README for v3 — wildcard exports, evaluator, loader, escape sequences ([2775197](https://github.com/Mearman/agent-permissions/commit/27751972c8dd005bec1929263e5cc0c3a6630542))
+
 ## [3.0.1](https://github.com/Mearman/agent-permissions/compare/v3.0.0...v3.0.1) (2026-05-10)
 
 ### Bug Fixes
