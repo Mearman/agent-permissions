@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/Mearman/agent-permissions/compare/v1.0.1...v1.1.0) (2026-05-10)
+
+### Features
+
+* add evaluate and loader modules ([75b4dee](https://github.com/Mearman/agent-permissions/commit/75b4dee31205b8cdadb8b5f1ac79c71c3afebb86))
+
 ## [1.0.1](https://github.com/Mearman/agent-permissions/compare/v1.0.0...v1.0.1) (2026-05-10)
 
 ### Chores
