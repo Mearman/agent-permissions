@@ -1,33 +1,30 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
+    "_build": {
+      "outputs": ["dist/**"]
+    },
     "_typecheck": {
-      "inputs": ["src/**/*.ts", "tsconfig.json"],
-      "outputs": [".tsbuildinfo"]
+      "outputs": []
     },
     "_lint": {
-      "inputs": ["src/**/*.ts", "eslint.config.ts"],
       "outputs": [".eslintcache"]
     },
     "_lint:fix": {
-      "inputs": ["src/**/*.ts", "eslint.config.ts"],
       "outputs": [".eslintcache"],
       "cache": false
     },
     "_test": {
       "dependsOn": ["_typecheck"],
-      "inputs": ["src/**/*.ts"]
-    },
-    "_build": {
-      "dependsOn": ["_typecheck", "_lint"],
-      "inputs": ["src/**/*.ts", "tsconfig.json", "tsdown.config.ts", "package.json"],
-      "outputs": ["dist/**", "agent-permissions.schema.json"]
+      "outputs": []
     },
     "_check": {
-      "dependsOn": ["_typecheck", "_lint", "_build"]
+      "dependsOn": ["_typecheck", "_lint", "_build"],
+      "outputs": []
     },
     "_validate": {
-      "dependsOn": ["_check", "_test"]
+      "dependsOn": ["_check", "_test"],
+      "outputs": []
     }
   }
 }

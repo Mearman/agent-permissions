@@ -114,6 +114,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check, test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      released: ${{ steps.detect-release.outputs.released }}
     permissions:
       contents: write
       id-token: write
@@ -145,7 +147,68 @@ jobs:
       - run: pnpm build
 
       - name: Release
+        id: detect-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm release
+        run: |
+          pnpm release 2>&1 | tee release-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          if grep -q "Published release" release-output.txt; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+          exit $EXIT_CODE
+
+  publish-aliases:
+    name: Publish alias — ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    strategy:
+      matrix:
+        include:
+          - name: agents-permissions
+            registry: https://registry.npmjs.org
+            token: NPM_TOKEN
+            provenance: --provenance
+          - name: agents-spec
+            registry: https://registry.npmjs.org
+            token: NPM_TOKEN
+            provenance: --provenance
+          - name: agent-permissions-policy
+            registry: https://registry.npmjs.org
+            token: NPM_TOKEN
+            provenance: --provenance
+          - name: "@mearman/agent-perms"
+            registry: https://npm.pkg.github.com
+            token: GITHUB_TOKEN
+            provenance: --no-provenance
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - uses: pnpm/action-setup@v6.0.5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .tool-versions
+          cache: pnpm
+          registry-url: ${{ matrix.registry }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - name: Publish
+        run: |
+          npm pkg set name=${{ matrix.name }}
+          pnpm publish --access public --no-git-checks ${{ matrix.provenance }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets[matrix.token] }}
