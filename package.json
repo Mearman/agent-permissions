@@ -37,7 +37,7 @@
   },
   "scripts": {
     "build:schema": "node --experimental-strip-types src/build-schema.ts",
-    "build": "tsdown && pnpm build:schema",
+    "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "node --experimental-strip-types --test src/test/*.test.ts",
     "test:watch": "node --experimental-strip-types --test --watch src/test/*.test.ts",
