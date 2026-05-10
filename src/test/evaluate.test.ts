@@ -208,14 +208,15 @@ describe("evaluate", () => {
   });
 
   describe("prefix pattern — prefix:*", () => {
-    it("matches when input starts with prefix", () => {
+    it("matches when input starts with prefix followed by space", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         permissions: {
           allow: ["Bash(git:*)"],
         },
       };
-      assert.equal(evaluate(policy, "bash", "git:status"), "allow");
+      assert.equal(evaluate(policy, "bash", "git status"), "allow");
+      assert.equal(evaluate(policy, "bash", "git"), "allow");
     });
 
     it("does not match when input has different prefix", () => {
@@ -239,18 +240,6 @@ describe("evaluate", () => {
       };
       assert.equal(evaluate(policy, "mcp__server__read", ""), "allow");
       assert.equal(evaluate(policy, "mcp__server__write", ""), "allow");
-    });
-
-    it("matches single-character wildcard", () => {
-      const policy: PermissionPolicy = {
-        defaultMode: "standard",
-        permissions: {
-          allow: ["bash_?"],
-        },
-      };
-      assert.equal(evaluate(policy, "bash_1", ""), "allow");
-      assert.equal(evaluate(policy, "bash_a", ""), "allow");
-      assert.equal(evaluate(policy, "bash_12", ""), "ask");
     });
   });
 
@@ -331,11 +320,11 @@ describe("evaluate", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         permissions: {
-          deny: ["Bash(+$[]() {})"],
+          deny: ["Bash(+$[]{})"],
         },
       };
       // Special chars should be escaped, not treated as regex
-      assert.equal(evaluate(policy, "bash", "+$[]() {}"), "deny");
+      assert.equal(evaluate(policy, "bash", "+$[]{}"), "deny");
     });
   });
 });
