@@ -1,3 +1,9 @@
+## [3.0.5](https://github.com/Mearman/agent-permissions/compare/v3.0.4...v3.0.5) (2026-05-10)
+
+### Chores
+
+* add LICENSE file, remove license section from README ([664f27e](https://github.com/Mearman/agent-permissions/commit/664f27e5b941f01be0bb4dca8b8bc184452d6e6b))
+
 ## [3.0.4](https://github.com/Mearman/agent-permissions/compare/v3.0.3...v3.0.4) (2026-05-10)
 
 ### Chores
