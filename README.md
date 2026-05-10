@@ -14,26 +14,30 @@ Create `.agents/permissions.json` in your project root:
 {
   "$schema": "https://raw.githubusercontent.com/Mearman/agent-permissions/main/agent-permissions.schema.json",
   "defaultMode": "standard",
-  "permissions": {
-    "allow": ["Bash(git status)", "Bash(npm run test:*)", "Read", "Grep"],
-    "deny": ["Bash(sudo:*)", "Read(./.env)"],
-    "ask": ["Bash(git push:*)"]
-  },
   "rules": [
+    { "tool": "Bash", "pattern": "sudo:*", "tier": "deny" },
+    { "tool": "Read", "pattern": "./.env", "tier": "deny" },
     { "tool": "Bash", "pattern": "npm publish:*", "tier": "deny" },
+    { "tool": "Bash", "pattern": "git status", "tier": "allow" },
+    { "tool": "Bash", "pattern": "git:*", "tier": "allow" },
+    { "tool": "Read", "tier": "allow" },
+    { "tool": "Grep", "tier": "allow" },
+    { "tool": "Bash", "pattern": "git push:*", "tier": "ask" },
     { "tool": "Bash", "pattern": "npm run *", "tier": "allow", "when": { "cwd": "./packages/*" } }
   ]
 }
 ```
 
-The `permissions` arrays are compatible with Claude Code's format. The `rules` array adds unconditional and conditional rules that go beyond what any single agent supports natively.
+Every rule has a `tool`, an optional `pattern`, a `tier` (deny/ask/allow), and optional `when` conditions. Evaluation is deny-first: all deny rules are checked, then ask, then allow. Falls back to `defaultMode` when no rule matches.
+
+**Zero-translation migration:** `jq '.permissions' .claude/settings.json > .agents/permissions.json` still works — the schema accepts Claude Code's `permissions.allow/deny/ask` arrays and the loader normalises them into rules.
 
 ## Why
 
 Every coding agent has its own permission config. Teams using multiple agents (or migrating between them) maintain separate, often contradictory permission files. This spec provides:
 
 - **One policy, many agents** — write once, convert to any agent's native format
-- **Zero-translation migration** — `jq '.permissions' .claude/settings.json > .agents/permissions.json` produces valid input
+- **Zero-translation migration** — Claude Code's `permissions` block is valid input
 - **Superset coverage** — expresses features from all supported agents (sandboxing, named profiles, per-agent overrides, conditional rules)
 - **IDE support** — JSON Schema for autocomplete and validation (submitted to [SchemaStore](https://github.com/SchemaStore/schemastore/pull/5666))
 
@@ -58,7 +62,7 @@ The package uses [wildcard exports](https://nodejs.org/api/packages.html#subpath
 
 ```typescript
 // Zod schemas (single source of truth)
-import { agentPermissionPolicy } from "agent-perms/schema";
+import { AgentPermissionPolicy } from "agent-perms/schema";
 
 // Deny-first evaluator
 import { evaluate } from "agent-perms/evaluate";
@@ -88,7 +92,15 @@ interface AgentPermissionPolicy {
 
   activeProfile?: string;
 
-  // Tool permission rules — evaluated deny → ask → allow
+  // Permission rules — unified deny-first evaluation
+  rules?: Array<{
+    tool: string;         // e.g. "Bash", "Read", "mcp__github__*"
+    pattern?: string;     // absent = match any input for this tool
+    tier: "allow" | "deny" | "ask";
+    when?: { cwd?: string; branch?: string };  // AND logic
+  }>;
+
+  // Claude Code compat — string rule arrays (normalised to rules on load)
   permissions?: {
     allow?: string[];
     deny?: string[];
@@ -96,14 +108,6 @@ interface AgentPermissionPolicy {
     additionalDirectories?: string[];
     defaultMode?: PermissionMode;
   };
-
-  // Conditional rules with cwd/branch conditions
-  rules?: Array<{
-    tool: string;
-    pattern: string;
-    tier: "allow" | "deny" | "ask";
-    when?: { cwd?: string; branch?: string };
-  }>;
 
   profiles?: Record<string, PermissionTiers>;
 
@@ -131,37 +135,33 @@ interface AgentPermissionPolicy {
 
 ## Rule syntax
 
-Rules use `Tool(pattern)` strings — compatible with Claude Code's permission format:
+Rules use `Tool(pattern)` strings inside `permissions` arrays — compatible with Claude Code's permission format. In the unified `rules` array, the tool and pattern are separate fields:
 
-| Pattern | Type | Matches |
-|---|---|---|
-| `Read` | Bare | All invocations of the `Read` tool |
-| `Bash(git status)` | Exact | Exactly `git status` |
-| `Bash(npm:*)` | Prefix | `npm` + space + anything, or bare `npm` |
-| `Bash(git commit *)` | Wildcard | `git commit` + anything (including bare `git commit`) |
-| `Bash(* Dockerfile)` | Wildcard | Any command ending with ` Dockerfile` |
-| `Bash(domain:evil.com)` | Domain | Commands containing `evil.com` |
-| `mcp__github` | MCP server | All tools from the `github` MCP server |
-| `mcp__*__delete*` | MCP wildcard | Any server's tools starting with `delete` |
+| Rule object | `permissions` string | Type | Matches |
+|---|---|---|---|
+| `{ tool: "Read" }` | `Read` | Bare | All invocations of `Read` |
+| `{ tool: "Bash", pattern: "git status" }` | `Bash(git status)` | Exact | Exactly `git status` |
+| `{ tool: "Bash", pattern: "npm:*" }` | `Bash(npm:*)` | Prefix | `npm` + space + anything |
+| `{ tool: "Bash", pattern: "git commit *" }` | `Bash(git commit *)` | Wildcard | `git commit` + anything |
+| `{ tool: "Bash", pattern: "domain:evil.com" }` | `Bash(domain:evil.com)` | Domain | Commands containing `evil.com` |
+| `{ tool: "mcp__github" }` | `mcp__github` | MCP server | All tools from `github` MCP server |
+
+### Evaluation order
+
+```
+deny rules → ask rules → allow rules → defaultMode
+```
+
+Deny short-circuits — if any deny rule matches, the tool is blocked regardless of allow rules from any source.
 
 ### Escape sequences
 
 | Escape | Meaning |
 |---|---|
-| `\(` | Literal `(` in pattern content |
-| `\)` | Literal `)` in pattern content |
+| `\(` | Literal `(` in pattern |
+| `\)` | Literal `)` in pattern |
 | `\*` | Literal `*` (not a wildcard) |
 | `\\` | Literal `\` |
-
-### Evaluation order
-
-Rules are evaluated in **deny → ask → allow** order. Deny short-circuits — if any deny rule matches, the tool is blocked regardless of allow rules from any source.
-
-```
-conditional rules (rules[]) → deny → ask → allow → defaultMode
-```
-
-Conditional rules are checked first. The first matching conditional rule wins. If none match, the tier arrays are checked in deny → ask → allow order.
 
 ## Evaluator
 
@@ -170,13 +170,14 @@ import { evaluate, type PermissionPolicy, type EvaluationContext } from "agent-p
 
 const policy: PermissionPolicy = {
   defaultMode: "standard",
-  permissions: {
-    deny: ["Bash(sudo:*)"],
-    allow: ["Bash(git:*)", "Read"],
-  },
+  rules: [
+    { tool: "Bash", pattern: "sudo:*", tier: "deny" },
+    { tool: "Bash", pattern: "git:*", tier: "allow" },
+    { tool: "Read", tier: "allow" },
+  ],
 };
 
-// Basic evaluation — returns "deny" | "ask" | "allow"
+// Returns "deny" | "ask" | "allow"
 evaluate(policy, "bash", "git status"); // "allow"
 evaluate(policy, "bash", "sudo rm -rf /"); // "deny"
 evaluate(policy, "bash", "npm install"); // "ask" (falls through to defaultMode)
@@ -187,6 +188,16 @@ evaluate(policy, "bash", "npm run build", ctx);
 ```
 
 Tool names are matched case-insensitively (`Bash` matches `bash`).
+
+### Converting string rules
+
+```typescript
+import { normaliseStringRule } from "agent-perms/evaluate";
+
+// Convert Claude Code-style string rules to structured rules
+const rule = normaliseStringRule("Bash(npm:*)", "allow");
+// → { tool: "Bash", pattern: "npm:*", tier: "allow" }
+```
 
 ## Policy loader
 
@@ -205,7 +216,7 @@ Loads and merges layers in order:
 2. `.agents/permissions.local.json` (personal overrides)
 3. Native agent configs (`.claude/settings.json`, etc.) — if `nativeSources` is set
 
-Deny rules from any layer short-circuit. Allow rules are additive.
+The loader normalises all `permissions` string arrays into structured `rules`. Deny rules from any layer short-circuit. Allow rules are additive.
 
 ## Agent compatibility
 
@@ -240,7 +251,7 @@ const codexConfig = codexCodec.encode(canonicalPolicy);
 jq '.permissions' .claude/settings.json > .agents/permissions.json
 ```
 
-This works because the canonical spec accepts Claude Code's rule syntax, mode values, and `defaultMode` placement unchanged.
+This works because the canonical spec accepts Claude Code's rule syntax, mode values, and `defaultMode` placement unchanged. The loader normalises `permissions` arrays into structured `rules`.
 
 ## JSON Schema for IDE support
 
@@ -266,10 +277,14 @@ The schema file ships with the package at `agent-perms/agent-permissions.schema.
 
 ```json
 {
-  "permissions": {
-    "allow": ["Bash(git status)", "Bash(git diff:*)", "Read", "Grep"],
-    "deny": ["Read(./.env)", "Bash(sudo:*)"]
-  }
+  "rules": [
+    { "tool": "Bash", "pattern": "git status", "tier": "allow" },
+    { "tool": "Bash", "pattern": "git diff:*", "tier": "allow" },
+    { "tool": "Read", "tier": "allow" },
+    { "tool": "Grep", "tier": "allow" },
+    { "tool": "Read", "pattern": "./.env", "tier": "deny" },
+    { "tool": "Bash", "pattern": "sudo:*", "tier": "deny" }
+  ]
 }
 ```
 
@@ -277,9 +292,10 @@ The schema file ships with the package at `agent-perms/agent-permissions.schema.
 
 ```json
 {
-  "permissions": {
-    "allow": ["Bash(python3:*)", "Bash(docker:*)"]
-  }
+  "rules": [
+    { "tool": "Bash", "pattern": "python3:*", "tier": "allow" },
+    { "tool": "Bash", "pattern": "docker:*", "tier": "allow" }
+  ]
 }
 ```
 
@@ -290,11 +306,7 @@ Rules without `when` always apply, regardless of cwd or branch:
 ```json
 {
   "rules": [
-    {
-      "tool": "Bash",
-      "pattern": "npm publish:*",
-      "tier": "deny"
-    }
+    { "tool": "Bash", "pattern": "npm publish:*", "tier": "deny" }
   ]
 }
 ```
@@ -324,7 +336,7 @@ See [`spec/examples/full.json`](spec/examples/full.json).
 
 ```bash
 pnpm install          # Install dependencies
-pnpm test             # Run tests (212 tests)
+pnpm test             # Run tests (216 tests)
 pnpm build            # Build ESM + CJS + types + JSON Schema
 ```
 
@@ -335,6 +347,6 @@ The Zod schema in `src/schema.ts` is the single source of truth. The compiled JS
 ### Adding a new agent codec
 
 1. Define the agent's native schema in `src/compat/codecs.ts`
-2. Implement `z.codec(nativeSchema, agentPermissionPolicy, { decode, encode })`
+2. Implement `z.codec(nativeSchema, AgentPermissionPolicy, { decode, encode })`
 3. Add round-trip tests in `src/test/compat.test.ts`
 4. Register in the `CODECS` export

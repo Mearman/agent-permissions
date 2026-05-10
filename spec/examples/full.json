@@ -2,53 +2,26 @@
   "$schema": "./agent-permissions.schema.json",
   "defaultMode": "standard",
   "activeProfile": "development",
-  "permissions": {
-    "allow": [
-      "Bash(git status)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
-      "Bash(npm run lint)",
-      "Bash(npm run test:*)",
-      "Read",
-      "Grep",
-      "WebFetch(domain:docs.example.com)"
-    ],
-    "deny": [
-      "Bash(rm -rf /)",
-      "Bash(sudo:*)",
-      "Bash(curl * | bash)",
-      "Bash(git push --force:*)",
-      "Read(./.env)",
-      "Read(./secrets/**)"
-    ],
-    "ask": [
-      "Bash(git push:*)",
-      "Bash(npm publish:*)",
-      "Write(./production/**)"
-    ],
-    "additionalDirectories": [
-      "../shared-libs/",
-      "/tmp/build-cache"
-    ]
-  },
   "rules": [
-    {
-      "tool": "Bash",
-      "pattern": "npm publish:*",
-      "tier": "deny"
-    },
-    {
-      "tool": "Bash",
-      "pattern": "npm run *",
-      "tier": "allow",
-      "when": { "cwd": "./packages/*" }
-    },
-    {
-      "tool": "Write",
-      "pattern": "./config/**",
-      "tier": "ask",
-      "when": { "branch": "main" }
-    }
+    { "tool": "Bash", "pattern": "git status", "tier": "allow" },
+    { "tool": "Bash", "pattern": "git log:*", "tier": "allow" },
+    { "tool": "Bash", "pattern": "git diff:*", "tier": "allow" },
+    { "tool": "Bash", "pattern": "npm run lint", "tier": "allow" },
+    { "tool": "Bash", "pattern": "npm run test:*", "tier": "allow" },
+    { "tool": "Read", "tier": "allow" },
+    { "tool": "Grep", "tier": "allow" },
+    { "tool": "WebFetch", "pattern": "domain:docs.example.com", "tier": "allow" },
+    { "tool": "Bash", "pattern": "rm -rf /", "tier": "deny" },
+    { "tool": "Bash", "pattern": "sudo:*", "tier": "deny" },
+    { "tool": "Bash", "pattern": "curl * | bash", "tier": "deny" },
+    { "tool": "Bash", "pattern": "git push --force:*", "tier": "deny" },
+    { "tool": "Read", "pattern": "./.env", "tier": "deny" },
+    { "tool": "Read", "pattern": "./secrets/**", "tier": "deny" },
+    { "tool": "Bash", "pattern": "npm publish:*", "tier": "deny" },
+    { "tool": "Bash", "pattern": "git push:*", "tier": "ask" },
+    { "tool": "Write", "pattern": "./production/**", "tier": "ask" },
+    { "tool": "Bash", "pattern": "npm run *", "tier": "allow", "when": { "cwd": "./packages/*" } },
+    { "tool": "Write", "pattern": "./config/**", "tier": "ask", "when": { "branch": "main" } }
   ],
   "profiles": {
     "development": {
