@@ -158,8 +158,6 @@ const opencodeNative = z.union([
     .strict(),
 ]);
 
-
-
 /**
  * Map OpenCode tool names to our canonical names.
  * OpenCode uses lowercase; we use PascalCase.
