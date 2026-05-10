@@ -1,3 +1,9 @@
+## [3.0.4](https://github.com/Mearman/agent-permissions/compare/v3.0.3...v3.0.4) (2026-05-10)
+
+### Chores
+
+* add commit-msg and pre-push husky hooks ([f3f2809](https://github.com/Mearman/agent-permissions/commit/f3f280994265b24f5c814d18f41783b1fc40b140))
+
 ## [3.0.3](https://github.com/Mearman/agent-permissions/compare/v3.0.2...v3.0.3) (2026-05-10)
 
 ### Bug Fixes
