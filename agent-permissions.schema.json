@@ -1,0 +1,188 @@
+{
+  "$id": "https://raw.githubusercontent.com/YOUR-ORG/agent-permissions-spec/main/agent-permissions.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema URI for editor validation and autocomplete."
+    },
+    "defaultMode": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "autonomous",
+        "restricted",
+        "readonly"
+      ],
+      "description": "Default permission mode. 'autonomous' and 'restricted' are only trusted from personal or managed sources.",
+      "default": "standard"
+    },
+    "permissions": {
+      "type": "object",
+      "properties": {
+        "allow": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tools auto-approved without prompting. Evaluated after deny rules.",
+          "examples": [
+            "Bash(git status)",
+            "Bash(npm run test:*)",
+            "Read",
+            "Grep"
+          ]
+        },
+        "deny": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tools always denied — short-circuits before allow and ask. A deny cannot be overridden by an allow in any other source.",
+          "examples": [
+            "Bash(sudo:*)",
+            "Bash(rm -rf /)",
+            "Read(./.env)"
+          ]
+        },
+        "ask": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tools that always prompt, even in autonomous mode. Evaluated after deny but before allow.",
+          "examples": [
+            "Bash(git push:*)",
+            "Bash(npm publish:*)"
+          ]
+        },
+        "additionalDirectories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Directories beyond project root that agents may access.",
+          "examples": [
+            "../shared-libs/",
+            "/tmp/build-cache"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "description": "Tool permission rules — evaluated in deny → ask → allow order."
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool": {
+            "type": "string",
+            "description": "Canonical tool name.",
+            "examples": [
+              "Bash",
+              "Read",
+              "Write",
+              "Edit",
+              "Grep",
+              "WebFetch",
+              "Agent",
+              "mcp__github__create_issue"
+            ]
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Pattern to match against tool input.",
+            "examples": [
+              "npm run *",
+              "./config/**",
+              "git push --force:*"
+            ]
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "allow",
+              "deny",
+              "ask"
+            ],
+            "description": "Permission tier to apply when this rule matches."
+          },
+          "when": {
+            "description": "Optional conditions. All must match for the rule to apply (AND logic).",
+            "type": "object",
+            "properties": {
+              "cwd": {
+                "type": "string",
+                "description": "Working directory pattern (glob)."
+              },
+              "branch": {
+                "type": "string",
+                "description": "Git branch name pattern (glob)."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "tool",
+          "pattern",
+          "tier"
+        ],
+        "additionalProperties": false,
+        "description": "Conditional permission rule. First matching rule wins."
+      },
+      "description": "Conditional rules — pattern matching on tool input. First matching rule wins; falls back to permission tier arrays."
+    },
+    "delegation": {
+      "type": "object",
+      "properties": {
+        "maxDepth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Maximum depth of agent nesting. 0 = no subagents allowed.",
+          "default": 2
+        },
+        "nonDelegable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tools that cannot be delegated to subagents. Uses the same rule syntax.",
+          "examples": [
+            "Bash(sudo:*)",
+            "Write(./.agents/**)"
+          ]
+        },
+        "bubbleUp": {
+          "type": "boolean",
+          "description": "Whether subagents can request elevated permissions from their parent.",
+          "default": true
+        }
+      },
+      "additionalProperties": false,
+      "description": "Agent delegation controls — what subagents may do."
+    },
+    "env": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Environment variables injected into all agent sessions.",
+      "examples": [
+        {
+          "NODE_ENV": "development",
+          "DISABLE_TELEMETRY": "1"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "title": "Agent Permission Policy",
+  "description": "Cross-agent permission policy for AI coding agents. Defines what tools agents may use, under what conditions, and how subagents are constrained. Placed at .agents/permissions.json (team, committed) or .agents/permissions.local.json (personal, gitignored)."
+}

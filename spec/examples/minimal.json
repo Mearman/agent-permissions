@@ -1,0 +1,15 @@
+{
+  "$schema": "./agent-permissions.schema.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Read",
+      "Grep"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Bash(sudo:*)"
+    ]
+  }
+}

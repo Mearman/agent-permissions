@@ -1,0 +1,25 @@
+/**
+ * Agent Permission Policy — public API.
+ *
+ * Re-exports the Zod schema and inferred types for consumers who want
+ * runtime validation, plus a helper to compile the JSON Schema.
+ */
+
+export {
+  agentPermissionPolicy,
+  permissionTiers,
+  permissionMode,
+  permissionRule,
+  conditionalRule,
+  ruleCondition,
+  delegation,
+} from "./schema.ts";
+
+export type {
+  AgentPermissionPolicy,
+  PermissionTiers,
+  ConditionalRule,
+  RuleCondition,
+  Delegation,
+  PermissionMode,
+} from "./schema.ts";
