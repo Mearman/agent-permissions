@@ -96,28 +96,30 @@ function parseRule(rule: string): ParsedRule {
     return { type: "bare", toolName };
   }
 
-  const content = unescapeContent(rawContent);
-
   // Domain pattern: "domain:example.com" — substring match on input
-  if (content.startsWith("domain:")) {
+  if (rawContent.startsWith("domain:")) {
     return {
       type: "wildcard",
       toolName,
-      pattern: "*" + content.slice(7) + "*",
+      pattern: "*" + rawContent.slice(7) + "*",
     };
   }
 
-  // Prefix syntax: "prefix:*"
-  const prefixMatch = /^(.+):\*$/.exec(content);
+  // Prefix syntax: "prefix:*" — check on raw content so escaped \:* isn't confused
+  const prefixMatch = /^(.+):\*$/.exec(rawContent);
   if (prefixMatch?.[1]) {
-    return { type: "prefix", toolName, prefix: prefixMatch[1] };
+    const prefix = unescapeContent(prefixMatch[1]);
+    return { type: "prefix", toolName, prefix };
   }
 
-  // Wildcard: has unescaped *
-  if (hasUnescapedWildcard(content)) {
-    return { type: "wildcard", toolName, pattern: content };
+  // Wildcard: has unescaped * (check raw content before unescaping)
+  if (hasUnescapedWildcard(rawContent)) {
+    // Pass raw content to matchWildcard — it handles escape sequences internally
+    return { type: "wildcard", toolName, pattern: rawContent };
   }
 
+  // Exact: unescape for the final comparison string
+  const content = unescapeContent(rawContent);
   return { type: "exact", toolName, content };
 }
 
@@ -467,10 +469,11 @@ function hasUnescapedWildcard(pattern: string): boolean {
   return false;
 }
 
-/** Unescape content: \( → (, \) → ), \\ → \ */
+/** Unescape content: \( → (, \) → ), \* → *, \\ → \ */
 function unescapeContent(content: string): string {
   return content
     .replace(/\\\(/g, "(")
     .replace(/\\\)/g, ")")
+    .replace(/\\\*/g, "*")
     .replace(/\\\\/g, "\\");
 }

@@ -115,6 +115,45 @@ describe("Claude Code rule syntax", () => {
     });
   });
 
+  describe("escape sequences", () => {
+    it("escaped parens in rule content become exact matches", () => {
+      // Rule string in policy: "Bash(git log \(main\))"
+      // Stored as: Bash(git log \(main\))
+      // Parser sees \( and \) → unescapes to: git log (main)
+      const rule = "Bash(git log \\(main\\))";
+      const policy: PermissionPolicy = {
+        defaultMode: "standard",
+        permissions: { allow: [rule] },
+      };
+      assert.equal(evaluate(policy, "bash", "git log (main)"), "allow");
+      // Without parens, should not match
+      assert.equal(evaluate(policy, "bash", "git log main"), "ask");
+    });
+
+    it("escaped asterisk is literal, not wildcard", () => {
+      // Rule string: "Bash(echo \*)" → parser sees \* → literal *
+      const rule = "Bash(echo \\*)";
+      const policy: PermissionPolicy = {
+        defaultMode: "standard",
+        permissions: { allow: [rule] },
+      };
+      assert.equal(evaluate(policy, "bash", "echo *"), "allow");
+      // Unescaped wildcard would match anything after "echo "
+      // But escaped * only matches literal *
+      assert.equal(evaluate(policy, "bash", "echo hello"), "ask");
+    });
+
+    it("escaped backslash is literal", () => {
+      // rawContent: echo \\ → unescaped: echo \
+      const rule = "Bash(echo " + "\\" + "\\" + ")";
+      const policy: PermissionPolicy = {
+        defaultMode: "standard",
+        permissions: { allow: [rule] },
+      };
+      assert.equal(evaluate(policy, "bash", "echo " + "\\"), "allow");
+    });
+  });
+
   describe("domain pattern", () => {
     it("matches when input contains the domain", () => {
       const policy: PermissionPolicy = {
