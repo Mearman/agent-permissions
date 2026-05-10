@@ -3,28 +3,19 @@
   "version": "1.2.0",
   "description": "Cross-agent permission policy specification for AI coding agents",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
+  "main": "./dist/schema.cjs",
+  "module": "./dist/schema.mjs",
+  "types": "./dist/schema.d.mts",
   "sideEffects": false,
   "exports": {
-    ".": {
+    "./*": {
       "types": {
-        "import": "./dist/index.d.mts",
-        "require": "./dist/index.d.cts"
+        "import": "./dist/*.d.mts",
+        "require": "./dist/*.d.cts"
       },
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.cjs"
-    },
-    "./schema": {
-      "types": {
-        "import": "./dist/schema.d.mts",
-        "require": "./dist/schema.d.cts"
-      },
-      "import": "./dist/schema.mjs",
-      "require": "./dist/schema.cjs",
-      "default": "./dist/schema.cjs"
+      "import": "./dist/*.mjs",
+      "require": "./dist/*.cjs",
+      "default": "./dist/*.cjs"
     },
     "./agent-permissions.schema.json": "./agent-permissions.schema.json"
   },

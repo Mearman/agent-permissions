@@ -16,12 +16,8 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import {
-  agentPermissionPolicy,
-  claudeCodeCodec,
-  opencodeCodec,
-  type AgentPermissionPolicy,
-} from "./index.ts";
+import { agentPermissionPolicy, type AgentPermissionPolicy } from "./schema.ts";
+import { claudeCodeCodec, opencodeCodec } from "./compat/codecs.ts";
 
 import type { PermissionPolicy } from "./evaluate.ts";
 

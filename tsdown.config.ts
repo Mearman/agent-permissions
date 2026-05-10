@@ -6,7 +6,6 @@ import { agentPermissionPolicy } from "./src/schema.ts";
 
 /**
  * Rolldown plugin that compiles the Zod schema to JSON Schema after build.
- * Replaces the separate `build-schema.ts` script.
  */
 function zodSchemaPlugin() {
   let written = false;
@@ -38,10 +37,7 @@ function zodSchemaPlugin() {
 }
 
 export default defineConfig({
-  entry: {
-    index: "src/index.ts",
-    schema: "src/schema.ts",
-  },
+  entry: ["src/**/*.ts", "!src/test/**"],
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,
