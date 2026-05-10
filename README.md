@@ -1,4 +1,4 @@
-# Agent Permission Policy Spec
+# agent-perms
 
 A vendor-neutral permission policy format for AI coding agents. One file works across Claude Code, OpenAI Codex, OpenCode, Crush, and any agent that adopts the spec.
 
@@ -8,7 +8,7 @@ Create `.agents/permissions.json` in your project root:
 
 ```json
 {
-  "$schema": "./agent-permissions.schema.json",
+  "$schema": "https://raw.githubusercontent.com/Mearman/agent-permissions/main/agent-permissions.schema.json",
   "permissions": {
     "allow": ["Bash(git status)", "Bash(npm run test:*)", "Read", "Grep"],
     "deny": ["Bash(sudo:*)", "Read(./.env)"],
@@ -26,7 +26,7 @@ Every coding agent has its own permission config. Teams using multiple agents (o
 - **One policy, many agents** — write once, convert to any agent's native format
 - **Zero-translation migration** — `jq '.permissions' .claude/settings.json > .agents/permissions.json` produces valid input
 - **Superset coverage** — expresses features from all supported agents (sandboxing, named profiles, per-agent overrides, conditional rules)
-- **IDE support** — JSON Schema for autocomplete and validation via `"$schema"`
+- **IDE support** — JSON Schema for autocomplete and validation (submitted to [SchemaStore](https://github.com/SchemaStore/schemastore/pull/5666))
 
 ## File location
 
@@ -37,25 +37,53 @@ Every coding agent has its own permission config. Teams using multiple agents (o
 
 Both files are merged at load time. Deny rules from any source short-circuit before allow rules.
 
+## Installation
+
+```bash
+pnpm add agent-perms
+```
+
+## Exports
+
+The package uses [wildcard exports](https://nodejs.org/api/packages.html#subpath-patterns) — import only what you need:
+
+```typescript
+// Zod schemas (single source of truth)
+import { agentPermissionPolicy } from "agent-perms/schema";
+
+// Deny-first evaluator
+import { evaluate } from "agent-perms/evaluate";
+
+// Multi-layer policy loader
+import { loadPolicy } from "agent-perms/loader";
+
+// Bidirectional codecs for each agent
+import { claudeCodeCodec } from "agent-perms/compat/codecs";
+
+// SDK enum alignment checks
+import { claudeCodeModes } from "agent-perms/compat/enums";
+```
+
 ## Schema overview
 
 ```typescript
+import { type AgentPermissionPolicy } from "agent-perms/schema";
+
+// All fields are optional — a valid policy can be as minimal as `{}`.
 interface AgentPermissionPolicy {
-  // JSON Schema URI for editor validation
   $schema?: string;
 
   // Default mode: standard | autonomous | restricted | readonly
   // Also accepts Claude Code modes: plan | dontAsk | acceptEdits | bypassPermissions
   defaultMode?: PermissionMode;
 
-  // Name of the active profile from `profiles`
   activeProfile?: string;
 
   // Tool permission rules — evaluated deny → ask → allow
   permissions?: {
-    allow?: string[];   // Auto-approved tools
-    deny?: string[];    // Always denied (short-circuits)
-    ask?: string[];     // Always prompt (even in autonomous mode)
+    allow?: string[];
+    deny?: string[];
+    ask?: string[];
     additionalDirectories?: string[];
     defaultMode?: PermissionMode;
   };
@@ -68,84 +96,130 @@ interface AgentPermissionPolicy {
     when?: { cwd?: string; branch?: string };
   }>;
 
-  // Named permission profiles — switch at session start
   profiles?: Record<string, PermissionTiers>;
 
-  // Subagent controls
   delegation?: {
-    maxDepth?: number;        // Default: 2
-    nonDelegable?: string[];  // Tools subagents can't use
-    bubbleUp?: boolean;       // Default: true
-    agents?: Record<string, PermissionTiers>;  // Per-agent overrides
+    maxDepth?: number;
+    nonDelegable?: string[];
+    bubbleUp?: boolean;
+    agents?: Record<string, PermissionTiers>;
   };
 
-  // OS-level sandboxing
   sandbox?: {
     mode?: "readonly" | "workspace-write" | "full-access";
     writableRoots?: string[];
     networkAccess?: boolean;
   };
 
-  // Network access controls
   network?: {
     enabled?: boolean;
     domains?: Record<string, "allow" | "deny">;
   };
 
-  // Environment variables for agent sessions
   env?: Record<string, string>;
 }
 ```
-
-All fields are optional. A valid policy can be as minimal as `{}`.
 
 ## Rule syntax
 
 Rules use `Tool(pattern)` strings — compatible with Claude Code's permission format:
 
-| Pattern | Matches |
-|---|---|
-| `Read` | All file reads |
-| `Bash(git status)` | Exactly `git status` |
-| `Bash(npm run test:*)` | Commands starting with `npm run test ` |
-| `Bash(*rm* /)` | Commands containing `rm` and ending with ` /` |
-| `Read(./.env)` | Reads at `./.env` |
-| `Read(./secrets/**)` | Reads under `./secrets/` |
-| `WebFetch(domain:example.com)` | Fetches to that domain |
-| `mcp__github` | All tools from the `github` MCP server |
-| `mcp__github__create_issue` | A specific MCP tool |
+| Pattern | Type | Matches |
+|---|---|---|
+| `Read` | Bare | All invocations of the `Read` tool |
+| `Bash(git status)` | Exact | Exactly `git status` |
+| `Bash(npm:*)` | Prefix | `npm` + space + anything, or bare `npm` |
+| `Bash(git commit *)` | Wildcard | `git commit` + anything (including bare `git commit`) |
+| `Bash(* Dockerfile)` | Wildcard | Any command ending with ` Dockerfile` |
+| `Bash(domain:evil.com)` | Domain | Commands containing `evil.com` |
+| `mcp__github` | MCP server | All tools from the `github` MCP server |
+| `mcp__*__delete*` | MCP wildcard | Any server's tools starting with `delete` |
 
-## Evaluation order
+### Escape sequences
+
+| Escape | Meaning |
+|---|---|
+| `\(` | Literal `(` in pattern content |
+| `\)` | Literal `)` in pattern content |
+| `\*` | Literal `*` (not a wildcard) |
+| `\\` | Literal `\` |
+
+### Evaluation order
 
 Rules are evaluated in **deny → ask → allow** order. Deny short-circuits — if any deny rule matches, the tool is blocked regardless of allow rules from any source.
 
 ```
-deny rules (all sources merged) → ask rules → allow rules → defaultMode
+conditional rules (rules[]) → deny → ask → allow → defaultMode
 ```
+
+Conditional rules are checked first. The first matching conditional rule wins. If none match, the tier arrays are checked in deny → ask → allow order.
+
+## Evaluator
+
+```typescript
+import { evaluate, type PermissionPolicy, type EvaluationContext } from "agent-perms/evaluate";
+
+const policy: PermissionPolicy = {
+  defaultMode: "standard",
+  permissions: {
+    deny: ["Bash(sudo:*)"],
+    allow: ["Bash(git:*)", "Read"],
+  },
+};
+
+// Basic evaluation — returns "deny" | "ask" | "allow"
+evaluate(policy, "bash", "git status"); // "allow"
+evaluate(policy, "bash", "sudo rm -rf /"); // "deny"
+evaluate(policy, "bash", "npm install"); // "ask" (falls through to defaultMode)
+
+// With context for conditional rules
+const ctx: EvaluationContext = { cwd: "./packages/api", branch: "main" };
+evaluate(policy, "bash", "npm run build", ctx);
+```
+
+Tool names are matched case-insensitively (`Bash` matches `bash`).
+
+## Policy loader
+
+```typescript
+import { loadPolicy } from "agent-perms/loader";
+
+const policy = await loadPolicy({
+  cwd: process.cwd(),
+  nativeSources: ["claude-code"], // also load .claude/settings.json
+});
+```
+
+Loads and merges layers in order:
+
+1. `.agents/permissions.json` (team-shared)
+2. `.agents/permissions.local.json` (personal overrides)
+3. Native agent configs (`.claude/settings.json`, etc.) — if `nativeSources` is set
+
+Deny rules from any layer short-circuit. Allow rules are additive.
 
 ## Agent compatibility
 
 Bidirectional codecs convert between the canonical format and each agent's native config:
 
 ```typescript
-import { claudeCodeCodec, codexCodec, opencodeCodec, crushCodec } from "agent-perms";
-import { z } from "zod";
+import { claudeCodeCodec, codexCodec } from "agent-perms/compat/codecs";
 
 // Decode agent-native → canonical
-const policy = claudeCodeCodec.decode(claudeSettings.permissions);
+const policy = claudeCodeCodec.parse(claudeSettings.permissions);
 
 // Encode canonical → agent-native
-const codexConfig = z.encode(codexCodec, policy);
+const codexConfig = codexCodec.parse(canonicalPolicy);
 ```
 
 | Agent | Native format | Codec | Fidelity |
 |---|---|---|---|
-| **Claude Code** | `Tool(pattern)` rule strings in `.claude/settings.json` | `claudeCodeCodec` | ✅ Lossless |
+| **Claude Code** | `Tool(pattern)` rule strings in `.claude/settings.json` | `claudeCodeCodec` | Lossless |
 | **OpenCode** | Per-tool `ask/allow/deny` objects in `config.json` | `opencodeCodec` | Near-lossless¹ |
 | **Codex** | Named profiles + sandbox in TOML config | `codexCodec` | Near-lossless² |
 | **Crush** | Tool allowlist in `config.json` | `crushCodec` | Lossy³ |
 
-¹ OpenCode's agent-specific tools (`doom_loop`, `lsp`, `skill`, `question`, `todowrite`) have no canonical equivalent. Per-agent markdown overrides must be handled by the caller.
+¹ OpenCode's agent-specific tools have no canonical equivalent. Per-agent markdown overrides must be handled by the caller.
 
 ² Codex's `on-failure` approval policy and granular approval config have no canonical equivalent. TOML serialisation is the caller's responsibility — the codec works on parsed JS objects.
 
@@ -154,40 +228,20 @@ const codexConfig = z.encode(codexCodec, policy);
 ### Zero-translation migration from Claude Code
 
 ```bash
-# Extract permissions from existing Claude Code settings — produces valid canonical input
 jq '.permissions' .claude/settings.json > .agents/permissions.json
 ```
 
 This works because the canonical spec accepts Claude Code's rule syntax, mode values, and `defaultMode` placement unchanged.
 
-## Installation
+## JSON Schema for IDE support
 
-```bash
-pnpm add agent-perms
-```
-
-### Programmatic usage
-
-```typescript
-import {
-  agentPermissionPolicy,
-  claudeCodeCodec,
-  codexCodec,
-  z,
-} from "agent-perms";
-
-// Validate a policy file
-const result = agentPermissionPolicy.safeParse(parsedJson);
-if (!result.success) {
-  console.error(result.error.issues);
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/Mearman/agent-permissions/main/agent-permissions.schema.json"
 }
-
-// Convert between agent formats
-const policy = claudeCodeCodec.decode(claudeSettings);
-const codexConfig = z.encode(codexCodec, policy);
 ```
 
-### JSON Schema for IDE support
+Or reference locally:
 
 ```json
 {
@@ -195,18 +249,7 @@ const codexConfig = z.encode(codexCodec, policy);
 }
 ```
 
-Or reference the schema in `.vscode/settings.json` for automatic association:
-
-```json
-{
-  "json.schemas": [
-    {
-      "fileMatch": [".agents/permissions.json", ".agents/permissions.local.json"],
-      "url": "./node_modules/agent-perms/agent-permissions.schema.json"
-    }
-  ]
-}
-```
+The schema file ships with the package at `agent-perms/agent-permissions.schema.json`.
 
 ## Examples
 
@@ -231,6 +274,21 @@ Or reference the schema in `.vscode/settings.json` for automatic association:
 }
 ```
 
+### Conditional rules — restrict publishing on main
+
+```json
+{
+  "rules": [
+    {
+      "tool": "Bash",
+      "pattern": "npm publish:*",
+      "tier": "deny",
+      "when": { "branch": "main", "cwd": "./packages/core" }
+    }
+  ]
+}
+```
+
 ### Full policy with profiles, sandbox, per-agent overrides
 
 See [`spec/examples/full.json`](spec/examples/full.json).
@@ -239,7 +297,7 @@ See [`spec/examples/full.json`](spec/examples/full.json).
 
 ```bash
 pnpm install          # Install dependencies
-pnpm test             # Run tests (142 tests)
+pnpm test             # Run tests (212 tests)
 pnpm build            # Build ESM + CJS + types + JSON Schema
 ```
 
