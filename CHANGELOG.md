@@ -1,3 +1,25 @@
+## [3.0.0](https://github.com/Mearman/agent-permissions/compare/v2.0.1...v3.0.0) (2026-05-10)
+
+### ⚠ BREAKING CHANGES
+
+* rule matching now follows Claude Code's three rule types:
+  - Exact: Tool(command) — string equality
+  - Prefix: Tool(prefix:*) — word-boundary enforced prefix match
+  - Wildcard: Tool(pattern * middle *) — regex with .* for unescaped *
+
+New features:
+  - Escape sequences: \( \) \* \\ in rule content
+  - Conditional rules (rules[]) with when.cwd and when.branch conditions
+  - MCP server-level wildcards (mcp__*__delete*)
+  - Domain patterns (domain:example.com)
+  - Trailing * matches bare command (git * matches both git and git add)
+  - matchPattern() for input-only matching (conditional rules)
+  - 209 tests (189 existing + 20 new Claude Code syntax + conditional tests)
+
+### Features
+
+* rewrite evaluator with Claude Code rule syntax ([f9f0fad](https://github.com/Mearman/agent-permissions/commit/f9f0fadaaf072c665013882f4b5cba5307dfae72))
+
 ## [2.0.1](https://github.com/Mearman/agent-permissions/compare/v2.0.0...v2.0.1) (2026-05-10)
 
 ### Bug Fixes
