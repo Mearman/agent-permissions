@@ -13,15 +13,20 @@ Create `.agents/permissions.json` in your project root:
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/Mearman/agent-permissions/main/agent-permissions.schema.json",
+  "defaultMode": "standard",
   "permissions": {
     "allow": ["Bash(git status)", "Bash(npm run test:*)", "Read", "Grep"],
     "deny": ["Bash(sudo:*)", "Read(./.env)"],
-    "ask": ["Bash(git push:*)", "Bash(npm publish:*)"]
-  }
+    "ask": ["Bash(git push:*)"]
+  },
+  "rules": [
+    { "tool": "Bash", "pattern": "npm publish:*", "tier": "deny" },
+    { "tool": "Bash", "pattern": "npm run *", "tier": "allow", "when": { "cwd": "./packages/*" } }
+  ]
 }
 ```
 
-That's it. The same file can be converted to any supported agent's native format using the built-in codecs.
+The `permissions` arrays are compatible with Claude Code's format. The `rules` array adds unconditional and conditional rules that go beyond what any single agent supports natively.
 
 ## Why
 
@@ -278,7 +283,25 @@ The schema file ships with the package at `agent-perms/agent-permissions.schema.
 }
 ```
 
-### Conditional rules — restrict publishing on main
+### Rules — unconditional deny
+
+Rules without `when` always apply, regardless of cwd or branch:
+
+```json
+{
+  "rules": [
+    {
+      "tool": "Bash",
+      "pattern": "npm publish:*",
+      "tier": "deny"
+    }
+  ]
+}
+```
+
+### Rules — conditional (cwd/branch)
+
+Rules with `when` only match when all conditions are met (AND logic):
 
 ```json
 {
