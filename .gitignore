@@ -5,4 +5,3 @@ dist/
 # Build tooling caches
 .eslintcache
 .turbo/
-.tool-versions
