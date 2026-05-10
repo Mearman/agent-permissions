@@ -1,3 +1,14 @@
+## [3.0.3](https://github.com/Mearman/agent-permissions/compare/v3.0.2...v3.0.3) (2026-05-10)
+
+### Bug Fixes
+
+* align codecs with upstream agent source code ([d08a4a1](https://github.com/Mearman/agent-permissions/commit/d08a4a18793396ecabd8a0b3175f5271f79c64d7))
+* use SDK imports for OpenCode v2 alignment ([9dc6c6d](https://github.com/Mearman/agent-permissions/commit/9dc6c6dbb972e238616ea09927d99363fd83fd28))
+
+### Styles
+
+* remove extra blank line in codecs.ts ([eea6a9f](https://github.com/Mearman/agent-permissions/commit/eea6a9f78d0dd0b69b1e99583e86b97b0ed238cd))
+
 ## [3.0.2](https://github.com/Mearman/agent-permissions/compare/v3.0.1...v3.0.2) (2026-05-10)
 
 ### Documentation
