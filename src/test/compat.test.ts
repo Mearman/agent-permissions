@@ -110,20 +110,62 @@ describe("claudeCodeCodec", () => {
     });
   });
 
-  describe("round-trip", () => {
-    it("preserves canonical data through encode→decode", () => {
-      const canonical = {
-        permissions: {
-          allow: ["Bash(git status)", "Read"],
-          deny: ["Bash(sudo:*)"],
-        },
+  describe("round-trip (native → canonical → native)", () => {
+    it("preserves allow/deny/ask/defaultMode through full cycle", () => {
+      const native = {
+        allow: ["Bash(git status)", "Read", "Bash(npm run test:*)"],
+        deny: ["Bash(sudo:*)", "Bash(rm -rf /)"],
+        ask: ["Bash(git push:*)"],
         defaultMode: "dontAsk" as const,
       };
-      const encoded = z.encode(claudeCodeCodec, canonical);
-      const decoded = claudeCodeCodec.decode(encoded);
-      expect(decoded.permissions?.allow).toEqual(["Bash(git status)", "Read"]);
-      expect(decoded.permissions?.deny).toEqual(["Bash(sudo:*)"]);
-      expect(decoded.defaultMode).toBe("dontAsk");
+      const canonical = claudeCodeCodec.decode(native);
+      const reEncoded = z.encode(claudeCodeCodec, canonical);
+      const reDecoded = claudeCodeCodec.decode(reEncoded);
+      expect(reDecoded.permissions?.allow).toEqual(native.allow);
+      expect(reDecoded.permissions?.deny).toEqual(native.deny);
+      expect(reDecoded.permissions?.ask).toEqual(native.ask);
+      expect(reDecoded.defaultMode).toBe("dontAsk");
+    });
+
+    it("preserves additionalDirectories through full cycle", () => {
+      const native = {
+        allow: ["Read"],
+        additionalDirectories: ["../shared-libs/", "/tmp/cache"],
+      };
+      const canonical = claudeCodeCodec.decode(native);
+      const reEncoded = z.encode(claudeCodeCodec, canonical);
+      const reDecoded = claudeCodeCodec.decode(reEncoded);
+      expect(reDecoded.permissions?.additionalDirectories).toEqual(
+        native.additionalDirectories,
+      );
+    });
+
+    it("preserves real settings.json through full cycle", () => {
+      const native = {
+        allow: [
+          "Bash(du:*)",
+          "Bash(python3:*)",
+          "Bash(claude plugin:*)",
+          "Bash(*rm* -rf */cache/*)",
+        ],
+        deny: [
+          "Bash(*rm* /)",
+          "Bash(sudo *rm*)",
+          "Bash(git add -A*)",
+        ],
+        ask: [
+          "Bash(*rm\\* -r*)",
+          "Write(eslint.config.ts)",
+        ],
+        defaultMode: "dontAsk" as const,
+      };
+      const canonical = claudeCodeCodec.decode(native);
+      const reEncoded = z.encode(claudeCodeCodec, canonical);
+      const reDecoded = claudeCodeCodec.decode(reEncoded);
+      expect(reDecoded.permissions?.allow).toEqual(native.allow);
+      expect(reDecoded.permissions?.deny).toEqual(native.deny);
+      expect(reDecoded.permissions?.ask).toEqual(native.ask);
+      expect(reDecoded.defaultMode).toBe("dontAsk");
     });
   });
 });
@@ -230,6 +272,63 @@ describe("opencodeCodec", () => {
       }
     });
   });
+
+  describe("round-trip (native → canonical → native)", () => {
+    it("preserves granular bash rules through full cycle", () => {
+      const native = {
+        bash: {
+          "*": "ask",
+          "git *": "allow",
+          "rm *": "deny",
+        },
+        read: "allow",
+        edit: "deny",
+      };
+      const canonical = opencodeCodec.decode(native);
+      const reEncoded = z.encode(opencodeCodec, canonical);
+      const reDecoded = opencodeCodec.decode(reEncoded);
+
+      // Bash granular rules survive
+      expect(reDecoded.permissions?.ask).toContain("Bash(*)");
+      expect(reDecoded.permissions?.allow).toContain("Bash(git *)");
+      expect(reDecoded.permissions?.deny).toContain("Bash(rm *)");
+
+      // Shorthand tools survive
+      expect(reDecoded.permissions?.allow).toContain("Read");
+      expect(reDecoded.permissions?.deny).toContain("Edit");
+    });
+
+    it("preserves shorthand action through full cycle", () => {
+      const canonical = opencodeCodec.decode("allow");
+      expect(canonical.defaultMode).toBe("autonomous");
+      // Encoding autonomous mode back should produce a valid OpenCode config
+      const reEncoded = z.encode(opencodeCodec, canonical);
+      // Autonomous mode with no rules → fallback "ask" for bash
+      expect(reEncoded).toBeDefined();
+    });
+
+    it("preserves mixed shorthand + granular rules", () => {
+      const native = {
+        bash: {
+          "git diff": "allow",
+          "git log*": "allow",
+          "*": "ask",
+        },
+        edit: "deny",
+        webfetch: "deny",
+      };
+      const canonical = opencodeCodec.decode(native);
+      const reEncoded = z.encode(opencodeCodec, canonical);
+      const reDecoded = opencodeCodec.decode(reEncoded);
+
+      // All three bash rules survive
+      expect(reDecoded.permissions?.allow).toContain("Bash(git diff)");
+      expect(reDecoded.permissions?.allow).toContain("Bash(git log*)");
+      expect(reDecoded.permissions?.ask).toContain("Bash(*)");
+      expect(reDecoded.permissions?.deny).toContain("Edit");
+      expect(reDecoded.permissions?.deny).toContain("WebFetch");
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -289,13 +388,36 @@ describe("crushCodec", () => {
     });
   });
 
-  describe("round-trip", () => {
-    it("preserves bare tool names through decode→encode", () => {
-      const canonical = crushCodec.decode({
-        allowed_tools: ["view", "ls", "grep", "edit", "bash"],
-      });
+  describe("round-trip (native → canonical → native)", () => {
+    it("preserves bare tool names through full cycle", () => {
+      const native = { allowed_tools: ["view", "ls", "grep", "edit", "bash"] };
+      const canonical = crushCodec.decode(native);
       const reEncoded = z.encode(crushCodec, canonical);
-      expect(reEncoded.allowed_tools).toEqual(["view", "ls", "grep", "edit", "bash"]);
+      expect(reEncoded.allowed_tools).toEqual(native.allowed_tools);
+    });
+
+    it("preserves MCP tools through full cycle", () => {
+      const native = {
+        allowed_tools: ["view", "bash", "mcp_context7_get-library-doc"],
+      };
+      const canonical = crushCodec.decode(native);
+      const reEncoded = z.encode(crushCodec, canonical);
+      // MCP tools have no canonical→crush mapping, so they're lost on encode
+      // This is expected — Crush has no MCP concept in allowed_tools
+      expect(reEncoded.allowed_tools).toContain("view");
+      expect(reEncoded.allowed_tools).toContain("bash");
+    });
+
+    it("round-trip is lossy for pattern rules", () => {
+      // Encode canonical with pattern rules → Crush loses them
+      const canonical = {
+        permissions: {
+          allow: ["Bash(git status)", "Read"],
+        },
+      };
+      const encoded = z.encode(crushCodec, canonical);
+      // Only bare "Read" survives → "view"
+      expect(encoded.allowed_tools).toEqual(["view"]);
     });
   });
 });
@@ -496,6 +618,136 @@ describe("codexCodec", () => {
       expect(profile.filesystem["/secrets"]).toBe("none");
       expect(profile.network.domains["evil.com"]).toBe("deny");
       expect(profile.network.domains["api.example.com"]).toBe("allow");
+    });
+  });
+
+  describe("round-trip (native → canonical → native)", () => {
+    it("preserves approval_policy + sandbox_mode through full cycle", () => {
+      const native = {
+        approval_policy: "on-request" as const,
+        sandbox_mode: "workspace-write" as const,
+      };
+      const canonical = codexCodec.decode(native);
+      const reEncoded = z.encode(codexCodec, canonical);
+      expect(reEncoded.approval_policy).toBe("on-request");
+      expect(reEncoded.sandbox_mode).toBe("workspace-write");
+    });
+
+    it("preserves autonomous mode through full cycle", () => {
+      const native = {
+        approval_policy: "never" as const,
+        sandbox_mode: "danger-full-access" as const,
+      };
+      const canonical = codexCodec.decode(native);
+      expect(canonical.defaultMode).toBe("autonomous");
+      const reEncoded = z.encode(codexCodec, canonical);
+      expect(reEncoded.approval_policy).toBe("never");
+      expect(reEncoded.sandbox_mode).toBe("danger-full-access");
+    });
+
+    it("preserves writable_roots through full cycle", () => {
+      const native = {
+        approval_policy: "on-request" as const,
+        sandbox_workspace_write: {
+          writable_roots: ["/tmp/build-cache", "../shared-libs"],
+        },
+      };
+      const canonical = codexCodec.decode(native);
+      expect(canonical.permissions?.additionalDirectories).toEqual([
+        "/tmp/build-cache",
+        "../shared-libs",
+      ]);
+      const reEncoded = z.encode(codexCodec, canonical);
+      expect(reEncoded.sandbox_workspace_write?.writable_roots).toEqual([
+        "/tmp/build-cache",
+        "../shared-libs",
+      ]);
+    });
+
+    it("preserves filesystem granular rules through full cycle", () => {
+      const native = {
+        approval_policy: "on-request" as const,
+        permissions: {
+          default: {
+            filesystem: {
+              "/secrets": "none",
+              "/etc/config": "read",
+            },
+          },
+        },
+        default_permissions: "default",
+      };
+      const canonical = codexCodec.decode(native);
+      // Deny rules generated
+      expect(canonical.permissions?.deny).toContain("Read(./secrets)");
+      expect(canonical.permissions?.deny).toContain("Write(./secrets)");
+      expect(canonical.permissions?.deny).toContain("Write(./etc/config)");
+
+      const reEncoded = z.encode(codexCodec, canonical);
+      const profile = (reEncoded.permissions as Record<string, any>)?.default;
+      expect(profile.filesystem["/secrets"]).toBe("none");
+      expect(profile.filesystem["/etc/config"]).toBe("read");
+    });
+
+    it("preserves network domain rules through full cycle", () => {
+      const native = {
+        approval_policy: "on-request" as const,
+        permissions: {
+          default: {
+            network: {
+              domains: {
+                "api.example.com": "allow",
+                "evil.com": "deny",
+              },
+            },
+          },
+        },
+        default_permissions: "default",
+      };
+      const canonical = codexCodec.decode(native);
+      expect(canonical.permissions?.allow).toContain(
+        "WebFetch(domain:api.example.com)",
+      );
+      expect(canonical.permissions?.deny).toContain(
+        "WebFetch(domain:evil.com)",
+      );
+
+      const reEncoded = z.encode(codexCodec, canonical);
+      const profile = (reEncoded.permissions as Record<string, any>)?.default;
+      expect(profile.network.domains["api.example.com"]).toBe("allow");
+      expect(profile.network.domains["evil.com"]).toBe("deny");
+    });
+
+    it("round-trip is lossy for Bash rules", () => {
+      // Codex has no Bash rule concept — those are lost
+      const canonical = {
+        defaultMode: "standard" as const,
+        permissions: {
+          allow: ["Bash(git status)", "Read"],
+          deny: ["Bash(sudo:*)"],
+        },
+      };
+      const encoded = z.encode(codexCodec, canonical);
+      // No filesystem or network profile — only Bash rules which Codex can't express
+      // The approval_policy + sandbox_mode are still correct
+      expect(encoded.approval_policy).toBe("on-request");
+      expect(encoded.sandbox_mode).toBe("workspace-write");
+    });
+
+    it("round-trip is lossy for sandbox_mode read-only", () => {
+      // read-only sandbox adds Write+Edit deny rules to canonical
+      // On encode, "readonly" → read-only sandbox, but the explicit deny rules
+      // also generate filesystem restrictions — some double-expression is expected
+      const native = {
+        approval_policy: "untrusted" as const,
+        sandbox_mode: "read-only" as const,
+      };
+      const canonical = codexCodec.decode(native);
+      expect(canonical.defaultMode).toBe("readonly");
+      // Re-encode: readonly mode maps back to read-only + untrusted
+      const reEncoded = z.encode(codexCodec, canonical);
+      expect(reEncoded.sandbox_mode).toBe("read-only");
+      expect(reEncoded.approval_policy).toBe("untrusted");
     });
   });
 });

@@ -598,17 +598,15 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
       const filesystem: Record<string, string> = {};
       const domains: Record<string, string> = {};
 
+      // Collect denied tool names per path to determine filesystem mode.
+      // Read+Write+Edit denied → "none". Write+Edit denied → "read".
+      const pathDenyTools: Record<string, Set<string>> = {};
+
       for (const rule of perms?.deny ?? []) {
-        // Parse Read/W Edit/W at path → filesystem none/read
         const parsed = parseToolPathPattern(rule);
         if (parsed) {
-          const mode = (parsed.tool === "Read") ? "read" : "none";
-          // Codex uses "write" as the baseline, so we only add restrictions
-          const existing = filesystem[parsed.path];
-          // "none" beats "read" (more restrictive)
-          if (!existing || (existing === "read" && mode === "none")) {
-            filesystem[parsed.path] = mode;
-          }
+          if (!pathDenyTools[parsed.path]) pathDenyTools[parsed.path] = new Set();
+          pathDenyTools[parsed.path].add(parsed.tool);
           continue;
         }
 
@@ -616,6 +614,21 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
         const domainMatch = rule.match(/^WebFetch\(domain:(.+)\)$/);
         if (domainMatch) {
           domains[domainMatch[1]] = "deny";
+        }
+      }
+
+      // Convert collected path denies to Codex filesystem modes
+      for (const [path, tools] of Object.entries(pathDenyTools)) {
+        const hasRead = tools.has("Read");
+        const hasWrite = tools.has("Write");
+        const hasEdit = tools.has("Edit");
+
+        if (hasRead) {
+          // Read denied → at best "none" (no access at all)
+          filesystem[path] = "none";
+        } else if (hasWrite || hasEdit) {
+          // Write/Edit denied but Read allowed → "read"
+          filesystem[path] = "read";
         }
       }
 
