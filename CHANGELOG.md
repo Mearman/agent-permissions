@@ -1,3 +1,9 @@
+## [3.0.1](https://github.com/Mearman/agent-permissions/compare/v3.0.0...v3.0.1) (2026-05-10)
+
+### Bug Fixes
+
+* escape sequence handling in rule parser ([d6b21ad](https://github.com/Mearman/agent-permissions/commit/d6b21adbd05f38d0c202a0e5bf010de1cbe79d55))
+
 ## [3.0.0](https://github.com/Mearman/agent-permissions/compare/v2.0.1...v3.0.0) (2026-05-10)
 
 ### ⚠ BREAKING CHANGES
