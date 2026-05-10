@@ -13,9 +13,14 @@
         "standard",
         "autonomous",
         "restricted",
-        "readonly"
+        "readonly",
+        "plan",
+        "dontAsk",
+        "acceptEdits",
+        "bypassPermissions",
+        "default"
       ],
-      "description": "Default permission mode. 'autonomous' and 'restricted' are only trusted from personal or managed sources.",
+      "description": "Default permission mode. Agent Permission Policy modes: standard, autonomous, restricted, readonly. Claude Code compatible modes: plan, dontAsk, acceptEdits, bypassPermissions, default.",
       "default": "standard"
     },
     "permissions": {

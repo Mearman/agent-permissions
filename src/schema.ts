@@ -95,7 +95,8 @@ export const permissionTiers = z
         examples: ["../shared-libs/", "/tmp/build-cache"],
       }),
   })
-  .partial();
+  .partial()
+  .strict();
 
 // ---------------------------------------------------------------------------
 // Conditional rules
@@ -201,20 +202,41 @@ export const delegation = z
 /**
  * Default permission mode when starting an agent session.
  *
+ * Agent Permission Policy modes:
  * - `standard`: Prompt for unsafe operations (default)
  * - `autonomous`: Auto-approve unless deny/ask rules match
  * - `restricted`: Prompt for all operations
  * - `readonly`: Only allow read-only tools
  *
- * **Security note**: `autonomous` and `restricted` are only trusted
- * from personal (`permissions.local.json`) or managed (enterprise)
+ * Claude Code compatible modes (accepted for zero-translation migration):
+ * - `plan`: Plan-only mode (maps to `restricted`)
+ * - `dontAsk`: Auto-approve (maps to `autonomous`)
+ * - `acceptEdits`: Accept edits without prompt (maps to `standard`)
+ * - `bypassPermissions`: Bypass all permission checks (maps to `autonomous`)
+ * - `default`: Agent default behaviour (maps to `standard`)
+ *
+ * **Security note**: `autonomous`, `bypassPermissions`, and `dontAsk` are only
+ * trusted from personal (`permissions.local.json`) or managed (enterprise)
  * sources — NOT from committed `permissions.json`.
  */
 export const permissionMode = z
-  .enum(["standard", "autonomous", "restricted", "readonly"])
+  .enum([
+    // APP modes
+    "standard",
+    "autonomous",
+    "restricted",
+    "readonly",
+    // Claude Code compatible modes
+    "plan",
+    "dontAsk",
+    "acceptEdits",
+    "bypassPermissions",
+    "default",
+  ])
   .meta({
     description:
-      "Default permission mode. 'autonomous' and 'restricted' are only trusted from personal or managed sources.",
+      "Default permission mode. Agent Permission Policy modes: standard, autonomous, restricted, readonly. " +
+      "Claude Code compatible modes: plan, dontAsk, acceptEdits, bypassPermissions, default.",
     default: "standard",
   });
 
