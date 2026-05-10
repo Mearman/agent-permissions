@@ -9,7 +9,7 @@
 
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { permissionMode, sandboxMode } from "../schema.ts";
+import { PermissionMode, SandboxMode } from "../schema.ts";
 import {
   ClaudeCodePermissionMode,
   CodexApprovalMode,
@@ -35,7 +35,7 @@ function zodEnumValues(schema: {
 
 describe("SDK alignment — Claude Code", () => {
   it("our schema includes every Claude Code SDK PermissionMode value", () => {
-    const ours = new Set(zodEnumValues(permissionMode));
+    const ours = new Set(zodEnumValues(PermissionMode));
     for (const mode of zodEnumValues(ClaudeCodePermissionMode)) {
       assert.ok(
         ours.has(mode),
@@ -46,7 +46,7 @@ describe("SDK alignment — Claude Code", () => {
 
   it("PermissionBehavior values match our permission tier names", () => {
     const tierNames = ["allow", "deny", "ask"];
-    const ours = new Set(zodEnumValues(permissionMode));
+    const ours = new Set(zodEnumValues(PermissionMode));
     assert.ok(ours.size > 0);
     assert.strictEqual(tierNames.length, 3);
   });
@@ -68,7 +68,7 @@ describe("SDK alignment — Codex", () => {
 
   it("our codec covers every Codex SDK SandboxMode value", () => {
     const sdkModes = zodEnumValues(CodexSandboxMode);
-    const ourModes = new Set(zodEnumValues(sandboxMode));
+    const ourModes = new Set(zodEnumValues(SandboxMode));
     const mappings: readonly [string, string][] = [
       ["read-only", "readonly"],
       ["workspace-write", "workspace-write"],

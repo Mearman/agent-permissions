@@ -30,7 +30,7 @@ describe("loadPolicy", () => {
       dirs.push(cwd);
       const policy = await loadPolicy({ cwd });
       assert.equal(policy.defaultMode, "standard");
-      assert.equal(policy.permissions, undefined);
+      assert.equal(policy.rules, undefined);
     });
 
     it("loads .agents/permissions.json", async () => {
@@ -50,9 +50,17 @@ describe("loadPolicy", () => {
 
       const policy = await loadPolicy({ cwd });
       assert.equal(policy.defaultMode, "autonomous");
-      assert.ok(policy.permissions, "permissions must exist");
-      assert.deepEqual(policy.permissions.deny, ["Bash(rm -rf *)"]);
-      assert.deepEqual(policy.permissions.allow, ["Bash(*)"]);
+      assert.ok(policy.rules, "rules must exist");
+      assert.equal(policy.rules.length, 2);
+      assert.deepStrictEqual(policy.rules[0], {
+        tool: "Bash",
+        pattern: "rm -rf *",
+        tier: "deny",
+      });
+      assert.deepStrictEqual(policy.rules[1], {
+        tool: "Bash",
+        tier: "allow",
+      });
     });
 
     it("returns undefined for invalid JSON in canonical file", async () => {
@@ -108,8 +116,13 @@ describe("loadPolicy", () => {
 
       const policy = await loadPolicy({ cwd });
       assert.equal(policy.defaultMode, "autonomous");
-      assert.ok(policy.permissions, "permissions must exist");
-      assert.deepEqual(policy.permissions.allow, ["Bash(ls)"]);
+      assert.ok(policy.rules, "rules must exist");
+      assert.equal(policy.rules.length, 1);
+      assert.deepStrictEqual(policy.rules[0], {
+        tool: "Bash",
+        pattern: "ls",
+        tier: "allow",
+      });
     });
 
     it("merges deny rules from both layers", async () => {
@@ -130,11 +143,14 @@ describe("loadPolicy", () => {
       );
 
       const policy = await loadPolicy({ cwd });
-      assert.ok(policy.permissions, "permissions must exist");
-      assert.deepEqual(policy.permissions.deny, [
-        "Bash(rm *)",
-        "Bash(curl domain:evil.com)",
-      ]);
+      assert.ok(policy.rules, "rules must exist");
+      const rules = policy.rules;
+      assert.ok(rules, "rules narrowed");
+      const denyRules = rules.filter((r) => r.tier === "deny");
+      assert.equal(denyRules.length, 2);
+      const [first, second] = denyRules;
+      assert.equal(first?.pattern, "rm *");
+      assert.equal(second?.pattern, "curl domain:evil.com");
     });
 
     it("merges all three tiers across layers", async () => {
@@ -161,13 +177,13 @@ describe("loadPolicy", () => {
       );
 
       const policy = await loadPolicy({ cwd });
-      assert.ok(policy.permissions, "permissions must exist");
-      assert.deepEqual(policy.permissions.deny, ["Bash(rm *)"]);
-      assert.deepEqual(policy.permissions.ask, ["Bash(curl *)"]);
-      assert.deepEqual(policy.permissions.allow, [
-        "Bash(git *)",
-        "Bash(npm *)",
-      ]);
+      assert.ok(policy.rules, "rules must exist");
+      const denyRules = policy.rules.filter((r) => r.tier === "deny");
+      const askRules = policy.rules.filter((r) => r.tier === "ask");
+      const allowRules = policy.rules.filter((r) => r.tier === "allow");
+      assert.equal(denyRules.length, 1);
+      assert.equal(askRules.length, 1);
+      assert.equal(allowRules.length, 2);
     });
   });
 
@@ -190,14 +206,8 @@ describe("loadPolicy", () => {
         cwd,
         nativeSources: ["claude-code"],
       });
-      assert.ok(policy.permissions, "permissions must exist");
-      const hasAllow =
-        policy.permissions.allow !== undefined &&
-        policy.permissions.allow.length > 0;
-      const hasDeny =
-        policy.permissions.deny !== undefined &&
-        policy.permissions.deny.length > 0;
-      assert.ok(hasAllow || hasDeny, "must have allow or deny rules");
+      assert.ok(policy.rules, "rules must exist");
+      assert.ok(policy.rules.length > 0, "must have rules");
     });
 
     it("loads OpenCode config", async () => {
@@ -218,8 +228,9 @@ describe("loadPolicy", () => {
         cwd,
         nativeSources: ["opencode"],
       });
-      assert.ok(policy.permissions, "permissions must exist");
-      assert.deepEqual(policy.permissions.deny, ["Edit"]);
+      assert.ok(policy.rules, "rules must exist");
+      const denyRules = policy.rules.filter((r) => r.tier === "deny");
+      assert.ok(denyRules.length > 0, "must have deny rules from edit:deny");
     });
 
     it("ignores unknown native source", async () => {

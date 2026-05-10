@@ -17,8 +17,7 @@
 
 import * as z from "zod";
 import {
-  agentPermissionPolicy,
-  type AgentPermissionPolicy,
+  AgentPermissionPolicy,
   type PermissionTiers,
   type Sandbox,
 } from "../schema.ts";
@@ -62,7 +61,7 @@ type ClaudeCodeNative = z.infer<typeof claudeCodeNative>;
 
 export const claudeCodeCodec = z.codec(
   claudeCodeNative,
-  agentPermissionPolicy,
+  AgentPermissionPolicy,
   {
     decode(native) {
       const result: Partial<AgentPermissionPolicy> = {};
@@ -238,7 +237,7 @@ const OC_UNMAPPED_TOOLS = new Set([
   "todowrite",
 ]);
 
-export const opencodeCodec = z.codec(opencodeNative, agentPermissionPolicy, {
+export const opencodeCodec = z.codec(opencodeNative, AgentPermissionPolicy, {
   decode(native) {
     // Shorthand "allow"/"deny" applies to everything
     if (typeof native === "string") {
@@ -393,7 +392,7 @@ const canonicalToCrush: Record<string, string> = {
   Agent: "agent",
 };
 
-export const crushCodec = z.codec(crushNative, agentPermissionPolicy, {
+export const crushCodec = z.codec(crushNative, AgentPermissionPolicy, {
   decode(native) {
     const allow: string[] = [];
     for (const tool of native.allowed_tools) {
@@ -617,7 +616,7 @@ function codexFilesystemToRules(
   }
 }
 
-export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
+export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
   decode(native) {
     const allow: string[] = [];
     const deny: string[] = [];

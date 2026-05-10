@@ -1,30 +1,32 @@
 /**
  * Permission evaluator — deny-first rule matching.
  *
- * Faithfully implements Claude Code's rule syntax:
- *   - Exact: `Tool(command)` — string equality
- *   - Prefix: `Tool(prefix:*)` — word-boundary enforced prefix match
- *   - Wildcard: `Tool(pattern * middle *)` — regex with `.*` for `*`
- *   - Bare: `Tool` — matches any invocation of that tool
- *
- * Plus our extensions:
- *   - Conditional rules (`rules[]`) with `when.cwd` / `when.branch`
- *   - Case-insensitive tool name matching
- *   - `domain:` pattern for WebFetch tools
+ * All permission rules are unified into a single `rules` array.
+ * Each rule has a `tier` (deny/ask/allow), an optional `pattern`,
+ * and optional `when` conditions.
  *
  * Evaluation order:
- *   1. `rules[]` — first matching conditional rule wins (deny/ask/allow)
- *   2. deny tier — if any deny rule matches, return "deny"
- *   3. ask tier — if any ask rule matches, return "ask"
- *   4. allow tier — if any allow rule matches, return "allow"
- *   5. defaultMode — fallback behaviour
+ *   1. All deny-tier rules (any match → "deny")
+ *   2. All ask-tier rules (any match → "ask")
+ *   3. All allow-tier rules (any match → "allow")
+ *   4. defaultMode fallback
+ *
+ * Deny always short-circuits — a deny from any source cannot be overridden
+ * by an allow from any source.
+ *
+ * Pattern syntax (Claude Code compatible):
+ *   - Exact: `git status` — string equality
+ *   - Prefix: `prefix:*` — word-boundary enforced prefix match
+ *   - Wildcard: `pattern * middle *` — regex with `.*` for `*`
+ *   - Bare tool (no pattern): matches any invocation
+ *   - Domain: `domain:example.com` — substring match on hostname
+ *
+ * Plus extensions:
+ *   - Case-insensitive tool name matching
+ *   - `when.cwd` / `when.branch` conditions (AND logic)
  */
 
-import type {
-  PermissionTiers,
-  ConditionalRule,
-  RuleCondition,
-} from "./schema.ts";
+import type { Rule, RuleCondition } from "./schema.ts";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -32,10 +34,11 @@ import type {
 
 export type PermissionDecision = "deny" | "ask" | "allow";
 
+export type PermissionTier = "deny" | "ask" | "allow";
+
 export interface PermissionPolicy {
   defaultMode: "autonomous" | "standard" | "restricted" | "readonly";
-  permissions?: PermissionTiers;
-  rules?: ConditionalRule[];
+  rules?: Rule[];
 }
 
 /** Context for conditional rule evaluation (cwd, branch, etc.). */
@@ -45,17 +48,51 @@ export interface EvaluationContext {
 }
 
 // ---------------------------------------------------------------------------
-// Rule parsing
+// Rule normalisation — convert string rules to structured rules
 // ---------------------------------------------------------------------------
 
 /**
- * Parsed rule discriminated union — mirrors Claude Code's ShellPermissionRule.
+ * Normalise a string rule from `permissions.allow/deny/ask` into a structured Rule.
+ *
+ * String rule syntax:
+ *   - `"Read"` → `{ tool: "Read", tier }`
+ *   - `"Bash(git status)"` → `{ tool: "Bash", pattern: "git status", tier }`
+ *   - `"Bash(npm:*)"` → `{ tool: "Bash", pattern: "npm:*", tier }`
+ *   - `"Bash()"` → `{ tool: "Bash", tier }` (match all)
+ *   - `"mcp__github__*"` → `{ tool: "mcp__github__*", tier }`
  */
-type ParsedRule =
-  | { type: "bare"; toolName: string }
-  | { type: "exact"; toolName: string; content: string }
-  | { type: "prefix"; toolName: string; prefix: string }
-  | { type: "wildcard"; toolName: string; pattern: string };
+export function normaliseStringRule(rule: string, tier: PermissionTier): Rule {
+  const openIdx = findFirstUnescaped(rule, "(");
+  if (openIdx === -1) {
+    return { tool: rule, tier };
+  }
+  const closeIdx = findLastUnescaped(rule, ")");
+  if (closeIdx === -1 || closeIdx <= openIdx || closeIdx !== rule.length - 1) {
+    return { tool: rule, tier };
+  }
+  const tool = rule.slice(0, openIdx);
+  if (!tool) {
+    return { tool: rule, tier };
+  }
+  const rawContent = rule.slice(openIdx + 1, closeIdx);
+  if (rawContent === "" || rawContent === "*") {
+    return { tool, tier };
+  }
+  return { tool, pattern: rawContent, tier };
+}
+
+// ---------------------------------------------------------------------------
+// Rule parsing — pattern matching
+// ---------------------------------------------------------------------------
+
+/**
+ * Parsed pattern — determines how a rule's pattern matches input.
+ */
+type ParsedPattern =
+  | { type: "bare" }
+  | { type: "exact"; content: string }
+  | { type: "prefix"; prefix: string }
+  | { type: "wildcard"; pattern: string };
 
 // Null-byte sentinels for safe wildcard escaping (compiled once).
 const ESCAPED_STAR = "\x00STAR\x00";
@@ -64,88 +101,53 @@ const ESCAPED_STAR_RE = new RegExp(ESCAPED_STAR, "g");
 const ESCAPED_BACKSLASH_RE = new RegExp(ESCAPED_BACKSLASH, "g");
 
 /**
- * Parse a rule string into a structured rule.
- *
- * Format: "ToolName" or "ToolName(content)"
- * Content may contain escaped parentheses: \( and \)
- *
- * Rule types:
- *   - Bare: "Tool" or "Tool()" or "Tool(*)"
- *   - Prefix: content ends with ":*" (e.g. "Bash(npm:*)")
- *   - Wildcard: content has unescaped * but not :* suffix
- *   - Exact: no wildcards
+ * Parse a pattern string as rule content (from `Rule.pattern`).
+ * Determines rule type from the content.
  */
-function parseRule(rule: string): ParsedRule {
-  const openIdx = findFirstUnescaped(rule, "(");
-  if (openIdx === -1) {
-    return { type: "bare", toolName: rule };
-  }
-
-  const closeIdx = findLastUnescaped(rule, ")");
-  if (closeIdx === -1 || closeIdx <= openIdx || closeIdx !== rule.length - 1) {
-    return { type: "bare", toolName: rule };
-  }
-
-  const toolName = rule.slice(0, openIdx);
-  if (!toolName) {
-    return { type: "bare", toolName: rule };
-  }
-
-  const rawContent = rule.slice(openIdx + 1, closeIdx);
-  if (rawContent === "" || rawContent === "*") {
-    return { type: "bare", toolName };
-  }
-
+function parsePattern(pattern: string): ParsedPattern {
   // Domain pattern: "domain:example.com" — substring match on input
-  if (rawContent.startsWith("domain:")) {
+  if (pattern.startsWith("domain:")) {
     return {
       type: "wildcard",
-      toolName,
-      pattern: "*" + rawContent.slice(7) + "*",
+      pattern: "*" + pattern.slice(7) + "*",
     };
   }
 
-  // Prefix syntax: "prefix:*" — check on raw content so escaped \:* isn't confused
-  const prefixMatch = /^(.+):\*$/.exec(rawContent);
+  // Prefix syntax: "prefix:*"
+  const prefixMatch = /^(.+):\*$/.exec(pattern);
   if (prefixMatch?.[1]) {
     const prefix = unescapeContent(prefixMatch[1]);
-    return { type: "prefix", toolName, prefix };
+    return { type: "prefix", prefix };
   }
 
   // Wildcard: has unescaped * (check raw content before unescaping)
-  if (hasUnescapedWildcard(rawContent)) {
-    // Pass raw content to matchWildcard — it handles escape sequences internally
-    return { type: "wildcard", toolName, pattern: rawContent };
+  if (hasUnescapedWildcard(pattern)) {
+    return { type: "wildcard", pattern };
   }
 
   // Exact: unescape for the final comparison string
-  const content = unescapeContent(rawContent);
-  return { type: "exact", toolName, content };
+  const content = unescapeContent(pattern);
+  return { type: "exact", content };
 }
 
 // ---------------------------------------------------------------------------
-// Rule matching
+// Pattern matching
 // ---------------------------------------------------------------------------
 
 /**
- * Match a parsed rule's pattern against input only (tool name already verified).
+ * Match a parsed pattern against input.
  */
-function matchPattern(rule: ParsedRule, input: string): boolean {
-  switch (rule.type) {
+function matchPattern(parsed: ParsedPattern, input: string): boolean {
+  switch (parsed.type) {
     case "bare":
       return true;
     case "exact":
-      return rule.content === input;
+      return parsed.content === input;
     case "prefix":
-      return input === rule.prefix || input.startsWith(rule.prefix + " ");
+      return input === parsed.prefix || input.startsWith(parsed.prefix + " ");
     case "wildcard":
-      return matchWildcard(rule.pattern, input);
+      return matchWildcard(parsed.pattern, input);
   }
-}
-
-function matchRule(rule: ParsedRule, toolName: string, input: string): boolean {
-  if (!toolNamesMatch(rule.toolName, toolName)) return false;
-  return matchPattern(rule, input);
 }
 
 /**
@@ -256,54 +258,8 @@ function matchWildcard(pattern: string, command: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Conditional rule evaluation
+// Condition matching
 // ---------------------------------------------------------------------------
-
-/**
- * Evaluate conditional rules. First matching rule wins.
- * Falls through to return undefined if no rule matches.
- */
-function evaluateConditionalRules(
-  rules: ConditionalRule[],
-  toolName: string,
-  input: string,
-  ctx: EvaluationContext,
-): PermissionDecision | undefined {
-  for (const rule of rules) {
-    // Check tool name first (cheapest check)
-    if (!toolNamesMatch(rule.tool, toolName)) continue;
-
-    // Check conditions before pattern (conditions are cheaper)
-    if (rule.when && !matchConditions(rule.when, ctx)) continue;
-
-    // Parse and match the pattern (tool name already verified above)
-    const parsed = parseRuleWithContent(rule.pattern);
-    if (matchPattern(parsed, input)) {
-      return rule.tier;
-    }
-  }
-  return undefined;
-}
-
-/**
- * Parse a pattern string (from conditionalRule.pattern) as if it were
- * the content inside Tool(...). Determines rule type from the content.
- */
-function parseRuleWithContent(pattern: string): ParsedRule {
-  // Prefix syntax
-  const prefixMatch = /^(.+):\*$/.exec(pattern);
-  if (prefixMatch?.[1]) {
-    return { type: "prefix", toolName: "", prefix: prefixMatch[1] };
-  }
-
-  // Wildcard
-  if (hasUnescapedWildcard(pattern)) {
-    return { type: "wildcard", toolName: "", pattern };
-  }
-
-  // Exact
-  return { type: "exact", toolName: "", content: pattern };
-}
 
 /**
  * Check all `when` conditions — AND logic, all must match.
@@ -341,10 +297,12 @@ function globMatchPath(pattern: string, text: string): boolean {
 // Main evaluator
 // ---------------------------------------------------------------------------
 
+const TIERS: readonly PermissionTier[] = ["deny", "ask", "allow"];
+
 /**
  * Evaluate a tool call against the permission policy.
  *
- * Order: conditional rules → deny → ask → allow → defaultMode
+ * Order: deny rules → ask rules → allow rules → defaultMode
  */
 export function evaluate(
   policy: PermissionPolicy,
@@ -352,52 +310,22 @@ export function evaluate(
   input: string,
   ctx: EvaluationContext = {},
 ): PermissionDecision {
-  // 1. Conditional rules — first match wins
-  if (policy.rules && policy.rules.length > 0) {
-    const decision = evaluateConditionalRules(
-      policy.rules,
-      toolName,
-      input,
-      ctx,
-    );
-    if (decision !== undefined) return decision;
-  }
-
-  const { permissions } = policy;
-  if (!permissions) {
-    return defaultDecision(policy.defaultMode);
-  }
-
-  // 2. Deny tier — deny from any source short-circuits everything
-  if (permissions.deny) {
-    for (const ruleStr of permissions.deny) {
-      const rule = parseRule(ruleStr);
-      if (matchRule(rule, toolName, input)) {
-        return "deny";
+  const { rules } = policy;
+  if (rules && rules.length > 0) {
+    for (const tier of TIERS) {
+      for (const rule of rules) {
+        if (rule.tier !== tier) continue;
+        if (!toolNamesMatch(rule.tool, toolName)) continue;
+        if (rule.when && !matchConditions(rule.when, ctx)) continue;
+        if (rule.pattern !== undefined) {
+          const parsed = parsePattern(rule.pattern);
+          if (!matchPattern(parsed, input)) continue;
+        }
+        // No pattern = match any input; pattern matched = match
+        return tier;
       }
     }
   }
-
-  // 3. Ask tier
-  if (permissions.ask) {
-    for (const ruleStr of permissions.ask) {
-      const rule = parseRule(ruleStr);
-      if (matchRule(rule, toolName, input)) {
-        return "ask";
-      }
-    }
-  }
-
-  // 4. Allow tier
-  if (permissions.allow) {
-    for (const ruleStr of permissions.allow) {
-      const rule = parseRule(ruleStr);
-      if (matchRule(rule, toolName, input)) {
-        return "allow";
-      }
-    }
-  }
-
   return defaultDecision(policy.defaultMode);
 }
 

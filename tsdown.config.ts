@@ -2,7 +2,7 @@ import { defineConfig } from "tsdown";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as z from "zod";
-import { agentPermissionPolicy } from "./src/schema.ts";
+import { AgentPermissionPolicy } from "./src/schema.ts";
 
 /**
  * Rolldown plugin that compiles the Zod schema to JSON Schema after build.
@@ -17,7 +17,7 @@ function zodSchemaPlugin() {
 
       const outPath = path.resolve("agent-permissions.schema.json");
 
-      const jsonSchema = z.toJSONSchema(agentPermissionPolicy, {
+      const jsonSchema = z.toJSONSchema(AgentPermissionPolicy, {
         target: "draft-07",
       });
 

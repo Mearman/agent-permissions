@@ -35,7 +35,7 @@ import * as z from "zod";
  * trusted from personal (`permissions.local.json`) or managed (enterprise)
  * sources — NOT from committed `permissions.json`.
  */
-export const permissionMode = z
+export const PermissionMode = z
   .enum([
     // APP modes
     "standard",
@@ -79,19 +79,19 @@ export const permissionMode = z
  * | `mcp__server`                 | All tools from an MCP server         |
  * | `mcp__server__tool`           | A specific MCP tool                  |
  */
-export const permissionRule = z.string();
+export const PermissionRule = z.string();
 
 // ---------------------------------------------------------------------------
 // Permission tier lists
 // ---------------------------------------------------------------------------
 
-export const permissionTiers = z
+export const PermissionTiers = z
   .object({
     /**
      * Tools auto-approved without prompting.
      * Evaluated after deny rules — if a deny matches, allow is never checked.
      */
-    allow: z.array(permissionRule).meta({
+    allow: z.array(PermissionRule).meta({
       description:
         "Tools auto-approved without prompting. Evaluated after deny rules.",
       examples: ["Bash(git status)", "Bash(npm run test:*)", "Read", "Grep"],
@@ -102,7 +102,7 @@ export const permissionTiers = z
      * Deny rules from ALL sources are merged and checked first.
      * A deny cannot be overridden by an allow in any other source.
      */
-    deny: z.array(permissionRule).meta({
+    deny: z.array(PermissionRule).meta({
       description:
         "Tools always denied — short-circuits before allow and ask. A deny cannot be overridden by an allow in any other source.",
       examples: ["Bash(sudo:*)", "Bash(rm -rf /)", "Read(./.env)"],
@@ -112,7 +112,7 @@ export const permissionTiers = z
      * Tools that always prompt, even in autonomous mode.
      * Evaluated after deny but before allow.
      */
-    ask: z.array(permissionRule).meta({
+    ask: z.array(PermissionRule).meta({
       description:
         "Tools that always prompt, even in autonomous mode. Evaluated after deny but before allow.",
       examples: ["Bash(git push:*)", "Bash(npm publish:*)"],
@@ -132,7 +132,7 @@ export const permissionTiers = z
      * Included here for Claude Code compatibility — Claude Code places
      * defaultMode inside the permissions object.
      */
-    defaultMode: permissionMode.meta({
+    defaultMode: PermissionMode.meta({
       description:
         "Default permission mode. Accepted here for Claude Code compatibility, " +
         "or at the top level for the canonical placement.",
@@ -145,7 +145,7 @@ export const permissionTiers = z
 // Conditional rules
 // ---------------------------------------------------------------------------
 
-export const ruleCondition = z
+export const RuleCondition = z
   .object({
     /** Working directory pattern (glob). */
     cwd: z.string().meta({ description: "Working directory pattern (glob)." }),
@@ -155,7 +155,7 @@ export const ruleCondition = z
   })
   .partial();
 
-export const conditionalRule = z
+export const Rule = z
   .object({
     /** Canonical tool name (e.g. "Bash", "Read", "Write"). */
     tool: z.string().meta({
@@ -172,11 +172,18 @@ export const conditionalRule = z
       ],
     }),
 
-    /** Pattern to match against tool input. Same syntax as permission rules. */
-    pattern: z.string().meta({
-      description: "Pattern to match against tool input.",
-      examples: ["npm run *", "./config/**", "git push --force:*"],
-    }),
+    /**
+     * Pattern to match against tool input. Same syntax as permission rules.
+     * When absent, matches any input for the tool (bare tool rule).
+     */
+    pattern: z
+      .string()
+      .optional()
+      .meta({
+        description:
+          "Pattern to match against tool input. When absent, matches any input.",
+        examples: ["npm run *", "./config/**", "git push --force:*"],
+      }),
 
     /** Permission tier to apply when this rule matches. */
     tier: z.enum(["allow", "deny", "ask"]).meta({
@@ -184,20 +191,21 @@ export const conditionalRule = z
     }),
 
     /** Optional conditions. All must match for the rule to apply (AND logic). */
-    when: ruleCondition.optional().meta({
+    when: RuleCondition.optional().meta({
       description:
         "Optional conditions. All must match for the rule to apply (AND logic).",
     }),
   })
   .meta({
-    description: "Conditional permission rule. First matching rule wins.",
+    description:
+      "Permission rule. Evaluated deny-first: all deny rules, then ask, then allow.",
   });
 
 // ---------------------------------------------------------------------------
 // Delegation controls
 // ---------------------------------------------------------------------------
 
-export const delegation = z
+export const Delegation = z
   .object({
     /**
      * Maximum depth of agent nesting. 0 = no subagents allowed.
@@ -212,7 +220,7 @@ export const delegation = z
      * Tools that cannot be delegated to subagents.
      * Uses the same permission rule syntax.
      */
-    nonDelegable: z.array(permissionRule).meta({
+    nonDelegable: z.array(PermissionRule).meta({
       description:
         "Tools that cannot be delegated to subagents. Uses the same rule syntax.",
       examples: ["Bash(sudo:*)", "Write(./.agents/**)"],
@@ -236,7 +244,7 @@ export const delegation = z
      * Maps to OpenCode's per-agent markdown frontmatter and Codex's
      * `apps.<name>.tools` config.
      */
-    agents: z.record(z.string(), permissionTiers).meta({
+    agents: z.record(z.string(), PermissionTiers).meta({
       description:
         "Per-agent permission overrides. Keys are agent names or glob patterns. " +
         "Values replace (not merge with) the parent policy for that agent.",
@@ -268,7 +276,7 @@ export const delegation = z
  *
  * Maps to Codex's `sandbox_mode` field.
  */
-export const sandboxMode = z
+export const SandboxMode = z
   .enum(["readonly", "workspace-write", "full-access"])
   .meta({
     description:
@@ -279,12 +287,12 @@ export const sandboxMode = z
     default: "workspace-write",
   });
 
-export const sandbox = z
+export const Sandbox = z
   .object({
     /**
      * Sandbox isolation mode.
      */
-    mode: sandboxMode.meta({
+    mode: SandboxMode.meta({
       description: "Sandbox isolation mode.",
     }),
 
@@ -330,7 +338,7 @@ export const sandbox = z
  * Agents that don't support named profiles should use the profile
  * specified by `activeProfile` (or `"default"` if unset).
  */
-export const profiles = z.record(z.string(), permissionTiers).meta({
+export const Profiles = z.record(z.string(), PermissionTiers).meta({
   description:
     "Named permission profiles. Each profile is a complete set of permission tiers. " +
     "Select one at session start via `activeProfile`.",
@@ -348,7 +356,7 @@ export const profiles = z.record(z.string(), permissionTiers).meta({
 // Network controls
 // ---------------------------------------------------------------------------
 
-export const network = z
+export const Network = z
   .object({
     /**
      * Whether network access is permitted at all.
@@ -383,7 +391,7 @@ export const network = z
 // Top-level schema
 // ---------------------------------------------------------------------------
 
-export const agentPermissionPolicy = z
+export const AgentPermissionPolicy = z
   .object({
     /** JSON Schema URI for editor validation and autocomplete. */
     $schema: z.string().meta({
@@ -391,7 +399,7 @@ export const agentPermissionPolicy = z
     }),
 
     /** Default permission mode when starting a session. */
-    defaultMode: permissionMode,
+    defaultMode: PermissionMode,
 
     /** Name of the active profile from `profiles`. */
     activeProfile: z.string().meta({
@@ -401,34 +409,35 @@ export const agentPermissionPolicy = z
     }),
 
     /** Tool permission rules — evaluated in deny → ask → allow order. */
-    permissions: permissionTiers.meta({
+    permissions: PermissionTiers.meta({
       description:
         "Tool permission rules — evaluated in deny → ask → allow order.",
     }),
 
-    /** Conditional rules — first matching rule wins. */
-    rules: z.array(conditionalRule).meta({
+    /** Permission rules — unified deny-first evaluation. */
+    rules: z.array(Rule).meta({
       description:
-        "Conditional rules — pattern matching on tool input. First matching rule wins; falls back to permission tier arrays.",
+        "Permission rules. Evaluated deny-first: all deny rules checked, then ask, then allow. " +
+        "Falls back to defaultMode when no rule matches.",
     }),
 
     /** Named permission profiles — selectable at session start. */
-    profiles: profiles.meta({
+    profiles: Profiles.meta({
       description: "Named permission profiles.",
     }),
 
     /** Agent delegation controls — what subagents may do. */
-    delegation: delegation.meta({
+    delegation: Delegation.meta({
       description: "Agent delegation controls — what subagents may do.",
     }),
 
     /** OS-level sandbox configuration. */
-    sandbox: sandbox.meta({
+    sandbox: Sandbox.meta({
       description: "OS-level sandbox configuration.",
     }),
 
     /** Network access controls. */
-    network: network.meta({
+    network: Network.meta({
       description: "Network access controls.",
     }),
 
@@ -450,13 +459,13 @@ export const agentPermissionPolicy = z
 // Inferred types
 // ---------------------------------------------------------------------------
 
-export type AgentPermissionPolicy = z.infer<typeof agentPermissionPolicy>;
-export type PermissionTiers = z.infer<typeof permissionTiers>;
-export type ConditionalRule = z.infer<typeof conditionalRule>;
-export type RuleCondition = z.infer<typeof ruleCondition>;
-export type Delegation = z.infer<typeof delegation>;
-export type PermissionMode = z.infer<typeof permissionMode>;
-export type SandboxMode = z.infer<typeof sandboxMode>;
-export type Sandbox = z.infer<typeof sandbox>;
-export type Profiles = z.infer<typeof profiles>;
-export type Network = z.infer<typeof network>;
+export type AgentPermissionPolicy = z.infer<typeof AgentPermissionPolicy>;
+export type PermissionTiers = z.infer<typeof PermissionTiers>;
+export type Rule = z.infer<typeof Rule>;
+export type RuleCondition = z.infer<typeof RuleCondition>;
+export type Delegation = z.infer<typeof Delegation>;
+export type PermissionMode = z.infer<typeof PermissionMode>;
+export type SandboxMode = z.infer<typeof SandboxMode>;
+export type Sandbox = z.infer<typeof Sandbox>;
+export type Profiles = z.infer<typeof Profiles>;
+export type Network = z.infer<typeof Network>;

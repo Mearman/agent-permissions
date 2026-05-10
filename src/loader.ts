@@ -16,10 +16,10 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { agentPermissionPolicy, type AgentPermissionPolicy } from "./schema.ts";
+import { AgentPermissionPolicy } from "./schema.ts";
 import { claudeCodeCodec, opencodeCodec } from "./compat/codecs.ts";
 
-import type { PermissionPolicy } from "./evaluate.ts";
+import { normaliseStringRule, type PermissionPolicy } from "./evaluate.ts";
 
 export interface PolicyLoadOptions {
   cwd: string;
@@ -62,7 +62,7 @@ async function loadCanonical(
 ): Promise<AgentPermissionPolicy | undefined> {
   const raw = await readJson(filePath);
   if (!raw) return undefined;
-  const result = agentPermissionPolicy.safeParse(raw);
+  const result = AgentPermissionPolicy.safeParse(raw);
   if (!result.success) return undefined;
   return result.data;
 }
@@ -131,28 +131,37 @@ function mergeLayers(layers: AgentPermissionPolicy[]): PermissionPolicy {
   }
 
   let mode: PermissionPolicy["defaultMode"] = "standard";
-  const deny: string[] = [];
-  const ask: string[] = [];
-  const allow: string[] = [];
+  const rules: PermissionPolicy["rules"] = [];
 
   for (const layer of layers) {
     if (layer.defaultMode) {
       mode = mapMode(layer.defaultMode);
     }
     if (layer.permissions) {
-      if (layer.permissions.deny) deny.push(...layer.permissions.deny);
-      if (layer.permissions.ask) ask.push(...layer.permissions.ask);
-      if (layer.permissions.allow) allow.push(...layer.permissions.allow);
+      if (layer.permissions.deny)
+        rules.push(
+          ...layer.permissions.deny.map((r) => normaliseStringRule(r, "deny")),
+        );
+      if (layer.permissions.ask)
+        rules.push(
+          ...layer.permissions.ask.map((r) => normaliseStringRule(r, "ask")),
+        );
+      if (layer.permissions.allow)
+        rules.push(
+          ...layer.permissions.allow.map((r) =>
+            normaliseStringRule(r, "allow"),
+          ),
+        );
+    }
+    // Also collect structured rules from the layer
+    if (layer.rules) {
+      rules.push(...layer.rules);
     }
   }
 
   return {
     defaultMode: mode,
-    permissions: {
-      ...(deny.length > 0 ? { deny } : {}),
-      ...(ask.length > 0 ? { ask } : {}),
-      ...(allow.length > 0 ? { allow } : {}),
-    },
+    ...(rules.length > 0 ? { rules } : {}),
   };
 }
 
