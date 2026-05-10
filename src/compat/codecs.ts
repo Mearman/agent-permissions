@@ -360,11 +360,315 @@ export const crushCodec = z.codec(crushNative, agentPermissionPolicy, {
 });
 
 // ---------------------------------------------------------------------------
+// Codex (OpenAI) codec
+// ---------------------------------------------------------------------------
+// Codex uses OS-level sandboxing + an approval_policy field, not rule strings.
+// TOML serialisation is a file-I/O concern, not the codec's job.
+// The codec works on the JS object that any TOML parser produces.
+//
+// Key concepts:
+//   approval_policy: "untrusted" | "on-request" | "never" | { granular: {...} }
+//   sandbox_mode: "read-only" | "workspace-write" | "danger-full-access"
+//   permissions: named profiles with filesystem + network rules
+//   default_permissions: name of the active profile
+//
+// Mapping:
+//   approval_policy ↔ defaultMode
+//   sandbox_mode "read-only" → defaultMode "readonly"
+//   sandbox_mode "danger-full-access" → defaultMode "autonomous"
+//   permissions.filesystem → deny/allow rules with Read/Write/Edit patterns
+//   permissions.network.domains → WebFetch allow/deny rules
+
+const codexApprovalPolicy = z.union([
+  z.enum(["untrusted", "on-failure", "on-request", "never"]),
+  z.object({
+    granular: z.object({
+      sandbox_approval: z.boolean(),
+      rules: z.boolean(),
+      mcp_elicitations: z.boolean(),
+      request_permissions: z.boolean().optional(),
+      skill_approval: z.boolean().optional(),
+    }),
+  }),
+]);
+
+const codexSandboxMode = z.enum([
+  "read-only",
+  "workspace-write",
+  "danger-full-access",
+]);
+
+const codexFilesystemAccess = z.enum(["read", "write", "none"]);
+
+/**
+ * Codex native config object — what a TOML parser produces from codex config.
+ * Only the permission-relevant fields; the full schema has 60+ keys.
+ */
+const codexNative = z.object({
+  approval_policy: codexApprovalPolicy.optional(),
+  sandbox_mode: codexSandboxMode.optional(),
+  default_permissions: z.string().optional(),
+  sandbox_workspace_write: z
+    .object({
+      writable_roots: z.array(z.string()).optional(),
+      network_access: z.boolean().optional(),
+    })
+    .partial()
+    .optional(),
+  // Named permission profiles: { [name]: { filesystem: { ... }, network: { ... } } }
+  // PermissionsToml is typed as `{}` in the schema — free-form object
+  permissions: z
+    .record(
+      z.string(),
+      z.object({
+        filesystem: z
+          .union([
+            // Shorthand: apply single mode to entire workspace
+            codexFilesystemAccess,
+            // Granular: { "/path": "read" | "write" | "none" }
+            z.record(z.string(), codexFilesystemAccess),
+          ])
+          .optional(),
+        network: z
+          .object({
+            enabled: z.boolean().optional(),
+            domains: z
+              .record(z.string(), z.enum(["allow", "deny"]))
+              .optional(),
+          })
+          .partial()
+          .optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * Map Codex approval_policy to canonical defaultMode.
+ */
+function codexApprovalToMode(
+  policy: z.infer<typeof codexApprovalPolicy>,
+): AgentPermissionPolicy["defaultMode"] {
+  if (typeof policy === "string") {
+    switch (policy) {
+      case "untrusted": return "restricted";
+      case "on-request": return "standard";
+      case "on-failure": return "standard";
+      case "never": return "autonomous";
+    }
+  }
+  // Granular — treat as standard (some ops auto-approved, some ask)
+  return "standard";
+}
+
+/**
+ * Map canonical defaultMode back to Codex approval_policy.
+ */
+function modeToCodexApproval(
+  mode: AgentPermissionPolicy["defaultMode"],
+  sandbox?: string,
+): z.infer<typeof codexApprovalPolicy> {
+  // Sandbox modes constrain what approval_policy means:
+  // read-only + autonomous → "never" (sandbox already prevents writes)
+  // danger-full-access + autonomous → "never" (explicit opt-in)
+  if (mode === "autonomous" || mode === "bypassPermissions" || mode === "dontAsk") {
+    return "never";
+  }
+  if (mode === "restricted" || mode === "plan" || mode === "readonly") {
+    return "untrusted";
+  }
+  // standard, acceptEdits, default
+  return "on-request";
+}
+
+/**
+ * Map Codex filesystem access mode to canonical deny/allow rules.
+ * Codex paths are absolute; we convert to relative where possible.
+ */
+function codexFilesystemToRules(
+  fs: z.infer<typeof codexFilesystemAccess> | Record<string, z.infer<typeof codexFilesystemAccess>>,
+  allow: string[],
+  deny: string[],
+): void {
+  if (typeof fs === "string") {
+    // Shorthand — applies to entire workspace
+    if (fs === "read") {
+      deny.push("Write", "Edit");
+    } else if (fs === "none") {
+      deny.push("Read", "Write", "Edit");
+    }
+    // "write" is the default — no restrictions
+    return;
+  }
+
+  // Granular: { "/path": "read" | "write" | "none" }
+  for (const [path, mode] of Object.entries(fs)) {
+    const rulePath = path.startsWith("/") ? `.${path}` : path;
+    if (mode === "none") {
+      deny.push(`Read(${rulePath})`, `Write(${rulePath})`, `Edit(${rulePath})`);
+    } else if (mode === "read") {
+      deny.push(`Write(${rulePath})`, `Edit(${rulePath})`);
+    }
+    // "write" — no restriction
+  }
+}
+
+export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
+  decode(native) {
+    const result: Record<string, unknown> = {};
+    const perms: Record<string, unknown[]> = { allow: [], deny: [] };
+
+    // --- approval_policy → defaultMode ---
+    if (native.approval_policy) {
+      result.defaultMode = codexApprovalToMode(native.approval_policy);
+    }
+
+    // --- sandbox_mode → defaultMode override ---
+    if (native.sandbox_mode === "read-only") {
+      result.defaultMode = "readonly";
+      perms.deny.push("Write", "Edit");
+    } else if (native.sandbox_mode === "danger-full-access") {
+      // If no explicit approval_policy, upgrade to autonomous
+      if (!native.approval_policy) result.defaultMode = "autonomous";
+    }
+
+    // --- sandbox_workspace_write.writable_roots → additionalDirectories ---
+    if (native.sandbox_workspace_write?.writable_roots) {
+      perms.additionalDirectories = native.sandbox_workspace_write.writable_roots;
+    }
+
+    // --- Named permission profiles ---
+    // Use default_permissions if set, otherwise use all profiles
+    const profiles = native.permissions ?? {};
+    const activeProfile = native.default_permissions
+      ? { [native.default_permissions]: profiles[native.default_permissions] }
+      : profiles;
+
+    for (const [, profile] of Object.entries(activeProfile)) {
+      if (profile.filesystem) {
+        codexFilesystemToRules(profile.filesystem, perms.allow, perms.deny);
+      }
+      if (profile.network?.domains) {
+        for (const [domain, action] of Object.entries(profile.network.domains)) {
+          if (action === "allow") perms.allow.push(`WebFetch(domain:${domain})`);
+          else if (action === "deny") perms.deny.push(`WebFetch(domain:${domain})`);
+        }
+      }
+    }
+
+    // Clean up empty arrays
+    if (perms.allow.length > 0 || perms.deny.length > 0 || perms.additionalDirectories) {
+      result.permissions = {};
+      if (perms.allow.length > 0) result.permissions.allow = perms.allow;
+      if (perms.deny.length > 0) result.permissions.deny = perms.deny;
+      if (perms.additionalDirectories) result.permissions.additionalDirectories = perms.additionalDirectories;
+    }
+
+    return result as AgentPermissionPolicy;
+  },
+  encode(canonical) {
+    const result: Record<string, unknown> = {};
+    const perms = canonical.permissions;
+
+    // --- defaultMode → approval_policy + sandbox_mode ---
+    if (canonical.defaultMode) {
+      result.approval_policy = modeToCodexApproval(canonical.defaultMode);
+
+      if (canonical.defaultMode === "readonly") {
+        result.sandbox_mode = "read-only";
+      } else if (
+        canonical.defaultMode === "autonomous" ||
+        canonical.defaultMode === "bypassPermissions"
+      ) {
+        result.sandbox_mode = "danger-full-access";
+      } else {
+        result.sandbox_mode = "workspace-write";
+      }
+    }
+
+    // --- additionalDirectories → writable_roots ---
+    if (perms?.additionalDirectories?.length) {
+      result.sandbox_workspace_write = {
+        writable_roots: perms.additionalDirectories,
+      };
+    }
+
+    // --- deny/allow rules → Codex named profile ---
+    if (perms?.deny?.length || perms?.allow?.length) {
+      const filesystem: Record<string, string> = {};
+      const domains: Record<string, string> = {};
+
+      for (const rule of perms?.deny ?? []) {
+        // Parse Read/W Edit/W at path → filesystem none/read
+        const parsed = parseToolPathPattern(rule);
+        if (parsed) {
+          const mode = (parsed.tool === "Read") ? "read" : "none";
+          // Codex uses "write" as the baseline, so we only add restrictions
+          const existing = filesystem[parsed.path];
+          // "none" beats "read" (more restrictive)
+          if (!existing || (existing === "read" && mode === "none")) {
+            filesystem[parsed.path] = mode;
+          }
+          continue;
+        }
+
+        // WebFetch(domain:X) → network.domains
+        const domainMatch = rule.match(/^WebFetch\(domain:(.+)\)$/);
+        if (domainMatch) {
+          domains[domainMatch[1]] = "deny";
+        }
+      }
+
+      for (const rule of perms?.allow ?? []) {
+        const domainMatch = rule.match(/^WebFetch\(domain:(.+)\)$/);
+        if (domainMatch) {
+          domains[domainMatch[1]] = "allow";
+        }
+      }
+
+      // Build the named profile
+      const profile: Record<string, unknown> = {};
+      if (Object.keys(filesystem).length > 0) {
+        // Convert relative paths back to absolute for Codex
+        const absoluteFs: Record<string, string> = {};
+        for (const [path, mode] of Object.entries(filesystem)) {
+          absoluteFs[path.startsWith(".") ? path.slice(1) : path] = mode;
+        }
+        profile.filesystem = absoluteFs;
+      }
+      if (Object.keys(domains).length > 0) {
+        profile.network = { domains };
+      }
+
+      if (Object.keys(profile).length > 0) {
+        result.permissions = { default: profile };
+        result.default_permissions = "default";
+      }
+    }
+
+    return result as z.infer<typeof codexNative>;
+  },
+});
+
+/**
+ * Parse a canonical tool-path pattern like `Read(./src/**)` or `Write(./config)`.
+ * Returns the tool name and path, or undefined if not a file-path rule.
+ */
+function parseToolPathPattern(
+  rule: string,
+): { tool: string; path: string } | undefined {
+  const match = rule.match(/^(Read|Write|Edit)\((.+)\)$/);
+  if (!match) return undefined;
+  return { tool: match[1], path: match[2] };
+}
+
+// ---------------------------------------------------------------------------
 // Codec registry
 // ---------------------------------------------------------------------------
 
 export const CODECS = {
   "claude-code": claudeCodeCodec,
+  codex: codexCodec,
   opencode: opencodeCodec,
   crush: crushCodec,
 } as const;

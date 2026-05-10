@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { z } from "zod";
 import {
   claudeCodeCodec,
+  codexCodec,
   opencodeCodec,
   crushCodec,
 } from "../compat/codecs.ts";
@@ -295,6 +296,206 @@ describe("crushCodec", () => {
       });
       const reEncoded = z.encode(crushCodec, canonical);
       expect(reEncoded.allowed_tools).toEqual(["view", "ls", "grep", "edit", "bash"]);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Codex codec
+// ---------------------------------------------------------------------------
+
+describe("codexCodec", () => {
+  describe("decode (Codex → canonical)", () => {
+    it("maps approval_policy 'untrusted' to restricted mode", () => {
+      const result = codexCodec.decode({
+        approval_policy: "untrusted",
+      });
+      expect(result.defaultMode).toBe("restricted");
+    });
+
+    it("maps approval_policy 'never' to autonomous mode", () => {
+      const result = codexCodec.decode({
+        approval_policy: "never",
+      });
+      expect(result.defaultMode).toBe("autonomous");
+    });
+
+    it("maps approval_policy 'on-request' to standard mode", () => {
+      const result = codexCodec.decode({
+        approval_policy: "on-request",
+      });
+      expect(result.defaultMode).toBe("standard");
+    });
+
+    it("maps sandbox_mode 'read-only' to readonly mode", () => {
+      const result = codexCodec.decode({
+        sandbox_mode: "read-only",
+      });
+      expect(result.defaultMode).toBe("readonly");
+      expect(result.permissions?.deny).toContain("Write");
+      expect(result.permissions?.deny).toContain("Edit");
+    });
+
+    it("maps sandbox_mode 'danger-full-access' to autonomous", () => {
+      const result = codexCodec.decode({
+        sandbox_mode: "danger-full-access",
+      });
+      expect(result.defaultMode).toBe("autonomous");
+    });
+
+    it("maps sandbox_workspace_write.writable_roots to additionalDirectories", () => {
+      const result = codexCodec.decode({
+        sandbox_workspace_write: {
+          writable_roots: ["/tmp/build-cache", "../shared-libs"],
+        },
+      });
+      expect(result.permissions?.additionalDirectories).toEqual([
+        "/tmp/build-cache",
+        "../shared-libs",
+      ]);
+    });
+
+    it("converts filesystem shorthand 'read' to Write+Edit deny", () => {
+      const result = codexCodec.decode({
+        permissions: {
+          strict: {
+            filesystem: "read",
+          },
+        },
+        default_permissions: "strict",
+      });
+      expect(result.permissions?.deny).toContain("Write");
+      expect(result.permissions?.deny).toContain("Edit");
+    });
+
+    it("converts filesystem shorthand 'none' to full deny", () => {
+      const result = codexCodec.decode({
+        permissions: {
+          locked: {
+            filesystem: "none",
+          },
+        },
+        default_permissions: "locked",
+      });
+      expect(result.permissions?.deny).toContain("Read");
+      expect(result.permissions?.deny).toContain("Write");
+      expect(result.permissions?.deny).toContain("Edit");
+    });
+
+    it("converts granular filesystem rules to path-based deny rules", () => {
+      const result = codexCodec.decode({
+        permissions: {
+          default: {
+            filesystem: {
+              "/etc/config": "read",
+              "/secrets": "none",
+            },
+          },
+        },
+        default_permissions: "default",
+      });
+      // /etc/config → read-only
+      expect(result.permissions?.deny).toContain("Write(./etc/config)");
+      expect(result.permissions?.deny).toContain("Edit(./etc/config)");
+      // /secrets → no access
+      expect(result.permissions?.deny).toContain("Read(./secrets)");
+      expect(result.permissions?.deny).toContain("Write(./secrets)");
+    });
+
+    it("converts network domain rules to WebFetch rules", () => {
+      const result = codexCodec.decode({
+        permissions: {
+          default: {
+            network: {
+              domains: {
+                "api.example.com": "allow",
+                "evil.com": "deny",
+              },
+            },
+          },
+        },
+        default_permissions: "default",
+      });
+      expect(result.permissions?.allow).toContain(
+        "WebFetch(domain:api.example.com)",
+      );
+      expect(result.permissions?.deny).toContain("WebFetch(domain:evil.com)");
+    });
+
+    it("uses all profiles when default_permissions is unset", () => {
+      const result = codexCodec.decode({
+        permissions: {
+          safe: {
+            filesystem: "read",
+          },
+          open: {
+            filesystem: "write",
+          },
+        },
+      });
+      // Both profiles merged — safe contributes Write+Edit deny
+      expect(result.permissions?.deny).toContain("Write");
+      expect(result.permissions?.deny).toContain("Edit");
+    });
+  });
+
+  describe("encode (canonical → Codex)", () => {
+    it("maps defaultMode to approval_policy + sandbox_mode", () => {
+      const encoded = z.encode(codexCodec, {
+        defaultMode: "standard",
+      });
+      expect(encoded.approval_policy).toBe("on-request");
+      expect(encoded.sandbox_mode).toBe("workspace-write");
+    });
+
+    it("maps autonomous to never + danger-full-access", () => {
+      const encoded = z.encode(codexCodec, {
+        defaultMode: "autonomous",
+      });
+      expect(encoded.approval_policy).toBe("never");
+      expect(encoded.sandbox_mode).toBe("danger-full-access");
+    });
+
+    it("maps readonly to untrusted + read-only", () => {
+      const encoded = z.encode(codexCodec, {
+        defaultMode: "restricted",
+      });
+      expect(encoded.approval_policy).toBe("untrusted");
+      expect(encoded.sandbox_mode).toBe("workspace-write");
+    });
+
+    it("maps additionalDirectories to writable_roots", () => {
+      const encoded = z.encode(codexCodec, {
+        permissions: {
+          additionalDirectories: ["/tmp/build-cache"],
+        },
+      });
+      expect(encoded.sandbox_workspace_write?.writable_roots).toEqual([
+        "/tmp/build-cache",
+      ]);
+    });
+
+    it("converts deny rules to filesystem + network profile", () => {
+      const encoded = z.encode(codexCodec, {
+        permissions: {
+          deny: [
+            "Write(./secrets)",
+            "Read(./secrets)",
+            "WebFetch(domain:evil.com)",
+          ],
+          allow: [
+            "WebFetch(domain:api.example.com)",
+          ],
+        },
+      });
+      // Should produce a named profile with filesystem + network
+      expect(encoded.permissions).toBeDefined();
+      expect(encoded.default_permissions).toBe("default");
+
+      const profile = (encoded.permissions as Record<string, any>).default;
+      expect(profile.filesystem["/secrets"]).toBe("none");
+      expect(profile.network.domains["evil.com"]).toBe("deny");
+      expect(profile.network.domains["api.example.com"]).toBe("allow");
     });
   });
 });

@@ -23,3 +23,13 @@ export type {
   Delegation,
   PermissionMode,
 } from "./schema.ts";
+
+export {
+  claudeCodeCodec,
+  codexCodec,
+  opencodeCodec,
+  crushCodec,
+  CODECS,
+} from "./compat/codecs.ts";
+
+export type { AgentId, Codecs } from "./compat/codecs.ts";
