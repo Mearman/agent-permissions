@@ -8,10 +8,12 @@ const examplesDir = path.resolve(import.meta.dirname, "../../spec/examples");
 
 describe("agentPermissionPolicy", () => {
   describe("example files", () => {
-    for (const file of fs.readdirSync(examplesDir).filter((f) => f.endsWith(".json"))) {
+    for (const file of fs
+      .readdirSync(examplesDir)
+      .filter((f) => f.endsWith(".json"))) {
       it(`validates ${file}`, () => {
         const content = fs.readFileSync(path.join(examplesDir, file), "utf-8");
-        const data = JSON.parse(content);
+        const data: unknown = JSON.parse(content);
         const result = agentPermissionPolicy.safeParse(data);
         assert.ok(result.success, `Expected ${file} to validate`);
       });
@@ -80,7 +82,10 @@ describe("agentPermissionPolicy", () => {
           nonDelegable: ["Bash(sudo:*)"],
           bubbleUp: true,
           agents: {
-            review: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
+            review: {
+              deny: ["Write", "Edit", "Bash"],
+              allow: ["Read", "Grep"],
+            },
           },
         },
         sandbox: {
@@ -140,15 +145,22 @@ describe("agentPermissionPolicy", () => {
 
   describe("validation failures", () => {
     it("rejects unknown permission mode", () => {
-      assert.ok(!agentPermissionPolicy.safeParse({ defaultMode: "yolo" }).success);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({ defaultMode: "yolo" }).success,
+      );
     });
 
     it("rejects unknown top-level key", () => {
-      assert.ok(!agentPermissionPolicy.safeParse({ unknownField: true }).success);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({ unknownField: true }).success,
+      );
     });
 
     it("rejects non-string permission rules", () => {
-      assert.ok(!agentPermissionPolicy.safeParse({ permissions: { allow: [123] } }).success);
+      assert.ok(
+        !agentPermissionPolicy.safeParse({ permissions: { allow: [123] } })
+          .success,
+      );
     });
 
     it("rejects rule without required tool field", () => {
@@ -169,7 +181,8 @@ describe("agentPermissionPolicy", () => {
 
     it("rejects negative maxDepth", () => {
       assert.ok(
-        !agentPermissionPolicy.safeParse({ delegation: { maxDepth: -1 } }).success,
+        !agentPermissionPolicy.safeParse({ delegation: { maxDepth: -1 } })
+          .success,
       );
     });
 
@@ -181,7 +194,8 @@ describe("agentPermissionPolicy", () => {
 
     it("rejects unknown sandbox mode", () => {
       assert.ok(
-        !agentPermissionPolicy.safeParse({ sandbox: { mode: "containerised" } }).success,
+        !agentPermissionPolicy.safeParse({ sandbox: { mode: "containerised" } })
+          .success,
       );
     });
 
@@ -213,7 +227,8 @@ describe("agentPermissionPolicy", () => {
   describe("sandbox configuration", () => {
     it("accepts sandbox with mode only", () => {
       assert.ok(
-        agentPermissionPolicy.safeParse({ sandbox: { mode: "readonly" } }).success,
+        agentPermissionPolicy.safeParse({ sandbox: { mode: "readonly" } })
+          .success,
       );
     });
 
@@ -243,7 +258,10 @@ describe("agentPermissionPolicy", () => {
       assert.ok(
         agentPermissionPolicy.safeParse({
           profiles: {
-            strict: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
+            strict: {
+              deny: ["Write", "Edit", "Bash"],
+              allow: ["Read", "Grep"],
+            },
             relaxed: { allow: ["Read", "Write", "Edit", "Bash(git:*)"] },
           },
           activeProfile: "strict",
@@ -279,7 +297,8 @@ describe("agentPermissionPolicy", () => {
   describe("network controls", () => {
     it("accepts network enabled only", () => {
       assert.ok(
-        agentPermissionPolicy.safeParse({ network: { enabled: false } }).success,
+        agentPermissionPolicy.safeParse({ network: { enabled: false } })
+          .success,
       );
     });
 
@@ -302,8 +321,13 @@ describe("agentPermissionPolicy", () => {
           delegation: {
             maxDepth: 3,
             agents: {
-              review: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
-              docs: { allow: ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"] },
+              review: {
+                deny: ["Write", "Edit", "Bash"],
+                allow: ["Read", "Grep"],
+              },
+              docs: {
+                allow: ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"],
+              },
             },
           },
         }).success,

@@ -18,7 +18,8 @@
         "dontAsk",
         "acceptEdits",
         "bypassPermissions",
-        "default"
+        "default",
+        "auto"
       ],
       "description": "Default permission mode. Agent Permission Policy modes: standard, autonomous, restricted, readonly. Claude Code compatible modes: plan, dontAsk, acceptEdits, bypassPermissions, default.",
       "default": "standard"
@@ -88,7 +89,8 @@
             "dontAsk",
             "acceptEdits",
             "bypassPermissions",
-            "default"
+            "default",
+            "auto"
           ],
           "description": "Default permission mode. Accepted here for Claude Code compatibility, or at the top level for the canonical placement.",
           "default": "standard"
@@ -226,7 +228,8 @@
               "dontAsk",
               "acceptEdits",
               "bypassPermissions",
-              "default"
+              "default",
+              "auto"
             ],
             "description": "Default permission mode. Accepted here for Claude Code compatibility, or at the top level for the canonical placement.",
             "default": "standard"
@@ -352,7 +355,8 @@
                   "dontAsk",
                   "acceptEdits",
                   "bypassPermissions",
-                  "default"
+                  "default",
+                  "auto"
                 ],
                 "description": "Default permission mode. Accepted here for Claude Code compatibility, or at the top level for the canonical placement.",
                 "default": "standard"

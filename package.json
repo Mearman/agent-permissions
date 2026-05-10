@@ -36,14 +36,23 @@
     "node": ">=18"
   },
   "scripts": {
-    "build:schema": "node --experimental-strip-types src/build-schema.ts",
-    "build": "tsdown",
+    "build": "turbo run _build",
     "dev": "tsdown --watch",
-    "test": "node --experimental-strip-types --test src/test/*.test.ts",
-    "test:watch": "node --experimental-strip-types --test --watch src/test/*.test.ts",
-    "check": "tsc --noEmit",
-    "lint:pkg": "publint && attw --pack .",
-    "prepublishOnly": "pnpm build && pnpm test && pnpm lint:pkg"
+    "_typecheck": "tsc --noEmit",
+    "_lint": "eslint --cache",
+    "_lint:fix": "eslint --cache --fix",
+    "_test": "node --experimental-strip-types --test src/test/*.test.ts",
+    "_build": "tsdown",
+    "typecheck": "turbo run _typecheck",
+    "lint": "turbo run _lint",
+    "lint:fix": "turbo run _lint:fix",
+    "test": "turbo run _test",
+    "check": "turbo run _check",
+    "validate": "turbo run _validate",
+    "release": "semantic-release",
+    "release:dry": "semantic-release --dry-run",
+    "prepare": "husky",
+    "prepublishOnly": "pnpm validate"
   },
   "keywords": [
     "agents",
@@ -56,29 +65,46 @@
     "cross-agent",
     "policy"
   ],
-  "author": "",
+  "author": "Joseph Mearman",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Mearman/agent-permissions-spec#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Mearman/agent-permissions-spec.git"
   },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.0.9",
-      "onFail": "download"
-    }
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "dependencies": {
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.138",
     "@arethetypeswrong/cli": "^0.18.2",
+    "@commitlint/cli": "^21.0.0",
+    "@commitlint/config-conventional": "^21.0.0",
+    "@eslint/js": "^10.0.1",
+    "@openai/codex-sdk": "^0.130.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.8",
     "@types/node": "^25.6.2",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.3",
+    "prettier": "^3.8.3",
     "publint": "^0.3.20",
     "rolldown": "^1.0.0",
+    "semantic-release": "^25.0.3",
     "tsdown": "^0.22.0",
-    "typescript": "^6.0.3"
-  }
+    "turbo": "^2.9.12",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.2"
+  },
+  "packageManager": "pnpm@11.0.9"
 }

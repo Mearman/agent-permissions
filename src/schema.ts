@@ -48,6 +48,7 @@ export const permissionMode = z
     "acceptEdits",
     "bypassPermissions",
     "default",
+    "auto",
   ])
   .meta({
     description:
@@ -90,55 +91,41 @@ export const permissionTiers = z
      * Tools auto-approved without prompting.
      * Evaluated after deny rules — if a deny matches, allow is never checked.
      */
-    allow: z
-      .array(permissionRule)
-      .meta({
-        description:
-          "Tools auto-approved without prompting. Evaluated after deny rules.",
-        examples: [
-          "Bash(git status)",
-          "Bash(npm run test:*)",
-          "Read",
-          "Grep",
-        ],
-      }),
+    allow: z.array(permissionRule).meta({
+      description:
+        "Tools auto-approved without prompting. Evaluated after deny rules.",
+      examples: ["Bash(git status)", "Bash(npm run test:*)", "Read", "Grep"],
+    }),
 
     /**
      * Tools always denied — short-circuits before allow and ask.
      * Deny rules from ALL sources are merged and checked first.
      * A deny cannot be overridden by an allow in any other source.
      */
-    deny: z
-      .array(permissionRule)
-      .meta({
-        description:
-          "Tools always denied — short-circuits before allow and ask. A deny cannot be overridden by an allow in any other source.",
-        examples: ["Bash(sudo:*)", "Bash(rm -rf /)", "Read(./.env)"],
-      }),
+    deny: z.array(permissionRule).meta({
+      description:
+        "Tools always denied — short-circuits before allow and ask. A deny cannot be overridden by an allow in any other source.",
+      examples: ["Bash(sudo:*)", "Bash(rm -rf /)", "Read(./.env)"],
+    }),
 
     /**
      * Tools that always prompt, even in autonomous mode.
      * Evaluated after deny but before allow.
      */
-    ask: z
-      .array(permissionRule)
-      .meta({
-        description:
-          "Tools that always prompt, even in autonomous mode. Evaluated after deny but before allow.",
-        examples: ["Bash(git push:*)", "Bash(npm publish:*)"],
-      }),
+    ask: z.array(permissionRule).meta({
+      description:
+        "Tools that always prompt, even in autonomous mode. Evaluated after deny but before allow.",
+      examples: ["Bash(git push:*)", "Bash(npm publish:*)"],
+    }),
 
     /**
      * Directories beyond project root that agents may access.
      * Paths are relative to project root or absolute.
      */
-    additionalDirectories: z
-      .array(z.string())
-      .meta({
-        description:
-          "Directories beyond project root that agents may access.",
-        examples: ["../shared-libs/", "/tmp/build-cache"],
-      }),
+    additionalDirectories: z.array(z.string()).meta({
+      description: "Directories beyond project root that agents may access.",
+      examples: ["../shared-libs/", "/tmp/build-cache"],
+    }),
 
     /**
      * Default permission mode. Also accepted at the top level.
@@ -161,14 +148,10 @@ export const permissionTiers = z
 export const ruleCondition = z
   .object({
     /** Working directory pattern (glob). */
-    cwd: z
-      .string()
-      .meta({ description: "Working directory pattern (glob)." }),
+    cwd: z.string().meta({ description: "Working directory pattern (glob)." }),
 
     /** Git branch name pattern (glob). */
-    branch: z
-      .string()
-      .meta({ description: "Git branch name pattern (glob)." }),
+    branch: z.string().meta({ description: "Git branch name pattern (glob)." }),
   })
   .partial();
 
@@ -206,7 +189,9 @@ export const conditionalRule = z
         "Optional conditions. All must match for the rule to apply (AND logic).",
     }),
   })
-  .meta({ description: "Conditional permission rule. First matching rule wins." });
+  .meta({
+    description: "Conditional permission rule. First matching rule wins.",
+  });
 
 // ---------------------------------------------------------------------------
 // Delegation controls
@@ -218,14 +203,10 @@ export const delegation = z
      * Maximum depth of agent nesting. 0 = no subagents allowed.
      * @default 2
      */
-    maxDepth: z
-      .number()
-      .int()
-      .min(0)
-      .meta({
-        description: "Maximum depth of agent nesting. 0 = no subagents allowed.",
-        default: 2,
-      }),
+    maxDepth: z.number().int().min(0).meta({
+      description: "Maximum depth of agent nesting. 0 = no subagents allowed.",
+      default: 2,
+    }),
 
     /**
      * Tools that cannot be delegated to subagents.
@@ -241,13 +222,11 @@ export const delegation = z
      * Whether subagents can request elevated permissions from their parent.
      * @default true
      */
-    bubbleUp: z
-      .boolean()
-      .meta({
-        description:
-          "Whether subagents can request elevated permissions from their parent.",
-        default: true,
-      }),
+    bubbleUp: z.boolean().meta({
+      description:
+        "Whether subagents can request elevated permissions from their parent.",
+      default: true,
+    }),
 
     /**
      * Per-agent permission overrides. Keys are agent names or glob patterns
@@ -257,19 +236,17 @@ export const delegation = z
      * Maps to OpenCode's per-agent markdown frontmatter and Codex's
      * `apps.<name>.tools` config.
      */
-    agents: z
-      .record(z.string(), permissionTiers)
-      .meta({
-        description:
-          "Per-agent permission overrides. Keys are agent names or glob patterns. " +
-          "Values replace (not merge with) the parent policy for that agent.",
-        examples: [
-          {
-            "review": { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
-            "docs": { allow: ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"] },
-          },
-        ],
-      }),
+    agents: z.record(z.string(), permissionTiers).meta({
+      description:
+        "Per-agent permission overrides. Keys are agent names or glob patterns. " +
+        "Values replace (not merge with) the parent policy for that agent.",
+      examples: [
+        {
+          review: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
+          docs: { allow: ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"] },
+        },
+      ],
+    }),
   })
   .partial();
 
@@ -315,28 +292,24 @@ export const sandbox = z
      * Additional paths the agent may write to (beyond project root).
      * Only meaningful when mode is `workspace-write`.
      */
-    writableRoots: z
-      .array(z.string())
-      .meta({
-        description:
-          "Additional paths the agent may write to (beyond project root). " +
-          "Only meaningful when mode is `workspace-write`.",
-        examples: ["/tmp/build-cache", "../shared-libs"],
-      }),
+    writableRoots: z.array(z.string()).meta({
+      description:
+        "Additional paths the agent may write to (beyond project root). " +
+        "Only meaningful when mode is `workspace-write`.",
+      examples: ["/tmp/build-cache", "../shared-libs"],
+    }),
 
     /**
      * Whether the agent may make network requests from within the sandbox.
      * When false, network access is blocked at the OS level.
      * Maps to Codex's `sandbox_workspace_write.network_access`.
      */
-    networkAccess: z
-      .boolean()
-      .meta({
-        description:
-          "Whether the agent may make network requests from within the sandbox. " +
-          "When false, network access is blocked at the OS level.",
-        default: true,
-      }),
+    networkAccess: z.boolean().meta({
+      description:
+        "Whether the agent may make network requests from within the sandbox. " +
+        "When false, network access is blocked at the OS level.",
+      default: true,
+    }),
   })
   .partial()
   .strict()
@@ -357,19 +330,19 @@ export const sandbox = z
  * Agents that don't support named profiles should use the profile
  * specified by `activeProfile` (or `"default"` if unset).
  */
-export const profiles = z
-  .record(z.string(), permissionTiers)
-  .meta({
-    description:
-      "Named permission profiles. Each profile is a complete set of permission tiers. " +
-      "Select one at session start via `activeProfile`.",
-    examples: [
-      {
-        strict: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
-        relaxed: { allow: ["Read", "Write", "Edit", "Bash(git:*)", "Bash(npm:*)"] },
+export const profiles = z.record(z.string(), permissionTiers).meta({
+  description:
+    "Named permission profiles. Each profile is a complete set of permission tiers. " +
+    "Select one at session start via `activeProfile`.",
+  examples: [
+    {
+      strict: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
+      relaxed: {
+        allow: ["Read", "Write", "Edit", "Bash(git:*)", "Bash(npm:*)"],
       },
-    ],
-  });
+    },
+  ],
+});
 
 // ---------------------------------------------------------------------------
 // Network controls
@@ -381,28 +354,24 @@ export const network = z
      * Whether network access is permitted at all.
      * When false, WebFetch and WebSearch are denied regardless of allow rules.
      */
-    enabled: z
-      .boolean()
-      .meta({
-        description:
-          "Whether network access is permitted at all. When false, " +
-          "WebFetch and WebSearch are denied regardless of allow rules.",
-        default: true,
-      }),
+    enabled: z.boolean().meta({
+      description:
+        "Whether network access is permitted at all. When false, " +
+        "WebFetch and WebSearch are denied regardless of allow rules.",
+      default: true,
+    }),
 
     /**
      * Domain-level allow/deny rules for HTTP(S) requests.
      * Maps to both Codex's `network.domains` and Claude Code's
      * `WebFetch(domain:...)` rules.
      */
-    domains: z
-      .record(z.string(), z.enum(["allow", "deny"]))
-      .meta({
-        description:
-          "Domain-level allow/deny rules for HTTP(S) requests. " +
-          "Supplements the WebFetch(domain:...) permission rules.",
-        examples: [{ "api.example.com": "allow", "evil.com": "deny" }],
-      }),
+    domains: z.record(z.string(), z.enum(["allow", "deny"])).meta({
+      description:
+        "Domain-level allow/deny rules for HTTP(S) requests. " +
+        "Supplements the WebFetch(domain:...) permission rules.",
+      examples: [{ "api.example.com": "allow", "evil.com": "deny" }],
+    }),
   })
   .partial()
   .strict()
@@ -425,13 +394,11 @@ export const agentPermissionPolicy = z
     defaultMode: permissionMode,
 
     /** Name of the active profile from `profiles`. */
-    activeProfile: z
-      .string()
-      .meta({
-        description:
-          "Name of the active profile from `profiles`. If unset, use the " +
-          "top-level permission tiers directly.",
-      }),
+    activeProfile: z.string().meta({
+      description:
+        "Name of the active profile from `profiles`. If unset, use the " +
+        "top-level permission tiers directly.",
+    }),
 
     /** Tool permission rules — evaluated in deny → ask → allow order. */
     permissions: permissionTiers.meta({
@@ -440,12 +407,10 @@ export const agentPermissionPolicy = z
     }),
 
     /** Conditional rules — first matching rule wins. */
-    rules: z
-      .array(conditionalRule)
-      .meta({
-        description:
-          "Conditional rules — pattern matching on tool input. First matching rule wins; falls back to permission tier arrays.",
-      }),
+    rules: z.array(conditionalRule).meta({
+      description:
+        "Conditional rules — pattern matching on tool input. First matching rule wins; falls back to permission tier arrays.",
+    }),
 
     /** Named permission profiles — selectable at session start. */
     profiles: profiles.meta({
@@ -468,12 +433,10 @@ export const agentPermissionPolicy = z
     }),
 
     /** Environment variables injected into all agent sessions. */
-    env: z
-      .record(z.string(), z.string())
-      .meta({
-        description: "Environment variables injected into all agent sessions.",
-        examples: [{ NODE_ENV: "development", DISABLE_TELEMETRY: "1" }],
-      }),
+    env: z.record(z.string(), z.string()).meta({
+      description: "Environment variables injected into all agent sessions.",
+      examples: [{ NODE_ENV: "development", DISABLE_TELEMETRY: "1" }],
+    }),
   })
   .partial()
   .strict()

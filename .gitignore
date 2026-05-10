@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 
-# Symlinks to README.md — override global gitignore
-!CLAUDE.md
-!AGENTS.md
+# Build tooling caches
+.eslintcache
+.turbo/
+.tool-versions

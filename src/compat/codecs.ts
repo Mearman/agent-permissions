@@ -19,18 +19,23 @@ import * as z from "zod";
 import {
   agentPermissionPolicy,
   type AgentPermissionPolicy,
+  type PermissionTiers,
+  type Sandbox,
 } from "../schema.ts";
+import {
+  ClaudeCodePermissionMode,
+  CodexApprovalMode,
+  CodexDomainAccess,
+  CodexFilesystemAccess,
+  CodexSandboxMode,
+  PermissionBehavior,
+} from "./enums.ts";
 
 // ---------------------------------------------------------------------------
 // Canonical agent identifiers
 // ---------------------------------------------------------------------------
 
-export const agentId = z.enum([
-  "claude-code",
-  "codex",
-  "opencode",
-  "crush",
-]);
+export const agentId = z.enum(["claude-code", "codex", "opencode", "crush"]);
 
 export type AgentId = z.infer<typeof agentId>;
 
@@ -47,58 +52,77 @@ const claudeCodeNative = z
     allow: z.array(z.string()).optional(),
     deny: z.array(z.string()).optional(),
     ask: z.array(z.string()).optional(),
-    defaultMode: z
-      .enum([
-        "acceptEdits",
-        "bypassPermissions",
-        "default",
-        "dontAsk",
-        "plan",
-      ])
-      .optional(),
+    defaultMode: ClaudeCodePermissionMode.optional(),
     additionalDirectories: z.array(z.string()).optional(),
   })
   .partial()
   .strict();
 
-export const claudeCodeCodec = z.codec(claudeCodeNative, agentPermissionPolicy, {
-  decode(native) {
-    const result: Record<string, unknown> = {};
+type ClaudeCodeNative = z.infer<typeof claudeCodeNative>;
 
-    if (native.allow ?? native.deny ?? native.ask ?? native.additionalDirectories) {
-      result.permissions = {};
-      if (native.allow) result.permissions.allow = native.allow;
-      if (native.deny) result.permissions.deny = native.deny;
-      if (native.ask) result.permissions.ask = native.ask;
-      if (native.additionalDirectories)
-        result.permissions.additionalDirectories = native.additionalDirectories;
-    }
+export const claudeCodeCodec = z.codec(
+  claudeCodeNative,
+  agentPermissionPolicy,
+  {
+    decode(native) {
+      const result: Partial<AgentPermissionPolicy> = {};
 
-    if (native.defaultMode) result.defaultMode = native.defaultMode;
+      if (
+        native.allow ??
+        native.deny ??
+        native.ask ??
+        native.additionalDirectories
+      ) {
+        const perms: Partial<PermissionTiers> = {};
+        if (native.allow) perms.allow = native.allow;
+        if (native.deny) perms.deny = native.deny;
+        if (native.ask) perms.ask = native.ask;
+        if (native.additionalDirectories)
+          perms.additionalDirectories = native.additionalDirectories;
+        result.permissions = perms;
+      }
 
-    return result as AgentPermissionPolicy;
+      if (native.defaultMode) {
+        // Claude Code's defaultMode is a narrower enum; it's already a valid canonical mode
+        result.defaultMode = native.defaultMode;
+      }
+
+      return result;
+    },
+    encode(canonical) {
+      const result: Partial<ClaudeCodeNative> = {};
+
+      const perms = canonical.permissions;
+      if (perms) {
+        if (perms.allow) result.allow = perms.allow;
+        if (perms.deny) result.deny = perms.deny;
+        if (perms.ask) result.ask = perms.ask;
+        if (perms.additionalDirectories)
+          result.additionalDirectories = perms.additionalDirectories;
+      }
+
+      // defaultMode — only include modes that Claude Code accepts
+      const ccDefaultMode = canonical.defaultMode ?? perms?.defaultMode;
+      if (ccDefaultMode) {
+        // Only Claude Code's native modes are valid in the output
+        const claudeCodeModes = [
+          "acceptEdits",
+          "auto",
+          "bypassPermissions",
+          "default",
+          "dontAsk",
+          "plan",
+        ] as const;
+        const match = claudeCodeModes.find((m) => m === ccDefaultMode);
+        if (match) {
+          result.defaultMode = match;
+        }
+      }
+
+      return result;
+    },
   },
-  encode(canonical) {
-    const result: Record<string, unknown> = {};
-
-    const perms = canonical.permissions;
-    if (perms) {
-      if (perms.allow) result.allow = perms.allow;
-      if (perms.deny) result.deny = perms.deny;
-      if (perms.ask) result.ask = perms.ask;
-      if (perms.additionalDirectories)
-        result.additionalDirectories = perms.additionalDirectories;
-      // defaultMode inside permissions — Claude Code's native placement
-      if (perms.defaultMode) result.defaultMode = perms.defaultMode;
-    }
-
-    // Also pick up top-level defaultMode
-    if (canonical.defaultMode && !result.defaultMode)
-      result.defaultMode = canonical.defaultMode;
-
-    return result as z.infer<typeof claudeCodeNative>;
-  },
-});
+);
 
 // ---------------------------------------------------------------------------
 // OpenCode codec
@@ -107,7 +131,7 @@ export const claudeCodeCodec = z.codec(claudeCodeNative, agentPermissionPolicy, 
 // Pattern syntax differs: space-separated (`"git *"`) vs our `:*` prefix.
 // Tool names differ: lowercase (`edit`, `list`) vs our PascalCase (`Edit`, `Glob`).
 
-const ocAction = z.enum(["ask", "allow", "deny"]);
+const ocAction = PermissionBehavior;
 
 const ocRule = z.union([ocAction, z.record(z.string(), ocAction)]);
 
@@ -136,6 +160,8 @@ const opencodeNative = z.union([
     })
     .strict(),
 ]);
+
+type OpenCodeNative = z.infer<typeof opencodeNative>;
 
 /**
  * Map OpenCode tool names to our canonical names.
@@ -174,10 +200,7 @@ const canonicalToOc: Record<string, string> = {
  * OpenCode: "git status *" (space-separated)
  * Canonical: "Bash(git status *)" (wrapped in parens)
  */
-function ocPatternToCanonical(
-  tool: string,
-  pattern: string,
-): string {
+function ocPatternToCanonical(tool: string, pattern: string): string {
   const canonicalTool = ocToCanonical[tool] ?? tool;
   return `${canonicalTool}(${pattern})`;
 }
@@ -224,28 +247,34 @@ export const opencodeCodec = z.codec(opencodeNative, agentPermissionPolicy, {
   decode(native) {
     // Shorthand "allow"/"deny" applies to everything
     if (typeof native === "string") {
-      return { defaultMode: native === "allow" ? "autonomous" : native === "deny" ? "restricted" : "standard" } as AgentPermissionPolicy;
+      const mode =
+        native === "allow"
+          ? ("autonomous" as const)
+          : native === "deny"
+            ? ("restricted" as const)
+            : ("standard" as const);
+      return { defaultMode: mode };
     }
 
-    const result: Record<string, unknown> = { permissions: {} };
-    const perms = result.permissions as Record<string, unknown>;
+    const perms: Partial<PermissionTiers> = {};
     const allow: string[] = [];
     const deny: string[] = [];
     const ask: string[] = [];
+    let sandbox: Partial<Sandbox> | undefined;
 
     for (const [ocTool, rule] of Object.entries(native)) {
       if (rule === undefined) continue;
       if (OC_UNMAPPED_TOOLS.has(ocTool)) continue;
 
       if (ocTool === "external_directory") {
-        if (typeof rule === "object" && rule !== null) {
+        if (typeof rule === "object") {
           const allowedDirs: string[] = [];
-          for (const [dir, action] of Object.entries(rule as Record<string, string>)) {
+          for (const [dir, action] of Object.entries(rule)) {
             if (action === "allow") allowedDirs.push(dir);
           }
           if (allowedDirs.length > 0) {
             perms.additionalDirectories = allowedDirs;
-            result.sandbox = { writableRoots: allowedDirs };
+            sandbox = { writableRoots: allowedDirs };
           }
         }
         continue;
@@ -256,16 +285,14 @@ export const opencodeCodec = z.codec(opencodeNative, agentPermissionPolicy, {
         const canonicalRule = ocToCanonical[ocTool] ?? ocTool;
         if (rule === "allow") allow.push(canonicalRule);
         else if (rule === "deny") deny.push(canonicalRule);
-        else if (rule === "ask") ask.push(canonicalRule);
-      } else if (typeof rule === "object" && rule !== null) {
+        else ask.push(canonicalRule);
+      } else {
         // Granular patterns: { "git *": "allow", "rm *": "deny" }
-        for (const [pattern, action] of Object.entries(
-          rule as Record<string, string>,
-        )) {
+        for (const [pattern, action] of Object.entries(rule)) {
           const canonicalRule = ocPatternToCanonical(ocTool, pattern);
           if (action === "allow") allow.push(canonicalRule);
           else if (action === "deny") deny.push(canonicalRule);
-          else if (action === "ask") ask.push(canonicalRule);
+          else ask.push(canonicalRule);
         }
       }
     }
@@ -274,16 +301,21 @@ export const opencodeCodec = z.codec(opencodeNative, agentPermissionPolicy, {
     if (deny.length > 0) perms.deny = deny;
     if (ask.length > 0) perms.ask = ask;
 
-    return result as AgentPermissionPolicy;
+    const result: Partial<AgentPermissionPolicy> = {};
+    if (Object.keys(perms).length > 0) result.permissions = perms;
+    if (sandbox) result.sandbox = sandbox;
+    return result;
   },
   encode(canonical) {
-    const result: Record<string, Record<string, string>> = {};
     const perms = canonical.permissions;
 
-    if (!perms) return { bash: "ask" } as z.infer<typeof opencodeNative>;
+    if (!perms) return { bash: "ask" } satisfies OpenCodeNative;
 
-    const allRules = [
-      ...(perms.allow?.map((r) => ({ rule: r, action: "allow" as const })) ?? []),
+    const result: Record<string, Record<string, "allow" | "deny" | "ask">> = {};
+
+    const allRules: { rule: string; action: "allow" | "deny" | "ask" }[] = [
+      ...(perms.allow?.map((r) => ({ rule: r, action: "allow" as const })) ??
+        []),
       ...(perms.deny?.map((r) => ({ rule: r, action: "deny" as const })) ?? []),
       ...(perms.ask?.map((r) => ({ rule: r, action: "ask" as const })) ?? []),
     ];
@@ -292,13 +324,17 @@ export const opencodeCodec = z.codec(opencodeNative, agentPermissionPolicy, {
       const parsed = canonicalToOcPattern(rule);
       if (!parsed) continue;
 
-      if (!result[parsed.tool]) result[parsed.tool] = {};
-      result[parsed.tool][parsed.pattern] = action;
+      let toolRules = result[parsed.tool];
+      if (!toolRules) {
+        toolRules = {};
+        result[parsed.tool] = toolRules;
+      }
+      toolRules[parsed.pattern] = action;
     }
 
     // Map sandbox.writableRoots → external_directory
     if (canonical.sandbox?.writableRoots?.length) {
-      const extDir: Record<string, string> = {};
+      const extDir: Record<string, "allow"> = {};
       for (const root of canonical.sandbox.writableRoots) {
         extDir[root] = "allow";
       }
@@ -306,15 +342,16 @@ export const opencodeCodec = z.codec(opencodeNative, agentPermissionPolicy, {
     }
 
     // If any tool has only a single "*" pattern, simplify to shorthand
+    const simplified: Record<string, unknown> = { ...result };
     for (const [tool, patterns] of Object.entries(result)) {
       if (tool === "external_directory") continue;
       const keys = Object.keys(patterns);
       if (keys.length === 1 && keys[0] === "*") {
-        (result as Record<string, unknown>)[tool] = patterns["*"];
+        simplified[tool] = patterns["*"];
       }
     }
 
-    return result as unknown as z.infer<typeof opencodeNative>;
+    return simplified;
   },
 });
 
@@ -366,7 +403,7 @@ export const crushCodec = z.codec(crushNative, agentPermissionPolicy, {
       const canonical = crushToCanonical[tool] ?? tool;
       allow.push(canonical);
     }
-    return { permissions: { allow } } as AgentPermissionPolicy;
+    return { permissions: { allow } };
   },
   encode(canonical) {
     const allowed: string[] = [];
@@ -403,7 +440,7 @@ export const crushCodec = z.codec(crushNative, agentPermissionPolicy, {
 //   named profiles → profiles record + activeProfile
 
 const codexApprovalPolicy = z.union([
-  z.enum(["untrusted", "on-failure", "on-request", "never"]),
+  CodexApprovalMode,
   z.object({
     granular: z.object({
       sandbox_approval: z.boolean(),
@@ -415,13 +452,7 @@ const codexApprovalPolicy = z.union([
   }),
 ]);
 
-const codexSandboxMode = z.enum([
-  "read-only",
-  "workspace-write",
-  "danger-full-access",
-]);
-
-const codexFilesystemAccess = z.enum(["read", "write", "none"]);
+type CodexApprovalPolicy = z.infer<typeof codexApprovalPolicy>;
 
 /**
  * Codex native config object — what a TOML parser produces from codex config.
@@ -429,7 +460,7 @@ const codexFilesystemAccess = z.enum(["read", "write", "none"]);
  */
 const codexNative = z.object({
   approval_policy: codexApprovalPolicy.optional(),
-  sandbox_mode: codexSandboxMode.optional(),
+  sandbox_mode: CodexSandboxMode.optional(),
   default_permissions: z.string().optional(),
   sandbox_workspace_write: z
     .object({
@@ -448,17 +479,15 @@ const codexNative = z.object({
         filesystem: z
           .union([
             // Shorthand: apply single mode to entire workspace
-            codexFilesystemAccess,
+            CodexFilesystemAccess,
             // Granular: { "/path": "read" | "write" | "none" }
-            z.record(z.string(), codexFilesystemAccess),
+            z.record(z.string(), CodexFilesystemAccess),
           ])
           .optional(),
         network: z
           .object({
             enabled: z.boolean().optional(),
-            domains: z
-              .record(z.string(), z.enum(["allow", "deny"]))
-              .optional(),
+            domains: z.record(z.string(), CodexDomainAccess).optional(),
           })
           .partial()
           .optional(),
@@ -467,18 +496,40 @@ const codexNative = z.object({
     .optional(),
 });
 
+type CodexNative = z.infer<typeof codexNative>;
+type CodexSandboxWorkspaceWrite = NonNullable<
+  CodexNative["sandbox_workspace_write"]
+>;
+
+export interface CodexProfile {
+  filesystem?:
+    | CodexFilesystemAccess
+    | Record<string, CodexFilesystemAccess>
+    | undefined;
+  network?:
+    | {
+        enabled?: boolean | undefined;
+        domains?: Record<string, "allow" | "deny"> | undefined;
+      }
+    | undefined;
+}
+
 /**
  * Map Codex approval_policy to canonical defaultMode.
  */
 function codexApprovalToMode(
-  policy: z.infer<typeof codexApprovalPolicy>,
+  policy: CodexApprovalPolicy,
 ): AgentPermissionPolicy["defaultMode"] {
   if (typeof policy === "string") {
     switch (policy) {
-      case "untrusted": return "restricted";
-      case "on-request": return "standard";
-      case "on-failure": return "standard";
-      case "never": return "autonomous";
+      case "untrusted":
+        return "restricted";
+      case "on-request":
+        return "standard";
+      case "on-failure":
+        return "standard";
+      case "never":
+        return "autonomous";
     }
   }
   // Granular — treat as standard (some ops auto-approved, some ask)
@@ -490,8 +541,12 @@ function codexApprovalToMode(
  */
 function modeToCodexApproval(
   mode: AgentPermissionPolicy["defaultMode"],
-): z.infer<typeof codexApprovalPolicy> {
-  if (mode === "autonomous" || mode === "bypassPermissions" || mode === "dontAsk") {
+): CodexApprovalPolicy {
+  if (
+    mode === "autonomous" ||
+    mode === "bypassPermissions" ||
+    mode === "dontAsk"
+  ) {
     return "never";
   }
   if (mode === "restricted" || mode === "plan" || mode === "readonly") {
@@ -505,12 +560,15 @@ function modeToCodexApproval(
  * Map Codex sandbox_mode to canonical sandbox.mode.
  */
 function codexSandboxToCanonical(
-  mode: z.infer<typeof codexSandboxMode>,
+  mode: z.infer<typeof CodexSandboxMode>,
 ): "readonly" | "workspace-write" | "full-access" {
   switch (mode) {
-    case "read-only": return "readonly";
-    case "workspace-write": return "workspace-write";
-    case "danger-full-access": return "full-access";
+    case "read-only":
+      return "readonly";
+    case "workspace-write":
+      return "workspace-write";
+    case "danger-full-access":
+      return "full-access";
   }
 }
 
@@ -519,11 +577,14 @@ function codexSandboxToCanonical(
  */
 function canonicalSandboxToCodex(
   mode: "readonly" | "workspace-write" | "full-access",
-): z.infer<typeof codexSandboxMode> {
+): z.infer<typeof CodexSandboxMode> {
   switch (mode) {
-    case "readonly": return "read-only";
-    case "workspace-write": return "workspace-write";
-    case "full-access": return "danger-full-access";
+    case "readonly":
+      return "read-only";
+    case "workspace-write":
+      return "workspace-write";
+    case "full-access":
+      return "danger-full-access";
   }
 }
 
@@ -532,8 +593,7 @@ function canonicalSandboxToCodex(
  * Codex paths are absolute; we convert to relative where possible.
  */
 function codexFilesystemToRules(
-  fs: z.infer<typeof codexFilesystemAccess> | Record<string, z.infer<typeof codexFilesystemAccess>>,
-  allow: string[],
+  fs: CodexFilesystemAccess | Record<string, CodexFilesystemAccess>,
   deny: string[],
 ): void {
   if (typeof fs === "string") {
@@ -561,41 +621,40 @@ function codexFilesystemToRules(
 
 export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
   decode(native) {
-    const result: Record<string, unknown> = {};
     const allow: string[] = [];
     const deny: string[] = [];
-    const networkDomains: Record<string, string> = {};
-    const profiles: Record<string, unknown> = {};
+    const networkDomains: Record<string, "allow" | "deny"> = {};
+    const namedProfiles: Record<string, Partial<PermissionTiers>> = {};
 
     // --- approval_policy → defaultMode ---
+    let defaultMode: AgentPermissionPolicy["defaultMode"] | undefined;
     if (native.approval_policy) {
-      result.defaultMode = codexApprovalToMode(native.approval_policy);
+      defaultMode = codexApprovalToMode(native.approval_policy);
     }
 
     // --- sandbox_mode → sandbox.mode ---
+    let sandbox: Partial<Sandbox> | undefined;
     if (native.sandbox_mode) {
-      result.sandbox = { mode: codexSandboxToCanonical(native.sandbox_mode) };
+      sandbox = { mode: codexSandboxToCanonical(native.sandbox_mode) };
     }
 
     // --- sandbox_workspace_write → sandbox fields ---
     if (native.sandbox_workspace_write) {
-      if (!result.sandbox) result.sandbox = {};
+      sandbox ??= {};
       if (native.sandbox_workspace_write.writable_roots?.length) {
-        (result.sandbox as Record<string, unknown>).writableRoots =
-          native.sandbox_workspace_write.writable_roots;
+        sandbox.writableRoots = native.sandbox_workspace_write.writable_roots;
       }
       if (native.sandbox_workspace_write.network_access !== undefined) {
-        (result.sandbox as Record<string, unknown>).networkAccess =
-          native.sandbox_workspace_write.network_access;
+        sandbox.networkAccess = native.sandbox_workspace_write.network_access;
       }
     }
 
     // --- sandbox_mode "read-only" override ---
     if (native.sandbox_mode === "read-only") {
-      result.defaultMode = "readonly";
+      defaultMode = "readonly";
       deny.push("Write", "Edit");
     } else if (native.sandbox_mode === "danger-full-access") {
-      if (!native.approval_policy) result.defaultMode = "autonomous";
+      if (!native.approval_policy) defaultMode = "autonomous";
     }
 
     // --- Named permission profiles ---
@@ -603,18 +662,20 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
     const activeProfileName = native.default_permissions;
 
     for (const [name, profile] of Object.entries(allProfiles)) {
-      const profileTiers: Record<string, unknown> = {};
       const profileAllow: string[] = [];
       const profileDeny: string[] = [];
 
       if (profile.filesystem) {
-        codexFilesystemToRules(profile.filesystem, profileAllow, profileDeny);
+        codexFilesystemToRules(profile.filesystem, profileDeny);
       }
 
       if (profile.network?.domains) {
-        for (const [domain, action] of Object.entries(profile.network.domains)) {
-          if (action === "allow") profileAllow.push(`WebFetch(domain:${domain})`);
-          else if (action === "deny") profileDeny.push(`WebFetch(domain:${domain})`);
+        for (const [domain, action] of Object.entries(
+          profile.network.domains,
+        )) {
+          if (action === "allow")
+            profileAllow.push(`WebFetch(domain:${domain})`);
+          else profileDeny.push(`WebFetch(domain:${domain})`);
         }
       }
 
@@ -630,22 +691,28 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
       }
 
       // Store as named profile
+      const profileTiers: Partial<PermissionTiers> = {};
       if (profileAllow.length > 0) profileTiers.allow = profileAllow;
       if (profileDeny.length > 0) profileTiers.deny = profileDeny;
       if (Object.keys(profileTiers).length > 0) {
-        profiles[name] = profileTiers;
+        namedProfiles[name] = profileTiers;
       }
     }
 
     // Build result
+    const result: Partial<AgentPermissionPolicy> = {};
+    if (defaultMode !== undefined) result.defaultMode = defaultMode;
+    if (sandbox) result.sandbox = sandbox;
+
     if (allow.length > 0 || deny.length > 0) {
-      result.permissions = {};
-      if (allow.length > 0) (result.permissions as Record<string, unknown>).allow = allow;
-      if (deny.length > 0) (result.permissions as Record<string, unknown>).deny = deny;
+      const perms: Partial<PermissionTiers> = {};
+      if (allow.length > 0) perms.allow = allow;
+      if (deny.length > 0) perms.deny = deny;
+      result.permissions = perms;
     }
 
-    if (Object.keys(profiles).length > 0) {
-      result.profiles = profiles;
+    if (Object.keys(namedProfiles).length > 0) {
+      result.profiles = namedProfiles;
       if (activeProfileName) result.activeProfile = activeProfileName;
     }
 
@@ -653,10 +720,10 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
       result.network = { domains: networkDomains };
     }
 
-    return result as AgentPermissionPolicy;
+    return result;
   },
   encode(canonical) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<CodexNative> = {};
     const perms = canonical.permissions;
 
     // --- defaultMode → approval_policy ---
@@ -669,8 +736,11 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
       if (canonical.sandbox.mode) {
         result.sandbox_mode = canonicalSandboxToCodex(canonical.sandbox.mode);
       }
-      if (canonical.sandbox.writableRoots?.length || canonical.sandbox.networkAccess !== undefined) {
-        const sw: Record<string, unknown> = {};
+      if (
+        canonical.sandbox.writableRoots?.length ||
+        canonical.sandbox.networkAccess !== undefined
+      ) {
+        const sw: Partial<CodexSandboxWorkspaceWrite> = {};
         if (canonical.sandbox.writableRoots?.length) {
           sw.writable_roots = canonical.sandbox.writableRoots;
         }
@@ -694,16 +764,23 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
     }
 
     // --- additionalDirectories → writable_roots ---
-    if (perms?.additionalDirectories?.length && !result.sandbox_workspace_write) {
+    if (
+      perms?.additionalDirectories?.length &&
+      !result.sandbox_workspace_write
+    ) {
       result.sandbox_workspace_write = {
         writable_roots: perms.additionalDirectories,
       };
     }
 
     // --- network.domains → Codex network.domains ---
-    const domains: Record<string, string> = {};
+    const domains: Record<string, "allow" | "deny"> = {};
     if (canonical.network?.domains) {
-      Object.assign(domains, canonical.network.domains);
+      for (const [domain, action] of Object.entries(
+        canonical.network.domains,
+      )) {
+        domains[domain] = action;
+      }
     }
 
     // Also extract WebFetch rules from deny/allow
@@ -712,26 +789,30 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
     for (const rule of perms?.deny ?? []) {
       const parsed = parseToolPathPattern(rule);
       if (parsed) {
-        if (!filesystemDenyTools[parsed.path]) filesystemDenyTools[parsed.path] = new Set();
-        filesystemDenyTools[parsed.path].add(parsed.tool);
+        let tools = filesystemDenyTools[parsed.path];
+        if (!tools) {
+          tools = new Set();
+          filesystemDenyTools[parsed.path] = tools;
+        }
+        tools.add(parsed.tool);
         continue;
       }
 
-      const domainMatch = rule.match(/^WebFetch\(domain:(.+)\)$/);
-      if (domainMatch) {
+      const domainMatch = /^WebFetch\(domain:(.+)\)$/.exec(rule);
+      if (domainMatch?.[1]) {
         domains[domainMatch[1]] = "deny";
       }
     }
 
     for (const rule of perms?.allow ?? []) {
-      const domainMatch = rule.match(/^WebFetch\(domain:(.+)\)$/);
-      if (domainMatch) {
+      const domainMatch = /^WebFetch\(domain:(.+)\)$/.exec(rule);
+      if (domainMatch?.[1]) {
         domains[domainMatch[1]] = "allow";
       }
     }
 
     // Convert collected path denies to Codex filesystem modes
-    const filesystem: Record<string, string> = {};
+    const filesystem: Record<string, CodexFilesystemAccess> = {};
     for (const [path, tools] of Object.entries(filesystemDenyTools)) {
       if (tools.has("Read")) {
         filesystem[path] = "none";
@@ -742,34 +823,39 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
 
     // --- profiles → named Codex profiles ---
     if (canonical.profiles && Object.keys(canonical.profiles).length > 0) {
-      const codexProfiles: Record<string, unknown> = {};
+      const codexProfiles: Record<string, CodexProfile> = {};
       for (const [name, profileTiers] of Object.entries(canonical.profiles)) {
-        const profile: Record<string, unknown> = {};
+        const profile: CodexProfile = {};
         const profDenyTools: Record<string, Set<string>> = {};
-        const profDomains: Record<string, string> = {};
+        const profDomains: Record<string, "allow" | "deny"> = {};
 
         for (const rule of profileTiers.deny ?? []) {
           const parsed = parseToolPathPattern(rule);
           if (parsed) {
-            if (!profDenyTools[parsed.path]) profDenyTools[parsed.path] = new Set();
-            profDenyTools[parsed.path].add(parsed.tool);
+            let tools = profDenyTools[parsed.path];
+            if (!tools) {
+              tools = new Set();
+              profDenyTools[parsed.path] = tools;
+            }
+            tools.add(parsed.tool);
           }
-          const dm = rule.match(/^WebFetch\(domain:(.+)\)$/);
-          if (dm) profDomains[dm[1]] = "deny";
+          const dm = /^WebFetch\(domain:(.+)\)$/.exec(rule);
+          if (dm?.[1]) profDomains[dm[1]] = "deny";
         }
         for (const rule of profileTiers.allow ?? []) {
-          const dm = rule.match(/^WebFetch\(domain:(.+)\)$/);
-          if (dm) profDomains[dm[1]] = "allow";
+          const dm = /^WebFetch\(domain:(.+)\)$/.exec(rule);
+          if (dm?.[1]) profDomains[dm[1]] = "allow";
         }
 
-        const profFs: Record<string, string> = {};
+        const profFs: Record<string, CodexFilesystemAccess> = {};
         for (const [path, tools] of Object.entries(profDenyTools)) {
           if (tools.has("Read")) profFs[path] = "none";
-          else if (tools.has("Write") || tools.has("Edit")) profFs[path] = "read";
+          else if (tools.has("Write") || tools.has("Edit"))
+            profFs[path] = "read";
         }
 
         if (Object.keys(profFs).length > 0) {
-          const absoluteFs: Record<string, string> = {};
+          const absoluteFs: Record<string, CodexFilesystemAccess> = {};
           for (const [p, m] of Object.entries(profFs)) {
             absoluteFs[p.startsWith(".") ? p.slice(1) : p] = m;
           }
@@ -790,11 +876,14 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
           result.default_permissions = canonical.activeProfile;
         }
       }
-    } else if (Object.keys(filesystem).length > 0 || Object.keys(domains).length > 0) {
+    } else if (
+      Object.keys(filesystem).length > 0 ||
+      Object.keys(domains).length > 0
+    ) {
       // No named profiles — create a single "default" profile from deny/allow rules
-      const profile: Record<string, unknown> = {};
+      const profile: CodexProfile = {};
       if (Object.keys(filesystem).length > 0) {
-        const absoluteFs: Record<string, string> = {};
+        const absoluteFs: Record<string, CodexFilesystemAccess> = {};
         for (const [p, m] of Object.entries(filesystem)) {
           absoluteFs[p.startsWith(".") ? p.slice(1) : p] = m;
         }
@@ -809,7 +898,7 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
       }
     }
 
-    return result as z.infer<typeof codexNative>;
+    return result;
   },
 });
 
@@ -820,8 +909,8 @@ export const codexCodec = z.codec(codexNative, agentPermissionPolicy, {
 function parseToolPathPattern(
   rule: string,
 ): { tool: string; path: string } | undefined {
-  const match = rule.match(/^(Read|Write|Edit)\((.+)\)$/);
-  if (!match) return undefined;
+  const match = /^(Read|Write|Edit)\((.+)\)$/.exec(rule);
+  if (!match?.[1] || !match[2]) return undefined;
   return { tool: match[1], path: match[2] };
 }
 

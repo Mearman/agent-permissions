@@ -13,15 +13,8 @@ describe("Claude Code compatibility", () => {
             "Bash(claude plugin:*)",
             "Bash(*rm* -rf */cache/*)",
           ],
-          deny: [
-            "Bash(*rm* /)",
-            "Bash(sudo *rm*)",
-            "Bash(git add -A*)",
-          ],
-          ask: [
-            "Bash(*rm\\* -r*)",
-            "Write(eslint.config.ts)",
-          ],
+          deny: ["Bash(*rm* /)", "Bash(sudo *rm*)", "Bash(git add -A*)"],
+          ask: ["Bash(*rm\\* -r*)", "Write(eslint.config.ts)"],
           defaultMode: "dontAsk",
         },
       });
@@ -184,11 +177,19 @@ describe("Claude Code compatibility", () => {
   });
 
   describe("defaultMode — Claude Code's mode values", () => {
-    const claudeModes = ["plan", "dontAsk", "acceptEdits", "bypassPermissions", "default"];
+    const claudeModes = [
+      "plan",
+      "dontAsk",
+      "acceptEdits",
+      "bypassPermissions",
+      "default",
+    ];
 
     for (const mode of claudeModes) {
       it(`accepts '${mode}' (Claude Code mode)`, () => {
-        assert.ok(agentPermissionPolicy.safeParse({ defaultMode: mode }).success);
+        assert.ok(
+          agentPermissionPolicy.safeParse({ defaultMode: mode }).success,
+        );
       });
     }
   });
@@ -197,7 +198,9 @@ describe("Claude Code compatibility", () => {
     it("accepts relative and absolute paths", () => {
       assert.ok(
         agentPermissionPolicy.safeParse({
-          permissions: { additionalDirectories: ["../shared-libs/", "/tmp/build-cache"] },
+          permissions: {
+            additionalDirectories: ["../shared-libs/", "/tmp/build-cache"],
+          },
         }).success,
       );
     });
@@ -206,7 +209,8 @@ describe("Claude Code compatibility", () => {
   describe("env block (Claude Code compatibility)", () => {
     it("accepts the same env structure as .claude/settings.json", () => {
       assert.ok(
-        agentPermissionPolicy.safeParse({ env: { FOO: "bar", BAZ: "qux" } }).success,
+        agentPermissionPolicy.safeParse({ env: { FOO: "bar", BAZ: "qux" } })
+          .success,
       );
     });
   });
