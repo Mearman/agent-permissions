@@ -1,3 +1,9 @@
+## [5.0.6](https://github.com/Mearman/agent-permissions/compare/v5.0.5...v5.0.6) (2026-05-11)
+
+### Tests
+
+* comprehensive CLI tests (39 new, 370 total) ([4699704](https://github.com/Mearman/agent-permissions/commit/469970428fc1e2cef7032e1bfb547bf82f1de9f8))
+
 ## [5.0.5](https://github.com/Mearman/agent-permissions/compare/v5.0.4...v5.0.5) (2026-05-11)
 
 ### Tests
