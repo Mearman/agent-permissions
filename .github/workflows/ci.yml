@@ -127,7 +127,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version-file: .tool-versions
+          node-version: 22
           cache: pnpm
           # Do NOT set registry-url — it creates an .npmrc that overrides OIDC
 
