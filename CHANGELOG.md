@@ -1,3 +1,9 @@
+## [5.0.3](https://github.com/Mearman/agent-permissions/compare/v5.0.2...v5.0.3) (2026-05-11)
+
+### Refactoring
+
+* shared result types for parseJson, validatePolicy, decodeNative ([bc85871](https://github.com/Mearman/agent-permissions/commit/bc85871f2f43bcb1304b648bb5474f3db7b48e19))
+
 ## [5.0.2](https://github.com/Mearman/agent-permissions/compare/v5.0.1...v5.0.2) (2026-05-11)
 
 ### Refactoring
