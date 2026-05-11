@@ -1,3 +1,22 @@
+## [4.1.0](https://github.com/Mearman/agent-permissions/compare/v4.0.0...v4.1.0) (2026-05-11)
+
+### Features
+
+* add CLI binary for converting, validating, and checking policies ([fb4b086](https://github.com/Mearman/agent-permissions/commit/fb4b0861a52dfcbaeec3946168475e93fe39ecb6))
+* add ruleToString and collectRules helpers to evaluate module ([200eb9e](https://github.com/Mearman/agent-permissions/commit/200eb9eaa3806337be3122b2e4a7e8a6e6eda26d))
+
+### Bug Fixes
+
+* make test task depend on build for CLI binary ([0bf1984](https://github.com/Mearman/agent-permissions/commit/0bf1984a1ad5f5e958c85fd136264a605199c67e))
+
+### Refactoring
+
+* codecs produce/consume unified rules[] instead of permissions tiers ([2ef38e4](https://github.com/Mearman/agent-permissions/commit/2ef38e4652e91d78b83cd95e1729f3cdc8b54297))
+
+### Tests
+
+* rewrite compat tests for unified rules, add CLI tests ([a220986](https://github.com/Mearman/agent-permissions/commit/a2209867c8afecaccacda72c9b04b67e66f0cd78))
+
 ## [4.0.0](https://github.com/Mearman/agent-permissions/compare/v3.0.6...v4.0.0) (2026-05-10)
 
 ### ⚠ BREAKING CHANGES
