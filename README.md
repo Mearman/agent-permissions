@@ -60,6 +60,32 @@ pnpm add agent-perms
 
 The package uses [wildcard exports](https://nodejs.org/api/packages.html#subpath-patterns) — import only what you need:
 
+### Programmatic API (`agent-perms/api`)
+
+Side-effect-free functions for use as a library:
+
+```typescript
+import { convert, validate, check, detectFormat } from "agent-perms/api";
+
+// Convert between formats (auto-detects source)
+const result = convert(undefined, "canonical", claudeCodeJson);
+result.output;   // canonical object
+result.from;     // "claude-code" (detected)
+result.ruleCount; // 3
+
+// Validate a policy
+const { valid, errors } = validate(json);
+
+// Evaluate a tool call
+const { decision } = check("Bash", "sudo rm -rf /", policy, { branch: "main" });
+// decision: "allow" | "deny" | "ask"
+
+// Detect format from structure
+const format = detectFormat(json); // "claude-code" | "crush" | "kiro" | ...
+```
+
+### Other modules
+
 ```typescript
 // Zod schemas (single source of truth)
 import { AgentPermissionPolicy } from "agent-perms/schema";
@@ -75,6 +101,9 @@ import { claudeCodeCodec } from "agent-perms/compat/codecs";
 
 // SDK enum alignment checks
 import { claudeCodeModes } from "agent-perms/compat/enums";
+
+// Sync filesystem configs
+import { sync } from "agent-perms/sync";
 ```
 
 ## Schema overview
@@ -417,7 +446,7 @@ See [`spec/examples/full.json`](spec/examples/full.json).
 
 ```bash
 pnpm install          # Install dependencies
-pnpm test             # Run tests (259 tests)
+pnpm test             # Run tests (295 tests)
 pnpm build            # Build ESM + CJS + types + JSON Schema
 ```
 
