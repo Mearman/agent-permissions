@@ -17,6 +17,7 @@ import { resolve } from "node:path";
 import { AgentPermissionPolicy } from "./schema.ts";
 import { CODECS, agentId } from "./compat/codecs.ts";
 import { evaluate, normaliseStringRule } from "./evaluate.ts";
+import { sync } from "./sync.ts";
 
 const AGENTS = agentId.options;
 type Agent = (typeof AGENTS)[number];
@@ -253,6 +254,83 @@ async function checkCommand(args: string[]): Promise<void> {
 // Main
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// sync
+// ---------------------------------------------------------------------------
+
+async function syncCommand(args: string[]): Promise<void> {
+  const { values, positionals } = parseArgs({
+    args,
+    options: {
+      up: { type: "string", default: "all" },
+      from: { type: "string", multiple: true },
+      to: { type: "string", multiple: true },
+      yes: { type: "boolean", short: "y" },
+      "dry-run": { type: "boolean" },
+      create: { type: "boolean" },
+      verbose: { type: "boolean", short: "v" },
+      backup: { type: "boolean" },
+    },
+    strict: true,
+    allowPositionals: true,
+  });
+
+  // Parse --up value
+  let up: number;
+  if (values.up === "all") {
+    up = Infinity;
+  } else {
+    up = Number(values.up);
+    if (!Number.isInteger(up) || up < 0) {
+      error("--up must be a non-negative integer or 'all'");
+    }
+  }
+
+  // Validate --from agents
+  const fromAgents: Agent[] = [];
+  for (const f of values.from ?? []) {
+    if (f === "all") {
+      fromAgents.length = 0;
+      break;
+    }
+    if (f !== "canonical" && !AGENTS.includes(f as Agent)) {
+      error(
+        `unknown --from agent: ${f}. Valid: ${[...AGENTS, "canonical", "all"].join(", ")}`,
+      );
+    }
+    fromAgents.push(f as Agent);
+  }
+
+  // Validate --to agents
+  const toAgents: Agent[] = [];
+  for (const t of values.to ?? []) {
+    if (t === "all") {
+      toAgents.length = 0;
+      break;
+    }
+    if (t !== "canonical" && !AGENTS.includes(t as Agent)) {
+      error(
+        `unknown --to agent: ${t}. Valid: ${[...AGENTS, "canonical", "all"].join(", ")}`,
+      );
+    }
+    toAgents.push(t as Agent);
+  }
+
+  const cwd = positionals[0] ? resolve(positionals[0]) : process.cwd();
+
+  await sync({
+    cwd,
+    up,
+    from: fromAgents,
+    to: toAgents,
+    yes: values.yes ?? false,
+    dryRun: values["dry-run"] ?? false,
+    create: values.create ?? false,
+    verbose: values.verbose ?? false,
+    backup: values.backup ?? false,
+  });
+}
+
 function usage(): never {
   process.stderr.write(`agent-perms — cross-agent permission policy tool
 
@@ -260,6 +338,7 @@ Usage:
   agent-perms convert --from <agent> --to <agent> [file]
   agent-perms validate [file]
   agent-perms check --tool <name> --input <string> [file]
+  agent-perms sync [path]
 
 Agents: claude-code, codex, kiro, opencode, crush, canonical
 
@@ -267,12 +346,26 @@ Commands:
   convert   Convert a permission config between agent formats
   validate  Validate a .agents/permissions.json file
   check     Evaluate a tool call against a policy
+  sync      Detect, merge, and write agent permission configs
+
+Sync flags:
+  --up <n|all>       Ascend n parent directories (default: all)
+  --from <agent>     Read only from these agents (default: all)
+  --to <agent>       Write only to these agents (default: all)
+  --with <agent>     Bidirectional participants (repeatable)
+  --yes, -y          Apply without prompting
+  --dry-run          Show changes only, never write
+  --create           Create config files that don't exist
+  --verbose, -v      Show rule provenance
+  --backup           Write .bak files before overwriting
 
 Examples:
-  agent-perms convert --from claude-code --to codex .claude/settings.json
-  agent-perms validate .agents/permissions.json
-  agent-perms check --tool bash --input "sudo rm -rf /" .agents/permissions.json
-  cat .claude/settings.json | agent-perms convert --from claude-code --to canonical
+  agent-perms sync                           # detect all, merge, prompt
+  agent-perms sync -y                        # apply immediately
+  agent-perms sync --dry-run                 # preview only
+  agent-perms sync --from claude-code        # bootstrap from Claude Code
+  agent-perms sync --to claude-code --create # create .claude/settings.json
+  agent-perms sync --up 0                    # cwd only, no parent walk
 `);
   process.exit(1);
 }
@@ -290,6 +383,9 @@ async function main(): Promise<void> {
       break;
     case "check":
       await checkCommand(args.slice(1));
+      break;
+    case "sync":
+      await syncCommand(args.slice(1));
       break;
     case "--help":
     case "-h":
