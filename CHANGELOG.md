@@ -1,3 +1,10 @@
+## [5.2.1](https://github.com/Mearman/agent-permissions/compare/v5.2.0...v5.2.1) (2026-05-11)
+
+### Bug Fixes
+
+* **ci:** skip husky hooks in release job ([c081c48](https://github.com/Mearman/agent-permissions/commit/c081c48a0288c5258d1ee0f1a5de0f6e781c48ef))
+* **ci:** use --notes-file for release body update ([7690d04](https://github.com/Mearman/agent-permissions/commit/7690d04adf78c1a80fda3527db23e84c1946ac28))
+
 ## [5.2.0](https://github.com/Mearman/agent-permissions/compare/v5.1.3...v5.2.0) (2026-05-11)
 
 ### Features
