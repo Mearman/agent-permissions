@@ -1,3 +1,9 @@
+## [5.0.1](https://github.com/Mearman/agent-permissions/compare/v5.0.0...v5.0.1) (2026-05-11)
+
+### Refactoring
+
+* extract shared agent-files module, DRY cli and sync ([c01a077](https://github.com/Mearman/agent-permissions/commit/c01a0778d0b176d872ba9b8fca5e645ffcdf6611))
+
 ## [5.0.0](https://github.com/Mearman/agent-permissions/compare/v4.9.0...v5.0.0) (2026-05-11)
 
 ### ⚠ BREAKING CHANGES
