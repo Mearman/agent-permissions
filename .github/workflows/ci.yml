@@ -146,6 +146,7 @@ jobs:
         id: detect-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HUSKY: "0"
         run: |
           pnpm exec semantic-release 2>&1 | tee release-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
