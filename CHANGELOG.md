@@ -1,3 +1,9 @@
+## [5.1.1](https://github.com/Mearman/agent-permissions/compare/v5.1.0...v5.1.1) (2026-05-11)
+
+### Chores
+
+* gitignore .agents/ test artefacts ([475a353](https://github.com/Mearman/agent-permissions/commit/475a353771dba037c6affd7343203b9d7c4cecf9))
+
 ## [5.1.0](https://github.com/Mearman/agent-permissions/compare/v5.0.7...v5.1.0) (2026-05-11)
 
 ### Features
