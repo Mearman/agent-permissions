@@ -9,8 +9,7 @@
  */
 
 import { parseArgs } from "node:util";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { dirname, resolve, join } from "node:path";
+import { resolve, join } from "node:path";
 import { existsSync } from "node:fs";
 import {
   convert,
@@ -22,19 +21,16 @@ import {
 } from "./api.ts";
 import { agentId } from "./compat/codecs.ts";
 import { sync } from "./sync.ts";
+import {
+  AGENT_FILES,
+  findDefaultFile,
+  readInput,
+  parseJson,
+  writeJsonFile,
+} from "./agent-files.ts";
 
 const AGENTS = agentId.options;
 type Agent = (typeof AGENTS)[number];
-
-/** Default config file for each format, relative to cwd. */
-const FORMAT_FILES: Record<Format, string> = {
-  canonical: ".agents/permissions.json",
-  "claude-code": ".claude/settings.json",
-  codex: "codex.toml",
-  opencode: "opencode.json",
-  crush: ".crush.json",
-  kiro: ".kiro/permissions.json",
-};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -49,74 +45,28 @@ function isAgent(value: string): value is Agent {
   return AGENTS.includes(value as Agent);
 }
 
-/**
- * Resolve a spec to a file path.
- * - Format name → walk up from cwd to find the default file, fall back to cwd
- * - File path → used directly
- * - "-" → undefined (caller handles stdin/stdout)
- */
-function resolveInputPath(spec: string | undefined): string | undefined {
+// ---------------------------------------------------------------------------
+// Resolution helpers
+// ---------------------------------------------------------------------------
+
+/** Resolve a spec to an input file path. Format name → walk up, file path → direct, "-" → stdin. */
+function resolveInputSpec(spec: string | undefined): string | undefined {
   if (spec === undefined || spec === "-") return undefined;
-
-  // Check if it's a format name
   const format = resolveFormat(spec);
-  if (format) {
-    const defaultFile = FORMAT_FILES[format];
-    // Walk up from cwd to find it
-    let dir = process.cwd();
-    for (;;) {
-      const candidate = join(dir, defaultFile);
-      if (existsSync(candidate)) return candidate;
-      const parent = dirname(dir);
-      if (parent === dir) break; // reached root
-      dir = parent;
-    }
-    // Not found — use cwd as default location
-    return join(process.cwd(), defaultFile);
-  }
-
-  // It's a file path
+  if (format) return findDefaultFile(format, process.cwd());
   return resolve(spec);
 }
 
-/**
- * Resolve a spec to an output file path.
- * - Format name → join with cwd (always write to cwd, no walk-up)
- * - File path → used directly
- * - "-" → undefined (stdout)
- */
-function resolveOutputPath(spec: string | undefined): string | undefined {
+/** Resolve a spec to an output file path. Format name → cwd, file path → direct, "-" → stdout. */
+function resolveOutputSpec(spec: string | undefined): string | undefined {
   if (spec === undefined || spec === "-") return undefined;
-
   const format = resolveFormat(spec);
   if (format) {
-    return join(process.cwd(), FORMAT_FILES[format]);
+    const fileName = AGENT_FILES[format].name;
+    return resolve(join(process.cwd(), fileName));
   }
-
   return resolve(spec);
 }
-
-async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) {
-    chunks.push(chunk as Buffer);
-  }
-  return Buffer.concat(chunks).toString("utf-8");
-}
-
-async function readInput(path: string | undefined): Promise<string> {
-  if (path === undefined) return readStdin();
-  return readFile(path, "utf-8");
-}
-
-function parseJson(raw: string, source: string): unknown {
-  try {
-    return JSON.parse(raw);
-  } catch {
-    error(`${source}: invalid JSON`);
-  }
-}
-
 function firstString(
   ...values: (string | boolean | undefined)[]
 ): string | undefined {
@@ -168,7 +118,7 @@ async function convertCommand(args: string[]): Promise<void> {
   if (toSpec === undefined) error("--to is required");
 
   // Resolve input: format name finds file, file path reads directly, omitted = stdin
-  const inputPath = resolveInputPath(fromSpec);
+  const inputPath = resolveInputSpec(fromSpec);
   let fromFormat: Format | undefined;
   if (fromSpec !== undefined && fromSpec !== "-") {
     fromFormat = resolveFormat(fromSpec);
@@ -192,8 +142,8 @@ async function convertCommand(args: string[]): Promise<void> {
     );
   }
   const outputPath = outputSpec
-    ? resolveOutputPath(outputSpec)
-    : resolveOutputPath(toSpec);
+    ? resolveOutputSpec(outputSpec)
+    : resolveOutputSpec(toSpec);
 
   // No need to validate --from — auto-detect handles unknown file paths
 
@@ -208,8 +158,7 @@ async function convertCommand(args: string[]): Promise<void> {
     const jsonStr = JSON.stringify(result.output, null, indent) + "\n";
 
     if (outputPath) {
-      await mkdir(dirname(outputPath), { recursive: true });
-      await writeFile(outputPath, jsonStr);
+      await writeJsonFile(outputPath, jsonStr);
     } else {
       process.stdout.write(jsonStr);
     }
@@ -248,7 +197,7 @@ async function validateCommand(args: string[]): Promise<void> {
   });
 
   const inputSpec = firstString(values.input, values.in);
-  const inputPath = resolveInputPath(inputSpec);
+  const inputPath = resolveInputSpec(inputSpec);
   const source = inputPath ?? "stdin";
 
   const raw = await readInput(inputPath);
@@ -287,7 +236,7 @@ async function checkCommand(args: string[]): Promise<void> {
   if (!values.tool) error("--tool is required");
   if (values.input === undefined) error("--input is required");
 
-  const inputPath = resolveInputPath(values["policy-file"]);
+  const inputPath = resolveInputSpec(values["policy-file"]);
   const source = inputPath ?? "stdin";
 
   const raw = await readInput(inputPath);

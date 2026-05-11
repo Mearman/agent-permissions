@@ -22,6 +22,7 @@ import { existsSync } from "node:fs";
 import { AgentPermissionPolicy, type Rule } from "./schema.ts";
 import { CODECS, type AgentId } from "./compat/codecs.ts";
 import { collectRules } from "./evaluate.ts";
+import { AGENT_FILES, type AgentFileDef } from "./agent-files.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,31 +81,13 @@ interface AgentFile {
   local: boolean;
 }
 
-const AGENT_FILES: Record<
-  AgentId | "canonical",
-  { name: string; localName?: string }
-> = {
-  canonical: {
-    name: ".agents/permissions.json",
-    localName: ".agents/permissions.local.json",
-  },
-  "claude-code": {
-    name: ".claude/settings.json",
-    localName: ".claude/settings.local.json",
-  },
-  codex: { name: "codex.toml" }, // TOML — read only if pre-parsed
-  opencode: { name: "opencode.json" },
-  crush: { name: ".crush.json" }, // Crush has no standard config file
-  kiro: { name: ".kiro/permissions.json" },
-};
-
 /** Detect which agent files exist in a directory. */
 function detectFiles(dir: string): AgentFile[] {
   const found: AgentFile[] = [];
 
   for (const [agent, def] of Object.entries(AGENT_FILES) as [
     AgentId | "canonical",
-    (typeof AGENT_FILES)[AgentId | "canonical"],
+    AgentFileDef,
   ][]) {
     const main = join(dir, def.name);
     if (existsSync(main)) {
