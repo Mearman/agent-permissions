@@ -149,7 +149,9 @@ async function convertCommand(args: string[]): Promise<void> {
 
   const source = inputPath ?? "stdin";
   const raw = await readInput(inputPath);
-  const json = parseJson(raw, source);
+  const parsed = parseJson(raw, source);
+  if (!parsed.ok) error(parsed.error);
+  const json = parsed.value;
 
   try {
     const result = convert(fromFormat, toFormat, json);
@@ -201,7 +203,9 @@ async function validateCommand(args: string[]): Promise<void> {
   const source = inputPath ?? "stdin";
 
   const raw = await readInput(inputPath);
-  const json = parseJson(raw, source);
+  const parsed = parseJson(raw, source);
+  if (!parsed.ok) error(parsed.error);
+  const json = parsed.value;
 
   const result = validateApi(json);
   if (result.valid) {
@@ -240,7 +244,9 @@ async function checkCommand(args: string[]): Promise<void> {
   const source = inputPath ?? "stdin";
 
   const raw = await readInput(inputPath);
-  const json = parseJson(raw, source);
+  const parsed = parseJson(raw, source);
+  if (!parsed.ok) error(parsed.error);
+  const json = parsed.value;
 
   try {
     const ctx: { cwd?: string; branch?: string } = {};

@@ -22,7 +22,13 @@ import { existsSync } from "node:fs";
 import { AgentPermissionPolicy, type Rule } from "./schema.ts";
 import { CODECS, type AgentId } from "./compat/codecs.ts";
 import { collectRules } from "./evaluate.ts";
-import { AGENT_FILES, type AgentFileDef } from "./agent-files.ts";
+import {
+  AGENT_FILES,
+  type AgentFileDef,
+  parseJson,
+  validatePolicy,
+  decodeNative,
+} from "./agent-files.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -151,36 +157,27 @@ async function readAndDecode(
   // Skip agents without extract/wrap (crush, codex) or without a file def
   if (def.extract === undefined) return undefined;
 
-  let raw: unknown;
+  // Read and parse
+  let content: string;
   try {
-    const content = await readFile(file.path, "utf-8");
-    raw = JSON.parse(content);
+    content = await readFile(file.path, "utf-8");
   } catch {
     return undefined;
   }
+  const parsed = parseJson(content, file.path);
+  if (!parsed.ok) return undefined;
 
   // Canonical files parse directly
   if (file.agent === "canonical") {
-    const result = AgentPermissionPolicy.safeParse(raw);
-    if (!result.success) return undefined;
-    return { file, policy: result.data };
+    const validated = validatePolicy(parsed.value);
+    if (!validated.ok) return undefined;
+    return { file, policy: validated.value };
   }
 
-  // Native files — extract the permissions block, decode, validate
-  const perms = def.extract(raw);
-  if (perms === undefined || perms === null) return undefined;
-
-  const codec = CODECS[file.agent];
-  try {
-    const decoded = (codec as { decode: (input: unknown) => unknown }).decode(
-      perms,
-    );
-    const result = AgentPermissionPolicy.safeParse(decoded);
-    if (!result.success) return undefined;
-    return { file, policy: result.data };
-  } catch {
-    return undefined;
-  }
+  // Native files — extract, decode, validate
+  const result = decodeNative(file.agent, parsed.value);
+  if (!result.ok) return undefined;
+  return { file, policy: result.value };
 }
 
 // ---------------------------------------------------------------------------

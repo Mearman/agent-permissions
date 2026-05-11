@@ -6,9 +6,10 @@
  *   import { convert, validate, check, detectFormat } from "agent-perms/api";
  */
 
-import { AgentPermissionPolicy } from "./schema.ts";
 import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
 import { evaluate, collectRules } from "./evaluate.ts";
+import { validatePolicy, type ValidationError } from "./agent-files.ts";
+export type { ValidationError } from "./agent-files.ts";
 import { basename } from "node:path";
 
 const AGENTS = agentId.options;
@@ -28,14 +29,6 @@ export interface ConvertResult {
   from: Format;
   /** Number of rules in the intermediate canonical representation. */
   ruleCount: number;
-}
-
-/** Validation error for a single field. */
-export interface ValidationError {
-  /** Dot-separated path to the invalid field, or "(root)". */
-  path: string;
-  /** Human-readable error message. */
-  message: string;
 }
 
 /** Result of validating a policy. */
@@ -269,17 +262,9 @@ export function convert(
   // Decode: agent-native → canonical
   let canonical: unknown;
   if (fromAgent === "canonical") {
-    const result = AgentPermissionPolicy.safeParse(json);
-    if (!result.success) {
-      const errors = result.error.issues.map(
-        (issue): ValidationError => ({
-          path: issue.path.length > 0 ? issue.path.join(".") : "(root)",
-          message: issue.message,
-        }),
-      );
-      throw new ConvertError("validation failed", errors);
-    }
-    canonical = result.data;
+    const result = validatePolicy(json);
+    if (!result.ok) throw new ConvertError(result.error, result.errors);
+    canonical = result.value;
   } else {
     const codec = CODECS[fromAgent];
     canonical = (
@@ -315,17 +300,9 @@ export function convert(
  * @returns Validation result with errors array (empty when valid).
  */
 export function validate(json: unknown): ValidateResult {
-  const result = AgentPermissionPolicy.safeParse(json);
-  if (result.success) {
-    return { valid: true, errors: [] };
-  }
-
-  const errors: ValidationError[] = result.error.issues.map((issue) => ({
-    path: issue.path.length > 0 ? issue.path.join(".") : "(root)",
-    message: issue.message,
-  }));
-
-  return { valid: false, errors };
+  const result = validatePolicy(json);
+  if (result.ok) return { valid: true, errors: [] };
+  return { valid: false, errors: result.errors };
 }
 
 // ---------------------------------------------------------------------------
@@ -348,18 +325,10 @@ export function check(
   json: unknown,
   context?: { cwd?: string; branch?: string },
 ): CheckResult {
-  const result = AgentPermissionPolicy.safeParse(json);
-  if (!result.success) {
-    const errors = result.error.issues.map(
-      (issue): ValidationError => ({
-        path: issue.path.length > 0 ? issue.path.join(".") : "(root)",
-        message: issue.message,
-      }),
-    );
-    throw new ConvertError("policy is invalid, cannot check", errors);
-  }
+  const result = validatePolicy(json);
+  if (!result.ok) throw new ConvertError(result.error, result.errors);
 
-  const policy = result.data;
+  const policy = result.value;
 
   const rules = collectRules(policy);
   const mode = policy.defaultMode ?? "standard";

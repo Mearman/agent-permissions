@@ -17,7 +17,12 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { AgentPermissionPolicy } from "./schema.ts";
-import { claudeCodeCodec, opencodeCodec } from "./compat/codecs.ts";
+import {
+  AGENT_FILES,
+  parseJson,
+  validatePolicy,
+  decodeNative,
+} from "./agent-files.ts";
 
 import { normaliseStringRule, type PermissionPolicy } from "./evaluate.ts";
 
@@ -60,66 +65,41 @@ export async function loadPolicy(
 async function loadCanonical(
   filePath: string,
 ): Promise<AgentPermissionPolicy | undefined> {
-  const raw = await readJson(filePath);
-  if (!raw) return undefined;
-  const result = AgentPermissionPolicy.safeParse(raw);
-  if (!result.success) return undefined;
-  return result.data;
+  const content = await readJsonFile(filePath);
+  if (content === undefined) return undefined;
+  const parsed = parseJson(content, filePath);
+  if (!parsed.ok) return undefined;
+  const validated = validatePolicy(parsed.value);
+  if (!validated.ok) return undefined;
+  return validated.value;
 }
 
 async function loadNative(
   cwd: string,
-  source: string,
+  source: "claude-code" | "codex" | "opencode",
 ): Promise<AgentPermissionPolicy | undefined> {
-  switch (source) {
-    case "claude-code":
-      return loadClaudeCode(cwd);
-    case "codex":
-      // Codex uses TOML — consumer should pre-parse and pass the object.
-      return undefined;
-    case "opencode":
-      return loadOpenCode(cwd);
-    default:
-      return undefined;
-  }
+  // Codex uses TOML — consumer should pre-parse and pass the object.
+  if (source === "codex") return undefined;
+
+  // Only claude-code and opencode are supported (codex handled above)
+  if (!(source in AGENT_FILES)) return undefined;
+  const def = AGENT_FILES[source];
+  if (def.extract === undefined) return undefined;
+
+  const filePath = join(cwd, def.name);
+  const content = await readJsonFile(filePath);
+  if (content === undefined) return undefined;
+  const parsed = parseJson(content, filePath);
+  if (!parsed.ok) return undefined;
+
+  const result = decodeNative(source, parsed.value);
+  if (!result.ok) return undefined;
+  return result.value;
 }
 
-async function loadClaudeCode(
-  cwd: string,
-): Promise<AgentPermissionPolicy | undefined> {
-  const settings = await readJson(join(cwd, ".claude", "settings.json"));
-  if (typeof settings !== "object" || settings === null) return undefined;
-  if (!("permissions" in settings)) return undefined;
-  const perms = (settings as Record<string, unknown>).permissions;
-  if (perms === undefined || perms === null) return undefined;
+async function readJsonFile(filePath: string): Promise<string | undefined> {
   try {
-    return claudeCodeCodec.decode(perms);
-  } catch {
-    return undefined;
-  }
-}
-
-async function loadOpenCode(
-  cwd: string,
-): Promise<AgentPermissionPolicy | undefined> {
-  const config = await readJson(join(cwd, "opencode.json"));
-  if (typeof config !== "object" || config === null) return undefined;
-  const obj = config as Record<string, unknown>;
-  if (!("permission" in obj)) return undefined;
-  const perm = obj.permission;
-  if (perm === undefined || perm === null) return undefined;
-  try {
-    return opencodeCodec.decode(perm);
-  } catch {
-    return undefined;
-  }
-}
-
-async function readJson(filePath: string): Promise<unknown> {
-  try {
-    const content = await readFile(filePath, "utf-8");
-    const data: unknown = JSON.parse(content);
-    return data;
+    return await readFile(filePath, "utf-8");
   } catch {
     return undefined;
   }
