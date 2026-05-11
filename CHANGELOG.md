@@ -1,3 +1,9 @@
+## [5.0.2](https://github.com/Mearman/agent-permissions/compare/v5.0.1...v5.0.2) (2026-05-11)
+
+### Refactoring
+
+* extract per-agent extract/wrap into AgentFileDef ([11f8c00](https://github.com/Mearman/agent-permissions/commit/11f8c00e5e38907843837a75b2a80baae531cedf))
+
 ## [5.0.1](https://github.com/Mearman/agent-permissions/compare/v5.0.0...v5.0.1) (2026-05-11)
 
 ### Refactoring
