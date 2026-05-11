@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * agent-perms CLI — convert and validate cross-agent permission policies.
+ * agent-perms CLI — convert, validate, check, and sync cross-agent permission policies.
  *
  * Commands:
- *   agent-perms convert --from <agent> --to <agent> [file]
+ *   agent-perms convert [--from <agent>] --to <agent> [file]
  *   agent-perms validate [file]
  *   agent-perms check --tool <name> --input <string> [file]
+ *   agent-perms sync [path]
  *
  * Reads from file argument or stdin. Writes JSON to stdout.
  * Exit codes: 0 = success, 1 = error, 2 = validation failure.
@@ -14,9 +15,14 @@
 import { parseArgs } from "node:util";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { AgentPermissionPolicy } from "./schema.ts";
-import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
-import { evaluate, normaliseStringRule } from "./evaluate.ts";
+import {
+  convert,
+  validate as validateApi,
+  check as checkApi,
+  ConvertError,
+  type Format,
+} from "./api.ts";
+import { agentId } from "./compat/codecs.ts";
 import { sync } from "./sync.ts";
 
 const AGENTS = agentId.options;
@@ -29,122 +35,6 @@ type Agent = (typeof AGENTS)[number];
 function error(message: string): never {
   process.stderr.write(`error: ${message}\n`);
   process.exit(1);
-}
-
-// ---------------------------------------------------------------------------
-// Format auto-detection
-// ---------------------------------------------------------------------------
-
-/**
- * Detect the agent format from the parsed JSON content.
- *
- * Distinguishing features:
- *   canonical — `rules` array of {tool, tier} objects, or top-level `permissions`, `sandbox`, `profiles`, etc.
- *   claude-code — `allow`/`deny`/`ask` arrays of plain strings, `additionalDirectories`
- *   crush — `allowed_tools` (required) array of plain strings
- *   kiro — `allowedTools` or `toolsSettings`
- *   codex — `approval_policy`, `sandbox_mode`, `permissions` (record of named profiles)
- *   opencode — bare "allow"/"deny" string, or object with lowercase tool keys (bash, read, edit, ...)
- */
-function detectFormat(
-  value: unknown,
-): (typeof AGENTS)[number] | "canonical" | undefined {
-  if (typeof value === "string") {
-    if (value === "allow" || value === "deny") return "opencode";
-    return undefined;
-  }
-
-  if (typeof value !== "object" || value === null) return undefined;
-  const obj = value as Record<string, unknown>;
-
-  // Crush: required allowed_tools array
-  if (Array.isArray(obj.allowed_tools)) return "crush";
-
-  // Kiro: allowedTools or toolsSettings
-  if (Array.isArray(obj.allowedTools) || "toolsSettings" in obj) return "kiro";
-
-  // Codex: approval_policy, sandbox_mode, or permissions as record of named profiles
-  if (
-    "approval_policy" in obj ||
-    "sandbox_mode" in obj ||
-    "default_permissions" in obj
-  ) {
-    return "codex";
-  }
-
-  // Claude Code: allow/deny/ask arrays of strings, additionalDirectories
-  if (
-    ("allow" in obj && Array.isArray(obj.allow)) ||
-    ("deny" in obj && Array.isArray(obj.deny)) ||
-    ("ask" in obj && Array.isArray(obj.ask))
-  ) {
-    // Distinguish from canonical: Claude Code arrays contain plain strings,
-    // canonical `rules` contains objects with {tool, tier}
-    if (Array.isArray(obj.allow) && typeof obj.allow[0] === "string")
-      return "claude-code";
-  }
-
-  // Canonical: rules array of {tool, tier} objects
-  if (Array.isArray(obj.rules)) {
-    const first: unknown = obj.rules[0];
-    if (
-      typeof first === "object" &&
-      first !== null &&
-      "tool" in first &&
-      "tier" in first
-    ) {
-      return "canonical";
-    }
-  }
-
-  // Canonical: top-level keys like sandbox, profiles, delegation, network
-  if (
-    "sandbox" in obj ||
-    "profiles" in obj ||
-    "delegation" in obj ||
-    "network" in obj ||
-    "activeProfile" in obj
-  ) {
-    return "canonical";
-  }
-
-  // Canonical: permissions with allow/deny/ask containing string rules
-  if (typeof obj.permissions === "object" && obj.permissions !== null) {
-    const perms = obj.permissions as Record<string, unknown>;
-    if (
-      ("allow" in perms && typeof perms.allow !== "undefined") ||
-      ("deny" in perms && typeof perms.deny !== "undefined")
-    ) {
-      return "canonical";
-    }
-  }
-
-  // OpenCode: object with lowercase tool keys
-  const ocTools = new Set([
-    "bash",
-    "read",
-    "edit",
-    "glob",
-    "grep",
-    "list",
-    "task",
-    "external_directory",
-    "todowrite",
-    "question",
-    "webfetch",
-    "websearch",
-    "lsp",
-    "doom_loop",
-    "skill",
-  ]);
-  for (const key of Object.keys(obj)) {
-    if (ocTools.has(key)) return "opencode";
-  }
-
-  // Fallback: if there's a `permissions` key with `defaultMode`, likely canonical
-  if ("defaultMode" in obj) return "canonical";
-
-  return undefined;
 }
 
 async function readInput(filePath: string | undefined): Promise<string> {
@@ -192,12 +82,12 @@ async function convertCommand(args: string[]): Promise<void> {
     allowPositionals: true,
   });
 
-  // --input is alias for --from, --output is alias for --to
   const from = values.from ?? values.input;
   const to = values.to ?? values.output;
   if (typeof to !== "string") error("--to is required");
   const filePath = positionals[0];
 
+  // Validate --to before reading input
   if (to !== "canonical" && !AGENTS.includes(to as Agent))
     error(
       `unknown --to agent: ${to}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
@@ -216,93 +106,41 @@ async function convertCommand(args: string[]): Promise<void> {
   const raw = await readInput(filePath);
   const json = parseJson(raw, filePath ?? "stdin");
 
-  // Auto-detect --from if not specified
-  let fromAgent: string;
-  if (typeof from === "string") {
-    fromAgent = from;
-  } else {
-    const detected = detectFormat(json);
-    if (!detected) {
-      error(
-        "could not auto-detect input format. Use --from to specify (claude-code | codex | kiro | opencode | crush | canonical)",
-      );
-    }
-    fromAgent = detected;
-    if (values.verbose) {
-      process.stderr.write(`Auto-detected input format: ${fromAgent}\n`);
-    }
-  }
-
-  if (fromAgent !== "canonical" && !AGENTS.includes(fromAgent as Agent))
-    error(
-      `unknown --from agent: ${fromAgent}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
+  try {
+    const result = convert(
+      typeof from === "string" ? (from as Format) : undefined,
+      to as Format,
+      json,
     );
 
-  // Decode: agent-native → canonical
-  let canonical: unknown;
-  if (fromAgent === "canonical") {
-    const result = AgentPermissionPolicy.safeParse(json);
-    if (!result.success) {
-      process.stderr.write("validation errors:\n");
-      for (const issue of result.error.issues) {
-        process.stderr.write(`  ${issue.path.join(".")}: ${issue.message}\n`);
+    const indent = values.compact ? undefined : 2;
+    const jsonStr = JSON.stringify(result.output, null, indent) + "\n";
+
+    const outFile =
+      typeof values.out === "string" ? resolve(values.out) : undefined;
+    if (outFile) {
+      await mkdir(dirname(outFile), { recursive: true });
+      await writeFile(outFile, jsonStr);
+    } else {
+      process.stdout.write(jsonStr);
+    }
+
+    if (values.verbose) {
+      const dest = outFile ?? "stdout";
+      process.stderr.write(
+        `Decoded ${result.from} → canonical (${String(result.ruleCount)} rules), encoded → ${to}, wrote ${dest}\n`,
+      );
+    }
+  } catch (e) {
+    if (e instanceof ConvertError) {
+      process.stderr.write(`error: ${e.message}\n`);
+      for (const err of e.errors) {
+        process.stderr.write(`  ${err.path}: ${err.message}\n`);
       }
       process.exit(2);
     }
-    canonical = result.data;
-  } else {
-    const codec = CODECS[fromAgent as Agent];
-    try {
-      // Input is unknown JSON from a file — codec validates at runtime
-      canonical = (
-        codec as {
-          decode: (input: unknown) => unknown;
-        }
-      ).decode(json);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      error(`decode failed: ${message}`);
-    }
-  }
-
-  // Encode: canonical → agent-native
-  let output: unknown;
-  if (to === "canonical") {
-    output = canonical;
-  } else {
-    const codec = CODECS[to as Agent];
-    try {
-      output = codec.encode(canonical as Parameters<typeof codec.encode>[0]);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      error(`encode failed: ${message}`);
-    }
-  }
-
-  const indent = values.compact ? undefined : 2;
-  const jsonStr = JSON.stringify(output, null, indent) + "\n";
-
-  // Write to file (--out) or stdout
-  const outFile =
-    typeof values.out === "string" ? resolve(values.out) : undefined;
-  if (outFile) {
-    await mkdir(dirname(outFile), { recursive: true });
-    await writeFile(outFile, jsonStr);
-  } else {
-    process.stdout.write(jsonStr);
-  }
-
-  if (values.verbose) {
-    const allRules =
-      canonical !== null &&
-      typeof canonical === "object" &&
-      "rules" in (canonical as Record<string, unknown>)
-        ? ((canonical as Record<string, unknown>).rules as unknown[]).length
-        : 0;
-    const dest = outFile ?? "stdout";
-    process.stderr.write(
-      `Decoded ${fromAgent} → canonical (${String(allRules)} rules), encoded → ${to}, wrote ${dest}\n`,
-    );
+    const message = e instanceof Error ? e.message : String(e);
+    error(message);
   }
 }
 
@@ -315,16 +153,15 @@ async function validateCommand(args: string[]): Promise<void> {
   const raw = await readInput(filePath);
   const json = parseJson(raw, filePath ?? "stdin");
 
-  const result = AgentPermissionPolicy.safeParse(json);
-  if (result.success) {
+  const result = validateApi(json);
+  if (result.valid) {
     process.stdout.write("valid\n");
     return;
   }
 
   process.stderr.write("validation errors:\n");
-  for (const issue of result.error.issues) {
-    const path = issue.path.length > 0 ? issue.path.join(".") : "(root)";
-    process.stderr.write(`  ${path}: ${issue.message}\n`);
+  for (const err of result.errors) {
+    process.stderr.write(`  ${err.path}: ${err.message}\n`);
   }
   process.exit(2);
 }
@@ -350,76 +187,28 @@ async function checkCommand(args: string[]): Promise<void> {
   if (values.input === undefined) error("--input is required");
 
   const filePath = positionals[0];
-
   const raw = await readInput(filePath);
   const json = parseJson(raw, filePath ?? "stdin");
 
-  const result = AgentPermissionPolicy.safeParse(json);
-  if (!result.success) {
-    process.stderr.write("policy is invalid, cannot check\n");
-    process.exit(2);
-  }
-
-  const policy = result.data;
-
-  // Build PermissionPolicy from the canonical data
-  const rules: {
-    tool: string;
-    pattern?: string | undefined;
-    tier: "allow" | "deny" | "ask";
-  }[] = [];
-
-  // Normalise permissions string arrays into rules
-  if (policy.permissions) {
-    if (policy.permissions.deny) {
-      rules.push(
-        ...policy.permissions.deny.map((r) => normaliseStringRule(r, "deny")),
-      );
+  try {
+    const ctx: { cwd?: string; branch?: string } = {};
+    if (values.cwd !== undefined) ctx.cwd = values.cwd;
+    if (values.branch !== undefined) ctx.branch = values.branch;
+    const result = checkApi(values.tool, values.input, json, ctx);
+    process.stdout.write(`${result.decision}\n`);
+    process.exit(result.decision === "deny" ? 1 : 0);
+  } catch (e) {
+    if (e instanceof ConvertError) {
+      process.stderr.write(`error: ${e.message}\n`);
+      for (const err of e.errors) {
+        process.stderr.write(`  ${err.path}: ${err.message}\n`);
+      }
+      process.exit(2);
     }
-    if (policy.permissions.ask) {
-      rules.push(
-        ...policy.permissions.ask.map((r) => normaliseStringRule(r, "ask")),
-      );
-    }
-    if (policy.permissions.allow) {
-      rules.push(
-        ...policy.permissions.allow.map((r) => normaliseStringRule(r, "allow")),
-      );
-    }
+    const message = e instanceof Error ? e.message : String(e);
+    error(message);
   }
-
-  // Merge structured rules
-  if (policy.rules) {
-    rules.push(...policy.rules);
-  }
-
-  const mode = policy.defaultMode ?? "standard";
-  const mappedMode =
-    mode === "autonomous" || mode === "bypassPermissions" || mode === "dontAsk"
-      ? "autonomous"
-      : mode === "restricted" || mode === "plan"
-        ? "restricted"
-        : mode === "readonly"
-          ? "readonly"
-          : "standard";
-
-  const decision = evaluate(
-    { defaultMode: mappedMode, rules },
-    values.tool,
-    values.input,
-    { cwd: values.cwd, branch: values.branch } as {
-      cwd?: string;
-      branch?: string;
-    },
-  );
-
-  process.stdout.write(`${decision}\n`);
-  process.exit(decision === "deny" ? 1 : 0);
 }
-
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // sync
@@ -465,24 +254,24 @@ async function syncCommand(args: string[]): Promise<void> {
   }
 
   // Validate agent names
-  const withAgents: AgentId[] = [];
+  const withAgents: Agent[] = [];
   for (const w of withRaw) {
     if (w !== "canonical" && !AGENTS.includes(w as Agent)) {
       error(
         `unknown agent: ${w}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
       );
     }
-    withAgents.push(w as AgentId);
+    withAgents.push(w as Agent);
   }
 
-  const withoutAgents: AgentId[] = [];
+  const withoutAgents: Agent[] = [];
   for (const w of withoutRaw) {
     if (w !== "canonical" && !AGENTS.includes(w as Agent)) {
       error(
         `unknown agent: ${w}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
       );
     }
-    withoutAgents.push(w as AgentId);
+    withoutAgents.push(w as Agent);
   }
 
   const cwd = positionals[0] ? resolve(positionals[0]) : process.cwd();
@@ -500,11 +289,15 @@ async function syncCommand(args: string[]): Promise<void> {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+
 function usage(): never {
   process.stderr.write(`agent-perms — cross-agent permission policy tool
 
 Usage:
-  agent-perms convert --from <agent> --to <agent> [file]
+  agent-perms convert [--from <agent>] --to <agent> [file]
   agent-perms validate [file]
   agent-perms check --tool <name> --input <string> [file]
   agent-perms sync [path]
@@ -518,8 +311,8 @@ Commands:
   sync      Detect, merge, and write agent permission configs (bidirectional)
 
 Convert flags:
-  -f, --from, --input <agent>   Source agent format (auto-detected if omitted)
-  -t, --to, --output <agent>    Target agent format (required)
+  -f, --from, --input <agent>   Source format (auto-detected if omitted)
+  -t, --to, --output <agent>    Target format (required)
   -o, --out <file>              Write output to file instead of stdout
   -c, --compact                 Output compact JSON (no pretty-print)
   -v, --verbose                 Show decode/encode summary on stderr
@@ -536,14 +329,14 @@ Sync flags:
 
 Examples:
   agent-perms convert --from claude-code --to canonical .claude/settings.json
-  agent-perms convert --input claude-code --output canonical .claude/settings.json
-  agent-perms sync                                        # detect all, merge, prompt
-  agent-perms sync -y                                     # apply immediately
-  agent-perms sync --dry-run                              # preview only
-  agent-perms sync --include claude-code --include opencode
-  agent-perms sync --without codex                        # all except codex
-  agent-perms sync --include claude-code --create         # bootstrap .claude/settings.json
-  agent-perms sync --up 0                                 # cwd only, no parent walk
+  agent-perms convert --to canonical settings.json    # auto-detect format
+  agent-perms sync                                    # detect all, merge, prompt
+  agent-perms sync -y                                 # apply immediately
+  agent-perms sync --dry-run                          # preview only
+  agent-perms sync -w claude-code -w opencode
+  agent-perms sync -x codex                           # all except codex
+  agent-perms sync -w claude-code --create            # bootstrap .claude/settings.json
+  agent-perms sync -u 0                               # cwd only, no parent walk
 `);
   process.exit(1);
 }
