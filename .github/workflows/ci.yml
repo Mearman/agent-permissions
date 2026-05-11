@@ -127,7 +127,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: .tool-versions
           cache: pnpm
           # Do NOT set registry-url — it creates an .npmrc that overrides OIDC
 
@@ -155,6 +155,16 @@ jobs:
             echo "released=false" >> "$GITHUB_OUTPUT"
           fi
           exit $EXIT_CODE
+
+      - name: Upload schema to release
+        if: steps.detect-release.outputs.released == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=$(grep -oP 'Created tag \Kv[0-9]+\.[0-9]+\.[0-9]+' release-output.txt)
+          if [ -n "$TAG" ]; then
+            gh release upload "$TAG" agent-permissions.schema.json --clobber
+          fi
 
   publish-npm-aliases:
     name: Publish npm alias — ${{ matrix.name }}
