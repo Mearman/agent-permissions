@@ -1,3 +1,9 @@
+## [4.2.0](https://github.com/Mearman/agent-permissions/compare/v4.1.0...v4.2.0) (2026-05-11)
+
+### Features
+
+* add Kiro codec — decode/encode Amazon Kiro agent configs ([7cc4f6e](https://github.com/Mearman/agent-permissions/commit/7cc4f6ec9b9295725c4c4b655cc1a0120e3c2562))
+
 ## [4.1.0](https://github.com/Mearman/agent-permissions/compare/v4.0.0...v4.1.0) (2026-05-11)
 
 ### Features
