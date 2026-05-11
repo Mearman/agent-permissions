@@ -286,76 +286,89 @@ This works because the canonical spec accepts Claude Code's rule syntax, mode va
 
 The `agent-perms` binary converts, validates, and syncs permission configs.
 
+**All flags, no positionals.** Format names resolve to default config file locations.
+Use `-` for stdin/stdout.
+
+```
+claude-code  →  .claude/settings.json
+canonical    →  .agents/permissions.json
+opencode     →  opencode.json
+kiro         →  .kiro/permissions.json
+codex        →  codex.toml
+crush        →  .crush.json
+```
+
 ### convert
 
 ```bash
-# Auto-detect input format, convert to canonical
-agent-perms convert -t canonical .claude/settings.json
+# Format name → reads/writes default config locations
+agent-perms convert --from claude-code --to canonical
 
-# Explicit source format, write to file
-agent-perms convert -f claude-code -t crush -o .crush.json settings.json
+# File paths — auto-detects format from contents
+agent-perms convert --from .claude/settings.json --to crush
 
-# Pipe compact JSON for scripting
-agent-perms convert -t canonical -c < settings.json | jq '.rules'
+# Piping with -
+cat settings.json | agent-perms convert --from - --to canonical --output -
+
+# Write to specific file
+agent-perms convert --from claude-code --to canonical --output my-policy.json
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--from` | `-f` | Source agent format (auto-detected if omitted) |
-| `--to` | `-t` | Target agent format (required) |
-| `--out <file>` | `-o` | Write output to file instead of stdout |
-| `--compact` | `-c` | Single-line JSON (no pretty-print) |
-| `--verbose` | `-v` | Show decode/encode summary on stderr |
-
-`--from` is optional — the CLI detects the format from the input structure:
-
-| Format | Distinguishing feature |
-|--------|----------------------|
-| Claude Code | `allow`/`deny`/`ask` string arrays |
-| Crush | `allowed_tools` (required) |
-| Kiro | `allowedTools` / `toolsSettings` |
-| Codex | `approval_policy` / `sandbox_mode` |
-| OpenCode | lowercase tool keys (`bash`, `read`, …) |
-| Canonical | `rules[]` of `{tool, tier}` objects |
+| Flag | Short | Aliases | Description |
+|------|-------|---------|-------------|
+| `--from` | `-f` | `--input`, `--in` | Source (format, file, or `-` for stdin) |
+| `--to` | `-t` | | Target format or file (required) |
+| `--output` | `-o` | `--out` | Output file (overrides `--to` path), or `-` for stdout |
+| `--compact` | `-c` | | Single-line JSON |
+| `--verbose` | `-v` | | Show decode/encode summary on stderr |
 
 ### validate
 
 ```bash
-agent-perms validate policy.json
-echo '...' | agent-perms validate
+agent-perms validate --input canonical
+agent-perms validate --input .agents/permissions.json
+echo '...' | agent-perms validate --input -
 ```
+
+| Flag | Short | Aliases | Description |
+|------|-------|---------|-------------|
+| `--input` | `-i` | `--in` | Policy file (format, file, or `-` for stdin) |
 
 Exits 0 if valid, 2 with error details if not.
 
 ### check
 
 ```bash
-# Does this policy allow running git status?
-agent-perms check --tool Bash --input "git status" policy.json
+agent-perms check --tool Bash --input "git status" --policy-file canonical
+agent-perms check --tool Bash --input "git status" --policy-file .agents/permissions.json
 ```
+
+| Flag | Description |
+|------|-------------|
+| `--tool` | Tool name (required) |
+| `--input` | Tool input string (required) |
+| `--policy-file` | Policy file (format, file, or `-` for stdin) |
+| `--cwd`, `--branch` | Evaluation context |
 
 Exits 0 with `allow` or 1 with `deny`.
 
 ### sync
 
 ```bash
-# Sync all detected agent configs in the directory tree
 agent-perms sync
-
-# Preview changes without writing
 agent-perms sync --dry-run
-
-# Only sync Claude Code and OpenCode configs
 agent-perms sync -w claude-code -w opencode
+agent-perms sync -x codex
 ```
 
 | Flag | Short | Description |
 |------|-------|-------------|
+| `--working-dir` | `-d` | Starting directory (default: cwd) |
 | `--up <n\|all>` | `-u` | Ascend n parent directories (default: all) |
 | `--with <agent>` | `-w` | Only sync these agents (repeatable) |
 | `--without <agent>` | `-x` | Sync all except these agents (repeatable) |
 | `--yes` | `-y` | Apply without prompting |
-| `--dry-run` | `-d` | Show changes only, never write |
+| `--dry-run` | | Show changes only, never write |
 | `--create` | `-c` | Create config files that don't exist |
 | `--verbose` | `-v` | Show rule provenance |
 | `--backup` | `-b` | Write `.bak` files before overwriting |
