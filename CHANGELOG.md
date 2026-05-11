@@ -1,3 +1,9 @@
+## [5.0.5](https://github.com/Mearman/agent-permissions/compare/v5.0.4...v5.0.5) (2026-05-11)
+
+### Tests
+
+* add unit tests for agent-files.ts (39 new tests) ([96b76c6](https://github.com/Mearman/agent-permissions/commit/96b76c664fca1828d3161a279041da69fe05cc1f))
+
 ## [5.0.4](https://github.com/Mearman/agent-permissions/compare/v5.0.3...v5.0.4) (2026-05-11)
 
 ### Refactoring
