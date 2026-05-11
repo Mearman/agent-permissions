@@ -51,7 +51,12 @@ const config: GlobalConfig = {
         message: "chore(release): ${nextRelease.version}",
       },
     ],
-    "@semantic-release/github",
+    [
+      "@semantic-release/github",
+      {
+        assets: [{ path: "agent-permissions.schema.json", label: "JSON Schema" }],
+      },
+    ],
   ],
 };
 
