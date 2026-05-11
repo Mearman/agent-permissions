@@ -47,7 +47,11 @@ void describe("CLI", () => {
         join(cwd, "policy.json"),
         JSON.stringify({ defaultMode: "standard" }),
       );
-      const result = await run(["validate", join(cwd, "policy.json")]);
+      const result = await run([
+        "validate",
+        "--input",
+        join(cwd, "policy.json"),
+      ]);
       assert.equal(result.exitCode, 0);
       assert.match(result.stdout, /valid/);
     });
@@ -59,7 +63,7 @@ void describe("CLI", () => {
         join(cwd, "bad.json"),
         JSON.stringify({ defaultMode: "yolo" }),
       );
-      const result = await run(["validate", join(cwd, "bad.json")]);
+      const result = await run(["validate", "--input", join(cwd, "bad.json")]);
       assert.equal(result.exitCode, 2);
       assert.match(result.stderr, /validation errors/);
     });
@@ -68,7 +72,11 @@ void describe("CLI", () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       await writeFile(join(cwd, "broken.json"), "not json{{{");
-      const result = await run(["validate", join(cwd, "broken.json")]);
+      const result = await run([
+        "validate",
+        "--input",
+        join(cwd, "broken.json"),
+      ]);
       assert.equal(result.exitCode, 1);
       assert.match(result.stderr, /invalid JSON/);
     });
@@ -90,6 +98,7 @@ void describe("CLI", () => {
         "bash",
         "--input",
         "git status",
+        "--policy-file",
         join(cwd, "policy.json"),
       ]);
       assert.equal(result.exitCode, 0);
@@ -111,6 +120,7 @@ void describe("CLI", () => {
         "bash",
         "--input",
         "sudo rm -rf /",
+        "--policy-file",
         join(cwd, "policy.json"),
       ]);
       assert.equal(result.exitCode, 1);
@@ -132,10 +142,11 @@ void describe("CLI", () => {
       const result = await run([
         "convert",
         "--from",
-        "claude-code",
+        join(cwd, "settings.json"),
         "--to",
         "canonical",
-        join(cwd, "settings.json"),
+        "--output",
+        "-",
       ]);
       assert.equal(result.exitCode, 0);
       const parsed: unknown = JSON.parse(result.stdout);
@@ -163,10 +174,11 @@ void describe("CLI", () => {
       const result = await run([
         "convert",
         "--from",
-        "canonical",
+        join(cwd, "policy.json"),
         "--to",
         "crush",
-        join(cwd, "policy.json"),
+        "--output",
+        "-",
       ]);
       assert.equal(result.exitCode, 0);
       const parsed: unknown = JSON.parse(result.stdout);
@@ -181,12 +193,14 @@ void describe("CLI", () => {
         "phantom",
         "--to",
         "canonical",
+        "--output",
+        "-",
       ]);
       assert.equal(result.exitCode, 1);
       assert.match(result.stderr, /unknown --from format/);
     });
 
-    void it("auto-detects format when --from is omitted", async () => {
+    void it("auto-detects format when --from is a file", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       await writeFile(
@@ -197,9 +211,12 @@ void describe("CLI", () => {
       );
       const result = await run([
         "convert",
+        "--from",
+        join(cwd, "settings.json"),
         "--to",
         "canonical",
-        join(cwd, "settings.json"),
+        "--output",
+        "-",
       ]);
       assert.equal(result.exitCode, 0);
       const parsed: unknown = JSON.parse(result.stdout);

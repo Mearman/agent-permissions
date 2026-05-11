@@ -2,19 +2,16 @@
 /**
  * agent-perms CLI — convert, validate, check, and sync cross-agent permission policies.
  *
- * Commands:
- *   agent-perms convert [--from <agent>] --to <agent> [file]
- *   agent-perms validate [file]
- *   agent-perms check --tool <name> --input <string> [file]
- *   agent-perms sync [path]
+ * All flags, no positionals. Format names resolve to default config file locations.
+ * Use "-" for stdin/stdout.
  *
- * Reads from file argument or stdin. Writes JSON to stdout.
  * Exit codes: 0 = success, 1 = error, 2 = validation failure.
  */
 
 import { parseArgs } from "node:util";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, resolve, join } from "node:path";
+import { existsSync } from "node:fs";
 import {
   convert,
   validate as validateApi,
@@ -29,6 +26,16 @@ import { sync } from "./sync.ts";
 const AGENTS = agentId.options;
 type Agent = (typeof AGENTS)[number];
 
+/** Default config file for each format, relative to cwd. */
+const FORMAT_FILES: Record<Format, string> = {
+  canonical: ".agents/permissions.json",
+  "claude-code": ".claude/settings.json",
+  codex: "codex.toml",
+  opencode: "opencode.json",
+  crush: ".crush.json",
+  kiro: ".kiro/permissions.json",
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -42,21 +49,64 @@ function isAgent(value: string): value is Agent {
   return AGENTS.includes(value as Agent);
 }
 
-async function readInput(filePath: string | undefined): Promise<string> {
-  if (filePath) {
-    return readFile(resolve(filePath), "utf-8");
+/**
+ * Resolve a spec to a file path.
+ * - Format name → walk up from cwd to find the default file, fall back to cwd
+ * - File path → used directly
+ * - "-" → undefined (caller handles stdin/stdout)
+ */
+function resolveInputPath(spec: string | undefined): string | undefined {
+  if (spec === undefined || spec === "-") return undefined;
+
+  // Check if it's a format name
+  const format = resolveFormat(spec);
+  if (format) {
+    const defaultFile = FORMAT_FILES[format];
+    // Walk up from cwd to find it
+    let dir = process.cwd();
+    for (;;) {
+      const candidate = join(dir, defaultFile);
+      if (existsSync(candidate)) return candidate;
+      const parent = dirname(dir);
+      if (parent === dir) break; // reached root
+      dir = parent;
+    }
+    // Not found — use cwd as default location
+    return join(process.cwd(), defaultFile);
   }
 
-  // Read from stdin
-  if (process.stdin.isTTY) {
-    error("no input file provided and stdin is a terminal");
+  // It's a file path
+  return resolve(spec);
+}
+
+/**
+ * Resolve a spec to an output file path.
+ * - Format name → join with cwd (always write to cwd, no walk-up)
+ * - File path → used directly
+ * - "-" → undefined (stdout)
+ */
+function resolveOutputPath(spec: string | undefined): string | undefined {
+  if (spec === undefined || spec === "-") return undefined;
+
+  const format = resolveFormat(spec);
+  if (format) {
+    return join(process.cwd(), FORMAT_FILES[format]);
   }
 
+  return resolve(spec);
+}
+
+async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) {
     chunks.push(chunk as Buffer);
   }
   return Buffer.concat(chunks).toString("utf-8");
+}
+
+async function readInput(path: string | undefined): Promise<string> {
+  if (path === undefined) return readStdin();
+  return readFile(path, "utf-8");
 }
 
 function parseJson(raw: string, source: string): unknown {
@@ -67,59 +117,89 @@ function parseJson(raw: string, source: string): unknown {
   }
 }
 
+function firstString(
+  ...values: (string | boolean | undefined)[]
+): string | undefined {
+  for (const v of values) {
+    if (typeof v === "string") return v;
+  }
+  return undefined;
+}
+
+function allStrings(
+  ...values: ((string | boolean | undefined)[] | undefined)[]
+): string[] {
+  const result: string[] = [];
+  for (const arr of values) {
+    if (arr === undefined) continue;
+    for (const v of arr) {
+      if (typeof v === "string") result.push(v);
+    }
+  }
+  return result;
+}
+
 // ---------------------------------------------------------------------------
 // convert
 // ---------------------------------------------------------------------------
 
 async function convertCommand(args: string[]): Promise<void> {
-  const { values, positionals } = parseArgs({
+  const { values } = parseArgs({
     args,
     options: {
       from: { type: "string", short: "f" },
       to: { type: "string", short: "t" },
       input: { type: "string" },
-      output: { type: "string" },
-      out: { type: "string", short: "o" },
+      in: { type: "string" },
+      output: { type: "string", short: "o" },
+      out: { type: "string" },
       compact: { type: "boolean", short: "c" },
       verbose: { type: "boolean", short: "v" },
     },
-    strict: false,
-    allowPositionals: true,
+    strict: true,
   });
 
-  const from = values.from ?? values.input;
-  const to = values.to ?? values.output;
-  if (typeof to !== "string") error("--to is required");
-  const filePath = positionals[0];
+  // Merge aliases: --input/--in → --from
+  const fromSpec = firstString(values.from, values.input, values.in);
+  // --to is always the target format/file
+  const toSpec = values.to;
+  // --output/--out overrides destination (--to might set it too)
+  const outputSpec = firstString(values.output, values.out);
+  if (toSpec === undefined) error("--to is required");
 
-  // Resolve --from and --to (agent name or file path)
-  const toFormat = resolveFormat(to);
-  if (!toFormat)
-    error(
-      `unknown --to format: ${to}. Use an agent name (claude-code, codex, kiro, opencode, crush, canonical) or a config file path`,
-    );
-
-  // If --to is a file path, use it as output file too
-  const toIsFilePath = to !== "canonical" && !isAgent(to);
-  const resolvedOutFile =
-    typeof values.out === "string"
-      ? resolve(values.out)
-      : toIsFilePath
-        ? resolve(to)
-        : undefined;
-
-  // Resolve --from (agent name, file path, or omitted for auto-detect)
+  // Resolve input: format name finds file, file path reads directly, omitted = stdin
+  const inputPath = resolveInputPath(fromSpec);
   let fromFormat: Format | undefined;
-  if (typeof from === "string") {
-    fromFormat = resolveFormat(from);
-    if (!fromFormat)
+  if (fromSpec !== undefined && fromSpec !== "-") {
+    fromFormat = resolveFormat(fromSpec);
+    // If not a known format name and not an existing file, it's an unknown format
+    if (
+      fromFormat === undefined &&
+      inputPath !== undefined &&
+      !existsSync(inputPath)
+    ) {
       error(
-        `unknown --from format: ${from}. Use an agent name or a config file path`,
+        `unknown --from format: ${fromSpec}. Use an agent name, a config file path, or "-" for stdin`,
       );
+    }
   }
 
-  const raw = await readInput(filePath);
-  const json = parseJson(raw, filePath ?? "stdin");
+  // Resolve output: format name → default file, file path → directly, "-" = stdout
+  const toFormat = resolveFormat(toSpec);
+  if (!toFormat) {
+    error(
+      `unknown --to format: ${toSpec}. Use an agent name (claude-code, codex, kiro, opencode, crush, canonical), a config file path, or "-" for stdout`,
+    );
+  }
+  const outputPath = outputSpec
+    ? resolveOutputPath(outputSpec)
+    : resolveOutputPath(toSpec);
+
+  // No need to validate --from — auto-detect handles unknown file paths
+
+  const source = inputPath ?? "stdin";
+  const raw = await readInput(inputPath);
+  const json = parseJson(raw, source);
 
   try {
     const result = convert(fromFormat, toFormat, json);
@@ -127,18 +207,17 @@ async function convertCommand(args: string[]): Promise<void> {
     const indent = values.compact ? undefined : 2;
     const jsonStr = JSON.stringify(result.output, null, indent) + "\n";
 
-    const outFile = resolvedOutFile;
-    if (outFile) {
-      await mkdir(dirname(outFile), { recursive: true });
-      await writeFile(outFile, jsonStr);
+    if (outputPath) {
+      await mkdir(dirname(outputPath), { recursive: true });
+      await writeFile(outputPath, jsonStr);
     } else {
       process.stdout.write(jsonStr);
     }
 
     if (values.verbose) {
-      const dest = outFile ?? "stdout";
+      const dest = outputPath ?? "stdout";
       process.stderr.write(
-        `Decoded ${result.from} → canonical (${String(result.ruleCount)} rules), encoded → ${to}, wrote ${dest}\n`,
+        `Decoded ${result.from} → canonical (${String(result.ruleCount)} rules), encoded → ${toFormat}, wrote ${dest}\n`,
       );
     }
   } catch (e) {
@@ -159,9 +238,21 @@ async function convertCommand(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function validateCommand(args: string[]): Promise<void> {
-  const filePath = args[0];
-  const raw = await readInput(filePath);
-  const json = parseJson(raw, filePath ?? "stdin");
+  const { values } = parseArgs({
+    args,
+    options: {
+      input: { type: "string", short: "i" },
+      in: { type: "string" },
+    },
+    strict: true,
+  });
+
+  const inputSpec = firstString(values.input, values.in);
+  const inputPath = resolveInputPath(inputSpec);
+  const source = inputPath ?? "stdin";
+
+  const raw = await readInput(inputPath);
+  const json = parseJson(raw, source);
 
   const result = validateApi(json);
   if (result.valid) {
@@ -181,24 +272,26 @@ async function validateCommand(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function checkCommand(args: string[]): Promise<void> {
-  const { values, positionals } = parseArgs({
+  const { values } = parseArgs({
     args,
     options: {
       tool: { type: "string" },
       input: { type: "string" },
+      "policy-file": { type: "string" },
       cwd: { type: "string" },
       branch: { type: "string" },
     },
     strict: true,
-    allowPositionals: true,
   });
 
   if (!values.tool) error("--tool is required");
   if (values.input === undefined) error("--input is required");
 
-  const filePath = positionals[0];
-  const raw = await readInput(filePath);
-  const json = parseJson(raw, filePath ?? "stdin");
+  const inputPath = resolveInputPath(values["policy-file"]);
+  const source = inputPath ?? "stdin";
+
+  const raw = await readInput(inputPath);
+  const json = parseJson(raw, source);
 
   try {
     const ctx: { cwd?: string; branch?: string } = {};
@@ -225,9 +318,10 @@ async function checkCommand(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function syncCommand(args: string[]): Promise<void> {
-  const { values, positionals } = parseArgs({
+  const { values } = parseArgs({
     args,
     options: {
+      "working-dir": { type: "string", short: "d" },
       up: { type: "string", default: "all", short: "u" },
       with: { type: "string", multiple: true, short: "w" },
       without: { type: "string", multiple: true, short: "x" },
@@ -240,7 +334,6 @@ async function syncCommand(args: string[]): Promise<void> {
       backup: { type: "boolean", short: "b" },
     },
     strict: true,
-    allowPositionals: true,
   });
 
   // Parse --up value
@@ -255,12 +348,12 @@ async function syncCommand(args: string[]): Promise<void> {
   }
 
   // Merge --with and --include (aliases)
-  const withRaw = [...(values.with ?? []), ...(values.include ?? [])];
+  const withRaw = allStrings(values.with, values.include);
   // Merge --without and --exclude (aliases)
-  const withoutRaw = [...(values.without ?? []), ...(values.exclude ?? [])];
+  const withoutRaw = allStrings(values.without, values.exclude);
 
   if (withRaw.length > 0 && withoutRaw.length > 0) {
-    error("--with/--include and --without/--exclude are mutually exclusive");
+    error("--with and --without are mutually exclusive");
   }
 
   // Validate agent names
@@ -284,7 +377,9 @@ async function syncCommand(args: string[]): Promise<void> {
     withoutAgents.push(w);
   }
 
-  const cwd = positionals[0] ? resolve(positionals[0]) : process.cwd();
+  const cwd = values["working-dir"]
+    ? resolve(values["working-dir"])
+    : process.cwd();
 
   await sync({
     cwd,
@@ -307,46 +402,67 @@ function usage(): never {
   process.stderr.write(`agent-perms — cross-agent permission policy tool
 
 Usage:
-  agent-perms convert [--from <agent>] --to <agent> [file]
-  agent-perms validate [file]
-  agent-perms check --tool <name> --input <string> [file]
-  agent-perms sync [path]
+  agent-perms convert [--from <spec>] --to <spec>
+  agent-perms validate [--input <spec>]
+  agent-perms check --tool <name> --input <cmd> [--policy-file <spec>]
+  agent-perms sync
 
-Agents: claude-code, codex, kiro, opencode, crush, canonical
+Specs: agent name, config file path, or "-" for stdin/stdout.
+
+  Format names resolve to default config files:
+    claude-code  →  .claude/settings.json
+    canonical    →  .agents/permissions.json
+    opencode     →  opencode.json
+    kiro         →  .kiro/permissions.json
+    codex        →  codex.toml
+    crush        →  .crush.json
 
 Commands:
-  convert   Convert a permission config between agent formats (unidirectional)
-  validate  Validate a .agents/permissions.json file
+  convert   Convert between agent formats
+  validate  Validate a policy file
   check     Evaluate a tool call against a policy
-  sync      Detect, merge, and write agent permission configs (bidirectional)
+  sync      Detect, merge, and write agent configs (bidirectional)
 
 Convert flags:
-  -f, --from, --input <agent>   Source format (auto-detected if omitted)
-  -t, --to, --output <agent>    Target format (required)
-  -o, --out <file>              Write output to file instead of stdout
-  -c, --compact                 Output compact JSON (no pretty-print)
-  -v, --verbose                 Show decode/encode summary on stderr
+  -f, --from, --input, --in <spec>   Source (format, file, or "-" for stdin)
+  -t, --to, --output, --out <spec>   Target (format, file, or "-" for stdout)
+  -c, --compact                      Output compact JSON
+  -v, --verbose                      Show decode/encode summary on stderr
+
+Validate flags:
+  -i, --input, --in <spec>           Policy file (format, file, or "-" for stdin)
+
+Check flags:
+  --tool <name>                      Tool name (required)
+  --input <cmd>                      Tool input string (required)
+  --policy-file <spec>               Policy file (format, file, or "-" for stdin)
+  --cwd, --branch                    Evaluation context
 
 Sync flags:
-  -u, --up <n|all>                  Ascend n parent directories (default: all)
-  -w, --with, --include <agent>     Only sync these agents (repeatable)
-  -x, --without, --exclude <agent>  Sync all except these agents (repeatable)
-  -y, --yes                         Apply without prompting
-  -d, --dry-run                     Show changes only, never write
-  -c, --create                      Create config files that don't exist
-  -v, --verbose                     Show rule provenance
-  -b, --backup                      Write .bak files before overwriting
+  -d, --working-dir <path>           Starting directory (default: cwd)
+  -u, --up <n|all>                   Ascend n parent directories (default: all)
+  -w, --with <agent>                 Only sync these agents (repeatable)
+  -x, --without <agent>              Sync all except these agents (repeatable)
+  -y, --yes                          Apply without prompting
+  --dry-run                          Show changes only, never write
+  -c, --create                       Create config files that don't exist
+  -v, --verbose                      Show rule provenance
+  -b, --backup                       Write .bak files before overwriting
 
 Examples:
-  agent-perms convert --from claude-code --to canonical .claude/settings.json
-  agent-perms convert --to canonical settings.json    # auto-detect format
-  agent-perms sync                                    # detect all, merge, prompt
-  agent-perms sync -y                                 # apply immediately
-  agent-perms sync --dry-run                          # preview only
+  agent-perms convert --from claude-code --to canonical
+  agent-perms convert --from .claude/settings.json --to crush
+  agent-perms convert --from claude-code --to -
+  cat settings.json | agent-perms convert --from - --to canonical --output -
+  agent-perms validate --input canonical
+  agent-perms validate --input .agents/permissions.json
+  agent-perms check --tool Bash --input "git status" --policy-file canonical
+  agent-perms sync
+  agent-perms sync -y
+  agent-perms sync --dry-run
   agent-perms sync -w claude-code -w opencode
-  agent-perms sync -x codex                           # all except codex
-  agent-perms sync -w claude-code --create            # bootstrap .claude/settings.json
-  agent-perms sync -u 0                               # cwd only, no parent walk
+  agent-perms sync -x codex
+  agent-perms sync -w claude-code --create
 `);
   process.exit(1);
 }
