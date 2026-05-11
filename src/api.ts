@@ -9,6 +9,7 @@
 import { AgentPermissionPolicy } from "./schema.ts";
 import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
 import { evaluate, collectRules } from "./evaluate.ts";
+import { basename } from "node:path";
 
 const AGENTS = agentId.options;
 
@@ -52,8 +53,62 @@ export interface CheckResult {
 }
 
 // ---------------------------------------------------------------------------
-// detectFormat
+// detectFormat / detectFormatFromPath / resolveFormat
 // ---------------------------------------------------------------------------
+
+/**
+ * Detect the agent format from a file path.
+ *
+ * Matches against known config file names:
+ *   - `.claude/settings.json` or `.claude/settings.local.json` → claude-code
+ *   - `opencode.json` → opencode
+ *   - `.kiro/permissions.json` → kiro
+ *   - `codex.toml` → codex
+ *   - `.agents/permissions.json` or `.agents/permissions.local.json` → canonical
+ */
+export function detectFormatFromPath(filePath: string): Format | undefined {
+  const base = basename(filePath);
+  const dir = filePath.replace(/\\/g, "/");
+
+  // Check directory-qualified paths first
+  if (
+    dir.endsWith("/.claude/settings.json") ||
+    dir.endsWith("/.claude/settings.local.json")
+  ) {
+    return "claude-code";
+  }
+  if (
+    dir.endsWith("/.agents/permissions.json") ||
+    dir.endsWith("/.agents/permissions.local.json")
+  ) {
+    return "canonical";
+  }
+  if (dir.endsWith("/.kiro/permissions.json")) return "kiro";
+
+  // Check basenames
+  if (base === "opencode.json") return "opencode";
+  if (base === "codex.toml") return "codex";
+  if (base === ".crush.json") return "crush";
+
+  return undefined;
+}
+
+/**
+ * Resolve a format specifier that may be an agent name or a file path.
+ *
+ * Returns the format if it's a known agent name.
+ * Returns the detected format if it's a known config file path.
+ * Returns undefined if neither.
+ */
+export function resolveFormat(spec: string): Format | undefined {
+  // Check agent names first
+  if (spec === "canonical" || AGENTS.includes(spec as AgentId)) {
+    return spec as Format;
+  }
+
+  // Try file path detection
+  return detectFormatFromPath(spec);
+}
 
 /**
  * Detect the agent format from parsed JSON content.

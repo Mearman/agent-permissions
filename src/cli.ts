@@ -19,6 +19,7 @@ import {
   convert,
   validate as validateApi,
   check as checkApi,
+  resolveFormat,
   ConvertError,
   type Format,
 } from "./api.ts";
@@ -35,6 +36,10 @@ type Agent = (typeof AGENTS)[number];
 function error(message: string): never {
   process.stderr.write(`error: ${message}\n`);
   process.exit(1);
+}
+
+function isAgent(value: string): value is Agent {
+  return AGENTS.includes(value as Agent);
 }
 
 async function readInput(filePath: string | undefined): Promise<string> {
@@ -87,37 +92,42 @@ async function convertCommand(args: string[]): Promise<void> {
   if (typeof to !== "string") error("--to is required");
   const filePath = positionals[0];
 
-  // Validate --to before reading input
-  if (to !== "canonical" && !AGENTS.includes(to as Agent))
+  // Resolve --from and --to (agent name or file path)
+  const toFormat = resolveFormat(to);
+  if (!toFormat)
     error(
-      `unknown --to agent: ${to}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
+      `unknown --to format: ${to}. Use an agent name (claude-code, codex, kiro, opencode, crush, canonical) or a config file path`,
     );
 
-  // Validate --from if explicitly provided (before reading input)
-  if (
-    typeof from === "string" &&
-    from !== "canonical" &&
-    !AGENTS.includes(from as Agent)
-  )
-    error(
-      `unknown --from agent: ${from}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
-    );
+  // If --to is a file path, use it as output file too
+  const toIsFilePath = to !== "canonical" && !isAgent(to);
+  const resolvedOutFile =
+    typeof values.out === "string"
+      ? resolve(values.out)
+      : toIsFilePath
+        ? resolve(to)
+        : undefined;
+
+  // Resolve --from (agent name, file path, or omitted for auto-detect)
+  let fromFormat: Format | undefined;
+  if (typeof from === "string") {
+    fromFormat = resolveFormat(from);
+    if (!fromFormat)
+      error(
+        `unknown --from format: ${from}. Use an agent name or a config file path`,
+      );
+  }
 
   const raw = await readInput(filePath);
   const json = parseJson(raw, filePath ?? "stdin");
 
   try {
-    const result = convert(
-      typeof from === "string" ? (from as Format) : undefined,
-      to as Format,
-      json,
-    );
+    const result = convert(fromFormat, toFormat, json);
 
     const indent = values.compact ? undefined : 2;
     const jsonStr = JSON.stringify(result.output, null, indent) + "\n";
 
-    const outFile =
-      typeof values.out === "string" ? resolve(values.out) : undefined;
+    const outFile = resolvedOutFile;
     if (outFile) {
       await mkdir(dirname(outFile), { recursive: true });
       await writeFile(outFile, jsonStr);
@@ -256,22 +266,22 @@ async function syncCommand(args: string[]): Promise<void> {
   // Validate agent names
   const withAgents: Agent[] = [];
   for (const w of withRaw) {
-    if (w !== "canonical" && !AGENTS.includes(w as Agent)) {
+    if (w === "canonical") continue;
+    if (!isAgent(w))
       error(
         `unknown agent: ${w}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
       );
-    }
-    withAgents.push(w as Agent);
+    withAgents.push(w);
   }
 
   const withoutAgents: Agent[] = [];
   for (const w of withoutRaw) {
-    if (w !== "canonical" && !AGENTS.includes(w as Agent)) {
+    if (w === "canonical") continue;
+    if (!isAgent(w))
       error(
         `unknown agent: ${w}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
       );
-    }
-    withoutAgents.push(w as Agent);
+    withoutAgents.push(w);
   }
 
   const cwd = positionals[0] ? resolve(positionals[0]) : process.cwd();
