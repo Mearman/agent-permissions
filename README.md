@@ -378,6 +378,14 @@ Most restrictive `defaultMode` wins.
 
 ## JSON Schema for IDE support
 
+Download the latest schema:
+
+```
+https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json
+```
+
+Reference from a policy file:
+
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/Mearman/agent-permissions/main/agent-permissions.schema.json"

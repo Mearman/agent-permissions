@@ -164,6 +164,10 @@ jobs:
           TAG=$(grep -oP 'Created tag \Kv[0-9]+\.[0-9]+\.[0-9]+' release-output.txt)
           if [ -n "$TAG" ]; then
             gh release upload "$TAG" agent-permissions.schema.json --clobber
+            EXISTING=$(gh release view "$TAG" --json body --jq '.body')
+            SCHEMA_URL="https://github.com/Mearman/agent-permissions/releases/download/${TAG}/agent-permissions.schema.json"
+            UPDATED="${EXISTING}\n\n---\n\n**Schema:** [${TAG}/agent-permissions.schema.json](${SCHEMA_URL})"
+            gh release edit "$TAG" --body "$UPDATED"
           fi
 
   publish-npm-aliases:
