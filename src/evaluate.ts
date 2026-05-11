@@ -405,3 +405,58 @@ function unescapeContent(content: string): string {
     .replace(/\\\*/g, "*")
     .replace(/\\\\/g, "\\");
 }
+
+// ---------------------------------------------------------------------------
+// Structured rule → string
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a structured Rule back to a string rule (e.g. `"Bash(npm:*)"`).
+ *
+ * Returns just the tool name for bare rules (no pattern).
+ */
+export function ruleToString(rule: Rule): string {
+  if (rule.pattern === undefined) return rule.tool;
+  return `${rule.tool}(${rule.pattern})`;
+}
+
+/**
+ * Collect all rules from a canonical policy, normalising both
+ * `rules[]` and `permissions.allow/deny/ask` into a single array.
+ */
+export function collectRules(policy: {
+  rules?: Rule[] | undefined;
+  permissions?:
+    | {
+        allow?: string[] | undefined;
+        deny?: string[] | undefined;
+        ask?: string[] | undefined;
+      }
+    | undefined;
+}): Rule[] {
+  const result: Rule[] = [];
+
+  if (policy.permissions) {
+    if (policy.permissions.deny) {
+      result.push(
+        ...policy.permissions.deny.map((r) => normaliseStringRule(r, "deny")),
+      );
+    }
+    if (policy.permissions.ask) {
+      result.push(
+        ...policy.permissions.ask.map((r) => normaliseStringRule(r, "ask")),
+      );
+    }
+    if (policy.permissions.allow) {
+      result.push(
+        ...policy.permissions.allow.map((r) => normaliseStringRule(r, "allow")),
+      );
+    }
+  }
+
+  if (policy.rules) {
+    result.push(...policy.rules);
+  }
+
+  return result;
+}
