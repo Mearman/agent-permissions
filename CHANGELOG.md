@@ -1,3 +1,9 @@
+## [5.1.0](https://github.com/Mearman/agent-permissions/compare/v5.0.7...v5.1.0) (2026-05-11)
+
+### Features
+
+* attach schema to GitHub Release assets ([d0d0d41](https://github.com/Mearman/agent-permissions/commit/d0d0d41cd3839036ea0e4c43089d079915f21571))
+
 ## [5.0.7](https://github.com/Mearman/agent-permissions/compare/v5.0.6...v5.0.7) (2026-05-11)
 
 ### Tests
