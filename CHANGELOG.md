@@ -1,3 +1,9 @@
+## [4.4.0](https://github.com/Mearman/agent-permissions/compare/v4.3.1...v4.4.0) (2026-05-11)
+
+### Features
+
+* add shorthand flags for all CLI options ([4351111](https://github.com/Mearman/agent-permissions/commit/4351111c4af914cf39bc2eed111ff818d6cc9a81))
+
 ## [4.3.1](https://github.com/Mearman/agent-permissions/compare/v4.3.0...v4.3.1) (2026-05-11)
 
 ### Refactoring
