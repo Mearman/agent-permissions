@@ -12,8 +12,8 @@
  */
 
 import { parseArgs } from "node:util";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { AgentPermissionPolicy } from "./schema.ts";
 import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
 import { evaluate, normaliseStringRule } from "./evaluate.ts";
@@ -68,6 +68,7 @@ async function convertCommand(args: string[]): Promise<void> {
       to: { type: "string", short: "t" },
       input: { type: "string" },
       output: { type: "string" },
+      out: { type: "string", short: "o" },
       compact: { type: "boolean", short: "c" },
       verbose: { type: "boolean", short: "v" },
     },
@@ -144,7 +145,17 @@ async function convertCommand(args: string[]): Promise<void> {
   }
 
   const indent = values.compact ? undefined : 2;
-  process.stdout.write(JSON.stringify(output, null, indent) + "\n");
+  const jsonStr = JSON.stringify(output, null, indent) + "\n";
+
+  // Write to file (--out) or stdout
+  const outFile =
+    typeof values.out === "string" ? resolve(values.out) : undefined;
+  if (outFile) {
+    await mkdir(dirname(outFile), { recursive: true });
+    await writeFile(outFile, jsonStr);
+  } else {
+    process.stdout.write(jsonStr);
+  }
 
   if (values.verbose) {
     const allRules =
@@ -153,8 +164,9 @@ async function convertCommand(args: string[]): Promise<void> {
       "rules" in (canonical as Record<string, unknown>)
         ? ((canonical as Record<string, unknown>).rules as unknown[]).length
         : 0;
+    const dest = outFile ?? "stdout";
     process.stderr.write(
-      `Decoded ${from} → canonical (${String(allRules)} rules), encoded → ${to}\n`,
+      `Decoded ${from} → canonical (${String(allRules)} rules), encoded → ${to}, wrote ${dest}\n`,
     );
   }
 }
@@ -373,6 +385,7 @@ Commands:
 Convert flags:
   -f, --from, --input <agent>   Source agent format (required)
   -t, --to, --output <agent>    Target agent format (required)
+  -o, --out <file>              Write output to file instead of stdout
   -c, --compact                 Output compact JSON (no pretty-print)
   -v, --verbose                 Show decode/encode summary on stderr
 
