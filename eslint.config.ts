@@ -27,21 +27,6 @@ export default defineConfig(
     },
     rules: {
       "prettier/prettier": "error",
-      "@typescript-eslint/consistent-type-assertions": "off",
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        {
-          varsIgnorePattern: "^_",
-          argsIgnorePattern: "^_",
-        },
-      ],
-    },
-  },
-
-  {
-    files: ["src/test/**/*.ts"],
-    rules: {
-      "@typescript-eslint/no-floating-promises": "off",
     },
   },
 
