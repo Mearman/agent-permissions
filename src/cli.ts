@@ -15,7 +15,7 @@ import { parseArgs } from "node:util";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { AgentPermissionPolicy } from "./schema.ts";
-import { CODECS, agentId } from "./compat/codecs.ts";
+import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
 import { evaluate, normaliseStringRule } from "./evaluate.ts";
 import { sync } from "./sync.ts";
 
@@ -66,13 +66,18 @@ async function convertCommand(args: string[]): Promise<void> {
     options: {
       from: { type: "string" },
       to: { type: "string" },
+      input: { type: "string" },
+      output: { type: "string" },
     },
-    strict: true,
+    strict: false,
     allowPositionals: true,
   });
 
-  const from = values.from;
-  const to = values.to;
+  // --input is alias for --from, --output is alias for --to
+  const from = values.from ?? values.input;
+  const to = values.to ?? values.output;
+  if (typeof from !== "string") error("--from is required");
+  if (typeof to !== "string") error("--to is required");
   const filePath = positionals[0];
 
   if (!from)
@@ -263,8 +268,10 @@ async function syncCommand(args: string[]): Promise<void> {
     args,
     options: {
       up: { type: "string", default: "all" },
-      from: { type: "string", multiple: true },
-      to: { type: "string", multiple: true },
+      with: { type: "string", multiple: true },
+      without: { type: "string", multiple: true },
+      include: { type: "string", multiple: true },
+      exclude: { type: "string", multiple: true },
       yes: { type: "boolean", short: "y" },
       "dry-run": { type: "boolean" },
       create: { type: "boolean" },
@@ -286,34 +293,34 @@ async function syncCommand(args: string[]): Promise<void> {
     }
   }
 
-  // Validate --from agents
-  const fromAgents: Agent[] = [];
-  for (const f of values.from ?? []) {
-    if (f === "all") {
-      fromAgents.length = 0;
-      break;
-    }
-    if (f !== "canonical" && !AGENTS.includes(f as Agent)) {
-      error(
-        `unknown --from agent: ${f}. Valid: ${[...AGENTS, "canonical", "all"].join(", ")}`,
-      );
-    }
-    fromAgents.push(f as Agent);
+  // Merge --with and --include (aliases)
+  const withRaw = [...(values.with ?? []), ...(values.include ?? [])];
+  // Merge --without and --exclude (aliases)
+  const withoutRaw = [...(values.without ?? []), ...(values.exclude ?? [])];
+
+  if (withRaw.length > 0 && withoutRaw.length > 0) {
+    error("--with/--include and --without/--exclude are mutually exclusive");
   }
 
-  // Validate --to agents
-  const toAgents: Agent[] = [];
-  for (const t of values.to ?? []) {
-    if (t === "all") {
-      toAgents.length = 0;
-      break;
-    }
-    if (t !== "canonical" && !AGENTS.includes(t as Agent)) {
+  // Validate agent names
+  const withAgents: AgentId[] = [];
+  for (const w of withRaw) {
+    if (w !== "canonical" && !AGENTS.includes(w as Agent)) {
       error(
-        `unknown --to agent: ${t}. Valid: ${[...AGENTS, "canonical", "all"].join(", ")}`,
+        `unknown agent: ${w}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
       );
     }
-    toAgents.push(t as Agent);
+    withAgents.push(w as AgentId);
+  }
+
+  const withoutAgents: AgentId[] = [];
+  for (const w of withoutRaw) {
+    if (w !== "canonical" && !AGENTS.includes(w as Agent)) {
+      error(
+        `unknown agent: ${w}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
+      );
+    }
+    withoutAgents.push(w as AgentId);
   }
 
   const cwd = positionals[0] ? resolve(positionals[0]) : process.cwd();
@@ -321,8 +328,8 @@ async function syncCommand(args: string[]): Promise<void> {
   await sync({
     cwd,
     up,
-    from: fromAgents,
-    to: toAgents,
+    with: withAgents,
+    without: withoutAgents,
     yes: values.yes ?? false,
     dryRun: values["dry-run"] ?? false,
     create: values.create ?? false,
@@ -343,29 +350,35 @@ Usage:
 Agents: claude-code, codex, kiro, opencode, crush, canonical
 
 Commands:
-  convert   Convert a permission config between agent formats
+  convert   Convert a permission config between agent formats (unidirectional)
   validate  Validate a .agents/permissions.json file
   check     Evaluate a tool call against a policy
-  sync      Detect, merge, and write agent permission configs
+  sync      Detect, merge, and write agent permission configs (bidirectional)
+
+Convert flags:
+  --from, --input <agent>   Source agent format (required)
+  --to, --output <agent>    Target agent format (required)
 
 Sync flags:
-  --up <n|all>       Ascend n parent directories (default: all)
-  --from <agent>     Read only from these agents (default: all)
-  --to <agent>       Write only to these agents (default: all)
-  --with <agent>     Bidirectional participants (repeatable)
-  --yes, -y          Apply without prompting
-  --dry-run          Show changes only, never write
-  --create           Create config files that don't exist
-  --verbose, -v      Show rule provenance
-  --backup           Write .bak files before overwriting
+  --up <n|all>                  Ascend n parent directories (default: all)
+  --with, --include <agent>     Only sync these agents (repeatable)
+  --without, --exclude <agent>  Sync all except these agents (repeatable)
+  --yes, -y                     Apply without prompting
+  --dry-run                     Show changes only, never write
+  --create                      Create config files that don't exist
+  --verbose, -v                 Show rule provenance
+  --backup                      Write .bak files before overwriting
 
 Examples:
-  agent-perms sync                           # detect all, merge, prompt
-  agent-perms sync -y                        # apply immediately
-  agent-perms sync --dry-run                 # preview only
-  agent-perms sync --from claude-code        # bootstrap from Claude Code
-  agent-perms sync --to claude-code --create # create .claude/settings.json
-  agent-perms sync --up 0                    # cwd only, no parent walk
+  agent-perms convert --from claude-code --to canonical .claude/settings.json
+  agent-perms convert --input claude-code --output canonical .claude/settings.json
+  agent-perms sync                                        # detect all, merge, prompt
+  agent-perms sync -y                                     # apply immediately
+  agent-perms sync --dry-run                              # preview only
+  agent-perms sync --include claude-code --include opencode
+  agent-perms sync --without codex                        # all except codex
+  agent-perms sync --include claude-code --create         # bootstrap .claude/settings.json
+  agent-perms sync --up 0                                 # cwd only, no parent walk
 `);
   process.exit(1);
 }

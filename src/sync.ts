@@ -32,15 +32,15 @@ export interface SyncOptions {
   cwd: string;
   /** Number of parent directories to ascend (0 = cwd only). Infinity = root. */
   up: number;
-  /** Agents to read from. Empty = all detected. */
-  from: AgentId[];
-  /** Agents to write to. Empty = all detected. */
-  to: AgentId[];
+  /** Agents to include in bidirectional sync. Empty = all detected. */
+  with: AgentId[];
+  /** Agents to exclude from bidirectional sync. */
+  without: AgentId[];
   /** Apply changes without prompting. */
   yes: boolean;
   /** Show changes only, never write. */
   dryRun: boolean;
-  /** Create config files that don't exist for agents in --to. */
+  /** Create config files that don't exist. */
   create: boolean;
   /** Show verbose output (rule provenance). */
   verbose: boolean;
@@ -152,12 +152,12 @@ interface DecodedSource {
 
 async function readAndDecode(
   file: AgentFile,
-  fromFilter: Set<string>,
+  agentFilter: Set<string> | undefined,
 ): Promise<DecodedSource | undefined> {
-  // Skip if --from is specified and this agent isn't included
+  // Skip if --with/--without excludes this agent
   if (
-    fromFilter.size > 0 &&
-    !fromFilter.has(file.agent) &&
+    agentFilter &&
+    !agentFilter.has(file.agent) &&
     file.agent !== "canonical"
   ) {
     return undefined;
@@ -357,14 +357,14 @@ function computeWriteTargets(
   cwd: string,
   merged: AgentPermissionPolicy,
   sources: DecodedSource[],
-  toFilter: Set<string>,
+  agentFilter: Set<string> | undefined,
   create: boolean,
 ): WriteTarget[] {
   const targets: WriteTarget[] = [];
 
-  // Always write canonical at cwd
+  // Always write canonical at cwd (unless excluded)
   const canonicalPath = join(cwd, ".agents", "permissions.json");
-  if (toFilter.size === 0 || toFilter.has("canonical")) {
+  if (!agentFilter || agentFilter.has("canonical")) {
     targets.push({
       agent: "canonical",
       path: canonicalPath,
@@ -375,7 +375,7 @@ function computeWriteTargets(
 
   // Write native configs at cwd
   for (const agent of Object.keys(CODECS) as AgentId[]) {
-    if (toFilter.size > 0 && !toFilter.has(agent)) continue;
+    if (agentFilter && !agentFilter.has(agent)) continue;
     if (agent === "codex" || agent === "crush") continue; // TOML / no file
 
     const def = AGENT_FILES[agent];
@@ -468,8 +468,8 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   const {
     cwd,
     up,
-    from: fromList,
-    to: toList,
+    with: withList,
+    without: withoutList,
     yes,
     dryRun,
     create,
@@ -477,8 +477,8 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     backup,
   } = options;
 
-  const fromFilter = new Set<string>(fromList);
-  const toFilter = new Set<string>(toList);
+  // Build agent filter from --with/--without
+  const agentFilter = buildAgentFilter(withList, withoutList);
 
   // 1. Collect files by walking up
   const files = collectFiles(cwd, up);
@@ -503,7 +503,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   const sources: DecodedSource[] = [];
   for (const file of files) {
     // Skip local files for write-back consideration
-    const decoded = await readAndDecode(file, fromFilter);
+    const decoded = await readAndDecode(file, agentFilter);
     if (decoded) {
       sources.push(decoded);
       if (verbose) {
@@ -531,7 +531,13 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   }
 
   // 4. Compute write targets
-  const targets = computeWriteTargets(cwd, merged, sources, toFilter, create);
+  const targets = computeWriteTargets(
+    cwd,
+    merged,
+    sources,
+    agentFilter,
+    create,
+  );
 
   if (targets.length === 0) {
     process.stderr.write("No write targets.\n");
@@ -635,4 +641,30 @@ function readLine(): Promise<string> {
       resolve(data.trim());
     });
   });
+}
+
+/**
+ * Build an agent filter from --with and --without lists.
+ * Returns undefined when no filtering is needed (all agents included).
+ * --with and --without are mutually exclusive.
+ */
+function buildAgentFilter(
+  withList: AgentId[],
+  withoutList: AgentId[],
+): Set<string> | undefined {
+  if (withList.length > 0) {
+    // --with: only include listed agents + canonical
+    const filter = new Set<string>(withList);
+    filter.add("canonical");
+    return filter;
+  }
+
+  if (withoutList.length > 0) {
+    // --without: include all except listed
+    const allAgents = [...Object.keys(CODECS), "canonical"];
+    const excluded = new Set(withoutList);
+    return new Set(allAgents.filter((a) => !excluded.has(a as AgentId)));
+  }
+
+  return undefined;
 }
