@@ -1,3 +1,9 @@
+## [5.2.0](https://github.com/Mearman/agent-permissions/compare/v5.1.3...v5.2.0) (2026-05-11)
+
+### Features
+
+* include schema download URL in release body and README ([f4d294d](https://github.com/Mearman/agent-permissions/commit/f4d294d304d873a5fcac28bbbc6fd82e3d74ab84))
+
 ## [5.1.3](https://github.com/Mearman/agent-permissions/compare/v5.1.2...v5.1.3) (2026-05-11)
 
 ### Bug Fixes
