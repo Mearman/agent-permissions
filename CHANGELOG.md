@@ -1,3 +1,9 @@
+## [5.1.2](https://github.com/Mearman/agent-permissions/compare/v5.1.1...v5.1.2) (2026-05-11)
+
+### Bug Fixes
+
+* **ci:** pin Node 22 for release job ([c433edb](https://github.com/Mearman/agent-permissions/commit/c433edbb4c86f373de91954274b1d0454982b0c4))
+
 ## [5.1.1](https://github.com/Mearman/agent-permissions/compare/v5.1.0...v5.1.1) (2026-05-11)
 
 ### Chores
