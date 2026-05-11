@@ -1,3 +1,9 @@
+## [5.0.4](https://github.com/Mearman/agent-permissions/compare/v5.0.3...v5.0.4) (2026-05-11)
+
+### Refactoring
+
+* extract shared merge utilities into evaluate.ts ([94c50cf](https://github.com/Mearman/agent-permissions/commit/94c50cfe93dc40dc9763b62ecc2a64406374d74a))
+
 ## [5.0.3](https://github.com/Mearman/agent-permissions/compare/v5.0.2...v5.0.3) (2026-05-11)
 
 ### Refactoring
