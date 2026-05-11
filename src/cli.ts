@@ -64,8 +64,8 @@ async function convertCommand(args: string[]): Promise<void> {
   const { values, positionals } = parseArgs({
     args,
     options: {
-      from: { type: "string" },
-      to: { type: "string" },
+      from: { type: "string", short: "f" },
+      to: { type: "string", short: "t" },
       input: { type: "string" },
       output: { type: "string" },
     },
@@ -267,16 +267,16 @@ async function syncCommand(args: string[]): Promise<void> {
   const { values, positionals } = parseArgs({
     args,
     options: {
-      up: { type: "string", default: "all" },
-      with: { type: "string", multiple: true },
-      without: { type: "string", multiple: true },
+      up: { type: "string", default: "all", short: "u" },
+      with: { type: "string", multiple: true, short: "w" },
+      without: { type: "string", multiple: true, short: "x" },
       include: { type: "string", multiple: true },
       exclude: { type: "string", multiple: true },
       yes: { type: "boolean", short: "y" },
       "dry-run": { type: "boolean" },
-      create: { type: "boolean" },
+      create: { type: "boolean", short: "c" },
       verbose: { type: "boolean", short: "v" },
-      backup: { type: "boolean" },
+      backup: { type: "boolean", short: "b" },
     },
     strict: true,
     allowPositionals: true,
@@ -356,18 +356,18 @@ Commands:
   sync      Detect, merge, and write agent permission configs (bidirectional)
 
 Convert flags:
-  --from, --input <agent>   Source agent format (required)
-  --to, --output <agent>    Target agent format (required)
+  -f, --from, --input <agent>   Source agent format (required)
+  -t, --to, --output <agent>    Target agent format (required)
 
 Sync flags:
-  --up <n|all>                  Ascend n parent directories (default: all)
-  --with, --include <agent>     Only sync these agents (repeatable)
-  --without, --exclude <agent>  Sync all except these agents (repeatable)
-  --yes, -y                     Apply without prompting
-  --dry-run                     Show changes only, never write
-  --create                      Create config files that don't exist
-  --verbose, -v                 Show rule provenance
-  --backup                      Write .bak files before overwriting
+  -u, --up <n|all>                  Ascend n parent directories (default: all)
+  -w, --with, --include <agent>     Only sync these agents (repeatable)
+  -x, --without, --exclude <agent>  Sync all except these agents (repeatable)
+  -y, --yes                         Apply without prompting
+  -d, --dry-run                     Show changes only, never write
+  -c, --create                      Create config files that don't exist
+  -v, --verbose                     Show rule provenance
+  -b, --backup                      Write .bak files before overwriting
 
 Examples:
   agent-perms convert --from claude-code --to canonical .claude/settings.json
