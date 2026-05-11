@@ -15,7 +15,7 @@
       "cache": false
     },
     "_test": {
-      "dependsOn": ["_typecheck"],
+      "dependsOn": ["_build"],
       "outputs": []
     },
     "_check": {
@@ -23,7 +23,7 @@
       "outputs": []
     },
     "_test:coverage": {
-      "dependsOn": ["_typecheck"],
+      "dependsOn": ["_build"],
       "outputs": []
     },
     "_validate": {
