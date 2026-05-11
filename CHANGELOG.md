@@ -1,3 +1,9 @@
+## [4.7.1](https://github.com/Mearman/agent-permissions/compare/v4.7.0...v4.7.1) (2026-05-11)
+
+### Documentation
+
+* add CLI section to README ([905bf73](https://github.com/Mearman/agent-permissions/commit/905bf73d7a7ecc473e6c10b40b3f0afcc2dbfc8f))
+
 ## [4.7.0](https://github.com/Mearman/agent-permissions/compare/v4.6.0...v4.7.0) (2026-05-11)
 
 ### Features
