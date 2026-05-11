@@ -5,3 +5,6 @@ dist/
 # Build tooling caches
 .eslintcache
 .turbo/
+
+# Test artefacts
+.agents/
