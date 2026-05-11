@@ -166,8 +166,14 @@ jobs:
             gh release upload "$TAG" agent-permissions.schema.json --clobber
             EXISTING=$(gh release view "$TAG" --json body --jq '.body')
             SCHEMA_URL="https://github.com/Mearman/agent-permissions/releases/download/${TAG}/agent-permissions.schema.json"
-            UPDATED="${EXISTING}\n\n---\n\n**Schema:** [${TAG}/agent-permissions.schema.json](${SCHEMA_URL})"
-            gh release edit "$TAG" --body "$UPDATED"
+            {
+              echo "$EXISTING"
+              echo ""
+              echo "---"
+              echo ""
+              echo "**Schema:** [${TAG}/agent-permissions.schema.json](${SCHEMA_URL})"
+            } > /tmp/release-body.md
+            gh release edit "$TAG" --notes-file /tmp/release-body.md
           fi
 
   publish-npm-aliases:
