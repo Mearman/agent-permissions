@@ -1,3 +1,9 @@
+## [4.3.1](https://github.com/Mearman/agent-permissions/compare/v4.3.0...v4.3.1) (2026-05-11)
+
+### Refactoring
+
+* split flag semantics between convert and sync ([c2a6cb3](https://github.com/Mearman/agent-permissions/commit/c2a6cb356ff3ed5dd33341c4677ff01c81bf19a5))
+
 ## [4.3.0](https://github.com/Mearman/agent-permissions/compare/v4.2.0...v4.3.0) (2026-05-11)
 
 ### Features
