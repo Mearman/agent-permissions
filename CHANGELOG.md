@@ -1,3 +1,9 @@
+## [5.0.7](https://github.com/Mearman/agent-permissions/compare/v5.0.6...v5.0.7) (2026-05-11)
+
+### Tests
+
+* add sync branch coverage tests (8 new, 378 total) ([54d8e4f](https://github.com/Mearman/agent-permissions/commit/54d8e4f4e732db4785898429e9e51a89a4ea8533))
+
 ## [5.0.6](https://github.com/Mearman/agent-permissions/compare/v5.0.5...v5.0.6) (2026-05-11)
 
 ### Tests
