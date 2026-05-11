@@ -9,7 +9,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-const CLI = join(import.meta.dirname, "..", "..", "dist", "cli.mjs");
+const CLI = join(import.meta.dirname, "..", "cli.ts");
 
 /** Narrow unknown to a record for JSON.parse result access — unavoidable object→Record boundary. */
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -20,11 +20,15 @@ function run(
   args: string[],
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    execFile("node", [CLI, ...args], (err, stdout, stderr) => {
-      const exitCode =
-        err !== null && typeof err.code === "number" ? err.code : 0;
-      resolve({ exitCode, stdout, stderr });
-    });
+    execFile(
+      "node",
+      ["--experimental-strip-types", CLI, ...args],
+      (err, stdout, stderr) => {
+        const exitCode =
+          err !== null && typeof err.code === "number" ? err.code : 0;
+        resolve({ exitCode, stdout, stderr });
+      },
+    );
   });
 }
 
@@ -182,10 +186,25 @@ describe("CLI", () => {
       assert.match(result.stderr, /unknown --from agent/);
     });
 
-    it("rejects missing --from", async () => {
-      const result = await run(["convert", "--to", "canonical"]);
-      assert.equal(result.exitCode, 1);
-      assert.match(result.stderr, /--from is required/);
+    it("auto-detects format when --from is omitted", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "settings.json"),
+        JSON.stringify({
+          allow: ["Read"],
+        }),
+      );
+      const result = await run([
+        "convert",
+        "--to",
+        "canonical",
+        join(cwd, "settings.json"),
+      ]);
+      assert.equal(result.exitCode, 0);
+      const parsed: unknown = JSON.parse(result.stdout);
+      assert.ok(isRecord(parsed));
+      assert.ok(Array.isArray(parsed.rules));
     });
   });
 
