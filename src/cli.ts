@@ -68,6 +68,8 @@ async function convertCommand(args: string[]): Promise<void> {
       to: { type: "string", short: "t" },
       input: { type: "string" },
       output: { type: "string" },
+      compact: { type: "boolean", short: "c" },
+      verbose: { type: "boolean", short: "v" },
     },
     strict: false,
     allowPositionals: true,
@@ -141,7 +143,20 @@ async function convertCommand(args: string[]): Promise<void> {
     }
   }
 
-  process.stdout.write(JSON.stringify(output, null, 2) + "\n");
+  const indent = values.compact ? undefined : 2;
+  process.stdout.write(JSON.stringify(output, null, indent) + "\n");
+
+  if (values.verbose) {
+    const allRules =
+      canonical !== null &&
+      typeof canonical === "object" &&
+      "rules" in (canonical as Record<string, unknown>)
+        ? ((canonical as Record<string, unknown>).rules as unknown[]).length
+        : 0;
+    process.stderr.write(
+      `Decoded ${from} → canonical (${String(allRules)} rules), encoded → ${to}\n`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -358,6 +373,8 @@ Commands:
 Convert flags:
   -f, --from, --input <agent>   Source agent format (required)
   -t, --to, --output <agent>    Target agent format (required)
+  -c, --compact                 Output compact JSON (no pretty-print)
+  -v, --verbose                 Show decode/encode summary on stderr
 
 Sync flags:
   -u, --up <n|all>                  Ascend n parent directories (default: all)
