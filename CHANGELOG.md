@@ -1,3 +1,9 @@
+## [4.7.0](https://github.com/Mearman/agent-permissions/compare/v4.6.0...v4.7.0) (2026-05-11)
+
+### Features
+
+* auto-detect input format when --from is omitted ([d7acf2e](https://github.com/Mearman/agent-permissions/commit/d7acf2ed52313b41fe03b6ed2ba1dcdab702f110))
+
 ## [4.6.0](https://github.com/Mearman/agent-permissions/compare/v4.5.0...v4.6.0) (2026-05-11)
 
 ### Features
