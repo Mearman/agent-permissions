@@ -9,10 +9,35 @@ import {
 } from "../compat/codecs.ts";
 import type { CodexProfile } from "../compat/codecs.ts";
 import type { CodexFilesystemAccess } from "../compat/enums.ts";
+import type { Rule } from "../schema.ts";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Find rules matching tool and tier. */
+function findRules(
+  rules: Rule[] | undefined,
+  tool: string,
+  tier: string,
+): Rule[] {
+  return (rules ?? []).filter((r) => r.tool === tool && r.tier === tier);
+}
+
+/** Check if a rule exists matching tool, tier, and optionally pattern. */
+function hasRule(
+  rules: Rule[] | undefined,
+  tool: string,
+  tier: string,
+  pattern?: string,
+): boolean {
+  return (rules ?? []).some(
+    (r) =>
+      r.tool === tool &&
+      r.tier === tier &&
+      (pattern === undefined || r.pattern === pattern),
+  );
+}
 
 /** Extract a named Codex profile from encoded output, asserting it exists. */
 function getCodexProfile(
@@ -20,7 +45,7 @@ function getCodexProfile(
   name: string,
 ): CodexProfile {
   const profiles = encoded.permissions;
-  assert.ok(profiles !== undefined, `Expected permissions to be defined`);
+  assert.ok(profiles !== undefined, "Expected permissions to be defined");
   const profile = profiles[name];
   assert.ok(profile !== undefined, `Expected profile "${name}" to exist`);
   return profile;
@@ -52,19 +77,17 @@ function getNetworkDomains(
 
 describe("claudeCodeCodec", () => {
   describe("decode (Claude Code → canonical)", () => {
-    it("maps allow/deny/ask arrays directly", () => {
+    it("maps allow/deny/ask arrays to rules", () => {
       const result = claudeCodeCodec.decode({
         allow: ["Bash(git status)", "Read"],
         deny: ["Bash(sudo:*)"],
         ask: ["Bash(git push:*)"],
       });
-      assert.ok(result.permissions !== undefined);
-      assert.deepStrictEqual(result.permissions.allow, [
-        "Bash(git status)",
-        "Read",
-      ]);
-      assert.deepStrictEqual(result.permissions.deny, ["Bash(sudo:*)"]);
-      assert.deepStrictEqual(result.permissions.ask, ["Bash(git push:*)"]);
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Bash", "allow", "git status"), true);
+      assert.equal(hasRule(result.rules, "Read", "allow"), true);
+      assert.equal(hasRule(result.rules, "Bash", "deny", "sudo:*"), true);
+      assert.equal(hasRule(result.rules, "Bash", "ask", "git push:*"), true);
     });
 
     it("maps defaultMode to top-level", () => {
@@ -97,22 +120,24 @@ describe("claudeCodeCodec", () => {
         ask: ["Bash(*rm\\* -r*)", "Write(eslint.config.ts)"],
         defaultMode: "dontAsk",
       });
-      assert.ok(result.permissions !== undefined);
-      assert.strictEqual(result.permissions.allow?.length, 4);
-      assert.strictEqual(result.permissions.deny?.length, 3);
-      assert.strictEqual(result.permissions.ask?.length, 2);
+      assert.ok(result.rules !== undefined);
+      assert.equal(findRules(result.rules, "Bash", "allow").length, 4);
+      assert.equal(findRules(result.rules, "Bash", "deny").length, 3);
+      assert.equal(findRules(result.rules, "Bash", "ask").length, 1);
+      assert.equal(findRules(result.rules, "Write", "ask").length, 1);
       assert.strictEqual(result.defaultMode, "dontAsk");
     });
   });
 
   describe("encode (canonical → Claude Code)", () => {
-    it("produces valid Claude Code permissions block", () => {
+    it("encodes rules to allow/deny/ask arrays", () => {
       const encoded = z.encode(claudeCodeCodec, {
-        permissions: {
-          allow: ["Bash(git status)", "Read"],
-          deny: ["Bash(sudo:*)"],
-          ask: ["Bash(git push:*)"],
-        },
+        rules: [
+          { tool: "Bash", pattern: "git status", tier: "allow" },
+          { tool: "Read", tier: "allow" },
+          { tool: "Bash", pattern: "sudo:*", tier: "deny" },
+          { tool: "Bash", pattern: "git push:*", tier: "ask" },
+        ],
         defaultMode: "dontAsk",
       });
       assert.deepStrictEqual(encoded.allow, ["Bash(git status)", "Read"]);
@@ -121,9 +146,21 @@ describe("claudeCodeCodec", () => {
       assert.strictEqual(encoded.defaultMode, "dontAsk");
     });
 
+    it("also reads from permissions arrays for backwards compat", () => {
+      const encoded = z.encode(claudeCodeCodec, {
+        permissions: {
+          allow: ["Bash(git status)", "Read"],
+          deny: ["Bash(sudo:*)"],
+        },
+      });
+      assert.deepStrictEqual(encoded.allow, ["Bash(git status)", "Read"]);
+      assert.deepStrictEqual(encoded.deny, ["Bash(sudo:*)"]);
+    });
+
     it("places defaultMode in permissions block (Claude Code placement)", () => {
       const encoded = z.encode(claudeCodeCodec, {
-        permissions: { allow: ["Read"], defaultMode: "plan" },
+        rules: [{ tool: "Read", tier: "allow" }],
+        defaultMode: "plan",
       });
       assert.strictEqual(encoded.defaultMode, "plan");
     });
@@ -140,10 +177,14 @@ describe("claudeCodeCodec", () => {
       const canonical = claudeCodeCodec.decode(native);
       const reEncoded = z.encode(claudeCodeCodec, canonical);
       const reDecoded = claudeCodeCodec.decode(reEncoded);
-      assert.ok(reDecoded.permissions !== undefined);
-      assert.deepStrictEqual(reDecoded.permissions.allow, native.allow);
-      assert.deepStrictEqual(reDecoded.permissions.deny, native.deny);
-      assert.deepStrictEqual(reDecoded.permissions.ask, native.ask);
+      assert.ok(reDecoded.rules !== undefined);
+      assert.equal(
+        hasRule(reDecoded.rules, "Bash", "allow", "git status"),
+        true,
+      );
+      assert.equal(hasRule(reDecoded.rules, "Read", "allow"), true);
+      assert.equal(hasRule(reDecoded.rules, "Bash", "deny", "sudo:*"), true);
+      assert.equal(hasRule(reDecoded.rules, "Bash", "ask", "git push:*"), true);
       assert.strictEqual(reDecoded.defaultMode, "dontAsk");
     });
 
@@ -177,10 +218,10 @@ describe("claudeCodeCodec", () => {
       const canonical = claudeCodeCodec.decode(native);
       const reEncoded = z.encode(claudeCodeCodec, canonical);
       const reDecoded = claudeCodeCodec.decode(reEncoded);
-      assert.ok(reDecoded.permissions !== undefined);
-      assert.deepStrictEqual(reDecoded.permissions.allow, native.allow);
-      assert.deepStrictEqual(reDecoded.permissions.deny, native.deny);
-      assert.deepStrictEqual(reDecoded.permissions.ask, native.ask);
+      assert.ok(reDecoded.rules !== undefined);
+      assert.equal(findRules(reDecoded.rules, "Bash", "allow").length, 4);
+      assert.equal(findRules(reDecoded.rules, "Bash", "deny").length, 3);
+      assert.equal(findRules(reDecoded.rules, "Bash", "ask").length, 1);
       assert.strictEqual(reDecoded.defaultMode, "dontAsk");
     });
   });
@@ -206,24 +247,26 @@ describe("opencodeCodec", () => {
       );
     });
 
-    it("converts granular bash rules to canonical patterns", () => {
+    it("converts granular bash rules to canonical rules", () => {
       const result = opencodeCodec.decode({
         bash: { "*": "ask", "git *": "allow", "rm *": "deny" },
       });
-      assert.ok(result.permissions?.ask?.includes("Bash(*)"));
-      assert.ok(result.permissions?.allow?.includes("Bash(git *)"));
-      assert.ok(result.permissions?.deny?.includes("Bash(rm *)"));
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Bash", "ask", "*"), true);
+      assert.equal(hasRule(result.rules, "Bash", "allow", "git *"), true);
+      assert.equal(hasRule(result.rules, "Bash", "deny", "rm *"), true);
     });
 
-    it("converts shorthand tool actions to canonical bare names", () => {
+    it("converts shorthand tool actions to canonical bare tool rules", () => {
       const result = opencodeCodec.decode({
         edit: "deny",
         read: "allow",
         bash: "ask",
       });
-      assert.ok(result.permissions?.deny?.includes("Edit"));
-      assert.ok(result.permissions?.allow?.includes("Read"));
-      assert.ok(result.permissions?.ask?.includes("Bash"));
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Edit", "deny"), true);
+      assert.equal(hasRule(result.rules, "Read", "allow"), true);
+      assert.equal(hasRule(result.rules, "Bash", "ask"), true);
     });
 
     it("maps external_directory to sandbox.writableRoots", () => {
@@ -240,23 +283,24 @@ describe("opencodeCodec", () => {
         bash: { "git diff": "allow", "git log*": "allow", "*": "ask" },
         webfetch: "deny",
       });
-      assert.ok(result.permissions?.deny?.includes("Edit"));
-      assert.ok(result.permissions?.allow?.includes("Bash(git diff)"));
-      assert.ok(result.permissions?.ask?.includes("Bash(*)"));
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Edit", "deny"), true);
+      assert.equal(hasRule(result.rules, "Bash", "allow", "git diff"), true);
+      assert.equal(hasRule(result.rules, "Bash", "ask", "*"), true);
     });
   });
 
   describe("encode (canonical → OpenCode)", () => {
     it("converts canonical rules to OpenCode granular format", () => {
       const encoded = z.encode(opencodeCodec, {
-        permissions: {
-          allow: ["Bash(git status *)", "Read"],
-          deny: ["Bash(rm *)", "Edit"],
-          ask: ["Bash(git push *)"],
-        },
+        rules: [
+          { tool: "Bash", pattern: "git status *", tier: "allow" },
+          { tool: "Read", tier: "allow" },
+          { tool: "Bash", pattern: "rm *", tier: "deny" },
+          { tool: "Edit", tier: "deny" },
+          { tool: "Bash", pattern: "git push *", tier: "ask" },
+        ],
       });
-      assert.strictEqual(typeof encoded, "object");
-      assert.ok(!Array.isArray(encoded));
       assert.strictEqual(typeof encoded, "object");
       assert.ok(!Array.isArray(encoded));
       assert.ok("bash" in (encoded as Record<string, unknown>));
@@ -268,7 +312,10 @@ describe("opencodeCodec", () => {
 
     it("simplifies bare tool names to shorthand", () => {
       const encoded = z.encode(opencodeCodec, {
-        permissions: { deny: ["Edit"], allow: ["Read"] },
+        rules: [
+          { tool: "Edit", tier: "deny" },
+          { tool: "Read", tier: "allow" },
+        ],
       });
       assert.strictEqual((encoded as Record<string, unknown>).edit, "deny");
       assert.strictEqual((encoded as Record<string, unknown>).read, "allow");
@@ -285,11 +332,12 @@ describe("opencodeCodec", () => {
       const canonical = opencodeCodec.decode(native);
       const reEncoded = z.encode(opencodeCodec, canonical);
       const reDecoded = opencodeCodec.decode(reEncoded);
-      assert.ok(reDecoded.permissions?.ask?.includes("Bash(*)"));
-      assert.ok(reDecoded.permissions?.allow?.includes("Bash(git *)"));
-      assert.ok(reDecoded.permissions?.deny?.includes("Bash(rm *)"));
-      assert.ok(reDecoded.permissions?.allow?.includes("Read"));
-      assert.ok(reDecoded.permissions?.deny?.includes("Edit"));
+      assert.ok(reDecoded.rules !== undefined);
+      assert.equal(hasRule(reDecoded.rules, "Bash", "ask", "*"), true);
+      assert.equal(hasRule(reDecoded.rules, "Bash", "allow", "git *"), true);
+      assert.equal(hasRule(reDecoded.rules, "Bash", "deny", "rm *"), true);
+      assert.equal(hasRule(reDecoded.rules, "Read", "allow"), true);
+      assert.equal(hasRule(reDecoded.rules, "Edit", "deny"), true);
     });
 
     it("preserves shorthand action through full cycle", () => {
@@ -308,11 +356,12 @@ describe("opencodeCodec", () => {
       const canonical = opencodeCodec.decode(native);
       const reEncoded = z.encode(opencodeCodec, canonical);
       const reDecoded = opencodeCodec.decode(reEncoded);
-      assert.ok(reDecoded.permissions?.allow?.includes("Bash(git diff)"));
-      assert.ok(reDecoded.permissions?.allow?.includes("Bash(git log*)"));
-      assert.ok(reDecoded.permissions?.ask?.includes("Bash(*)"));
-      assert.ok(reDecoded.permissions?.deny?.includes("Edit"));
-      assert.ok(reDecoded.permissions?.deny?.includes("WebFetch"));
+      assert.ok(reDecoded.rules !== undefined);
+      assert.equal(hasRule(reDecoded.rules, "Bash", "allow", "git diff"), true);
+      assert.equal(hasRule(reDecoded.rules, "Bash", "allow", "git log*"), true);
+      assert.equal(hasRule(reDecoded.rules, "Bash", "ask", "*"), true);
+      assert.equal(hasRule(reDecoded.rules, "Edit", "deny"), true);
+      assert.equal(hasRule(reDecoded.rules, "WebFetch", "deny"), true);
     });
 
     it("preserves external_directory through full cycle via sandbox", () => {
@@ -352,49 +401,55 @@ describe("opencodeCodec", () => {
 
 describe("crushCodec", () => {
   describe("decode (Crush → canonical)", () => {
-    it("maps lowercase tool names to canonical PascalCase", () => {
+    it("maps lowercase tool names to canonical PascalCase rules", () => {
       const result = crushCodec.decode({
         allowed_tools: ["view", "glob", "grep", "edit", "bash"],
       });
-      assert.ok(result.permissions !== undefined);
-      assert.deepStrictEqual(result.permissions.allow, [
-        "Read",
-        "Glob",
-        "Grep",
-        "Edit",
-        "Bash",
-      ]);
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Read", "allow"), true);
+      assert.equal(hasRule(result.rules, "Glob", "allow"), true);
+      assert.equal(hasRule(result.rules, "Grep", "allow"), true);
+      assert.equal(hasRule(result.rules, "Edit", "allow"), true);
+      assert.equal(hasRule(result.rules, "Bash", "allow"), true);
     });
 
     it("passes through unknown tool names as-is", () => {
       const result = crushCodec.decode({
         allowed_tools: ["mcp_context7_get-library-doc"],
       });
-      assert.ok(result.permissions !== undefined);
-      assert.deepStrictEqual(result.permissions.allow, [
-        "mcp_context7_get-library-doc",
-      ]);
+      assert.ok(result.rules !== undefined);
+      assert.equal(
+        hasRule(result.rules, "mcp_context7_get-library-doc", "allow"),
+        true,
+      );
     });
   });
 
   describe("encode (canonical → Crush)", () => {
-    it("maps canonical names to Crush lowercase", () => {
+    it("maps canonical rules to Crush lowercase", () => {
       const encoded = z.encode(crushCodec, {
-        permissions: { allow: ["Read", "Grep", "Bash"] },
+        rules: [
+          { tool: "Read", tier: "allow" },
+          { tool: "Grep", tier: "allow" },
+          { tool: "Bash", tier: "allow" },
+        ],
       });
       assert.deepStrictEqual(encoded.allowed_tools, ["view", "grep", "bash"]);
     });
 
     it("skips rules with patterns (Crush has no pattern syntax)", () => {
       const encoded = z.encode(crushCodec, {
-        permissions: { allow: ["Bash(git status)", "Read"] },
+        rules: [
+          { tool: "Bash", pattern: "git status", tier: "allow" },
+          { tool: "Read", tier: "allow" },
+        ],
       });
       assert.deepStrictEqual(encoded.allowed_tools, ["view"]);
     });
 
     it("produces empty allowed_tools for deny-only policy", () => {
       const encoded = z.encode(crushCodec, {
-        permissions: { deny: ["Bash(sudo:*)"] },
+        rules: [{ tool: "Bash", pattern: "sudo:*", tier: "deny" }],
       });
       assert.deepStrictEqual(encoded.allowed_tools, []);
     });
@@ -424,7 +479,10 @@ describe("crushCodec", () => {
 
     it("round-trip is lossy for pattern rules", () => {
       const encoded = z.encode(crushCodec, {
-        permissions: { allow: ["Bash(git status)", "Read"] },
+        rules: [
+          { tool: "Bash", pattern: "git status", tier: "allow" },
+          { tool: "Read", tier: "allow" },
+        ],
       });
       assert.deepStrictEqual(encoded.allowed_tools, ["view"]);
     });
@@ -461,8 +519,9 @@ describe("codexCodec", () => {
     it("maps sandbox_mode 'read-only' to readonly mode", () => {
       const result = codexCodec.decode({ sandbox_mode: "read-only" });
       assert.strictEqual(result.defaultMode, "readonly");
-      assert.ok(result.permissions?.deny?.includes("Write"));
-      assert.ok(result.permissions?.deny?.includes("Edit"));
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Write", "deny"), true);
+      assert.equal(hasRule(result.rules, "Edit", "deny"), true);
     });
 
     it("maps sandbox_mode 'danger-full-access' to autonomous", () => {
@@ -485,23 +544,25 @@ describe("codexCodec", () => {
       ]);
     });
 
-    it("converts filesystem shorthand 'read' to Write+Edit deny", () => {
+    it("converts filesystem shorthand 'read' to Write+Edit deny rules", () => {
       const result = codexCodec.decode({
         permissions: { strict: { filesystem: "read" } },
         default_permissions: "strict",
       });
-      assert.ok(result.permissions?.deny?.includes("Write"));
-      assert.ok(result.permissions?.deny?.includes("Edit"));
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Write", "deny"), true);
+      assert.equal(hasRule(result.rules, "Edit", "deny"), true);
     });
 
-    it("converts filesystem shorthand 'none' to full deny", () => {
+    it("converts filesystem shorthand 'none' to full deny rules", () => {
       const result = codexCodec.decode({
         permissions: { locked: { filesystem: "none" } },
         default_permissions: "locked",
       });
-      assert.ok(result.permissions?.deny?.includes("Read"));
-      assert.ok(result.permissions?.deny?.includes("Write"));
-      assert.ok(result.permissions?.deny?.includes("Edit"));
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Read", "deny"), true);
+      assert.equal(hasRule(result.rules, "Write", "deny"), true);
+      assert.equal(hasRule(result.rules, "Edit", "deny"), true);
     });
 
     it("converts granular filesystem rules to path-based deny rules", () => {
@@ -513,10 +574,14 @@ describe("codexCodec", () => {
         },
         default_permissions: "default",
       });
-      assert.ok(result.permissions?.deny?.includes("Write(./etc/config)"));
-      assert.ok(result.permissions?.deny?.includes("Edit(./etc/config)"));
-      assert.ok(result.permissions?.deny?.includes("Read(./secrets)"));
-      assert.ok(result.permissions?.deny?.includes("Write(./secrets)"));
+      assert.ok(result.rules !== undefined);
+      assert.equal(
+        hasRule(result.rules, "Write", "deny", "./etc/config"),
+        true,
+      );
+      assert.equal(hasRule(result.rules, "Edit", "deny", "./etc/config"), true);
+      assert.equal(hasRule(result.rules, "Read", "deny", "./secrets"), true);
+      assert.equal(hasRule(result.rules, "Write", "deny", "./secrets"), true);
     });
 
     it("converts network domain rules to WebFetch rules", () => {
@@ -530,11 +595,14 @@ describe("codexCodec", () => {
         },
         default_permissions: "default",
       });
-      assert.ok(
-        result.permissions?.allow?.includes("WebFetch(domain:api.example.com)"),
+      assert.ok(result.rules !== undefined);
+      assert.equal(
+        hasRule(result.rules, "WebFetch", "allow", "domain:api.example.com"),
+        true,
       );
-      assert.ok(
-        result.permissions?.deny?.includes("WebFetch(domain:evil.com)"),
+      assert.equal(
+        hasRule(result.rules, "WebFetch", "deny", "domain:evil.com"),
+        true,
       );
     });
 
@@ -545,8 +613,9 @@ describe("codexCodec", () => {
           open: { filesystem: "write" },
         },
       });
-      assert.ok(result.permissions?.deny?.includes("Write"));
-      assert.ok(result.permissions?.deny?.includes("Edit"));
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Write", "deny"), true);
+      assert.equal(hasRule(result.rules, "Edit", "deny"), true);
     });
   });
 
@@ -581,14 +650,16 @@ describe("codexCodec", () => {
 
     it("converts deny rules to filesystem + network profile", () => {
       const encoded = z.encode(codexCodec, {
-        permissions: {
-          deny: [
-            "Write(./secrets)",
-            "Read(./secrets)",
-            "WebFetch(domain:evil.com)",
-          ],
-          allow: ["WebFetch(domain:api.example.com)"],
-        },
+        rules: [
+          { tool: "Write", pattern: "./secrets", tier: "deny" },
+          { tool: "Read", pattern: "./secrets", tier: "deny" },
+          { tool: "WebFetch", pattern: "domain:evil.com", tier: "deny" },
+          {
+            tool: "WebFetch",
+            pattern: "domain:api.example.com",
+            tier: "allow",
+          },
+        ],
       });
       assert.ok(encoded.permissions !== undefined);
       assert.strictEqual(encoded.default_permissions, "default");
@@ -656,9 +727,16 @@ describe("codexCodec", () => {
         default_permissions: "default",
       } as const;
       const canonical = codexCodec.decode(native);
-      assert.ok(canonical.permissions?.deny?.includes("Read(./secrets)"));
-      assert.ok(canonical.permissions?.deny?.includes("Write(./secrets)"));
-      assert.ok(canonical.permissions?.deny?.includes("Write(./etc/config)"));
+      assert.ok(canonical.rules !== undefined);
+      assert.equal(hasRule(canonical.rules, "Read", "deny", "./secrets"), true);
+      assert.equal(
+        hasRule(canonical.rules, "Write", "deny", "./secrets"),
+        true,
+      );
+      assert.equal(
+        hasRule(canonical.rules, "Write", "deny", "./etc/config"),
+        true,
+      );
       const reEncoded = z.encode(codexCodec, canonical);
       const profile = getCodexProfile(reEncoded, "default");
       const fs = getFilesystemRecord(profile.filesystem);
@@ -679,13 +757,14 @@ describe("codexCodec", () => {
         default_permissions: "default",
       } as const;
       const canonical = codexCodec.decode(native);
-      assert.ok(
-        canonical.permissions?.allow?.includes(
-          "WebFetch(domain:api.example.com)",
-        ),
+      assert.ok(canonical.rules !== undefined);
+      assert.equal(
+        hasRule(canonical.rules, "WebFetch", "allow", "domain:api.example.com"),
+        true,
       );
-      assert.ok(
-        canonical.permissions?.deny?.includes("WebFetch(domain:evil.com)"),
+      assert.equal(
+        hasRule(canonical.rules, "WebFetch", "deny", "domain:evil.com"),
+        true,
       );
       const reEncoded = z.encode(codexCodec, canonical);
       const profile = getCodexProfile(reEncoded, "default");
@@ -696,12 +775,14 @@ describe("codexCodec", () => {
 
     it("round-trip is lossy for Bash rules", () => {
       const encoded = z.encode(codexCodec, {
+        rules: [
+          { tool: "Bash", pattern: "git status", tier: "allow" },
+          { tool: "Read", tier: "allow" },
+          { tool: "Bash", pattern: "sudo:*", tier: "deny" },
+        ],
         defaultMode: "standard" as const,
-        permissions: {
-          allow: ["Bash(git status)", "Read"],
-          deny: ["Bash(sudo:*)"],
-        },
       });
+      // Bash rules don't map to Codex filesystem/network — only the non-Bash rules survive
       assert.strictEqual(encoded.approval_policy, "on-request");
       assert.strictEqual(encoded.sandbox_mode, "workspace-write");
     });
