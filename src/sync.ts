@@ -146,9 +146,10 @@ async function readAndDecode(
     return undefined;
   }
 
-  // Skip crush (no real config file) and codex (TOML)
-  if (file.agent === "crush") return undefined;
-  if (file.agent === "codex") return undefined;
+  const def = AGENT_FILES[file.agent];
+
+  // Skip agents without extract/wrap (crush, codex) or without a file def
+  if (def.extract === undefined) return undefined;
 
   let raw: unknown;
   try {
@@ -165,58 +166,21 @@ async function readAndDecode(
     return { file, policy: result.data };
   }
 
-  // Native files — extract the permissions block and decode
-  const agent = file.agent as AgentId;
-  const codec = CODECS[agent];
+  // Native files — extract the permissions block, decode, validate
+  const perms = def.extract(raw);
+  if (perms === undefined || perms === null) return undefined;
 
-  if (agent === "claude-code") {
-    // Claude Code permissions live inside settings.permissions
-    if (!isRecord(raw)) return undefined;
-    if (!("permissions" in raw)) return undefined;
-    const perms = raw.permissions;
-    if (perms === undefined || perms === null) return undefined;
-    try {
-      const decoded = (codec as { decode: (input: unknown) => unknown }).decode(
-        perms,
-      );
-      const result = AgentPermissionPolicy.safeParse(decoded);
-      if (!result.success) return undefined;
-      return { file, policy: result.data };
-    } catch {
-      return undefined;
-    }
+  const codec = CODECS[file.agent];
+  try {
+    const decoded = (codec as { decode: (input: unknown) => unknown }).decode(
+      perms,
+    );
+    const result = AgentPermissionPolicy.safeParse(decoded);
+    if (!result.success) return undefined;
+    return { file, policy: result.data };
+  } catch {
+    return undefined;
   }
-
-  // OpenCode / Kiro — permissions are at top level under "permission"
-  if (agent === "opencode") {
-    if (!isRecord(raw)) return undefined;
-    if (!("permission" in raw)) return undefined;
-    try {
-      const decoded = (codec as { decode: (input: unknown) => unknown }).decode(
-        raw.permission,
-      );
-      const result = AgentPermissionPolicy.safeParse(decoded);
-      if (!result.success) return undefined;
-      return { file, policy: result.data };
-    } catch {
-      return undefined;
-    }
-  }
-
-  if (agent === "kiro") {
-    try {
-      const decoded = (codec as { decode: (input: unknown) => unknown }).decode(
-        raw,
-      );
-      const result = AgentPermissionPolicy.safeParse(decoded);
-      if (!result.success) return undefined;
-      return { file, policy: result.data };
-    } catch {
-      return undefined;
-    }
-  }
-
-  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -379,15 +343,8 @@ function computeWriteTargets(
       continue;
     }
 
-    // For Claude Code, wrap in settings.permissions structure
-    if (agent === "claude-code") {
-      encoded = { permissions: encoded };
-    }
-
-    // For OpenCode, wrap in { permission: ... } structure
-    if (agent === "opencode") {
-      encoded = { permission: encoded };
-    }
+    // Wrap in native config structure (e.g. { permissions: ... })
+    if (def.wrap) encoded = def.wrap(encoded);
 
     targets.push({
       agent,
@@ -612,10 +569,6 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function readLine(): Promise<string> {
   return new Promise((resolve) => {

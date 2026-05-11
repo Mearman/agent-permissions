@@ -21,6 +21,15 @@ export interface AgentFileDef {
   name: string;
   /** Relative path to the local override file (read-only, never written). */
   localName?: string;
+  /**
+   * Extract the permissions payload from a parsed native config.
+   * Returns undefined if the config doesn't contain a permissions block.
+   */
+  extract?: (raw: unknown) => unknown;
+  /**
+   * Wrap encoded permissions back into the native config structure.
+   */
+  wrap?: (encoded: unknown) => unknown;
 }
 
 /** Default config file for each agent format, relative to a project root. */
@@ -28,15 +37,35 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
   canonical: {
     name: ".agents/permissions.json",
     localName: ".agents/permissions.local.json",
+    extract: (raw) => raw,
+    wrap: (encoded) => encoded,
   },
   "claude-code": {
     name: ".claude/settings.json",
     localName: ".claude/settings.local.json",
+    extract: (raw) => {
+      if (typeof raw !== "object" || raw === null) return undefined;
+      if (!("permissions" in raw)) return undefined;
+      return (raw as Record<string, unknown>).permissions;
+    },
+    wrap: (encoded) => ({ permissions: encoded }),
   },
-  codex: { name: "codex.toml" },
-  opencode: { name: "opencode.json" },
-  crush: { name: ".crush.json" },
-  kiro: { name: ".kiro/permissions.json" },
+  codex: { name: "codex.toml" }, // TOML — read only if pre-parsed
+  opencode: {
+    name: "opencode.json",
+    extract: (raw) => {
+      if (typeof raw !== "object" || raw === null) return undefined;
+      if (!("permission" in raw)) return undefined;
+      return (raw as Record<string, unknown>).permission;
+    },
+    wrap: (encoded) => ({ permission: encoded }),
+  },
+  crush: { name: ".crush.json" }, // Crush has no standard config file
+  kiro: {
+    name: ".kiro/permissions.json",
+    extract: (raw) => raw,
+    wrap: (encoded) => encoded,
+  },
 };
 
 /** Get the default file name for a format. */
