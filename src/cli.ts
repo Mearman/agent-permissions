@@ -1,0 +1,311 @@
+#!/usr/bin/env node
+/**
+ * agent-perms CLI — convert and validate cross-agent permission policies.
+ *
+ * Commands:
+ *   agent-perms convert --from <agent> --to <agent> [file]
+ *   agent-perms validate [file]
+ *   agent-perms check --tool <name> --input <string> [file]
+ *
+ * Reads from file argument or stdin. Writes JSON to stdout.
+ * Exit codes: 0 = success, 1 = error, 2 = validation failure.
+ */
+
+import { parseArgs } from "node:util";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { AgentPermissionPolicy } from "./schema.ts";
+import { CODECS, agentId } from "./compat/codecs.ts";
+import { evaluate, normaliseStringRule } from "./evaluate.ts";
+
+const AGENTS = agentId.options;
+type Agent = (typeof AGENTS)[number];
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function error(message: string): never {
+  process.stderr.write(`error: ${message}\n`);
+  process.exit(1);
+}
+
+async function readInput(filePath: string | undefined): Promise<string> {
+  if (filePath) {
+    return readFile(resolve(filePath), "utf-8");
+  }
+
+  // Read from stdin
+  if (process.stdin.isTTY) {
+    error("no input file provided and stdin is a terminal");
+  }
+
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks).toString("utf-8");
+}
+
+function parseJson(raw: string, source: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    error(`${source}: invalid JSON`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// convert
+// ---------------------------------------------------------------------------
+
+async function convertCommand(args: string[]): Promise<void> {
+  const { values, positionals } = parseArgs({
+    args,
+    options: {
+      from: { type: "string" },
+      to: { type: "string" },
+    },
+    strict: true,
+    allowPositionals: true,
+  });
+
+  const from = values.from;
+  const to = values.to;
+  const filePath = positionals[0];
+
+  if (!from)
+    error(
+      "--from is required (claude-code | codex | opencode | crush | canonical)",
+    );
+  if (!to)
+    error(
+      "--to is required (claude-code | codex | opencode | crush | canonical)",
+    );
+  if (from !== "canonical" && !AGENTS.includes(from as Agent))
+    error(
+      `unknown --from agent: ${from}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
+    );
+  if (to !== "canonical" && !AGENTS.includes(to as Agent))
+    error(
+      `unknown --to agent: ${to}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
+    );
+
+  const raw = await readInput(filePath);
+  const json = parseJson(raw, filePath ?? "stdin");
+
+  // Decode: agent-native → canonical
+  let canonical: unknown;
+  if (from === "canonical") {
+    const result = AgentPermissionPolicy.safeParse(json);
+    if (!result.success) {
+      process.stderr.write("validation errors:\n");
+      for (const issue of result.error.issues) {
+        process.stderr.write(`  ${issue.path.join(".")}: ${issue.message}\n`);
+      }
+      process.exit(2);
+    }
+    canonical = result.data;
+  } else {
+    const codec = CODECS[from as Agent];
+    try {
+      // Input is unknown JSON from a file — codec validates at runtime
+      canonical = (
+        codec as {
+          decode: (input: unknown) => unknown;
+        }
+      ).decode(json);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      error(`decode failed: ${message}`);
+    }
+  }
+
+  // Encode: canonical → agent-native
+  let output: unknown;
+  if (to === "canonical") {
+    output = canonical;
+  } else {
+    const codec = CODECS[to as Agent];
+    try {
+      output = codec.encode(canonical as Parameters<typeof codec.encode>[0]);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      error(`encode failed: ${message}`);
+    }
+  }
+
+  process.stdout.write(JSON.stringify(output, null, 2) + "\n");
+}
+
+// ---------------------------------------------------------------------------
+// validate
+// ---------------------------------------------------------------------------
+
+async function validateCommand(args: string[]): Promise<void> {
+  const filePath = args[0];
+  const raw = await readInput(filePath);
+  const json = parseJson(raw, filePath ?? "stdin");
+
+  const result = AgentPermissionPolicy.safeParse(json);
+  if (result.success) {
+    process.stdout.write("valid\n");
+    return;
+  }
+
+  process.stderr.write("validation errors:\n");
+  for (const issue of result.error.issues) {
+    const path = issue.path.length > 0 ? issue.path.join(".") : "(root)";
+    process.stderr.write(`  ${path}: ${issue.message}\n`);
+  }
+  process.exit(2);
+}
+
+// ---------------------------------------------------------------------------
+// check
+// ---------------------------------------------------------------------------
+
+async function checkCommand(args: string[]): Promise<void> {
+  const { values, positionals } = parseArgs({
+    args,
+    options: {
+      tool: { type: "string" },
+      input: { type: "string" },
+      cwd: { type: "string" },
+      branch: { type: "string" },
+    },
+    strict: true,
+    allowPositionals: true,
+  });
+
+  if (!values.tool) error("--tool is required");
+  if (values.input === undefined) error("--input is required");
+
+  const filePath = positionals[0];
+
+  const raw = await readInput(filePath);
+  const json = parseJson(raw, filePath ?? "stdin");
+
+  const result = AgentPermissionPolicy.safeParse(json);
+  if (!result.success) {
+    process.stderr.write("policy is invalid, cannot check\n");
+    process.exit(2);
+  }
+
+  const policy = result.data;
+
+  // Build PermissionPolicy from the canonical data
+  const rules: {
+    tool: string;
+    pattern?: string | undefined;
+    tier: "allow" | "deny" | "ask";
+  }[] = [];
+
+  // Normalise permissions string arrays into rules
+  if (policy.permissions) {
+    if (policy.permissions.deny) {
+      rules.push(
+        ...policy.permissions.deny.map((r) => normaliseStringRule(r, "deny")),
+      );
+    }
+    if (policy.permissions.ask) {
+      rules.push(
+        ...policy.permissions.ask.map((r) => normaliseStringRule(r, "ask")),
+      );
+    }
+    if (policy.permissions.allow) {
+      rules.push(
+        ...policy.permissions.allow.map((r) => normaliseStringRule(r, "allow")),
+      );
+    }
+  }
+
+  // Merge structured rules
+  if (policy.rules) {
+    rules.push(...policy.rules);
+  }
+
+  const mode = policy.defaultMode ?? "standard";
+  const mappedMode =
+    mode === "autonomous" || mode === "bypassPermissions" || mode === "dontAsk"
+      ? "autonomous"
+      : mode === "restricted" || mode === "plan"
+        ? "restricted"
+        : mode === "readonly"
+          ? "readonly"
+          : "standard";
+
+  const decision = evaluate(
+    { defaultMode: mappedMode, rules },
+    values.tool,
+    values.input,
+    { cwd: values.cwd, branch: values.branch } as {
+      cwd?: string;
+      branch?: string;
+    },
+  );
+
+  process.stdout.write(`${decision}\n`);
+  process.exit(decision === "deny" ? 1 : 0);
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+
+function usage(): never {
+  process.stderr.write(`agent-perms — cross-agent permission policy tool
+
+Usage:
+  agent-perms convert --from <agent> --to <agent> [file]
+  agent-perms validate [file]
+  agent-perms check --tool <name> --input <string> [file]
+
+Agents: claude-code, codex, opencode, crush, canonical
+
+Commands:
+  convert   Convert a permission config between agent formats
+  validate  Validate a .agents/permissions.json file
+  check     Evaluate a tool call against a policy
+
+Examples:
+  agent-perms convert --from claude-code --to codex .claude/settings.json
+  agent-perms validate .agents/permissions.json
+  agent-perms check --tool bash --input "sudo rm -rf /" .agents/permissions.json
+  cat .claude/settings.json | agent-perms convert --from claude-code --to canonical
+`);
+  process.exit(1);
+}
+
+async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  const command = args[0];
+
+  switch (command) {
+    case "convert":
+      await convertCommand(args.slice(1));
+      break;
+    case "validate":
+      await validateCommand(args.slice(1));
+      break;
+    case "check":
+      await checkCommand(args.slice(1));
+      break;
+    case "--help":
+    case "-h":
+      usage();
+      break;
+    default:
+      if (command) {
+        process.stderr.write(`unknown command: ${command}\n\n`);
+      }
+      usage();
+  }
+}
+
+main().catch((e: unknown) => {
+  process.stderr.write(
+    `fatal: ${e instanceof Error ? e.message : String(e)}\n`,
+  );
+  process.exit(1);
+});

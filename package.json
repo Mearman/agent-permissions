@@ -7,6 +7,9 @@
   "module": "./dist/schema.mjs",
   "types": "./dist/schema.d.mts",
   "sideEffects": false,
+  "bin": {
+    "agent-perms": "./dist/cli.mjs"
+  },
   "exports": {
     "./*": {
       "types": {
