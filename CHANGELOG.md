@@ -1,3 +1,27 @@
+## [5.0.0](https://github.com/Mearman/agent-permissions/compare/v4.9.0...v5.0.0) (2026-05-11)
+
+### ⚠ BREAKING CHANGES
+
+* — all inputs/outputs via flags, no positional args.
+
+- `--from`/`--input`/`--in` accept format name (finds default file),
+  file path, or `-` for stdin
+- `--to` accepts format name (writes to default file) or file path
+- `--output`/`--out`/`-o` override destination file or `-` for stdout
+- `validate --input`/`--in` replaces positional arg
+- `check --policy-file` replaces positional arg
+- `sync --working-dir`/`-d` replaces positional arg
+- Format names resolve to default config file locations (walk-up for input)
+- `strict: true` for parseArgs — proper type narrowing via firstString/allStrings
+
+### Features
+
+* rewrite CLI — no positionals, format names resolve to file paths ([8d08397](https://github.com/Mearman/agent-permissions/commit/8d08397bab81f27fb287da4e1602ea5b0e107ab1))
+
+### Documentation
+
+* rewrite CLI section for flag-only, format-to-file resolution ([629f2cc](https://github.com/Mearman/agent-permissions/commit/629f2cc2e896dc88f5cae9e9147b3e0acb9761ec))
+
 ## [4.9.0](https://github.com/Mearman/agent-permissions/compare/v4.8.0...v4.9.0) (2026-05-11)
 
 ### Features
