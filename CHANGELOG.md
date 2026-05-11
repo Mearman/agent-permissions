@@ -1,3 +1,14 @@
+## [4.9.0](https://github.com/Mearman/agent-permissions/compare/v4.8.0...v4.9.0) (2026-05-11)
+
+### Features
+
+* resolve --from/--to/--with from agent names or config file paths ([ab69636](https://github.com/Mearman/agent-permissions/commit/ab69636084f7502eecb6f1d46864be52a377c40c))
+
+### Bug Fixes
+
+* enforce strict ESLint — no floating promises, no unused vars, no type assertions ([bcba5d9](https://github.com/Mearman/agent-permissions/commit/bcba5d9f14de8b4f26fa3d22559b6c03d42074a5))
+* restore strict ESLint rules — remove assertion and unused-var relaxations ([43b8b00](https://github.com/Mearman/agent-permissions/commit/43b8b0033a937d9b4b3cb7998791e184a77a2a8e))
+
 ## [4.8.0](https://github.com/Mearman/agent-permissions/compare/v4.7.1...v4.8.0) (2026-05-11)
 
 ### Features
