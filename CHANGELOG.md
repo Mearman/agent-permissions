@@ -1,3 +1,13 @@
+## [4.3.0](https://github.com/Mearman/agent-permissions/compare/v4.2.0...v4.3.0) (2026-05-11)
+
+### Features
+
+* add sync command for bidirectional agent config merging ([b807287](https://github.com/Mearman/agent-permissions/commit/b807287ed880fa2124ca41c17a5f78331ba15406))
+
+### Tests
+
+* add 11 tests for sync command ([869bb85](https://github.com/Mearman/agent-permissions/commit/869bb85a1e1e777b3e79d06fe1f0219db493bfb5))
+
 ## [4.2.0](https://github.com/Mearman/agent-permissions/compare/v4.1.0...v4.2.0) (2026-05-11)
 
 ### Features
