@@ -1,3 +1,9 @@
+## [4.5.0](https://github.com/Mearman/agent-permissions/compare/v4.4.0...v4.5.0) (2026-05-11)
+
+### Features
+
+* add --compact and --verbose flags to convert command ([7db8c2d](https://github.com/Mearman/agent-permissions/commit/7db8c2d54bb43b8f847bf88a9f479b14c31dca04))
+
 ## [4.4.0](https://github.com/Mearman/agent-permissions/compare/v4.3.1...v4.4.0) (2026-05-11)
 
 ### Features

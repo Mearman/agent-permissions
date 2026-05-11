@@ -1,6 +1,6 @@
 {
   "name": "agent-perms",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "description": "Cross-agent permission policy specification for AI coding agents",
   "type": "module",
   "main": "./dist/schema.cjs",
