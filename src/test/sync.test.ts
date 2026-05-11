@@ -486,4 +486,339 @@ void describe("sync", () => {
     // restricted (3) > autonomous (1)
     assert.equal(parsed.defaultMode, "restricted");
   });
+
+  // -----------------------------------------------------------------------
+  // Branch coverage: local files, additionalDirectories, verbose, --without
+  // -----------------------------------------------------------------------
+
+  void it("detects local override files", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
+    dirs.push(cwd);
+
+    // Main canonical
+    await mkdir(join(cwd, ".agents"), { recursive: true });
+    await writeFile(
+      join(cwd, ".agents", "permissions.json"),
+      JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+    );
+
+    // Local override
+    await writeFile(
+      join(cwd, ".agents", "permissions.local.json"),
+      JSON.stringify({ rules: [{ tool: "Bash", tier: "deny" }] }),
+    );
+
+    // Also test Claude local override detection
+    await mkdir(join(cwd, ".claude"), { recursive: true });
+    await writeFile(
+      join(cwd, ".claude", "settings.json"),
+      JSON.stringify({
+        permissions: { allow: ["Read"] },
+      }),
+    );
+    await writeFile(
+      join(cwd, ".claude", "settings.local.json"),
+      JSON.stringify({
+        permissions: { deny: ["Bash(rm:*)"] },
+      }),
+    );
+
+    const result = await sync({
+      cwd,
+      up: 0,
+      with: [],
+      without: [],
+      yes: true,
+      dryRun: false,
+      create: false,
+      verbose: true,
+      backup: false,
+    });
+
+    assert.equal(result.applied, true);
+
+    const canonical = await readFile(
+      join(cwd, ".agents", "permissions.json"),
+      "utf-8",
+    );
+    const parsed: unknown = JSON.parse(canonical);
+    assert.ok(isRecord(parsed));
+    const rules = parsed.rules as Record<string, unknown>[];
+
+    // Should have deny from local override
+    const denyRules = rules.filter((r) => r.tier === "deny");
+    assert.ok(denyRules.length > 0);
+  });
+
+  void it("merges additionalDirectories from permissions", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
+    dirs.push(cwd);
+
+    await mkdir(join(cwd, ".claude"), { recursive: true });
+    await writeFile(
+      join(cwd, ".claude", "settings.json"),
+      JSON.stringify({
+        permissions: {
+          allow: ["Read"],
+          additionalDirectories: ["/tmp/workspace", "/home/user/projects"],
+        },
+      }),
+    );
+
+    await sync({
+      cwd,
+      up: 0,
+      with: [],
+      without: [],
+      yes: true,
+      dryRun: false,
+      create: false,
+      verbose: false,
+      backup: false,
+    });
+
+    const canonical = await readFile(
+      join(cwd, ".agents", "permissions.json"),
+      "utf-8",
+    );
+    const parsed: unknown = JSON.parse(canonical);
+    assert.ok(isRecord(parsed));
+    assert.ok(isRecord(parsed.permissions));
+    assert.ok(Array.isArray(parsed.permissions.additionalDirectories));
+    assert.equal(parsed.permissions.additionalDirectories.length, 2);
+  });
+
+  void it("--without excludes specific agents", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
+    dirs.push(cwd);
+
+    await mkdir(join(cwd, ".claude"), { recursive: true });
+    await writeFile(
+      join(cwd, ".claude", "settings.json"),
+      JSON.stringify({
+        permissions: { allow: ["Bash(git status)"] },
+      }),
+    );
+
+    await writeFile(
+      join(cwd, "opencode.json"),
+      JSON.stringify({
+        permission: { bash: { "rm *": "deny" } },
+      }),
+    );
+
+    await sync({
+      cwd,
+      up: 0,
+      with: [],
+      without: ["claude-code"],
+      yes: true,
+      dryRun: false,
+      create: false,
+      verbose: false,
+      backup: false,
+    });
+
+    const canonical = await readFile(
+      join(cwd, ".agents", "permissions.json"),
+      "utf-8",
+    );
+    const parsed: unknown = JSON.parse(canonical);
+    assert.ok(isRecord(parsed));
+    const rules = parsed.rules as Record<string, unknown>[];
+
+    // Should only have OpenCode deny rule, not Claude Code allow
+    const allowRules = rules.filter(
+      (r) => r.tier === "allow" && r.pattern === "git status",
+    );
+    assert.equal(allowRules.length, 0);
+  });
+
+  void it("handles unreadable files gracefully", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
+    dirs.push(cwd);
+
+    // Create a file with invalid JSON
+    await mkdir(join(cwd, ".claude"), { recursive: true });
+    await writeFile(join(cwd, ".claude", "settings.json"), "not valid json");
+
+    // Also a valid canonical file
+    await mkdir(join(cwd, ".agents"), { recursive: true });
+    await writeFile(
+      join(cwd, ".agents", "permissions.json"),
+      JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+    );
+
+    const result = await sync({
+      cwd,
+      up: 0,
+      with: [],
+      without: [],
+      yes: true,
+      dryRun: false,
+      create: false,
+      verbose: false,
+      backup: false,
+    });
+
+    // Should still succeed — invalid file is skipped
+    assert.equal(result.applied, true);
+  });
+
+  void it("produces verbose output with rule provenance", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
+    dirs.push(cwd);
+
+    await mkdir(join(cwd, ".claude"), { recursive: true });
+    await writeFile(
+      join(cwd, ".claude", "settings.json"),
+      JSON.stringify({
+        permissions: { allow: ["Read"] },
+      }),
+    );
+
+    // Capture stderr output by running with verbose
+    const originalWrite = process.stderr.write.bind(process.stderr);
+    const chunks: string[] = [];
+    process.stderr.write = (data: string) => {
+      chunks.push(data);
+      return true;
+    };
+
+    try {
+      await sync({
+        cwd,
+        up: 0,
+        with: [],
+        without: [],
+        yes: true,
+        dryRun: false,
+        create: false,
+        verbose: true,
+        backup: false,
+      });
+    } finally {
+      process.stderr.write = originalWrite;
+    }
+
+    const output = chunks.join("");
+    assert.match(output, /Detected config/);
+    assert.match(output, /Merged/);
+  });
+
+  void it("merges agent-specific fields (sandbox, network, delegation)", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
+    dirs.push(cwd);
+
+    // Canonical with sandbox and network
+    await mkdir(join(cwd, ".agents"), { recursive: true });
+    await writeFile(
+      join(cwd, ".agents", "permissions.json"),
+      JSON.stringify({
+        rules: [{ tool: "Read", tier: "allow" }],
+        sandbox: { mode: "docker" },
+        network: { outbound: "deny" },
+      }),
+    );
+
+    await sync({
+      cwd,
+      up: 0,
+      with: [],
+      without: [],
+      yes: true,
+      dryRun: false,
+      create: false,
+      verbose: false,
+      backup: false,
+    });
+
+    const canonical = await readFile(
+      join(cwd, ".agents", "permissions.json"),
+      "utf-8",
+    );
+    const parsed: unknown = JSON.parse(canonical);
+    assert.ok(isRecord(parsed));
+    assert.ok(isRecord(parsed.sandbox));
+    assert.equal(parsed.sandbox.mode, "docker");
+    assert.ok(isRecord(parsed.network));
+    assert.equal(parsed.network.outbound, "deny");
+  });
+
+  void it("merges profiles and activeProfile", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
+    dirs.push(cwd);
+
+    await mkdir(join(cwd, ".agents"), { recursive: true });
+    await writeFile(
+      join(cwd, ".agents", "permissions.json"),
+      JSON.stringify({
+        rules: [{ tool: "Read", tier: "allow" }],
+        profiles: {
+          strict: {
+            defaultMode: "restricted",
+            rules: [{ tool: "Bash", tier: "deny" }],
+          },
+        },
+        activeProfile: "strict",
+      }),
+    );
+
+    await sync({
+      cwd,
+      up: 0,
+      with: [],
+      without: [],
+      yes: true,
+      dryRun: false,
+      create: false,
+      verbose: false,
+      backup: false,
+    });
+
+    const canonical = await readFile(
+      join(cwd, ".agents", "permissions.json"),
+      "utf-8",
+    );
+    const parsed: unknown = JSON.parse(canonical);
+    assert.ok(isRecord(parsed));
+    assert.ok(isRecord(parsed.profiles));
+    assert.equal(parsed.activeProfile, "strict");
+  });
+
+  void it("merges env and delegation fields", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
+    dirs.push(cwd);
+
+    await mkdir(join(cwd, ".agents"), { recursive: true });
+    await writeFile(
+      join(cwd, ".agents", "permissions.json"),
+      JSON.stringify({
+        rules: [{ tool: "Read", tier: "allow" }],
+        delegation: { agents: ["claude-code", "opencode"] },
+        env: { NODE_ENV: "production" },
+      }),
+    );
+
+    await sync({
+      cwd,
+      up: 0,
+      with: [],
+      without: [],
+      yes: true,
+      dryRun: false,
+      create: false,
+      verbose: false,
+      backup: false,
+    });
+
+    const canonical = await readFile(
+      join(cwd, ".agents", "permissions.json"),
+      "utf-8",
+    );
+    const parsed: unknown = JSON.parse(canonical);
+    assert.ok(isRecord(parsed));
+    assert.ok(isRecord(parsed.delegation));
+    assert.ok(isRecord(parsed.env));
+  });
 });
