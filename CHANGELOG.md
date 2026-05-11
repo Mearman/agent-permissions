@@ -1,3 +1,9 @@
+## [5.1.3](https://github.com/Mearman/agent-permissions/compare/v5.1.2...v5.1.3) (2026-05-11)
+
+### Bug Fixes
+
+* **ci:** upload schema to GitHub Release via gh CLI ([287bb89](https://github.com/Mearman/agent-permissions/commit/287bb8928bdfbc5ad9313f15f1f58f8983c6f5f3))
+
 ## [5.1.2](https://github.com/Mearman/agent-permissions/compare/v5.1.1...v5.1.2) (2026-05-11)
 
 ### Bug Fixes
