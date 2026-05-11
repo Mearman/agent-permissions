@@ -21,7 +21,11 @@ import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { AgentPermissionPolicy, type Rule } from "./schema.ts";
 import { CODECS, type AgentId } from "./compat/codecs.ts";
-import { collectRules } from "./evaluate.ts";
+import {
+  collectRules,
+  deduplicateRules,
+  mostRestrictiveMode,
+} from "./evaluate.ts";
 import {
   AGENT_FILES,
   type AgentFileDef,
@@ -184,32 +188,13 @@ async function readAndDecode(
 // Merging
 // ---------------------------------------------------------------------------
 
-/** Most restrictive mode wins. */
-const MODE_RESTRICTIVENESS: Record<string, number> = {
-  readonly: 4,
-  restricted: 3,
-  plan: 3,
-  standard: 2,
-  acceptEdits: 2,
-  default: 2,
-  auto: 2,
-  autonomous: 1,
-  dontAsk: 1,
-  bypassPermissions: 1,
-};
-
-/** Rule identity key for deduplication (tool + pattern, excluding tier). */
-function ruleKey(rule: Rule): string {
-  return `${rule.tool}:${rule.pattern ?? ""}`;
-}
-
 function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
   if (sources.length === 0) {
     return {};
   }
 
   let defaultMode: string | undefined;
-  const ruleMap = new Map<string, Rule>();
+  const allRules: Rule[] = [];
   const additionalDirectories: string[] = [];
   let sandbox: AgentPermissionPolicy["sandbox"];
   let network: AgentPermissionPolicy["network"];
@@ -220,30 +205,10 @@ function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
 
   for (const { policy } of sources) {
     // defaultMode: most restrictive wins
-    if (policy.defaultMode) {
-      const currentRank = MODE_RESTRICTIVENESS[defaultMode ?? "standard"] ?? 2;
-      const newRank = MODE_RESTRICTIVENESS[policy.defaultMode] ?? 2;
-      if (newRank > currentRank) {
-        defaultMode = policy.defaultMode;
-      }
-    }
+    defaultMode = mostRestrictiveMode(defaultMode, policy.defaultMode);
 
-    // Rules: union, deny-first priority
-    const rules = collectRules(policy);
-    for (const rule of rules) {
-      const key = ruleKey(rule);
-      const existing = ruleMap.get(key);
-
-      if (existing === undefined) {
-        ruleMap.set(key, rule);
-      } else {
-        // Deny beats ask beats allow for same tool+pattern
-        const tierRank = { deny: 3, ask: 2, allow: 1 };
-        if (tierRank[rule.tier] > tierRank[existing.tier]) {
-          ruleMap.set(key, rule);
-        }
-      }
-    }
+    // Rules: collect then deduplicate with deny-first priority
+    allRules.push(...collectRules(policy));
 
     // Additional directories: union
     if (policy.permissions?.additionalDirectories) {
@@ -264,12 +229,13 @@ function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
     if (policy.env) env = { ...(env ?? {}), ...policy.env };
   }
 
+  const rules = deduplicateRules(allRules);
+
   const result: AgentPermissionPolicy = {};
 
   if (defaultMode)
     result.defaultMode = defaultMode as AgentPermissionPolicy["defaultMode"];
 
-  const rules = Array.from(ruleMap.values());
   if (rules.length > 0) result.rules = rules;
 
   if (additionalDirectories.length > 0) {

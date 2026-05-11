@@ -7,7 +7,7 @@
  */
 
 import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
-import { evaluate, collectRules } from "./evaluate.ts";
+import { evaluate, collectRules, mapMode } from "./evaluate.ts";
 import { validatePolicy, type ValidationError } from "./agent-files.ts";
 export type { ValidationError } from "./agent-files.ts";
 import { basename } from "node:path";
@@ -374,19 +374,4 @@ function countRules(canonical: unknown): number {
     if (Array.isArray(rules)) return rules.length;
   }
   return 0;
-}
-
-function mapMode(
-  mode: string,
-): "autonomous" | "standard" | "restricted" | "readonly" {
-  if (
-    mode === "autonomous" ||
-    mode === "bypassPermissions" ||
-    mode === "dontAsk"
-  ) {
-    return "autonomous";
-  }
-  if (mode === "restricted" || mode === "plan") return "restricted";
-  if (mode === "readonly") return "readonly";
-  return "standard";
 }

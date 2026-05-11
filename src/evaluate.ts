@@ -460,3 +460,90 @@ export function collectRules(policy: {
 
   return result;
 }
+
+// ---------------------------------------------------------------------------
+// Shared merge utilities
+// ---------------------------------------------------------------------------
+
+/** Most restrictive mode wins. */
+const MODE_RESTRICTIVENESS: Record<string, number> = {
+  readonly: 4,
+  restricted: 3,
+  plan: 3,
+  standard: 2,
+  acceptEdits: 2,
+  default: 2,
+  auto: 2,
+  autonomous: 1,
+  dontAsk: 1,
+  bypassPermissions: 1,
+};
+
+/** Tier priority for deduplication — deny beats ask beats allow. */
+const TIER_RANK: Record<PermissionTier, number> = {
+  deny: 3,
+  ask: 2,
+  allow: 1,
+};
+
+/**
+ * Map a schema-mode string to a normalised evaluation mode.
+ *
+ * Agent-specific names (bypassPermissions, dontAsk, plan) are
+ * mapped to their canonical equivalents.
+ */
+export function mapMode(mode: string): PermissionPolicy["defaultMode"] {
+  switch (mode) {
+    case "autonomous":
+    case "bypassPermissions":
+    case "dontAsk":
+      return "autonomous";
+    case "restricted":
+    case "plan":
+      return "restricted";
+    case "readonly":
+      return "readonly";
+    default:
+      return "standard";
+  }
+}
+
+/**
+ * Compare two mode strings by restrictiveness.
+ * Returns the more restrictive of the two.
+ */
+export function mostRestrictiveMode(
+  a: string | undefined,
+  b: string | undefined,
+): string | undefined {
+  if (a === undefined) return b;
+  if (b === undefined) return a;
+  const rankA = MODE_RESTRICTIVENESS[a] ?? 2;
+  const rankB = MODE_RESTRICTIVENESS[b] ?? 2;
+  return rankB > rankA ? b : a;
+}
+
+/**
+ * Rule identity key for deduplication (tool + pattern, excluding tier).
+ */
+export function ruleKey(rule: Rule): string {
+  return `${rule.tool}:${rule.pattern ?? ""}`;
+}
+
+/**
+ * Deduplicate rules by tool+pattern, keeping the highest-priority tier.
+ * Deny beats ask beats allow for the same tool+pattern combination.
+ */
+export function deduplicateRules(rules: Rule[]): Rule[] {
+  const map = new Map<string, Rule>();
+  for (const rule of rules) {
+    const key = ruleKey(rule);
+    const existing = map.get(key);
+    if (existing === undefined) {
+      map.set(key, rule);
+    } else if (TIER_RANK[rule.tier] > TIER_RANK[existing.tier]) {
+      map.set(key, rule);
+    }
+  }
+  return Array.from(map.values());
+}

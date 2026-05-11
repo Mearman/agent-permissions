@@ -8,15 +8,14 @@
  *
  * Merge rules:
  *   - defaultMode: last-defined wins
- *   - permissions.deny: merged (union) — deny from ANY source is final
- *   - permissions.ask: merged (union)
- *   - permissions.allow: merged (union)
+ *   - rules: collected from all sources, deduplicated with deny-first priority
+ *     (deny > ask > allow for same tool+pattern)
  */
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { AgentPermissionPolicy } from "./schema.ts";
+import { AgentPermissionPolicy, type Rule } from "./schema.ts";
 import {
   AGENT_FILES,
   parseJson,
@@ -24,7 +23,12 @@ import {
   decodeNative,
 } from "./agent-files.ts";
 
-import { normaliseStringRule, type PermissionPolicy } from "./evaluate.ts";
+import {
+  collectRules,
+  mapMode,
+  deduplicateRules,
+  type PermissionPolicy,
+} from "./evaluate.ts";
 
 export interface PolicyLoadOptions {
   cwd: string;
@@ -111,52 +115,19 @@ function mergeLayers(layers: AgentPermissionPolicy[]): PermissionPolicy {
   }
 
   let mode: PermissionPolicy["defaultMode"] = "standard";
-  const rules: PermissionPolicy["rules"] = [];
+  const allRules: Rule[] = [];
 
   for (const layer of layers) {
     if (layer.defaultMode) {
       mode = mapMode(layer.defaultMode);
     }
-    if (layer.permissions) {
-      if (layer.permissions.deny)
-        rules.push(
-          ...layer.permissions.deny.map((r) => normaliseStringRule(r, "deny")),
-        );
-      if (layer.permissions.ask)
-        rules.push(
-          ...layer.permissions.ask.map((r) => normaliseStringRule(r, "ask")),
-        );
-      if (layer.permissions.allow)
-        rules.push(
-          ...layer.permissions.allow.map((r) =>
-            normaliseStringRule(r, "allow"),
-          ),
-        );
-    }
-    // Also collect structured rules from the layer
-    if (layer.rules) {
-      rules.push(...layer.rules);
-    }
+    allRules.push(...collectRules(layer));
   }
+
+  const rules = deduplicateRules(allRules);
 
   return {
     defaultMode: mode,
     ...(rules.length > 0 ? { rules } : {}),
   };
-}
-
-function mapMode(mode: string): PermissionPolicy["defaultMode"] {
-  switch (mode) {
-    case "autonomous":
-    case "bypassPermissions":
-    case "dontAsk":
-      return "autonomous";
-    case "restricted":
-    case "plan":
-      return "restricted";
-    case "readonly":
-      return "readonly";
-    default:
-      return "standard";
-  }
 }
