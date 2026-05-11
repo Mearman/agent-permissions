@@ -17,15 +17,15 @@ async function isolate(): Promise<string> {
   return mkdtemp(join(tmpdir(), "agent-perms-test-"));
 }
 
-describe("loadPolicy", () => {
+void describe("loadPolicy", () => {
   const dirs: string[] = [];
 
   after(async () => {
     await Promise.all(dirs.map((d) => rm(d, { recursive: true })));
   });
 
-  describe("canonical loading", () => {
-    it("returns standard mode when no files exist", async () => {
+  void describe("canonical loading", () => {
+    void it("returns standard mode when no files exist", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       const policy = await loadPolicy({ cwd });
@@ -33,7 +33,7 @@ describe("loadPolicy", () => {
       assert.equal(policy.rules, undefined);
     });
 
-    it("loads .agents/permissions.json", async () => {
+    void it("loads .agents/permissions.json", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });
@@ -63,7 +63,7 @@ describe("loadPolicy", () => {
       });
     });
 
-    it("returns undefined for invalid JSON in canonical file", async () => {
+    void it("returns undefined for invalid JSON in canonical file", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });
@@ -76,7 +76,7 @@ describe("loadPolicy", () => {
       assert.equal(policy.defaultMode, "standard");
     });
 
-    it("returns undefined for schema-invalid canonical file", async () => {
+    void it("returns undefined for schema-invalid canonical file", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });
@@ -95,8 +95,8 @@ describe("loadPolicy", () => {
     });
   });
 
-  describe("layer merging", () => {
-    it("local overrides committed defaultMode", async () => {
+  void describe("layer merging", () => {
+    void it("local overrides committed defaultMode", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });
@@ -125,7 +125,7 @@ describe("loadPolicy", () => {
       });
     });
 
-    it("merges deny rules from both layers", async () => {
+    void it("merges deny rules from both layers", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });
@@ -153,7 +153,7 @@ describe("loadPolicy", () => {
       assert.equal(second?.pattern, "curl domain:evil.com");
     });
 
-    it("merges all three tiers across layers", async () => {
+    void it("merges all three tiers across layers", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });
@@ -187,8 +187,8 @@ describe("loadPolicy", () => {
     });
   });
 
-  describe("native source loading", () => {
-    it("loads Claude Code settings", async () => {
+  void describe("native source loading", () => {
+    void it("loads Claude Code settings", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".claude"), { recursive: true });
@@ -210,7 +210,7 @@ describe("loadPolicy", () => {
       assert.ok(policy.rules.length > 0, "must have rules");
     });
 
-    it("loads OpenCode config", async () => {
+    void it("loads OpenCode config", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await writeFile(
@@ -233,7 +233,7 @@ describe("loadPolicy", () => {
       assert.ok(denyRules.length > 0, "must have deny rules from edit:deny");
     });
 
-    it("ignores unknown native source", async () => {
+    void it("ignores unknown native source", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       const policy = await loadPolicy({
@@ -244,7 +244,7 @@ describe("loadPolicy", () => {
       assert.equal(policy.defaultMode, "standard");
     });
 
-    it("codex returns undefined (TOML not supported)", async () => {
+    void it("codex returns undefined (TOML not supported)", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       const policy = await loadPolicy({
@@ -255,8 +255,8 @@ describe("loadPolicy", () => {
     });
   });
 
-  describe("mode mapping", () => {
-    it("maps bypassPermissions to autonomous", async () => {
+  void describe("mode mapping", () => {
+    void it("maps bypassPermissions to autonomous", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });
@@ -271,7 +271,7 @@ describe("loadPolicy", () => {
       assert.equal(policy.defaultMode, "autonomous");
     });
 
-    it("maps plan to restricted", async () => {
+    void it("maps plan to restricted", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });

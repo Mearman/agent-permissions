@@ -2,9 +2,9 @@ import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
 import { AgentPermissionPolicy } from "../schema.ts";
 
-describe("Claude Code compatibility", () => {
-  describe("real settings.json permissions", () => {
-    it("accepts the full permissions block from a real .claude/settings.json", () => {
+void describe("Claude Code compatibility", () => {
+  void describe("real settings.json permissions", () => {
+    void it("accepts the full permissions block from a real .claude/settings.json", () => {
       const result = AgentPermissionPolicy.safeParse({
         permissions: {
           allow: [
@@ -21,7 +21,7 @@ describe("Claude Code compatibility", () => {
       assert.ok(result.success);
     });
 
-    it("accepts a real .claude/settings.local.json permissions block", () => {
+    void it("accepts a real .claude/settings.local.json permissions block", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           permissions: { allow: ["Bash(git push:*)"] },
@@ -30,7 +30,7 @@ describe("Claude Code compatibility", () => {
     });
   });
 
-  describe("plain tool names (no parentheses)", () => {
+  void describe("plain tool names (no parentheses)", () => {
     const bareTools = [
       "Read",
       "Write",
@@ -43,7 +43,7 @@ describe("Claude Code compatibility", () => {
     ];
 
     for (const tool of bareTools) {
-      it(`accepts '${tool}' as a bare tool name`, () => {
+      void it(`accepts '${tool}' as a bare tool name`, () => {
         assert.ok(
           AgentPermissionPolicy.safeParse({
             permissions: { allow: [tool] },
@@ -53,7 +53,7 @@ describe("Claude Code compatibility", () => {
     }
   });
 
-  describe("Bash rules — prefix :* syntax (legacy)", () => {
+  void describe("Bash rules — prefix :* syntax (legacy)", () => {
     const prefixRules = [
       "Bash(git:*)",
       "Bash(npm:*)",
@@ -66,7 +66,7 @@ describe("Claude Code compatibility", () => {
     ];
 
     for (const rule of prefixRules) {
-      it(`accepts '${rule}'`, () => {
+      void it(`accepts '${rule}'`, () => {
         assert.ok(
           AgentPermissionPolicy.safeParse({
             permissions: { allow: [rule] },
@@ -76,7 +76,7 @@ describe("Claude Code compatibility", () => {
     }
   });
 
-  describe("Bash rules — wildcard patterns", () => {
+  void describe("Bash rules — wildcard patterns", () => {
     const wildcardRules = [
       "Bash(npm run *)",
       "Bash(*rm* -rf */cache/*)",
@@ -88,7 +88,7 @@ describe("Claude Code compatibility", () => {
     ];
 
     for (const rule of wildcardRules) {
-      it(`accepts '${rule}'`, () => {
+      void it(`accepts '${rule}'`, () => {
         assert.ok(
           AgentPermissionPolicy.safeParse({
             permissions: { deny: [rule] },
@@ -98,7 +98,7 @@ describe("Claude Code compatibility", () => {
     }
   });
 
-  describe("Bash rules — escaped characters", () => {
+  void describe("Bash rules — escaped characters", () => {
     const escapedRules = [
       "Bash(*rm\\* -r*)",
       "Bash(rm \\*)",
@@ -107,7 +107,7 @@ describe("Claude Code compatibility", () => {
     ];
 
     for (const rule of escapedRules) {
-      it(`accepts '${rule}'`, () => {
+      void it(`accepts '${rule}'`, () => {
         assert.ok(
           AgentPermissionPolicy.safeParse({
             permissions: { ask: [rule] },
@@ -117,7 +117,7 @@ describe("Claude Code compatibility", () => {
     }
   });
 
-  describe("file tool rules — path patterns", () => {
+  void describe("file tool rules — path patterns", () => {
     const pathRules = [
       "Read(./.env)",
       "Read(./secrets/**)",
@@ -129,7 +129,7 @@ describe("Claude Code compatibility", () => {
     ];
 
     for (const rule of pathRules) {
-      it(`accepts '${rule}'`, () => {
+      void it(`accepts '${rule}'`, () => {
         assert.ok(
           AgentPermissionPolicy.safeParse({
             permissions: { deny: [rule] },
@@ -139,7 +139,7 @@ describe("Claude Code compatibility", () => {
     }
   });
 
-  describe("WebFetch rules — domain patterns", () => {
+  void describe("WebFetch rules — domain patterns", () => {
     const domainRules = [
       "WebFetch(domain:example.com)",
       "WebFetch(domain:docs.example.com)",
@@ -147,7 +147,7 @@ describe("Claude Code compatibility", () => {
     ];
 
     for (const rule of domainRules) {
-      it(`accepts '${rule}'`, () => {
+      void it(`accepts '${rule}'`, () => {
         assert.ok(
           AgentPermissionPolicy.safeParse({
             permissions: { allow: [rule] },
@@ -157,7 +157,7 @@ describe("Claude Code compatibility", () => {
     }
   });
 
-  describe("MCP rules", () => {
+  void describe("MCP rules", () => {
     const mcpRules = [
       "mcp__github",
       "mcp__github__*",
@@ -166,7 +166,7 @@ describe("Claude Code compatibility", () => {
     ];
 
     for (const rule of mcpRules) {
-      it(`accepts '${rule}'`, () => {
+      void it(`accepts '${rule}'`, () => {
         assert.ok(
           AgentPermissionPolicy.safeParse({
             permissions: { allow: [rule] },
@@ -176,7 +176,7 @@ describe("Claude Code compatibility", () => {
     }
   });
 
-  describe("defaultMode — Claude Code's mode values", () => {
+  void describe("defaultMode — Claude Code's mode values", () => {
     const claudeModes = [
       "plan",
       "dontAsk",
@@ -186,7 +186,7 @@ describe("Claude Code compatibility", () => {
     ];
 
     for (const mode of claudeModes) {
-      it(`accepts '${mode}' (Claude Code mode)`, () => {
+      void it(`accepts '${mode}' (Claude Code mode)`, () => {
         assert.ok(
           AgentPermissionPolicy.safeParse({ defaultMode: mode }).success,
         );
@@ -194,8 +194,8 @@ describe("Claude Code compatibility", () => {
     }
   });
 
-  describe("additionalDirectories", () => {
-    it("accepts relative and absolute paths", () => {
+  void describe("additionalDirectories", () => {
+    void it("accepts relative and absolute paths", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           permissions: {
@@ -206,8 +206,8 @@ describe("Claude Code compatibility", () => {
     });
   });
 
-  describe("env block (Claude Code compatibility)", () => {
-    it("accepts the same env structure as .claude/settings.json", () => {
+  void describe("env block (Claude Code compatibility)", () => {
+    void it("accepts the same env structure as .claude/settings.json", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({ env: { FOO: "bar", BAZ: "qux" } })
           .success,
@@ -215,8 +215,8 @@ describe("Claude Code compatibility", () => {
     });
   });
 
-  describe("top-level defaultMode vs Claude Code permissions.defaultMode", () => {
-    it("accepts defaultMode at the top level (our format)", () => {
+  void describe("top-level defaultMode vs Claude Code permissions.defaultMode", () => {
+    void it("accepts defaultMode at the top level (our format)", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           defaultMode: "standard",
@@ -225,7 +225,7 @@ describe("Claude Code compatibility", () => {
       );
     });
 
-    it("accepts defaultMode inside permissions (Claude Code's placement)", () => {
+    void it("accepts defaultMode inside permissions (Claude Code's placement)", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           permissions: { allow: ["Read"], defaultMode: "plan" },
@@ -234,8 +234,8 @@ describe("Claude Code compatibility", () => {
     });
   });
 
-  describe("migration: jq '.permissions' produces valid input", () => {
-    it("accepts the exact output of extracting Claude Code's permissions block", () => {
+  void describe("migration: jq '.permissions' produces valid input", () => {
+    void it("accepts the exact output of extracting Claude Code's permissions block", () => {
       // This is what `jq '.permissions' .claude/settings.json` produces —
       // pass it as the permissions value, not the top-level policy
       assert.ok(

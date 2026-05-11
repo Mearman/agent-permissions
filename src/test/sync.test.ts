@@ -10,7 +10,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-describe("sync", () => {
+void describe("sync", () => {
   const dirs: string[] = [];
 
   // Clean up after all tests
@@ -18,7 +18,7 @@ describe("sync", () => {
     await Promise.all(dirs.map((d) => rm(d, { recursive: true })));
   });
 
-  it("detects and merges Claude Code settings into canonical", async () => {
+  void it("detects and merges Claude Code settings into canonical", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 
@@ -65,7 +65,7 @@ describe("sync", () => {
     assert.ok(denyRules.length > 0);
   });
 
-  it("detects and merges OpenCode config into canonical", async () => {
+  void it("detects and merges OpenCode config into canonical", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 
@@ -102,7 +102,7 @@ describe("sync", () => {
     assert.ok(Array.isArray(parsed.rules));
   });
 
-  it("merges multiple sources with deny-first priority", async () => {
+  void it("merges multiple sources with deny-first priority", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 
@@ -159,7 +159,7 @@ describe("sync", () => {
     assert.equal(rule.tier, "deny");
   });
 
-  it("respects --from filter to read only from specific agents", async () => {
+  void it("respects --from filter to read only from specific agents", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 
@@ -209,7 +209,7 @@ describe("sync", () => {
     assert.equal(denyRules.length, 0);
   });
 
-  it("dry-run does not write files", async () => {
+  void it("dry-run does not write files", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 
@@ -247,7 +247,7 @@ describe("sync", () => {
     }
   });
 
-  it("respects --up 0 to only read from cwd", async () => {
+  void it("respects --up 0 to only read from cwd", async () => {
     const parent = await mkdtemp(join(tmpdir(), "sync-test-"));
     const child = join(parent, "project");
     await mkdir(child, { recursive: true });
@@ -304,7 +304,7 @@ describe("sync", () => {
     assert.equal(npmRules.length, 0);
   });
 
-  it("walks up to parent when --up > 0", async () => {
+  void it("walks up to parent when --up > 0", async () => {
     const parent = await mkdtemp(join(tmpdir(), "sync-test-"));
     const child = join(parent, "project");
     await mkdir(child, { recursive: true });
@@ -350,7 +350,7 @@ describe("sync", () => {
     assert.equal(npmRules.length, 1);
   });
 
-  it("--create creates missing native config files", async () => {
+  void it("--create creates missing native config files", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 
@@ -387,7 +387,7 @@ describe("sync", () => {
     assert.ok(isRecord(parsed.permissions));
   });
 
-  it("reports no changes when already in sync", async () => {
+  void it("reports no changes when already in sync", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 
@@ -417,7 +417,7 @@ describe("sync", () => {
     assert.equal(result.changes.length, 0);
   });
 
-  it("skips codex and crush (no file support)", async () => {
+  void it("skips codex and crush (no file support)", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 
@@ -441,7 +441,7 @@ describe("sync", () => {
     assert.equal(result.changes.length, 0);
   });
 
-  it("most restrictive defaultMode wins in merge", async () => {
+  void it("most restrictive defaultMode wins in merge", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 

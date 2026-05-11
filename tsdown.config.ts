@@ -45,5 +45,6 @@ export default defineConfig({
   minify: false,
   treeshake: true,
   target: "es2022",
+  external: [/^undici-types/, /^@anthropic-ai/],
   plugins: [zodSchemaPlugin()],
 });

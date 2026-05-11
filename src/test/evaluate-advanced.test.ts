@@ -12,9 +12,9 @@ import {
   type EvaluationContext,
 } from "../evaluate.ts";
 
-describe("Claude Code rule syntax", () => {
-  describe("exact matching", () => {
-    it("matches exact command string", () => {
+void describe("Claude Code rule syntax", () => {
+  void describe("exact matching", () => {
+    void it("matches exact command string", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "git status", tier: "allow" }],
@@ -24,8 +24,8 @@ describe("Claude Code rule syntax", () => {
     });
   });
 
-  describe("prefix matching — word boundary", () => {
-    it("matches command equal to prefix", () => {
+  void describe("prefix matching — word boundary", () => {
+    void it("matches command equal to prefix", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "git:*", tier: "allow" }],
@@ -33,7 +33,7 @@ describe("Claude Code rule syntax", () => {
       assert.equal(evaluate(policy, "bash", "git"), "allow");
     });
 
-    it("matches command starting with prefix + space", () => {
+    void it("matches command starting with prefix + space", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "npm:*", tier: "allow" }],
@@ -42,7 +42,7 @@ describe("Claude Code rule syntax", () => {
       assert.equal(evaluate(policy, "bash", "npm publish"), "allow");
     });
 
-    it("does not match without word boundary", () => {
+    void it("does not match without word boundary", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "ls:*", tier: "allow" }],
@@ -52,8 +52,8 @@ describe("Claude Code rule syntax", () => {
     });
   });
 
-  describe("wildcard matching", () => {
-    it("matches * anywhere in pattern", () => {
+  void describe("wildcard matching", () => {
+    void it("matches * anywhere in pattern", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "git commit *", tier: "allow" }],
@@ -61,7 +61,7 @@ describe("Claude Code rule syntax", () => {
       assert.equal(evaluate(policy, "bash", "git commit -m test"), "allow");
     });
 
-    it("trailing * matches bare command too", () => {
+    void it("trailing * matches bare command too", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "git *", tier: "allow" }],
@@ -71,7 +71,7 @@ describe("Claude Code rule syntax", () => {
       assert.equal(evaluate(policy, "bash", "git commit -m test"), "allow");
     });
 
-    it("matches *suffix pattern", () => {
+    void it("matches *suffix pattern", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "* Dockerfile", tier: "allow" }],
@@ -80,8 +80,8 @@ describe("Claude Code rule syntax", () => {
     });
   });
 
-  describe("bare tool matching (no pattern)", () => {
-    it("absent pattern matches any input for that tool", () => {
+  void describe("bare tool matching (no pattern)", () => {
+    void it("absent pattern matches any input for that tool", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", tier: "allow" }],
@@ -90,8 +90,8 @@ describe("Claude Code rule syntax", () => {
     });
   });
 
-  describe("escape sequences", () => {
-    it("escaped parens in pattern become exact matches", () => {
+  void describe("escape sequences", () => {
+    void it("escaped parens in pattern become exact matches", () => {
       // Pattern contains escaped parens: git log \(main\)
       // Should match: git log (main)
       const policy: PermissionPolicy = {
@@ -103,7 +103,7 @@ describe("Claude Code rule syntax", () => {
       assert.equal(evaluate(policy, "bash", "git log main"), "ask");
     });
 
-    it("escaped asterisk is literal, not wildcard", () => {
+    void it("escaped asterisk is literal, not wildcard", () => {
       // Pattern: echo \* → literal asterisk
       const policy: PermissionPolicy = {
         defaultMode: "standard",
@@ -115,7 +115,7 @@ describe("Claude Code rule syntax", () => {
       assert.equal(evaluate(policy, "bash", "echo hello"), "ask");
     });
 
-    it("escaped backslash is literal", () => {
+    void it("escaped backslash is literal", () => {
       // Pattern: echo \\ → unescaped: echo \
       const policy: PermissionPolicy = {
         defaultMode: "standard",
@@ -125,8 +125,8 @@ describe("Claude Code rule syntax", () => {
     });
   });
 
-  describe("domain pattern", () => {
-    it("matches when input contains the domain", () => {
+  void describe("domain pattern", () => {
+    void it("matches when input contains the domain", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "domain:evil.com", tier: "deny" }],
@@ -137,7 +137,7 @@ describe("Claude Code rule syntax", () => {
       );
     });
 
-    it("matches domain as substring of hostname", () => {
+    void it("matches domain as substring of hostname", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "domain:evil.com", tier: "deny" }],
@@ -146,8 +146,8 @@ describe("Claude Code rule syntax", () => {
     });
   });
 
-  describe("MCP tool matching", () => {
-    it("matches entire MCP server", () => {
+  void describe("MCP tool matching", () => {
+    void it("matches entire MCP server", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "mcp__github", tier: "allow" }],
@@ -159,7 +159,7 @@ describe("Claude Code rule syntax", () => {
       assert.equal(evaluate(policy, "mcp__github__list_prs", "{}"), "allow");
     });
 
-    it("matches MCP server wildcard", () => {
+    void it("matches MCP server wildcard", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "mcp__*__delete*", tier: "deny" }],
@@ -169,13 +169,13 @@ describe("Claude Code rule syntax", () => {
     });
   });
 
-  describe("string rule normalisation", () => {
-    it("normalises bare tool name", () => {
+  void describe("string rule normalisation", () => {
+    void it("normalises bare tool name", () => {
       const rule = normaliseStringRule("Read", "allow");
       assert.deepStrictEqual(rule, { tool: "Read", tier: "allow" });
     });
 
-    it("normalises tool with pattern", () => {
+    void it("normalises tool with pattern", () => {
       const rule = normaliseStringRule("Bash(git status)", "allow");
       assert.deepStrictEqual(rule, {
         tool: "Bash",
@@ -184,7 +184,7 @@ describe("Claude Code rule syntax", () => {
       });
     });
 
-    it("normalises tool with prefix pattern", () => {
+    void it("normalises tool with prefix pattern", () => {
       const rule = normaliseStringRule("Bash(npm:*)", "deny");
       assert.deepStrictEqual(rule, {
         tool: "Bash",
@@ -193,21 +193,21 @@ describe("Claude Code rule syntax", () => {
       });
     });
 
-    it("normalises empty parens as bare tool", () => {
+    void it("normalises empty parens as bare tool", () => {
       const rule = normaliseStringRule("Bash()", "allow");
       assert.deepStrictEqual(rule, { tool: "Bash", tier: "allow" });
     });
 
-    it("normalises star parens as bare tool", () => {
+    void it("normalises star parens as bare tool", () => {
       const rule = normaliseStringRule("Bash(*)", "allow");
       assert.deepStrictEqual(rule, { tool: "Bash", tier: "allow" });
     });
   });
 });
 
-describe("conditional rules", () => {
-  describe("basic matching", () => {
-    it("ask tier is checked before allow tier", () => {
+void describe("conditional rules", () => {
+  void describe("basic matching", () => {
+    void it("ask tier is checked before allow tier", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [
@@ -220,7 +220,7 @@ describe("conditional rules", () => {
       assert.equal(evaluate(policy, "bash", "npm run build"), "ask");
     });
 
-    it("falls through to defaultMode when no rule matches", () => {
+    void it("falls through to defaultMode when no rule matches", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "npm:*", tier: "allow" }],
@@ -229,7 +229,7 @@ describe("conditional rules", () => {
       assert.equal(evaluate(policy, "bash", "rm -rf /"), "ask");
     });
 
-    it("prefix pattern in conditional rule", () => {
+    void it("prefix pattern in conditional rule", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "git:*", tier: "allow" }],
@@ -238,7 +238,7 @@ describe("conditional rules", () => {
       assert.equal(evaluate(policy, "bash", "npm install"), "ask");
     });
 
-    it("exact pattern in conditional rule", () => {
+    void it("exact pattern in conditional rule", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [{ tool: "Bash", pattern: "git status", tier: "allow" }],
@@ -248,8 +248,8 @@ describe("conditional rules", () => {
     });
   });
 
-  describe("when conditions", () => {
-    it("matches when cwd condition matches", () => {
+  void describe("when conditions", () => {
+    void it("matches when cwd condition matches", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [
@@ -268,7 +268,7 @@ describe("conditional rules", () => {
       assert.equal(evaluate(policy, "bash", "npm run test", otherCtx), "ask");
     });
 
-    it("matches when branch condition matches", () => {
+    void it("matches when branch condition matches", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [
@@ -293,7 +293,7 @@ describe("conditional rules", () => {
       );
     });
 
-    it("AND logic — all conditions must match", () => {
+    void it("AND logic — all conditions must match", () => {
       const policy: PermissionPolicy = {
         defaultMode: "standard",
         rules: [

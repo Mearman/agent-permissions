@@ -76,9 +76,9 @@ function getNetworkDomains(
 // Claude Code codec
 // ---------------------------------------------------------------------------
 
-describe("claudeCodeCodec", () => {
-  describe("decode (Claude Code → canonical)", () => {
-    it("maps allow/deny/ask arrays to rules", () => {
+void describe("claudeCodeCodec", () => {
+  void describe("decode (Claude Code → canonical)", () => {
+    void it("maps allow/deny/ask arrays to rules", () => {
       const result = claudeCodeCodec.decode({
         allow: ["Bash(git status)", "Read"],
         deny: ["Bash(sudo:*)"],
@@ -91,7 +91,7 @@ describe("claudeCodeCodec", () => {
       assert.equal(hasRule(result.rules, "Bash", "ask", "git push:*"), true);
     });
 
-    it("maps defaultMode to top-level", () => {
+    void it("maps defaultMode to top-level", () => {
       const result = claudeCodeCodec.decode({
         defaultMode: "dontAsk",
         allow: ["Read"],
@@ -99,7 +99,7 @@ describe("claudeCodeCodec", () => {
       assert.strictEqual(result.defaultMode, "dontAsk");
     });
 
-    it("maps additionalDirectories", () => {
+    void it("maps additionalDirectories", () => {
       const result = claudeCodeCodec.decode({
         additionalDirectories: ["../shared-libs/"],
       });
@@ -109,7 +109,7 @@ describe("claudeCodeCodec", () => {
       ]);
     });
 
-    it("decodes real settings.json permissions block", () => {
+    void it("decodes real settings.json permissions block", () => {
       const result = claudeCodeCodec.decode({
         allow: [
           "Bash(du:*)",
@@ -130,8 +130,8 @@ describe("claudeCodeCodec", () => {
     });
   });
 
-  describe("encode (canonical → Claude Code)", () => {
-    it("encodes rules to allow/deny/ask arrays", () => {
+  void describe("encode (canonical → Claude Code)", () => {
+    void it("encodes rules to allow/deny/ask arrays", () => {
       const encoded = z.encode(claudeCodeCodec, {
         rules: [
           { tool: "Bash", pattern: "git status", tier: "allow" },
@@ -147,7 +147,7 @@ describe("claudeCodeCodec", () => {
       assert.strictEqual(encoded.defaultMode, "dontAsk");
     });
 
-    it("also reads from permissions arrays for backwards compat", () => {
+    void it("also reads from permissions arrays for backwards compat", () => {
       const encoded = z.encode(claudeCodeCodec, {
         permissions: {
           allow: ["Bash(git status)", "Read"],
@@ -158,7 +158,7 @@ describe("claudeCodeCodec", () => {
       assert.deepStrictEqual(encoded.deny, ["Bash(sudo:*)"]);
     });
 
-    it("places defaultMode in permissions block (Claude Code placement)", () => {
+    void it("places defaultMode in permissions block (Claude Code placement)", () => {
       const encoded = z.encode(claudeCodeCodec, {
         rules: [{ tool: "Read", tier: "allow" }],
         defaultMode: "plan",
@@ -167,8 +167,8 @@ describe("claudeCodeCodec", () => {
     });
   });
 
-  describe("round-trip (native → canonical → native)", () => {
-    it("preserves allow/deny/ask/defaultMode through full cycle", () => {
+  void describe("round-trip (native → canonical → native)", () => {
+    void it("preserves allow/deny/ask/defaultMode through full cycle", () => {
       const native = {
         allow: ["Bash(git status)", "Read", "Bash(npm run test:*)"],
         deny: ["Bash(sudo:*)", "Bash(rm -rf /)"],
@@ -189,7 +189,7 @@ describe("claudeCodeCodec", () => {
       assert.strictEqual(reDecoded.defaultMode, "dontAsk");
     });
 
-    it("preserves additionalDirectories through full cycle", () => {
+    void it("preserves additionalDirectories through full cycle", () => {
       const native = {
         allow: ["Read"],
         additionalDirectories: ["../shared-libs/", "/tmp/cache"],
@@ -204,7 +204,7 @@ describe("claudeCodeCodec", () => {
       );
     });
 
-    it("preserves real settings.json through full cycle", () => {
+    void it("preserves real settings.json through full cycle", () => {
       const native = {
         allow: [
           "Bash(du:*)",
@@ -232,23 +232,23 @@ describe("claudeCodeCodec", () => {
 // OpenCode codec
 // ---------------------------------------------------------------------------
 
-describe("opencodeCodec", () => {
-  describe("decode (OpenCode → canonical)", () => {
-    it("converts 'allow' shorthand to autonomous mode", () => {
+void describe("opencodeCodec", () => {
+  void describe("decode (OpenCode → canonical)", () => {
+    void it("converts 'allow' shorthand to autonomous mode", () => {
       assert.strictEqual(
         opencodeCodec.decode("allow").defaultMode,
         "autonomous",
       );
     });
 
-    it("converts 'deny' shorthand to restricted mode", () => {
+    void it("converts 'deny' shorthand to restricted mode", () => {
       assert.strictEqual(
         opencodeCodec.decode("deny").defaultMode,
         "restricted",
       );
     });
 
-    it("converts granular bash rules to canonical rules", () => {
+    void it("converts granular bash rules to canonical rules", () => {
       const result = opencodeCodec.decode({
         bash: { "*": "ask", "git *": "allow", "rm *": "deny" },
       });
@@ -258,7 +258,7 @@ describe("opencodeCodec", () => {
       assert.equal(hasRule(result.rules, "Bash", "deny", "rm *"), true);
     });
 
-    it("converts shorthand tool actions to canonical bare tool rules", () => {
+    void it("converts shorthand tool actions to canonical bare tool rules", () => {
       const result = opencodeCodec.decode({
         edit: "deny",
         read: "allow",
@@ -270,7 +270,7 @@ describe("opencodeCodec", () => {
       assert.equal(hasRule(result.rules, "Bash", "ask"), true);
     });
 
-    it("maps external_directory to sandbox.writableRoots", () => {
+    void it("maps external_directory to sandbox.writableRoots", () => {
       const result = opencodeCodec.decode({
         external_directory: { "~/projects/lib": "allow" },
       });
@@ -278,7 +278,7 @@ describe("opencodeCodec", () => {
       assert.deepStrictEqual(result.sandbox.writableRoots, ["~/projects/lib"]);
     });
 
-    it("converts Markdown-defined agent permissions", () => {
+    void it("converts Markdown-defined agent permissions", () => {
       const result = opencodeCodec.decode({
         edit: "deny",
         bash: { "git diff": "allow", "git log*": "allow", "*": "ask" },
@@ -291,8 +291,8 @@ describe("opencodeCodec", () => {
     });
   });
 
-  describe("encode (canonical → OpenCode)", () => {
-    it("converts canonical rules to OpenCode granular format", () => {
+  void describe("encode (canonical → OpenCode)", () => {
+    void it("converts canonical rules to OpenCode granular format", () => {
       const encoded = z.encode(opencodeCodec, {
         rules: [
           { tool: "Bash", pattern: "git status *", tier: "allow" },
@@ -311,7 +311,7 @@ describe("opencodeCodec", () => {
       );
     });
 
-    it("simplifies bare tool names to shorthand", () => {
+    void it("simplifies bare tool names to shorthand", () => {
       const encoded = z.encode(opencodeCodec, {
         rules: [
           { tool: "Edit", tier: "deny" },
@@ -323,8 +323,8 @@ describe("opencodeCodec", () => {
     });
   });
 
-  describe("round-trip (native → canonical → native)", () => {
-    it("preserves granular bash rules through full cycle", () => {
+  void describe("round-trip (native → canonical → native)", () => {
+    void it("preserves granular bash rules through full cycle", () => {
       const native = {
         bash: { "*": "ask", "git *": "allow", "rm *": "deny" },
         read: "allow",
@@ -341,14 +341,14 @@ describe("opencodeCodec", () => {
       assert.equal(hasRule(reDecoded.rules, "Edit", "deny"), true);
     });
 
-    it("preserves shorthand action through full cycle", () => {
+    void it("preserves shorthand action through full cycle", () => {
       const canonical = opencodeCodec.decode("allow");
       assert.strictEqual(canonical.defaultMode, "autonomous");
       const encoded = z.encode(opencodeCodec, canonical);
       assert.ok(typeof encoded === "object");
     });
 
-    it("preserves mixed shorthand + granular rules", () => {
+    void it("preserves mixed shorthand + granular rules", () => {
       const native = {
         bash: { "git diff": "allow", "git log*": "allow", "*": "ask" },
         edit: "deny",
@@ -365,7 +365,7 @@ describe("opencodeCodec", () => {
       assert.equal(hasRule(reDecoded.rules, "WebFetch", "deny"), true);
     });
 
-    it("preserves external_directory through full cycle via sandbox", () => {
+    void it("preserves external_directory through full cycle via sandbox", () => {
       const native = {
         bash: { "*": "ask" },
         external_directory: {
@@ -400,9 +400,9 @@ describe("opencodeCodec", () => {
 // Crush codec
 // ---------------------------------------------------------------------------
 
-describe("crushCodec", () => {
-  describe("decode (Crush → canonical)", () => {
-    it("maps lowercase tool names to canonical PascalCase rules", () => {
+void describe("crushCodec", () => {
+  void describe("decode (Crush → canonical)", () => {
+    void it("maps lowercase tool names to canonical PascalCase rules", () => {
       const result = crushCodec.decode({
         allowed_tools: ["view", "glob", "grep", "edit", "bash"],
       });
@@ -414,7 +414,7 @@ describe("crushCodec", () => {
       assert.equal(hasRule(result.rules, "Bash", "allow"), true);
     });
 
-    it("passes through unknown tool names as-is", () => {
+    void it("passes through unknown tool names as-is", () => {
       const result = crushCodec.decode({
         allowed_tools: ["mcp_context7_get-library-doc"],
       });
@@ -426,8 +426,8 @@ describe("crushCodec", () => {
     });
   });
 
-  describe("encode (canonical → Crush)", () => {
-    it("maps canonical rules to Crush lowercase", () => {
+  void describe("encode (canonical → Crush)", () => {
+    void it("maps canonical rules to Crush lowercase", () => {
       const encoded = z.encode(crushCodec, {
         rules: [
           { tool: "Read", tier: "allow" },
@@ -438,7 +438,7 @@ describe("crushCodec", () => {
       assert.deepStrictEqual(encoded.allowed_tools, ["view", "grep", "bash"]);
     });
 
-    it("skips rules with patterns (Crush has no pattern syntax)", () => {
+    void it("skips rules with patterns (Crush has no pattern syntax)", () => {
       const encoded = z.encode(crushCodec, {
         rules: [
           { tool: "Bash", pattern: "git status", tier: "allow" },
@@ -448,7 +448,7 @@ describe("crushCodec", () => {
       assert.deepStrictEqual(encoded.allowed_tools, ["view"]);
     });
 
-    it("produces empty allowed_tools for deny-only policy", () => {
+    void it("produces empty allowed_tools for deny-only policy", () => {
       const encoded = z.encode(crushCodec, {
         rules: [{ tool: "Bash", pattern: "sudo:*", tier: "deny" }],
       });
@@ -456,8 +456,8 @@ describe("crushCodec", () => {
     });
   });
 
-  describe("round-trip (native → canonical → native)", () => {
-    it("preserves bare tool names through full cycle", () => {
+  void describe("round-trip (native → canonical → native)", () => {
+    void it("preserves bare tool names through full cycle", () => {
       const native = {
         allowed_tools: ["view", "glob", "grep", "edit", "bash"],
       };
@@ -468,7 +468,7 @@ describe("crushCodec", () => {
       );
     });
 
-    it("preserves MCP tools through full cycle", () => {
+    void it("preserves MCP tools through full cycle", () => {
       const native = {
         allowed_tools: ["view", "bash", "mcp_context7_get-library-doc"],
       };
@@ -478,7 +478,7 @@ describe("crushCodec", () => {
       assert.ok(reEncoded.allowed_tools.includes("bash"));
     });
 
-    it("round-trip is lossy for pattern rules", () => {
+    void it("round-trip is lossy for pattern rules", () => {
       const encoded = z.encode(crushCodec, {
         rules: [
           { tool: "Bash", pattern: "git status", tier: "allow" },
@@ -494,30 +494,30 @@ describe("crushCodec", () => {
 // Codex codec
 // ---------------------------------------------------------------------------
 
-describe("codexCodec", () => {
-  describe("decode (Codex → canonical)", () => {
-    it("maps approval_policy 'untrusted' to restricted mode", () => {
+void describe("codexCodec", () => {
+  void describe("decode (Codex → canonical)", () => {
+    void it("maps approval_policy 'untrusted' to restricted mode", () => {
       assert.strictEqual(
         codexCodec.decode({ approval_policy: "untrusted" }).defaultMode,
         "restricted",
       );
     });
 
-    it("maps approval_policy 'never' to autonomous mode", () => {
+    void it("maps approval_policy 'never' to autonomous mode", () => {
       assert.strictEqual(
         codexCodec.decode({ approval_policy: "never" }).defaultMode,
         "autonomous",
       );
     });
 
-    it("maps approval_policy 'on-request' to standard mode", () => {
+    void it("maps approval_policy 'on-request' to standard mode", () => {
       assert.strictEqual(
         codexCodec.decode({ approval_policy: "on-request" }).defaultMode,
         "standard",
       );
     });
 
-    it("maps sandbox_mode 'read-only' to readonly mode", () => {
+    void it("maps sandbox_mode 'read-only' to readonly mode", () => {
       const result = codexCodec.decode({ sandbox_mode: "read-only" });
       assert.strictEqual(result.defaultMode, "readonly");
       assert.ok(result.rules !== undefined);
@@ -525,14 +525,14 @@ describe("codexCodec", () => {
       assert.equal(hasRule(result.rules, "Edit", "deny"), true);
     });
 
-    it("maps sandbox_mode 'danger-full-access' to autonomous", () => {
+    void it("maps sandbox_mode 'danger-full-access' to autonomous", () => {
       assert.strictEqual(
         codexCodec.decode({ sandbox_mode: "danger-full-access" }).defaultMode,
         "autonomous",
       );
     });
 
-    it("maps sandbox_workspace_write.writable_roots to sandbox.writableRoots", () => {
+    void it("maps sandbox_workspace_write.writable_roots to sandbox.writableRoots", () => {
       const result = codexCodec.decode({
         sandbox_workspace_write: {
           writable_roots: ["/tmp/build-cache", "../shared-libs"],
@@ -545,7 +545,7 @@ describe("codexCodec", () => {
       ]);
     });
 
-    it("converts filesystem shorthand 'read' to Write+Edit deny rules", () => {
+    void it("converts filesystem shorthand 'read' to Write+Edit deny rules", () => {
       const result = codexCodec.decode({
         permissions: { strict: { filesystem: "read" } },
         default_permissions: "strict",
@@ -555,7 +555,7 @@ describe("codexCodec", () => {
       assert.equal(hasRule(result.rules, "Edit", "deny"), true);
     });
 
-    it("converts filesystem shorthand 'none' to full deny rules", () => {
+    void it("converts filesystem shorthand 'none' to full deny rules", () => {
       const result = codexCodec.decode({
         permissions: { locked: { filesystem: "none" } },
         default_permissions: "locked",
@@ -566,7 +566,7 @@ describe("codexCodec", () => {
       assert.equal(hasRule(result.rules, "Edit", "deny"), true);
     });
 
-    it("converts granular filesystem rules to path-based deny rules", () => {
+    void it("converts granular filesystem rules to path-based deny rules", () => {
       const result = codexCodec.decode({
         permissions: {
           default: {
@@ -585,7 +585,7 @@ describe("codexCodec", () => {
       assert.equal(hasRule(result.rules, "Write", "deny", "./secrets"), true);
     });
 
-    it("converts network domain rules to WebFetch rules", () => {
+    void it("converts network domain rules to WebFetch rules", () => {
       const result = codexCodec.decode({
         permissions: {
           default: {
@@ -607,7 +607,7 @@ describe("codexCodec", () => {
       );
     });
 
-    it("uses all profiles when default_permissions is unset", () => {
+    void it("uses all profiles when default_permissions is unset", () => {
       const result = codexCodec.decode({
         permissions: {
           safe: { filesystem: "read" },
@@ -620,26 +620,26 @@ describe("codexCodec", () => {
     });
   });
 
-  describe("encode (canonical → Codex)", () => {
-    it("maps defaultMode to approval_policy + sandbox_mode", () => {
+  void describe("encode (canonical → Codex)", () => {
+    void it("maps defaultMode to approval_policy + sandbox_mode", () => {
       const encoded = z.encode(codexCodec, { defaultMode: "standard" });
       assert.strictEqual(encoded.approval_policy, "on-request");
       assert.strictEqual(encoded.sandbox_mode, "workspace-write");
     });
 
-    it("maps autonomous to never + danger-full-access", () => {
+    void it("maps autonomous to never + danger-full-access", () => {
       const encoded = z.encode(codexCodec, { defaultMode: "autonomous" });
       assert.strictEqual(encoded.approval_policy, "never");
       assert.strictEqual(encoded.sandbox_mode, "danger-full-access");
     });
 
-    it("maps readonly to untrusted + read-only", () => {
+    void it("maps readonly to untrusted + read-only", () => {
       const encoded = z.encode(codexCodec, { defaultMode: "restricted" });
       assert.strictEqual(encoded.approval_policy, "untrusted");
       assert.strictEqual(encoded.sandbox_mode, "workspace-write");
     });
 
-    it("maps sandbox.writableRoots to writable_roots", () => {
+    void it("maps sandbox.writableRoots to writable_roots", () => {
       const encoded = z.encode(codexCodec, {
         sandbox: { writableRoots: ["/tmp/build-cache"] },
       });
@@ -649,7 +649,7 @@ describe("codexCodec", () => {
       ]);
     });
 
-    it("converts deny rules to filesystem + network profile", () => {
+    void it("converts deny rules to filesystem + network profile", () => {
       const encoded = z.encode(codexCodec, {
         rules: [
           { tool: "Write", pattern: "./secrets", tier: "deny" },
@@ -673,8 +673,8 @@ describe("codexCodec", () => {
     });
   });
 
-  describe("round-trip (native → canonical → native)", () => {
-    it("preserves approval_policy + sandbox_mode through full cycle", () => {
+  void describe("round-trip (native → canonical → native)", () => {
+    void it("preserves approval_policy + sandbox_mode through full cycle", () => {
       const native = {
         approval_policy: "on-request" as const,
         sandbox_mode: "workspace-write" as const,
@@ -684,7 +684,7 @@ describe("codexCodec", () => {
       assert.strictEqual(reEncoded.sandbox_mode, "workspace-write");
     });
 
-    it("preserves autonomous mode through full cycle", () => {
+    void it("preserves autonomous mode through full cycle", () => {
       const native = {
         approval_policy: "never" as const,
         sandbox_mode: "danger-full-access" as const,
@@ -696,7 +696,7 @@ describe("codexCodec", () => {
       assert.strictEqual(reEncoded.sandbox_mode, "danger-full-access");
     });
 
-    it("preserves writable_roots through full cycle", () => {
+    void it("preserves writable_roots through full cycle", () => {
       const native = {
         approval_policy: "on-request" as const,
         sandbox_workspace_write: {
@@ -717,7 +717,7 @@ describe("codexCodec", () => {
       ]);
     });
 
-    it("preserves filesystem granular rules through full cycle", () => {
+    void it("preserves filesystem granular rules through full cycle", () => {
       const native = {
         approval_policy: "on-request" as const,
         permissions: {
@@ -745,7 +745,7 @@ describe("codexCodec", () => {
       assert.strictEqual(fs["/etc/config"], "read");
     });
 
-    it("preserves network domain rules through full cycle", () => {
+    void it("preserves network domain rules through full cycle", () => {
       const native = {
         approval_policy: "on-request" as const,
         permissions: {
@@ -774,7 +774,7 @@ describe("codexCodec", () => {
       assert.strictEqual(domains["evil.com"], "deny");
     });
 
-    it("round-trip is lossy for Bash rules", () => {
+    void it("round-trip is lossy for Bash rules", () => {
       const encoded = z.encode(codexCodec, {
         rules: [
           { tool: "Bash", pattern: "git status", tier: "allow" },
@@ -788,7 +788,7 @@ describe("codexCodec", () => {
       assert.strictEqual(encoded.sandbox_mode, "workspace-write");
     });
 
-    it("round-trip is lossy for sandbox_mode read-only", () => {
+    void it("round-trip is lossy for sandbox_mode read-only", () => {
       const native = {
         approval_policy: "untrusted" as const,
         sandbox_mode: "read-only" as const,
@@ -801,8 +801,8 @@ describe("codexCodec", () => {
     });
   });
 
-  describe("sandbox round-trip", () => {
-    it("preserves full sandbox config through cycle", () => {
+  void describe("sandbox round-trip", () => {
+    void it("preserves full sandbox config through cycle", () => {
       const native = {
         approval_policy: "on-request" as const,
         sandbox_mode: "workspace-write" as const,
@@ -828,7 +828,7 @@ describe("codexCodec", () => {
       );
     });
 
-    it("preserves danger-full-access sandbox through cycle", () => {
+    void it("preserves danger-full-access sandbox through cycle", () => {
       const native = {
         approval_policy: "never" as const,
         sandbox_mode: "danger-full-access" as const,
@@ -843,8 +843,8 @@ describe("codexCodec", () => {
     });
   });
 
-  describe("named profiles round-trip", () => {
-    it("preserves named profiles through cycle", () => {
+  void describe("named profiles round-trip", () => {
+    void it("preserves named profiles through cycle", () => {
       const native = {
         approval_policy: "on-request" as const,
         permissions: {
@@ -871,8 +871,8 @@ describe("codexCodec", () => {
     });
   });
 
-  describe("network round-trip", () => {
-    it("preserves network domains through cycle", () => {
+  void describe("network round-trip", () => {
+    void it("preserves network domains through cycle", () => {
       const native = {
         approval_policy: "on-request" as const,
         permissions: {
@@ -903,9 +903,9 @@ describe("codexCodec", () => {
 // Kiro codec
 // ---------------------------------------------------------------------------
 
-describe("kiroCodec", () => {
-  describe("decode (Kiro → canonical)", () => {
-    it("maps allowedTools to allow rules", () => {
+void describe("kiroCodec", () => {
+  void describe("decode (Kiro → canonical)", () => {
+    void it("maps allowedTools to allow rules", () => {
       const result = kiroCodec.decode({
         allowedTools: ["read", "@git", "@git/git_status", "shell"],
       });
@@ -916,7 +916,7 @@ describe("kiroCodec", () => {
       assert.equal(hasRule(result.rules, "@git/git_status", "allow"), true);
     });
 
-    it("maps shell deniedCommands to deny Bash rules", () => {
+    void it("maps shell deniedCommands to deny Bash rules", () => {
       const result = kiroCodec.decode({
         toolsSettings: {
           shell: {
@@ -928,7 +928,7 @@ describe("kiroCodec", () => {
       assert.equal(hasRule(result.rules, "Bash", "deny", "rm -rf .*"), true);
     });
 
-    it("maps shell allowedCommands to allow Bash rules", () => {
+    void it("maps shell allowedCommands to allow Bash rules", () => {
       const result = kiroCodec.decode({
         toolsSettings: {
           shell: {
@@ -940,7 +940,7 @@ describe("kiroCodec", () => {
       assert.equal(hasRule(result.rules, "Bash", "allow", "git status"), true);
     });
 
-    it("maps denyByDefault to restricted mode", () => {
+    void it("maps denyByDefault to restricted mode", () => {
       assert.strictEqual(
         kiroCodec.decode({
           toolsSettings: { shell: { denyByDefault: true } },
@@ -949,7 +949,7 @@ describe("kiroCodec", () => {
       );
     });
 
-    it("maps write deniedPaths to deny Write rules", () => {
+    void it("maps write deniedPaths to deny Write rules", () => {
       const result = kiroCodec.decode({
         toolsSettings: {
           write: { deniedPaths: ["./secrets/**", ".env"] },
@@ -963,7 +963,7 @@ describe("kiroCodec", () => {
       assert.equal(hasRule(result.rules, "Write", "deny", ".env"), true);
     });
 
-    it("maps read allowedPaths to allow Read rules", () => {
+    void it("maps read allowedPaths to allow Read rules", () => {
       const result = kiroCodec.decode({
         toolsSettings: {
           read: { allowedPaths: ["~/projects"] },
@@ -973,7 +973,7 @@ describe("kiroCodec", () => {
       assert.equal(hasRule(result.rules, "Read", "allow", "~/projects"), true);
     });
 
-    it("maps aws allowedServices/deniedServices", () => {
+    void it("maps aws allowedServices/deniedServices", () => {
       const result = kiroCodec.decode({
         toolsSettings: {
           aws: {
@@ -987,7 +987,7 @@ describe("kiroCodec", () => {
       assert.equal(hasRule(result.rules, "Aws", "deny", "service:eks"), true);
     });
 
-    it("maps web_fetch trusted/blocked to WebFetch rules", () => {
+    void it("maps web_fetch trusted/blocked to WebFetch rules", () => {
       const result = kiroCodec.decode({
         toolsSettings: {
           web_fetch: {
@@ -1012,7 +1012,7 @@ describe("kiroCodec", () => {
       );
     });
 
-    it("decodes a full agent config", () => {
+    void it("decodes a full agent config", () => {
       const result = kiroCodec.decode({
         allowedTools: ["read", "@git/git_status"],
         toolsSettings: {
@@ -1041,8 +1041,8 @@ describe("kiroCodec", () => {
     });
   });
 
-  describe("encode (canonical → Kiro)", () => {
-    it("encodes bare allow rules to allowedTools", () => {
+  void describe("encode (canonical → Kiro)", () => {
+    void it("encodes bare allow rules to allowedTools", () => {
       const encoded = z.encode(kiroCodec, {
         rules: [
           { tool: "Read", tier: "allow" },
@@ -1053,7 +1053,7 @@ describe("kiroCodec", () => {
       assert.deepStrictEqual(encoded.allowedTools, ["read", "shell", "@git"]);
     });
 
-    it("encodes Bash deny rules to shell.deniedCommands", () => {
+    void it("encodes Bash deny rules to shell.deniedCommands", () => {
       const encoded = z.encode(kiroCodec, {
         rules: [{ tool: "Bash", pattern: "rm -rf .*", tier: "deny" }],
       });
@@ -1064,7 +1064,7 @@ describe("kiroCodec", () => {
       ]);
     });
 
-    it("encodes Write path rules to write settings", () => {
+    void it("encodes Write path rules to write settings", () => {
       const encoded = z.encode(kiroCodec, {
         rules: [
           { tool: "Write", pattern: "src/**", tier: "allow" },
@@ -1081,7 +1081,7 @@ describe("kiroCodec", () => {
       ]);
     });
 
-    it("encodes Aws service rules to aws settings", () => {
+    void it("encodes Aws service rules to aws settings", () => {
       const encoded = z.encode(kiroCodec, {
         rules: [
           { tool: "Aws", pattern: "service:s3", tier: "allow" },
@@ -1094,7 +1094,7 @@ describe("kiroCodec", () => {
       assert.deepStrictEqual(encoded.toolsSettings.aws.deniedServices, ["eks"]);
     });
 
-    it("encodes WebFetch domain rules to web_fetch settings", () => {
+    void it("encodes WebFetch domain rules to web_fetch settings", () => {
       const encoded = z.encode(kiroCodec, {
         rules: [
           {
@@ -1115,7 +1115,7 @@ describe("kiroCodec", () => {
       ]);
     });
 
-    it("encodes restricted mode to denyByDefault", () => {
+    void it("encodes restricted mode to denyByDefault", () => {
       const encoded = z.encode(kiroCodec, { defaultMode: "restricted" });
       assert.ok(encoded.toolsSettings !== undefined);
       assert.ok(encoded.toolsSettings.shell !== undefined);
@@ -1123,8 +1123,8 @@ describe("kiroCodec", () => {
     });
   });
 
-  describe("round-trip (native → canonical → native)", () => {
-    it("preserves allowedTools through full cycle", () => {
+  void describe("round-trip (native → canonical → native)", () => {
+    void it("preserves allowedTools through full cycle", () => {
       const native = {
         allowedTools: ["read", "shell", "@git", "@git/git_status"],
       };
@@ -1137,7 +1137,7 @@ describe("kiroCodec", () => {
       assert.ok(reEncoded.allowedTools.includes("@git/git_status"));
     });
 
-    it("preserves shell commands through full cycle", () => {
+    void it("preserves shell commands through full cycle", () => {
       const native = {
         toolsSettings: {
           shell: {
@@ -1166,7 +1166,7 @@ describe("kiroCodec", () => {
       ]);
     });
 
-    it("preserves write paths through full cycle", () => {
+    void it("preserves write paths through full cycle", () => {
       const native = {
         toolsSettings: {
           write: {
@@ -1191,7 +1191,7 @@ describe("kiroCodec", () => {
       ]);
     });
 
-    it("preserves AWS services through full cycle", () => {
+    void it("preserves AWS services through full cycle", () => {
       const native = {
         toolsSettings: {
           aws: {
@@ -1222,7 +1222,7 @@ describe("kiroCodec", () => {
       ]);
     });
 
-    it("preserves web_fetch patterns through full cycle", () => {
+    void it("preserves web_fetch patterns through full cycle", () => {
       const native = {
         toolsSettings: {
           web_fetch: {
@@ -1253,7 +1253,7 @@ describe("kiroCodec", () => {
       ]);
     });
 
-    it("preserves full agent config through cycle", () => {
+    void it("preserves full agent config through cycle", () => {
       const native = {
         allowedTools: ["read", "@git/git_status"],
         toolsSettings: {

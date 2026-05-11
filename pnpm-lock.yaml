@@ -289,6 +289,9 @@ importers:
       typescript-eslint:
         specifier: ^8.59.2
         version: 8.59.2(eslint@10.3.0(jiti@2.6.1))(typescript@6.0.3)
+      undici-types:
+        specifier: ^8.2.0
+        version: 8.2.0
 
 packages:
 
@@ -2779,6 +2782,9 @@ packages:
 
   undici-types@7.19.2:
     resolution: {integrity: sha512-qYVnV5OEm2AW8cJMCpdV20CDyaN3g0AjDlOGf1OW4iaDEx8MwdtChUp4zu4H0VP3nDRF/8RKWH+IPp9uW0YGZg==}
+
+  undici-types@8.2.0:
+    resolution: {integrity: sha512-uciYZ5yCmf+QJb18kJw10HjquzM7K0z992vWcI+84KeBpTfXT4hfgfGJ5DQbf/mCBPACofkrjvqgcjZfuujjFA==}
 
   undici@6.25.0:
     resolution: {integrity: sha512-ZgpWDC5gmNiuY9CnLVXEH8rl50xhRCuLNA97fAUnKi8RRuV4E6KG31pDTsLVUKnohJE0I3XDrTeEydAXRw47xg==}
@@ -5379,6 +5385,8 @@ snapshots:
       quansync: 1.0.0
 
   undici-types@7.19.2: {}
+
+  undici-types@8.2.0: {}
 
   undici@6.25.0: {}
 

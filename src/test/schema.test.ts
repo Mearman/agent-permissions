@@ -6,12 +6,12 @@ import { AgentPermissionPolicy } from "../schema.ts";
 
 const examplesDir = path.resolve(import.meta.dirname, "../../spec/examples");
 
-describe("AgentPermissionPolicy", () => {
-  describe("example files", () => {
+void describe("AgentPermissionPolicy", () => {
+  void describe("example files", () => {
     for (const file of fs
       .readdirSync(examplesDir)
       .filter((f) => f.endsWith(".json"))) {
-      it(`validates ${file}`, () => {
+      void it(`validates ${file}`, () => {
         const content = fs.readFileSync(path.join(examplesDir, file), "utf-8");
         const data: unknown = JSON.parse(content);
         const result = AgentPermissionPolicy.safeParse(data);
@@ -20,12 +20,12 @@ describe("AgentPermissionPolicy", () => {
     }
   });
 
-  describe("minimal policy", () => {
-    it("accepts an empty object", () => {
+  void describe("minimal policy", () => {
+    void it("accepts an empty object", () => {
       assert.ok(AgentPermissionPolicy.safeParse({}).success);
     });
 
-    it("accepts only permissions.allow", () => {
+    void it("accepts only permissions.allow", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           permissions: { allow: ["Read", "Grep"] },
@@ -33,7 +33,7 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("accepts only permissions.deny", () => {
+    void it("accepts only permissions.deny", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           permissions: { deny: ["Bash(sudo:*)"] },
@@ -41,21 +41,21 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("accepts only defaultMode", () => {
+    void it("accepts only defaultMode", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({ defaultMode: "readonly" }).success,
       );
     });
 
-    it("accepts only env", () => {
+    void it("accepts only env", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({ env: { FOO: "bar" } }).success,
       );
     });
   });
 
-  describe("full policy", () => {
-    it("accepts all fields populated", () => {
+  void describe("full policy", () => {
+    void it("accepts all fields populated", () => {
       const result = AgentPermissionPolicy.safeParse({
         $schema: "./agent-permissions.schema.json",
         defaultMode: "standard",
@@ -103,8 +103,8 @@ describe("AgentPermissionPolicy", () => {
     });
   });
 
-  describe("conditional rules", () => {
-    it("accepts a rule without when", () => {
+  void describe("conditional rules", () => {
+    void it("accepts a rule without when", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           rules: [{ tool: "Bash", pattern: "npm run *", tier: "allow" }],
@@ -112,7 +112,7 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("accepts a rule with partial when (cwd only)", () => {
+    void it("accepts a rule with partial when (cwd only)", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           rules: [
@@ -127,7 +127,7 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("accepts a rule with partial when (branch only)", () => {
+    void it("accepts a rule with partial when (branch only)", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           rules: [
@@ -143,27 +143,27 @@ describe("AgentPermissionPolicy", () => {
     });
   });
 
-  describe("validation failures", () => {
-    it("rejects unknown permission mode", () => {
+  void describe("validation failures", () => {
+    void it("rejects unknown permission mode", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({ defaultMode: "yolo" }).success,
       );
     });
 
-    it("rejects unknown top-level key", () => {
+    void it("rejects unknown top-level key", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({ unknownField: true }).success,
       );
     });
 
-    it("rejects non-string permission rules", () => {
+    void it("rejects non-string permission rules", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({ permissions: { allow: [123] } })
           .success,
       );
     });
 
-    it("rejects rule without required tool field", () => {
+    void it("rejects rule without required tool field", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({
           rules: [{ pattern: "npm run *", tier: "allow" }],
@@ -171,7 +171,7 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("rejects rule with invalid tier", () => {
+    void it("rejects rule with invalid tier", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({
           rules: [{ tool: "Bash", pattern: "npm run *", tier: "maybe" }],
@@ -179,27 +179,27 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("rejects negative maxDepth", () => {
+    void it("rejects negative maxDepth", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({ delegation: { maxDepth: -1 } })
           .success,
       );
     });
 
-    it("rejects non-string env values", () => {
+    void it("rejects non-string env values", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({ env: { PORT: 3000 } }).success,
       );
     });
 
-    it("rejects unknown sandbox mode", () => {
+    void it("rejects unknown sandbox mode", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({ sandbox: { mode: "containerised" } })
           .success,
       );
     });
 
-    it("rejects unknown keys in sandbox", () => {
+    void it("rejects unknown keys in sandbox", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({
           sandbox: { mode: "workspace-write", container: "docker" },
@@ -207,7 +207,7 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("rejects unknown keys in network", () => {
+    void it("rejects unknown keys in network", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({
           network: { proxy: "http://localhost:8080" },
@@ -215,7 +215,7 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("rejects invalid domain action", () => {
+    void it("rejects invalid domain action", () => {
       assert.ok(
         !AgentPermissionPolicy.safeParse({
           network: { domains: { "example.com": "block" } },
@@ -224,15 +224,15 @@ describe("AgentPermissionPolicy", () => {
     });
   });
 
-  describe("sandbox configuration", () => {
-    it("accepts sandbox with mode only", () => {
+  void describe("sandbox configuration", () => {
+    void it("accepts sandbox with mode only", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({ sandbox: { mode: "readonly" } })
           .success,
       );
     });
 
-    it("accepts sandbox with writableRoots", () => {
+    void it("accepts sandbox with writableRoots", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           sandbox: {
@@ -244,7 +244,7 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("accepts sandbox with networkAccess disabled", () => {
+    void it("accepts sandbox with networkAccess disabled", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           sandbox: { mode: "full-access", networkAccess: false },
@@ -253,8 +253,8 @@ describe("AgentPermissionPolicy", () => {
     });
   });
 
-  describe("named profiles", () => {
-    it("accepts profiles with activeProfile", () => {
+  void describe("named profiles", () => {
+    void it("accepts profiles with activeProfile", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           profiles: {
@@ -269,7 +269,7 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("accepts profiles without activeProfile", () => {
+    void it("accepts profiles without activeProfile", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           profiles: { default: { allow: ["Read"] } },
@@ -277,7 +277,7 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("accepts profile with all tier fields", () => {
+    void it("accepts profile with all tier fields", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           profiles: {
@@ -294,15 +294,15 @@ describe("AgentPermissionPolicy", () => {
     });
   });
 
-  describe("network controls", () => {
-    it("accepts network enabled only", () => {
+  void describe("network controls", () => {
+    void it("accepts network enabled only", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({ network: { enabled: false } })
           .success,
       );
     });
 
-    it("accepts network with domain rules", () => {
+    void it("accepts network with domain rules", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           network: {
@@ -314,8 +314,8 @@ describe("AgentPermissionPolicy", () => {
     });
   });
 
-  describe("per-agent delegation overrides", () => {
-    it("accepts delegation with agents", () => {
+  void describe("per-agent delegation overrides", () => {
+    void it("accepts delegation with agents", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           delegation: {
@@ -334,7 +334,7 @@ describe("AgentPermissionPolicy", () => {
       );
     });
 
-    it("accepts empty agents record", () => {
+    void it("accepts empty agents record", () => {
       assert.ok(
         AgentPermissionPolicy.safeParse({
           delegation: { agents: {} },

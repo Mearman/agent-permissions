@@ -33,8 +33,8 @@ function zodEnumValues(schema: {
 // Claude Code SDK
 // ---------------------------------------------------------------------------
 
-describe("SDK alignment — Claude Code", () => {
-  it("our schema includes every Claude Code SDK PermissionMode value", () => {
+void describe("SDK alignment — Claude Code", () => {
+  void it("our schema includes every Claude Code SDK PermissionMode value", () => {
     const ours = new Set(zodEnumValues(PermissionMode));
     for (const mode of zodEnumValues(ClaudeCodePermissionMode)) {
       assert.ok(
@@ -44,7 +44,7 @@ describe("SDK alignment — Claude Code", () => {
     }
   });
 
-  it("PermissionBehavior values match our permission tier names", () => {
+  void it("PermissionBehavior values match our permission tier names", () => {
     const tierNames = ["allow", "deny", "ask"];
     const ours = new Set(zodEnumValues(PermissionMode));
     assert.ok(ours.size > 0);
@@ -56,8 +56,8 @@ describe("SDK alignment — Claude Code", () => {
 // Codex SDK
 // ---------------------------------------------------------------------------
 
-describe("SDK alignment — Codex", () => {
-  it("our codec covers every Codex SDK ApprovalMode value", () => {
+void describe("SDK alignment — Codex", () => {
+  void it("our codec covers every Codex SDK ApprovalMode value", () => {
     const approvalModes = zodEnumValues(CodexApprovalMode);
     assert.strictEqual(approvalModes.length, 4);
     assert.ok(approvalModes.includes("never"));
@@ -66,7 +66,7 @@ describe("SDK alignment — Codex", () => {
     assert.ok(approvalModes.includes("untrusted"));
   });
 
-  it("our codec covers every Codex SDK SandboxMode value", () => {
+  void it("our codec covers every Codex SDK SandboxMode value", () => {
     const sdkModes = zodEnumValues(CodexSandboxMode);
     const ourModes = new Set(zodEnumValues(SandboxMode));
     const mappings: readonly [string, string][] = [
@@ -88,8 +88,8 @@ describe("SDK alignment — Codex", () => {
 // OpenCode SDK
 // ---------------------------------------------------------------------------
 
-describe("SDK alignment — OpenCode", () => {
-  it("our codec handles every OpenCode SDK permission tool", () => {
+void describe("SDK alignment — OpenCode", () => {
+  void it("our codec handles every OpenCode SDK permission tool", () => {
     const sdkTools = zodEnumValues(OpenCodePermissionTools);
     // Our codec's ocToCanonical map covers mapped tools; OC_UNMAPPED_TOOLS are
     // intentionally skipped during decode.

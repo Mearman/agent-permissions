@@ -32,15 +32,15 @@ function run(
   });
 }
 
-describe("CLI", () => {
+void describe("CLI", () => {
   const dirs: string[] = [];
 
   after(async () => {
     await Promise.all(dirs.map((d) => rm(d, { recursive: true })));
   });
 
-  describe("validate", () => {
-    it("validates a correct policy file", async () => {
+  void describe("validate", () => {
+    void it("validates a correct policy file", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       await writeFile(
@@ -52,7 +52,7 @@ describe("CLI", () => {
       assert.match(result.stdout, /valid/);
     });
 
-    it("rejects an invalid policy file", async () => {
+    void it("rejects an invalid policy file", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       await writeFile(
@@ -64,7 +64,7 @@ describe("CLI", () => {
       assert.match(result.stderr, /validation errors/);
     });
 
-    it("rejects invalid JSON", async () => {
+    void it("rejects invalid JSON", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       await writeFile(join(cwd, "broken.json"), "not json{{{");
@@ -74,8 +74,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("check", () => {
-    it("allows a matching rule", async () => {
+  void describe("check", () => {
+    void it("allows a matching rule", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       await writeFile(
@@ -96,7 +96,7 @@ describe("CLI", () => {
       assert.match(result.stdout, /allow/);
     });
 
-    it("denies a matching deny rule", async () => {
+    void it("denies a matching deny rule", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       await writeFile(
@@ -118,8 +118,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("convert", () => {
-    it("converts claude-code to canonical", async () => {
+  void describe("convert", () => {
+    void it("converts claude-code to canonical", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       await writeFile(
@@ -151,7 +151,7 @@ describe("CLI", () => {
       assert.equal(first.tier, "deny");
     });
 
-    it("converts canonical to crush", async () => {
+    void it("converts canonical to crush", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       await writeFile(
@@ -174,7 +174,7 @@ describe("CLI", () => {
       assert.deepEqual(parsed.allowed_tools, ["view", "bash", "grep"]);
     });
 
-    it("rejects unknown --from agent", async () => {
+    void it("rejects unknown --from agent", async () => {
       const result = await run([
         "convert",
         "--from",
@@ -183,10 +183,10 @@ describe("CLI", () => {
         "canonical",
       ]);
       assert.equal(result.exitCode, 1);
-      assert.match(result.stderr, /unknown --from agent/);
+      assert.match(result.stderr, /unknown --from format/);
     });
 
-    it("auto-detects format when --from is omitted", async () => {
+    void it("auto-detects format when --from is omitted", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       await writeFile(
@@ -208,8 +208,8 @@ describe("CLI", () => {
     });
   });
 
-  describe("--help", () => {
-    it("shows usage", async () => {
+  void describe("--help", () => {
+    void it("shows usage", async () => {
       const result = await run(["--help"]);
       assert.equal(result.exitCode, 1);
       assert.match(result.stderr, /agent-perms/);

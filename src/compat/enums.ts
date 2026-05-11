@@ -136,7 +136,7 @@ export type CodexDomainAccess = z.infer<typeof CodexDomainAccess>;
 // Compile-time alignment assertions
 // ---------------------------------------------------------------------------
 // These produce compile errors if our Zod enums diverge from the upstream
-// SDK types. They are never referenced at runtime.
+// SDK types. Each const forces evaluation of the conditional
 
 type _AssertClaudeModes = [ClaudeCodePermissionMode] extends [
   ClaudeSdkPermissionMode,
@@ -145,6 +145,7 @@ type _AssertClaudeModes = [ClaudeCodePermissionMode] extends [
     ? true
     : "SDK has modes missing from ClaudeCodePermissionMode"
   : "ClaudeCodePermissionMode has modes missing from SDK";
+export const _assertClaudeModes: _AssertClaudeModes = true;
 
 type _AssertClaudeBehaviors = [PermissionBehavior] extends [
   ClaudeSdkPermissionBehavior,
@@ -153,18 +154,21 @@ type _AssertClaudeBehaviors = [PermissionBehavior] extends [
     ? true
     : "SDK has behaviors missing from PermissionBehavior"
   : "PermissionBehavior has behaviors missing from SDK";
+export const _assertClaudeBehaviors: _AssertClaudeBehaviors = true;
 
 type _AssertCodexApproval = [CodexApprovalMode] extends [CodexSdkApprovalMode]
   ? [CodexSdkApprovalMode] extends [CodexApprovalMode]
     ? true
     : "SDK has approval modes missing from CodexApprovalMode"
   : "CodexApprovalMode has approval modes missing from SDK";
+export const _assertCodexApproval: _AssertCodexApproval = true;
 
 type _AssertCodexSandbox = [CodexSandboxMode] extends [CodexSdkSandboxMode]
   ? [CodexSdkSandboxMode] extends [CodexSandboxMode]
     ? true
     : "SDK has sandbox modes missing from CodexSandboxMode"
   : "CodexSandboxMode has sandbox modes missing from SDK";
+export const _assertCodexSandbox: _AssertCodexSandbox = true;
 
 // ---------------------------------------------------------------------------
 // OpenCode alignment (v2 SDK)
@@ -181,3 +185,4 @@ type _AssertOpenCodeBehavior = [PermissionBehavior] extends [OpenCodeAction]
     ? true
     : "OpenCode SDK has actions missing from PermissionBehavior"
   : "PermissionBehavior has actions missing from OpenCode SDK";
+export const _assertOpenCodeBehavior: _AssertOpenCodeBehavior = true;
