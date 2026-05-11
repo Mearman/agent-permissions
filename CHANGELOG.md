@@ -1,3 +1,13 @@
+## [4.8.0](https://github.com/Mearman/agent-permissions/compare/v4.7.1...v4.8.0) (2026-05-11)
+
+### Features
+
+* extract programmatic API from CLI into src/api.ts ([0518661](https://github.com/Mearman/agent-permissions/commit/0518661612fcaf31d1178626abb496664a6c9a9d))
+
+### Documentation
+
+* document programmatic API and sync import in README ([cf9862d](https://github.com/Mearman/agent-permissions/commit/cf9862d8d89705749cede7161f0c72595cd0fe9e))
+
 ## [4.7.1](https://github.com/Mearman/agent-permissions/compare/v4.7.0...v4.7.1) (2026-05-11)
 
 ### Documentation
