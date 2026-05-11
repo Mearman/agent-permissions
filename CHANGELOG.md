@@ -1,3 +1,9 @@
+## [4.6.0](https://github.com/Mearman/agent-permissions/compare/v4.5.0...v4.6.0) (2026-05-11)
+
+### Features
+
+* add --out/-o flag to convert for writing output to a file ([0220f3f](https://github.com/Mearman/agent-permissions/commit/0220f3fef1219a35aeba96eb201a87cc12188674))
+
 ## [4.5.0](https://github.com/Mearman/agent-permissions/compare/v4.4.0...v4.5.0) (2026-05-11)
 
 ### Features
