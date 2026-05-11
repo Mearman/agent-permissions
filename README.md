@@ -253,6 +253,87 @@ jq '.permissions' .claude/settings.json > .agents/permissions.json
 
 This works because the canonical spec accepts Claude Code's rule syntax, mode values, and `defaultMode` placement unchanged. The loader normalises `permissions` arrays into structured `rules`.
 
+## CLI
+
+The `agent-perms` binary converts, validates, and syncs permission configs.
+
+### convert
+
+```bash
+# Auto-detect input format, convert to canonical
+agent-perms convert -t canonical .claude/settings.json
+
+# Explicit source format, write to file
+agent-perms convert -f claude-code -t crush -o .crush.json settings.json
+
+# Pipe compact JSON for scripting
+agent-perms convert -t canonical -c < settings.json | jq '.rules'
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--from` | `-f` | Source agent format (auto-detected if omitted) |
+| `--to` | `-t` | Target agent format (required) |
+| `--out <file>` | `-o` | Write output to file instead of stdout |
+| `--compact` | `-c` | Single-line JSON (no pretty-print) |
+| `--verbose` | `-v` | Show decode/encode summary on stderr |
+
+`--from` is optional — the CLI detects the format from the input structure:
+
+| Format | Distinguishing feature |
+|--------|----------------------|
+| Claude Code | `allow`/`deny`/`ask` string arrays |
+| Crush | `allowed_tools` (required) |
+| Kiro | `allowedTools` / `toolsSettings` |
+| Codex | `approval_policy` / `sandbox_mode` |
+| OpenCode | lowercase tool keys (`bash`, `read`, …) |
+| Canonical | `rules[]` of `{tool, tier}` objects |
+
+### validate
+
+```bash
+agent-perms validate policy.json
+echo '...' | agent-perms validate
+```
+
+Exits 0 if valid, 2 with error details if not.
+
+### check
+
+```bash
+# Does this policy allow running git status?
+agent-perms check --tool Bash --input "git status" policy.json
+```
+
+Exits 0 with `allow` or 1 with `deny`.
+
+### sync
+
+```bash
+# Sync all detected agent configs in the directory tree
+agent-perms sync
+
+# Preview changes without writing
+agent-perms sync --dry-run
+
+# Only sync Claude Code and OpenCode configs
+agent-perms sync -w claude-code -w opencode
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--up <n\|all>` | `-u` | Ascend n parent directories (default: all) |
+| `--with <agent>` | `-w` | Only sync these agents (repeatable) |
+| `--without <agent>` | `-x` | Sync all except these agents (repeatable) |
+| `--yes` | `-y` | Apply without prompting |
+| `--dry-run` | `-d` | Show changes only, never write |
+| `--create` | `-c` | Create config files that don't exist |
+| `--verbose` | `-v` | Show rule provenance |
+| `--backup` | `-b` | Write `.bak` files before overwriting |
+
+Sync merges rules with deny-first semantics (deny > ask > allow for same tool+pattern).
+Most restrictive `defaultMode` wins.
+
 ## JSON Schema for IDE support
 
 ```json
@@ -336,7 +417,7 @@ See [`spec/examples/full.json`](spec/examples/full.json).
 
 ```bash
 pnpm install          # Install dependencies
-pnpm test             # Run tests (216 tests)
+pnpm test             # Run tests (259 tests)
 pnpm build            # Build ESM + CJS + types + JSON Schema
 ```
 
