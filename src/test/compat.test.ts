@@ -6,6 +6,7 @@ import {
   codexCodec,
   opencodeCodec,
   crushCodec,
+  kiroCodec,
 } from "../compat/codecs.ts";
 import type { CodexProfile } from "../compat/codecs.ts";
 import type { CodexFilesystemAccess } from "../compat/enums.ts";
@@ -894,6 +895,391 @@ describe("codexCodec", () => {
       const domains = getNetworkDomains(profile.network);
       assert.strictEqual(domains["api.example.com"], "allow");
       assert.strictEqual(domains["evil.com"], "deny");
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Kiro codec
+// ---------------------------------------------------------------------------
+
+describe("kiroCodec", () => {
+  describe("decode (Kiro → canonical)", () => {
+    it("maps allowedTools to allow rules", () => {
+      const result = kiroCodec.decode({
+        allowedTools: ["read", "@git", "@git/git_status", "shell"],
+      });
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Read", "allow"), true);
+      assert.equal(hasRule(result.rules, "Bash", "allow"), true);
+      assert.equal(hasRule(result.rules, "@git", "allow"), true);
+      assert.equal(hasRule(result.rules, "@git/git_status", "allow"), true);
+    });
+
+    it("maps shell deniedCommands to deny Bash rules", () => {
+      const result = kiroCodec.decode({
+        toolsSettings: {
+          shell: {
+            deniedCommands: ["\\Arm -rf .*\\z"],
+          },
+        },
+      });
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Bash", "deny", "rm -rf .*"), true);
+    });
+
+    it("maps shell allowedCommands to allow Bash rules", () => {
+      const result = kiroCodec.decode({
+        toolsSettings: {
+          shell: {
+            allowedCommands: ["\\Agit status\\z"],
+          },
+        },
+      });
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Bash", "allow", "git status"), true);
+    });
+
+    it("maps denyByDefault to restricted mode", () => {
+      assert.strictEqual(
+        kiroCodec.decode({
+          toolsSettings: { shell: { denyByDefault: true } },
+        }).defaultMode,
+        "restricted",
+      );
+    });
+
+    it("maps write deniedPaths to deny Write rules", () => {
+      const result = kiroCodec.decode({
+        toolsSettings: {
+          write: { deniedPaths: ["./secrets/**", ".env"] },
+        },
+      });
+      assert.ok(result.rules !== undefined);
+      assert.equal(
+        hasRule(result.rules, "Write", "deny", "./secrets/**"),
+        true,
+      );
+      assert.equal(hasRule(result.rules, "Write", "deny", ".env"), true);
+    });
+
+    it("maps read allowedPaths to allow Read rules", () => {
+      const result = kiroCodec.decode({
+        toolsSettings: {
+          read: { allowedPaths: ["~/projects"] },
+        },
+      });
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Read", "allow", "~/projects"), true);
+    });
+
+    it("maps aws allowedServices/deniedServices", () => {
+      const result = kiroCodec.decode({
+        toolsSettings: {
+          aws: {
+            allowedServices: ["s3", "lambda"],
+            deniedServices: ["eks"],
+          },
+        },
+      });
+      assert.ok(result.rules !== undefined);
+      assert.equal(hasRule(result.rules, "Aws", "allow", "service:s3"), true);
+      assert.equal(hasRule(result.rules, "Aws", "deny", "service:eks"), true);
+    });
+
+    it("maps web_fetch trusted/blocked to WebFetch rules", () => {
+      const result = kiroCodec.decode({
+        toolsSettings: {
+          web_fetch: {
+            trusted: [".*docs\\.aws\\.amazon\\.com.*"],
+            blocked: [".*pastebin\\.com.*"],
+          },
+        },
+      });
+      assert.ok(result.rules !== undefined);
+      assert.equal(
+        hasRule(
+          result.rules,
+          "WebFetch",
+          "allow",
+          "url:.*docs\\.aws\\.amazon\\.com.*",
+        ),
+        true,
+      );
+      assert.equal(
+        hasRule(result.rules, "WebFetch", "deny", "url:.*pastebin\\.com.*"),
+        true,
+      );
+    });
+
+    it("decodes a full agent config", () => {
+      const result = kiroCodec.decode({
+        allowedTools: ["read", "@git/git_status"],
+        toolsSettings: {
+          shell: {
+            allowedCommands: ["\\Agit status\\z", "\\Agit fetch\\z"],
+            deniedCommands: ["\\Arm -rf .*\\z"],
+            autoAllowReadonly: true,
+            denyByDefault: false,
+          },
+          write: {
+            allowedPaths: ["src/**", "tests/**"],
+            deniedPaths: ["./secrets"],
+          },
+        },
+      });
+      assert.ok(result.rules !== undefined);
+      assert.equal(findRules(result.rules, "Bash", "deny").length, 1);
+      assert.equal(findRules(result.rules, "Bash", "allow").length, 2);
+      assert.equal(findRules(result.rules, "Write", "deny").length, 1);
+      assert.equal(findRules(result.rules, "Write", "allow").length, 2);
+      assert.equal(findRules(result.rules, "Read", "allow").length, 1);
+      assert.equal(
+        findRules(result.rules, "@git/git_status", "allow").length,
+        1,
+      );
+    });
+  });
+
+  describe("encode (canonical → Kiro)", () => {
+    it("encodes bare allow rules to allowedTools", () => {
+      const encoded = z.encode(kiroCodec, {
+        rules: [
+          { tool: "Read", tier: "allow" },
+          { tool: "Bash", tier: "allow" },
+          { tool: "@git", tier: "allow" },
+        ],
+      });
+      assert.deepStrictEqual(encoded.allowedTools, ["read", "shell", "@git"]);
+    });
+
+    it("encodes Bash deny rules to shell.deniedCommands", () => {
+      const encoded = z.encode(kiroCodec, {
+        rules: [{ tool: "Bash", pattern: "rm -rf .*", tier: "deny" }],
+      });
+      assert.ok(encoded.toolsSettings !== undefined);
+      assert.ok(encoded.toolsSettings.shell !== undefined);
+      assert.deepStrictEqual(encoded.toolsSettings.shell.deniedCommands, [
+        "\\Arm -rf .*\\z",
+      ]);
+    });
+
+    it("encodes Write path rules to write settings", () => {
+      const encoded = z.encode(kiroCodec, {
+        rules: [
+          { tool: "Write", pattern: "src/**", tier: "allow" },
+          { tool: "Write", pattern: "./secrets", tier: "deny" },
+        ],
+      });
+      assert.ok(encoded.toolsSettings !== undefined);
+      assert.ok(encoded.toolsSettings.write !== undefined);
+      assert.deepStrictEqual(encoded.toolsSettings.write.allowedPaths, [
+        "src/**",
+      ]);
+      assert.deepStrictEqual(encoded.toolsSettings.write.deniedPaths, [
+        "./secrets",
+      ]);
+    });
+
+    it("encodes Aws service rules to aws settings", () => {
+      const encoded = z.encode(kiroCodec, {
+        rules: [
+          { tool: "Aws", pattern: "service:s3", tier: "allow" },
+          { tool: "Aws", pattern: "service:eks", tier: "deny" },
+        ],
+      });
+      assert.ok(encoded.toolsSettings !== undefined);
+      assert.ok(encoded.toolsSettings.aws !== undefined);
+      assert.deepStrictEqual(encoded.toolsSettings.aws.allowedServices, ["s3"]);
+      assert.deepStrictEqual(encoded.toolsSettings.aws.deniedServices, ["eks"]);
+    });
+
+    it("encodes WebFetch domain rules to web_fetch settings", () => {
+      const encoded = z.encode(kiroCodec, {
+        rules: [
+          {
+            tool: "WebFetch",
+            pattern: "url:.*docs.aws.amazon.com.*",
+            tier: "allow",
+          },
+          { tool: "WebFetch", pattern: "url:.*evil.com.*", tier: "deny" },
+        ],
+      });
+      assert.ok(encoded.toolsSettings !== undefined);
+      assert.ok(encoded.toolsSettings.web_fetch !== undefined);
+      assert.deepStrictEqual(encoded.toolsSettings.web_fetch.trusted, [
+        "\\A.*docs.aws.amazon.com.*\\z",
+      ]);
+      assert.deepStrictEqual(encoded.toolsSettings.web_fetch.blocked, [
+        "\\A.*evil.com.*\\z",
+      ]);
+    });
+
+    it("encodes restricted mode to denyByDefault", () => {
+      const encoded = z.encode(kiroCodec, { defaultMode: "restricted" });
+      assert.ok(encoded.toolsSettings !== undefined);
+      assert.ok(encoded.toolsSettings.shell !== undefined);
+      assert.strictEqual(encoded.toolsSettings.shell.denyByDefault, true);
+    });
+  });
+
+  describe("round-trip (native → canonical → native)", () => {
+    it("preserves allowedTools through full cycle", () => {
+      const native = {
+        allowedTools: ["read", "shell", "@git", "@git/git_status"],
+      };
+      const canonical = kiroCodec.decode(native);
+      const reEncoded = z.encode(kiroCodec, canonical);
+      assert.ok(reEncoded.allowedTools !== undefined);
+      assert.ok(reEncoded.allowedTools.includes("read"));
+      assert.ok(reEncoded.allowedTools.includes("shell"));
+      assert.ok(reEncoded.allowedTools.includes("@git"));
+      assert.ok(reEncoded.allowedTools.includes("@git/git_status"));
+    });
+
+    it("preserves shell commands through full cycle", () => {
+      const native = {
+        toolsSettings: {
+          shell: {
+            allowedCommands: ["\\Agit status\\z"],
+            deniedCommands: ["\\Arm -rf .*\\z"],
+            autoAllowReadonly: true,
+            denyByDefault: false,
+          },
+        },
+      };
+      const canonical = kiroCodec.decode(native);
+      assert.ok(canonical.rules !== undefined);
+      assert.equal(
+        hasRule(canonical.rules, "Bash", "allow", "git status"),
+        true,
+      );
+      assert.equal(hasRule(canonical.rules, "Bash", "deny", "rm -rf .*"), true);
+      const reEncoded = z.encode(kiroCodec, canonical);
+      assert.ok(reEncoded.toolsSettings !== undefined);
+      assert.ok(reEncoded.toolsSettings.shell !== undefined);
+      assert.deepStrictEqual(reEncoded.toolsSettings.shell.allowedCommands, [
+        "\\Agit status\\z",
+      ]);
+      assert.deepStrictEqual(reEncoded.toolsSettings.shell.deniedCommands, [
+        "\\Arm -rf .*\\z",
+      ]);
+    });
+
+    it("preserves write paths through full cycle", () => {
+      const native = {
+        toolsSettings: {
+          write: {
+            allowedPaths: ["src/**", "tests/**"],
+            deniedPaths: ["./secrets"],
+          },
+        },
+      };
+      const canonical = kiroCodec.decode(native);
+      assert.ok(canonical.rules !== undefined);
+      assert.equal(findRules(canonical.rules, "Write", "allow").length, 2);
+      assert.equal(findRules(canonical.rules, "Write", "deny").length, 1);
+      const reEncoded = z.encode(kiroCodec, canonical);
+      assert.ok(reEncoded.toolsSettings !== undefined);
+      assert.ok(reEncoded.toolsSettings.write !== undefined);
+      assert.deepStrictEqual(
+        reEncoded.toolsSettings.write.allowedPaths?.sort(),
+        ["src/**", "tests/**"],
+      );
+      assert.deepStrictEqual(reEncoded.toolsSettings.write.deniedPaths, [
+        "./secrets",
+      ]);
+    });
+
+    it("preserves AWS services through full cycle", () => {
+      const native = {
+        toolsSettings: {
+          aws: {
+            allowedServices: ["s3", "lambda"],
+            deniedServices: ["eks"],
+          },
+        },
+      };
+      const canonical = kiroCodec.decode(native);
+      assert.ok(canonical.rules !== undefined);
+      assert.equal(
+        hasRule(canonical.rules, "Aws", "allow", "service:s3"),
+        true,
+      );
+      assert.equal(
+        hasRule(canonical.rules, "Aws", "deny", "service:eks"),
+        true,
+      );
+      const reEncoded = z.encode(kiroCodec, canonical);
+      assert.ok(reEncoded.toolsSettings !== undefined);
+      assert.ok(reEncoded.toolsSettings.aws !== undefined);
+      assert.deepStrictEqual(
+        reEncoded.toolsSettings.aws.allowedServices?.sort(),
+        ["lambda", "s3"],
+      );
+      assert.deepStrictEqual(reEncoded.toolsSettings.aws.deniedServices, [
+        "eks",
+      ]);
+    });
+
+    it("preserves web_fetch patterns through full cycle", () => {
+      const native = {
+        toolsSettings: {
+          web_fetch: {
+            trusted: [".*docs\\.aws\\.amazon\\.com.*"],
+            blocked: [".*pastebin\\.com.*"],
+          },
+        },
+      };
+      const canonical = kiroCodec.decode(native);
+      assert.ok(canonical.rules !== undefined);
+      assert.equal(
+        hasRule(
+          canonical.rules,
+          "WebFetch",
+          "allow",
+          "url:.*docs\\.aws\\.amazon\\.com.*",
+        ),
+        true,
+      );
+      const reEncoded = z.encode(kiroCodec, canonical);
+      assert.ok(reEncoded.toolsSettings !== undefined);
+      assert.ok(reEncoded.toolsSettings.web_fetch !== undefined);
+      assert.deepStrictEqual(reEncoded.toolsSettings.web_fetch.trusted, [
+        "\\A.*docs\\.aws\\.amazon\\.com.*\\z",
+      ]);
+      assert.deepStrictEqual(reEncoded.toolsSettings.web_fetch.blocked, [
+        "\\A.*pastebin\\.com.*\\z",
+      ]);
+    });
+
+    it("preserves full agent config through cycle", () => {
+      const native = {
+        allowedTools: ["read", "@git/git_status"],
+        toolsSettings: {
+          shell: {
+            allowedCommands: ["\\Agit status\\z"],
+            deniedCommands: ["\\Arm -rf .*\\z"],
+          },
+          write: {
+            allowedPaths: ["src/**"],
+            deniedPaths: ["./secrets"],
+          },
+        },
+      };
+      const canonical = kiroCodec.decode(native);
+      const reEncoded = z.encode(kiroCodec, canonical);
+      const reDecoded = kiroCodec.decode(reEncoded);
+      assert.ok(reDecoded.rules !== undefined);
+      assert.equal(findRules(reDecoded.rules, "Read", "allow").length, 1);
+      assert.equal(
+        findRules(reDecoded.rules, "@git/git_status", "allow").length,
+        1,
+      );
+      assert.equal(findRules(reDecoded.rules, "Bash", "deny").length, 1);
+      assert.equal(findRules(reDecoded.rules, "Bash", "allow").length, 1);
+      assert.equal(findRules(reDecoded.rules, "Write", "deny").length, 1);
+      assert.equal(findRules(reDecoded.rules, "Write", "allow").length, 1);
     });
   });
 });

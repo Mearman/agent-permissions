@@ -76,11 +76,11 @@ async function convertCommand(args: string[]): Promise<void> {
 
   if (!from)
     error(
-      "--from is required (claude-code | codex | opencode | crush | canonical)",
+      "--from is required (claude-code | codex | kiro | opencode | crush | canonical)",
     );
   if (!to)
     error(
-      "--to is required (claude-code | codex | opencode | crush | canonical)",
+      "--to is required (claude-code | codex | kiro | opencode | crush | canonical)",
     );
   if (from !== "canonical" && !AGENTS.includes(from as Agent))
     error(
@@ -261,7 +261,7 @@ Usage:
   agent-perms validate [file]
   agent-perms check --tool <name> --input <string> [file]
 
-Agents: claude-code, codex, opencode, crush, canonical
+Agents: claude-code, codex, kiro, opencode, crush, canonical
 
 Commands:
   convert   Convert a permission config between agent formats

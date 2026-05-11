@@ -40,7 +40,13 @@ import {
 // Canonical agent identifiers
 // ---------------------------------------------------------------------------
 
-export const agentId = z.enum(["claude-code", "codex", "opencode", "crush"]);
+export const agentId = z.enum([
+  "claude-code",
+  "codex",
+  "kiro",
+  "opencode",
+  "crush",
+]);
 
 export type AgentId = z.infer<typeof agentId>;
 
@@ -379,6 +385,354 @@ export const crushCodec = z.codec(crushNative, AgentPermissionPolicy, {
       if (crushTool) allowed.push(crushTool);
     }
     return { allowed_tools: allowed };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Kiro (Amazon) codec
+// ---------------------------------------------------------------------------
+// Kiro uses declarative per-agent JSON configs with interactive tiered trust.
+// No SDK — alignment by manual review of https://kiro.dev/docs/.
+//
+// Key concepts:
+//   allowedTools: auto-approved tools (glob patterns with * and ?)
+//   toolsSettings.shell.allowedCommands/deniedCommands: regex patterns
+//   toolsSettings.shell.autoAllowReadonly / denyByDefault: booleans
+//   toolsSettings.<tool>.allowedPaths/deniedPaths: path globs
+//   toolsSettings.aws.allowedServices/deniedServices: service names
+//   toolsSettings.web_fetch.trusted/blocked: regex URL patterns
+//
+// Mapping:
+//   allowedTools → allow rules (bare tool or MCP glob)
+//   toolsSettings.shell.deniedCommands → deny Bash rules
+//   toolsSettings.shell.allowedCommands → allow Bash rules
+//   toolsSettings.<tool>.deniedPaths → deny rules for that tool
+//   toolsSettings.<tool>.allowedPaths → allow rules for that tool
+//   toolsSettings.web_fetch.blocked/trusted → deny/allow WebFetch (domain: regex)
+//   toolsSettings.shell.denyByDefault → defaultMode "restricted"
+//   toolsSettings.shell.autoAllowReadonly → allow Bash rules for readonly
+
+/** Kiro → canonical tool name mapping. */
+const kiroToCanonical: Record<string, string> = {
+  read: "Read",
+  write: "Write",
+  shell: "Bash",
+  aws: "Aws",
+  glob: "Glob",
+  grep: "Grep",
+  web_search: "WebSearch",
+  web_fetch: "WebFetch",
+  code: "Code",
+  delegate: "Delegate",
+  subagent: "Agent",
+};
+
+/** Canonical → Kiro tool name mapping (reverse of kiroToCanonical). */
+const canonicalToKiro: Record<string, string> = {};
+for (const [kiro, canonical] of Object.entries(kiroToCanonical)) {
+  canonicalToKiro[canonical] = kiro;
+}
+
+/**
+ * Strip Kiro regex anchors (\A → ^, \z → $) from a pattern for canonical use.
+ * Kiro auto-anchors with \A/\z; we store the pattern without anchors.
+ */
+function stripKiroAnchors(pattern: string): string {
+  return pattern.replace(/^\\A/, "").replace(/\\z$/, "");
+}
+
+/** Add Kiro regex anchors to a pattern for native output. */
+function addKiroAnchors(pattern: string): string {
+  return `\\A${pattern}\\z`;
+}
+
+/**
+ * Check if a Kiro allowedTools entry is an MCP reference
+ * (starts with @) vs a built-in tool name.
+ */
+function isKiroMcpRef(entry: string): boolean {
+  return entry.startsWith("@");
+}
+
+/**
+ * Convert a Kiro allowedTools glob pattern to canonical pattern syntax.
+ * Kiro uses * and ? globs; MCP refs use @server/tool format.
+ */
+function kiroGlobToPattern(glob: string): string | undefined {
+  if (!isKiroMcpRef(glob) && !glob.includes("*") && !glob.includes("?"))
+    return undefined;
+  return glob;
+}
+
+const kiroNative = z.object({
+  allowedTools: z.array(z.string()).optional(),
+  toolsSettings: z
+    .object({
+      shell: z
+        .object({
+          allowedCommands: z.array(z.string()).optional(),
+          deniedCommands: z.array(z.string()).optional(),
+          autoAllowReadonly: z.boolean().optional(),
+          denyByDefault: z.boolean().optional(),
+        })
+        .partial()
+        .optional(),
+      read: z
+        .object({
+          allowedPaths: z.array(z.string()).optional(),
+          deniedPaths: z.array(z.string()).optional(),
+        })
+        .partial()
+        .optional(),
+      write: z
+        .object({
+          allowedPaths: z.array(z.string()).optional(),
+          deniedPaths: z.array(z.string()).optional(),
+        })
+        .partial()
+        .optional(),
+      aws: z
+        .object({
+          allowedServices: z.array(z.string()).optional(),
+          deniedServices: z.array(z.string()).optional(),
+          autoAllowReadonly: z.boolean().optional(),
+        })
+        .partial()
+        .optional(),
+      web_fetch: z
+        .object({
+          trusted: z.array(z.string()).optional(),
+          blocked: z.array(z.string()).optional(),
+        })
+        .partial()
+        .optional(),
+    })
+    .partial()
+    .optional(),
+});
+
+type KiroNative = z.infer<typeof kiroNative>;
+
+export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
+  decode(native) {
+    const rules: Rule[] = [];
+    const result: Partial<AgentPermissionPolicy> = {};
+
+    // --- allowedTools → allow rules ---
+    if (native.allowedTools) {
+      for (const entry of native.allowedTools) {
+        if (isKiroMcpRef(entry)) {
+          // MCP reference: @server, @server/tool, @server/prefix_*
+          rules.push({ tool: entry, tier: "allow" });
+        } else {
+          const canonical = kiroToCanonical[entry] ?? entry;
+          const pattern = kiroGlobToPattern(entry);
+          rules.push({
+            tool: canonical,
+            tier: "allow",
+            ...(pattern && { pattern }),
+          });
+        }
+      }
+    }
+
+    // --- toolsSettings ---
+    const ts = native.toolsSettings;
+    if (ts) {
+      // Shell (Bash)
+      if (ts.shell) {
+        if (ts.shell.deniedCommands) {
+          for (const cmd of ts.shell.deniedCommands) {
+            rules.push({
+              tool: "Bash",
+              pattern: stripKiroAnchors(cmd),
+              tier: "deny",
+            });
+          }
+        }
+        if (ts.shell.allowedCommands) {
+          for (const cmd of ts.shell.allowedCommands) {
+            rules.push({
+              tool: "Bash",
+              pattern: stripKiroAnchors(cmd),
+              tier: "allow",
+            });
+          }
+        }
+        if (ts.shell.denyByDefault) {
+          result.defaultMode = "restricted";
+        }
+        // autoAllowReadonly is a Kiro-specific behaviour flag; no canonical mapping
+      }
+
+      // Read paths
+      if (ts.read) {
+        if (ts.read.deniedPaths) {
+          for (const path of ts.read.deniedPaths) {
+            rules.push({ tool: "Read", pattern: path, tier: "deny" });
+          }
+        }
+        if (ts.read.allowedPaths) {
+          for (const path of ts.read.allowedPaths) {
+            rules.push({ tool: "Read", pattern: path, tier: "allow" });
+          }
+        }
+      }
+
+      // Write paths
+      if (ts.write) {
+        if (ts.write.deniedPaths) {
+          for (const path of ts.write.deniedPaths) {
+            rules.push({ tool: "Write", pattern: path, tier: "deny" });
+          }
+        }
+        if (ts.write.allowedPaths) {
+          for (const path of ts.write.allowedPaths) {
+            rules.push({ tool: "Write", pattern: path, tier: "allow" });
+          }
+        }
+      }
+
+      // AWS services
+      if (ts.aws) {
+        if (ts.aws.deniedServices) {
+          for (const svc of ts.aws.deniedServices) {
+            rules.push({
+              tool: "Aws",
+              pattern: `service:${svc}`,
+              tier: "deny",
+            });
+          }
+        }
+        if (ts.aws.allowedServices) {
+          for (const svc of ts.aws.allowedServices) {
+            rules.push({
+              tool: "Aws",
+              pattern: `service:${svc}`,
+              tier: "allow",
+            });
+          }
+        }
+      }
+
+      // Web fetch (URL regex → domain-like patterns)
+      if (ts.web_fetch) {
+        if (ts.web_fetch.blocked) {
+          for (const urlPattern of ts.web_fetch.blocked) {
+            rules.push({
+              tool: "WebFetch",
+              pattern: `url:${stripKiroAnchors(urlPattern)}`,
+              tier: "deny",
+            });
+          }
+        }
+        if (ts.web_fetch.trusted) {
+          for (const urlPattern of ts.web_fetch.trusted) {
+            rules.push({
+              tool: "WebFetch",
+              pattern: `url:${stripKiroAnchors(urlPattern)}`,
+              tier: "allow",
+            });
+          }
+        }
+      }
+    }
+
+    if (rules.length > 0) result.rules = rules;
+    return result;
+  },
+
+  encode(canonical) {
+    const allRules = collectRules(canonical);
+    const result: Partial<KiroNative> = {};
+
+    const allowedTools: string[] = [];
+    const shellSettings: NonNullable<KiroNative["toolsSettings"]>["shell"] = {};
+    const readSettings: NonNullable<KiroNative["toolsSettings"]>["read"] = {};
+    const writeSettings: NonNullable<KiroNative["toolsSettings"]>["write"] = {};
+    const awsSettings: NonNullable<KiroNative["toolsSettings"]>["aws"] = {};
+    const webFetchSettings: NonNullable<
+      KiroNative["toolsSettings"]
+    >["web_fetch"] = {};
+
+    for (const rule of allRules) {
+      const kiroTool = canonicalToKiro[rule.tool];
+
+      // Bare allow rules (no pattern) → allowedTools
+      if (rule.tier === "allow" && rule.pattern === undefined) {
+        if (isKiroMcpRef(rule.tool)) {
+          allowedTools.push(rule.tool);
+        } else if (kiroTool) {
+          allowedTools.push(kiroTool);
+        }
+        continue;
+      }
+
+      // Patterned rules → toolsSettings
+      if (rule.tool === "Bash" && rule.pattern !== undefined) {
+        if (rule.tier === "deny") {
+          shellSettings.deniedCommands ??= [];
+          shellSettings.deniedCommands.push(addKiroAnchors(rule.pattern));
+        } else if (rule.tier === "allow") {
+          shellSettings.allowedCommands ??= [];
+          shellSettings.allowedCommands.push(addKiroAnchors(rule.pattern));
+        }
+      } else if (rule.tool === "Read" && rule.pattern !== undefined) {
+        if (rule.tier === "deny") {
+          readSettings.deniedPaths ??= [];
+          readSettings.deniedPaths.push(rule.pattern);
+        } else if (rule.tier === "allow") {
+          readSettings.allowedPaths ??= [];
+          readSettings.allowedPaths.push(rule.pattern);
+        }
+      } else if (rule.tool === "Write" && rule.pattern !== undefined) {
+        if (rule.tier === "deny") {
+          writeSettings.deniedPaths ??= [];
+          writeSettings.deniedPaths.push(rule.pattern);
+        } else if (rule.tier === "allow") {
+          writeSettings.allowedPaths ??= [];
+          writeSettings.allowedPaths.push(rule.pattern);
+        }
+      } else if (rule.tool === "Aws" && rule.pattern?.startsWith("service:")) {
+        const svc = rule.pattern.slice("service:".length);
+        if (rule.tier === "deny") {
+          awsSettings.deniedServices ??= [];
+          awsSettings.deniedServices.push(svc);
+        } else if (rule.tier === "allow") {
+          awsSettings.allowedServices ??= [];
+          awsSettings.allowedServices.push(svc);
+        }
+      } else if (rule.tool === "WebFetch" && rule.pattern?.startsWith("url:")) {
+        const urlPattern = rule.pattern.slice("url:".length);
+        if (rule.tier === "deny") {
+          webFetchSettings.blocked ??= [];
+          webFetchSettings.blocked.push(addKiroAnchors(urlPattern));
+        } else if (rule.tier === "allow") {
+          webFetchSettings.trusted ??= [];
+          webFetchSettings.trusted.push(addKiroAnchors(urlPattern));
+        }
+      }
+    }
+
+    if (canonical.defaultMode === "restricted") {
+      shellSettings.denyByDefault = true;
+    }
+
+    if (allowedTools.length > 0) result.allowedTools = allowedTools;
+
+    const toolsSettings: NonNullable<KiroNative["toolsSettings"]> = {};
+    if (Object.keys(shellSettings).length > 0)
+      toolsSettings.shell = shellSettings;
+    if (Object.keys(readSettings).length > 0) toolsSettings.read = readSettings;
+    if (Object.keys(writeSettings).length > 0)
+      toolsSettings.write = writeSettings;
+    if (Object.keys(awsSettings).length > 0) toolsSettings.aws = awsSettings;
+    if (Object.keys(webFetchSettings).length > 0)
+      toolsSettings.web_fetch = webFetchSettings;
+    if (Object.keys(toolsSettings).length > 0)
+      result.toolsSettings = toolsSettings;
+
+    return result;
   },
 });
 
@@ -885,6 +1239,7 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
 export const CODECS = {
   "claude-code": claudeCodeCodec,
   codex: codexCodec,
+  kiro: kiroCodec,
   opencode: opencodeCodec,
   crush: crushCodec,
 } as const;
