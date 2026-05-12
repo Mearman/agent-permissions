@@ -1,3 +1,9 @@
+## [5.3.0](https://github.com/Mearman/agent-permissions/compare/v5.2.2...v5.3.0) (2026-05-12)
+
+### Features
+
+* **sync:** inject $schema into generated canonical files ([3548e19](https://github.com/Mearman/agent-permissions/commit/3548e19976c007f2d75734974e3611aa78b70752))
+
 ## [5.2.2](https://github.com/Mearman/agent-permissions/compare/v5.2.1...v5.2.2) (2026-05-12)
 
 ### Chores
