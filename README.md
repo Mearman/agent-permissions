@@ -52,6 +52,57 @@ Both files are merged at load time. Deny rules from any source short-circuit bef
 
 ## Installation
 
+### As an MCP server
+
+#### CLI shorthand
+
+Some agent harnesses provide a one-command install:
+
+**Claude Code (MCP):**
+
+```bash
+claude mcp add agent-perms -- npx -y agent-perms-mcp
+```
+
+**Claude Code (plugin marketplace):**
+
+```
+/plugin marketplace add https://github.com/Mearman/agent-permissions.git
+/plugin install agent-perms@agent-perms
+```
+
+**OpenAI Codex:**
+
+```bash
+codex mcp add agent-perms -- npx -y agent-perms-mcp
+```
+
+#### Manual configuration
+
+For harnesses that use config files, add the following to the `mcpServers` section:
+
+```json
+{
+  "agent-perms": {
+    "command": "npx",
+    "args": ["-y", "agent-perms-mcp"]
+  }
+}
+```
+
+| Harness | Config file | Config key |
+|---|---|---|
+| Claude Code | `.mcp.json` (project) / `~/.claude.json` (user) | `mcpServers` |
+| Codex | `~/.codex/config.toml` | `[mcp_servers.agent-perms]` |
+| Gemini CLI | `~/.gemini/settings.json` | `mcpServers` |
+| Crush | `.crush.json` / `~/.config/crush/crush.json` | `mcp` |
+| Cline | `.cline/mcp.json` | `mcpServers` |
+| Cursor | `.cursor/mcp.json` | `mcpServers` |
+
+The MCP server is a background sync daemon — it exposes no tools. It reads config from `.agents/permissions.json` and keeps native agent config files in sync.
+
+### As a library
+
 ```bash
 pnpm add agent-perms
 ```
