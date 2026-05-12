@@ -1,3 +1,10 @@
+## [5.2.2](https://github.com/Mearman/agent-permissions/compare/v5.2.1...v5.2.2) (2026-05-12)
+
+### Chores
+
+* **build:** regenerate JSON schema with with/without/up fields ([e1bca37](https://github.com/Mearman/agent-permissions/commit/e1bca37432369bd7d61e25d2ec3495aad37392aa))
+* **deps:** update commitlint scopes for all modules ([8421258](https://github.com/Mearman/agent-permissions/commit/8421258117e077d20202dc5832bb68300a792c9b))
+
 ## [5.2.1](https://github.com/Mearman/agent-permissions/compare/v5.2.0...v5.2.1) (2026-05-11)
 
 ### Bug Fixes
