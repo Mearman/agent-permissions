@@ -1,3 +1,9 @@
+## [5.9.2](https://github.com/Mearman/agent-permissions/compare/v5.9.1...v5.9.2) (2026-05-12)
+
+### Documentation
+
+* add mcp CLI subcommand, fix $schema URL consistency ([41e1e2d](https://github.com/Mearman/agent-permissions/commit/41e1e2d61131ef27a2c565fc475cefa102cf09dc))
+
 ## [5.9.1](https://github.com/Mearman/agent-permissions/compare/v5.9.0...v5.9.1) (2026-05-12)
 
 ### Documentation
