@@ -45,9 +45,16 @@ const config: GlobalConfig = {
     "@semantic-release/changelog",
     "@semantic-release/npm",
     [
+      "@semantic-release/exec",
+      {
+        prepareCmd:
+          "jq --indent 2 '.version = \"${nextRelease.version}\"' .claude-plugin/plugin.json > /tmp/plugin.json && mv /tmp/plugin.json .claude-plugin/plugin.json",
+      },
+    ],
+    [
       "@semantic-release/git",
       {
-        assets: ["package.json", "CHANGELOG.md"],
+        assets: ["package.json", "CHANGELOG.md", ".claude-plugin/plugin.json"],
         message: "chore(release): ${nextRelease.version}",
       },
     ],
