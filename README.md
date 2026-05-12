@@ -12,7 +12,7 @@ Create `.agents/permissions.json` in your project root:
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/Mearman/agent-permissions/main/agent-permissions.schema.json",
+  "$schema": "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json",
   "defaultMode": "standard",
   "rules": [
     { "tool": "Bash", "pattern": "sudo:*", "tier": "deny" },
@@ -39,7 +39,7 @@ Every coding agent has its own permission config. Teams using multiple agents (o
 - **One policy, many agents** — write once, convert to any agent's native format
 - **Zero-translation migration** — Claude Code's `permissions` block is valid input
 - **Superset coverage** — expresses features from all supported agents (sandboxing, named profiles, per-agent overrides, conditional rules)
-- **IDE support** — JSON Schema for autocomplete and validation (submitted to [SchemaStore](https://github.com/SchemaStore/schemastore/pull/5666))
+- **IDE support** — JSON Schema for autocomplete and validation ([SchemaStore PR](https://github.com/SchemaStore/schemastore/pull/5666) pending)
 
 ## File location
 
@@ -284,17 +284,28 @@ const rule = normaliseStringRule("Bash(npm:*)", "allow");
 ```typescript
 import { loadPolicy } from "agent-perms/loader";
 
-const policy = await loadPolicy({
-  cwd: process.cwd(),
-  nativeSources: ["claude-code"], // also load .claude/settings.json
-});
+const policy = await loadPolicy({ cwd: process.cwd() });
 ```
 
-Loads and merges layers in order:
+Walks up from `cwd` looking for `.agents/permissions.json` and native agent configs. The policy file itself controls discovery via `with`, `without`, and `up` fields:
 
-1. `.agents/permissions.json` (team-shared)
-2. `.agents/permissions.local.json` (personal overrides)
-3. Native agent configs (`.claude/settings.json`, etc.) — if `nativeSources` is set
+```json
+{
+  "with": ["claude-code", "opencode"],
+  "up": 3,
+  "rules": [...]
+}
+```
+
+- `with` — only load these native configs (default: canonical only)
+- `without` — load all except these
+- `up` — how many parent directories to walk (default: `"all"`)
+
+Loads and merges layers in order (outermost-first, last-defined-wins for `defaultMode`):
+
+1. `.agents/permissions.json` (team-shared, discovered via walk-up)
+2. `.agents/permissions.local.json` (personal overrides, discovered via walk-up)
+3. Native agent configs (`.claude/settings.json`, `opencode.json`, etc.) — if `with`/`without` enables them
 
 The loader normalises all `permissions` string arrays into structured `rules`. Deny rules from any layer short-circuit. Allow rules are additive.
 
@@ -333,9 +344,32 @@ jq '.permissions' .claude/settings.json > .agents/permissions.json
 
 This works because the canonical spec accepts Claude Code's rule syntax, mode values, and `defaultMode` placement unchanged. The loader normalises `permissions` arrays into structured `rules`.
 
+### MCP sync server
+
+```typescript
+import { startMcpServer } from "agent-perms/mcp";
+```
+
+A background sync daemon that keeps native agent config files bidirectionally synced with `.agents/permissions.json`. Exposes no tools — purely filesystem sync. Configured via the `sync` field in the policy file:
+
+```json
+{
+  "sync": {
+    "mode": "watch",
+    "backup": true
+  }
+}
+```
+
+- `mode: "sync"` — one-shot sync on startup
+- `mode: "watch"` — continuous sync via `fs.watch`
+- `mode: false` — disabled
+
+Also available as the `agent-perms-mcp` binary.
+
 ## CLI
 
-The `agent-perms` binary converts, validates, and syncs permission configs.
+The `agent-perms` binary converts, validates, syncs, and serves permission configs.
 
 **All flags, no positionals.** Format names resolve to default config file locations.
 Use `-` for stdin/stdout.
@@ -427,6 +461,14 @@ agent-perms sync -x codex
 Sync merges rules with deny-first semantics (deny > ask > allow for same tool+pattern).
 Most restrictive `defaultMode` wins.
 
+### mcp
+
+```bash
+agent-perms mcp
+```
+
+Starts the MCP sync daemon on stdio. No flags — all config comes from `.agents/permissions.json` via the `sync` field. Typically invoked by agent harnesses via `npx agent-perms-mcp`, not run directly.
+
 ## JSON Schema for IDE support
 
 Download the latest schema:
@@ -439,7 +481,7 @@ Reference from a policy file:
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/Mearman/agent-permissions/main/agent-permissions.schema.json"
+  "$schema": "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json"
 }
 ```
 
@@ -518,7 +560,7 @@ See [`spec/examples/full.json`](spec/examples/full.json).
 
 ```bash
 pnpm install          # Install dependencies
-pnpm test             # Run tests (295 tests)
+pnpm test             # Run tests
 pnpm build            # Build ESM + CJS + types + JSON Schema
 ```
 
