@@ -15,6 +15,7 @@ const config: UserConfig = {
         "api",
         "cli",
         "sync",
+        "mcp",
         "agent-files",
         "build",
         "release",

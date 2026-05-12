@@ -533,6 +533,35 @@
         3,
         5
       ]
+    },
+    "sync": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "sync",
+                "watch"
+              ]
+            },
+            {
+              "type": "boolean",
+              "const": false
+            }
+          ],
+          "description": "Sync mode. 'sync' = one-shot at startup. 'watch' = continuous via fs.watch. false = disabled.",
+          "default": false
+        },
+        "backup": {
+          "type": "boolean",
+          "description": "Write .bak files before overwriting.",
+          "default": false
+        }
+      },
+      "additionalProperties": false,
+      "description": "Sync configuration for the MCP server and CLI sync command."
     }
   },
   "additionalProperties": false,

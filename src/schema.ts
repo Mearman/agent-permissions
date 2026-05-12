@@ -484,6 +484,33 @@ export const AgentPermissionPolicy = z
       default: "all",
       examples: ["all", 0, 3, 5],
     }),
+
+    /** Sync configuration for the MCP server and CLI sync command. */
+    sync: z
+      .object({
+        /**
+         * Sync mode.
+         * - `"sync"`: One-shot sync at startup, then exit.
+         * - `"watch"`: Continuous sync via filesystem watching.
+         * - `false`: No sync (MCP server is passive).
+         */
+        mode: z.union([z.enum(["sync", "watch"]), z.literal(false)]).meta({
+          description:
+            "Sync mode. 'sync' = one-shot at startup. 'watch' = continuous via fs.watch. false = disabled.",
+          default: false,
+        }),
+
+        /** Write .bak files before overwriting. */
+        backup: z.boolean().meta({
+          description: "Write .bak files before overwriting.",
+          default: false,
+        }),
+      })
+      .partial()
+      .meta({
+        description:
+          "Sync configuration for the MCP server and CLI sync command.",
+      }),
   })
   .partial()
   .strict()

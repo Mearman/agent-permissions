@@ -423,6 +423,13 @@ Examples:
 }
 
 async function main(): Promise<void> {
+  // If invoked as agent-perms-mcp, route directly to MCP server
+  const binName = process.argv[1]?.split("/").pop() ?? "";
+  if (binName === "agent-perms-mcp") {
+    await import("./mcp.ts");
+    return;
+  }
+
   const args = process.argv.slice(2);
   const command = args[0];
 
@@ -438,6 +445,9 @@ async function main(): Promise<void> {
       break;
     case "sync":
       await syncCommand(args.slice(1));
+      break;
+    case "mcp":
+      await import("./mcp.ts");
       break;
     case "--help":
     case "-h":
