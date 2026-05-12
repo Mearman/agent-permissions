@@ -1,3 +1,9 @@
+## [5.9.4](https://github.com/Mearman/agent-permissions/compare/v5.9.3...v5.9.4) (2026-05-12)
+
+### Chores
+
+* add mcp, mcp-server, sync, crush, zod keywords ([c49bd70](https://github.com/Mearman/agent-permissions/commit/c49bd70b729e6a615796c465bfe68b6478420647))
+
 ## [5.9.3](https://github.com/Mearman/agent-permissions/compare/v5.9.2...v5.9.3) (2026-05-12)
 
 ### Documentation
