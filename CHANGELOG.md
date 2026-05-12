@@ -1,3 +1,13 @@
+## [5.8.0](https://github.com/Mearman/agent-permissions/compare/v5.7.0...v5.8.0) (2026-05-12)
+
+### Features
+
+* **mcp:** use npm source for marketplace plugin entry ([65ca648](https://github.com/Mearman/agent-permissions/commit/65ca64854e8b4697e298f87053aa9cd447f9beea))
+
+### Bug Fixes
+
+* **mcp:** remove hardcoded version from plugin.json ([7bc8e27](https://github.com/Mearman/agent-permissions/commit/7bc8e27ed6426300ba888f4d9e17b1291efa1ad3))
+
 ## [5.7.0](https://github.com/Mearman/agent-permissions/compare/v5.6.0...v5.7.0) (2026-05-12)
 
 ### Features
