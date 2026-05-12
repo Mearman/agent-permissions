@@ -446,13 +446,64 @@ export const AgentPermissionPolicy = z
       description: "Environment variables injected into all agent sessions.",
       examples: [{ NODE_ENV: "development", DISABLE_TELEMETRY: "1" }],
     }),
+
+    /**
+     * Agent configs to include when loading. When set, only these agent
+     * configs are read (plus canonical). Mutually exclusive with `without`.
+     */
+    with: z
+      .array(z.enum(["claude-code", "codex", "kiro", "opencode", "crush"]))
+      .meta({
+        description:
+          "Agent configs to include when loading. Only these native configs " +
+          "are read (plus canonical). Mutually exclusive with `without`.",
+        examples: [["claude-code", "opencode"]],
+      }),
+
+    /**
+     * Agent configs to exclude when loading. Mutually exclusive with `with`.
+     */
+    without: z
+      .array(z.enum(["claude-code", "codex", "kiro", "opencode", "crush"]))
+      .meta({
+        description:
+          "Agent configs to exclude when loading. Mutually exclusive with `with`.",
+        examples: [["codex"]],
+      }),
+
+    /**
+     * How far to walk up the directory tree when loading configs.
+     * `"all"` walks to the filesystem root. A number limits parent
+     * directories (0 = cwd only). Controls both canonical and native
+     * config discovery.
+     */
+    up: z.union([z.enum(["all"]), z.number().int().min(0)]).meta({
+      description:
+        "How far to walk up the directory tree when loading configs. " +
+        "'all' walks to the filesystem root. A number limits parent directories (0 = cwd only).",
+      default: "all",
+      examples: ["all", 0, 3, 5],
+    }),
   })
   .partial()
   .strict()
+  .check((ctx) => {
+    if (ctx.value.with !== undefined && ctx.value.without !== undefined) {
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message: "'with' and 'without' are mutually exclusive.",
+        path: ["with"],
+      });
+    }
+  })
   .meta({
     title: "Agent Permission Policy",
     description:
-      "Cross-agent permission policy for AI coding agents. Defines what tools agents may use, under what conditions, and how subagents are constrained. Placed at .agents/permissions.json (team, committed) or .agents/permissions.local.json (personal, gitignored).",
+      "Cross-agent permission policy for AI coding agents. Defines what tools agents may use, under what conditions, and how subagents are constrained. " +
+      "The `with`/`without`/`up` fields control which native agent configs are " +
+      "discovered and merged during walk-up loading. " +
+      "Placed at .agents/permissions.json (team, committed) or .agents/permissions.local.json (personal, gitignored).",
   });
 
 // ---------------------------------------------------------------------------

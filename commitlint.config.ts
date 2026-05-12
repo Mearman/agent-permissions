@@ -6,7 +6,21 @@ const config: UserConfig = {
     "scope-enum": [
       2,
       "always",
-      ["schema", "codec", "compat", "build", "release", "ci", "deps"],
+      [
+        "schema",
+        "codec",
+        "compat",
+        "loader",
+        "evaluate",
+        "api",
+        "cli",
+        "sync",
+        "agent-files",
+        "build",
+        "release",
+        "ci",
+        "deps",
+      ],
     ],
   },
 };

@@ -1,107 +1,193 @@
 /**
- * Permission policy loader — reads and merges permission files.
+ * Permission policy loader — walk-up discovery and merge.
  *
- * Load order (later sources override earlier):
+ * Walks up from `cwd`, collecting canonical and native agent config files.
+ * Merge semantics:
+ *   - with/without: unioned from all discovered canonical files
+ *   - up: outermost canonical file wins (team controls walk-up depth)
+ *   - defaultMode: last-defined wins (innermost/cwd overrides)
+ *   - rules: collected from all sources, deduplicated deny-first
+ *
+ * Load order at each directory (innermost processed last):
  *   1. `.agents/permissions.json` (team, committed)
  *   2. `.agents/permissions.local.json` (personal, gitignored)
- *   3. Native agent configs (if enabled via config)
- *
- * Merge rules:
- *   - defaultMode: last-defined wins
- *   - rules: collected from all sources, deduplicated with deny-first priority
- *     (deny > ask > allow for same tool+pattern)
+ *   3. Native agent configs filtered by with/without
  */
 
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { existsSync } from "node:fs";
 
-import { AgentPermissionPolicy, type Rule } from "./schema.ts";
+import { type AgentPermissionPolicy, type Rule } from "./schema.ts";
 import {
   AGENT_FILES,
+  type AgentFileDef,
   parseJson,
   validatePolicy,
   decodeNative,
 } from "./agent-files.ts";
-
 import {
   collectRules,
   mapMode,
   deduplicateRules,
   type PermissionPolicy,
 } from "./evaluate.ts";
+import { type AgentId, CODECS } from "./compat/codecs.ts";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 export interface PolicyLoadOptions {
+  /** Starting directory for walk-up discovery. */
   cwd: string;
-  /** Read native agent configs and convert to canonical form. */
-  nativeSources?: ("claude-code" | "codex" | "opencode")[] | undefined;
+}
+
+interface DiscoveredFile {
+  /** Agent identifier (e.g. "canonical", "claude-code"). */
+  agent: AgentId | "canonical";
+  /** Absolute path to the config file. */
+  path: string;
+  /** Whether this is a local override (read-only in merge). */
+  local: boolean;
+}
+
+interface DecodedLayer {
+  file: DiscoveredFile;
+  policy: AgentPermissionPolicy;
+}
+
+// ---------------------------------------------------------------------------
+// Walk-up discovery
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve effective `up` and agent filter from all discovered canonical files.
+ *
+ * - `up`: outermost canonical file's value wins (team controls depth).
+ *   Falls back to `"all"` if no canonical file specifies it.
+ * - `with`/`without`: unioned across all canonical files.
+ */
+function resolveDiscoveryConfig(canonicalLayers: DecodedLayer[]): {
+  up: number;
+  agentFilter: Set<string> | undefined;
+} {
+  let up = Infinity;
+  const withAgents = new Set<AgentId>();
+  const withoutAgents = new Set<AgentId>();
+
+  // canonicalLayers are outermost-first after reverse.
+  for (const layer of canonicalLayers) {
+    const { with: w, without: wo, up: u } = layer.policy;
+    if (u !== undefined) {
+      const resolved = u === "all" ? Infinity : u;
+      // Outermost wins — take the first up value we see (outermost-first)
+      if (up === Infinity) {
+        up = resolved;
+      }
+    }
+    if (w !== undefined) {
+      for (const a of w) withAgents.add(a);
+    }
+    if (wo !== undefined) {
+      for (const a of wo) withoutAgents.add(a);
+    }
+  }
+
+  // Build agent filter
+  let agentFilter: Set<string> | undefined;
+  if (withAgents.size > 0 && withoutAgents.size > 0) {
+    // Invalid — a single file can't have both, and cross-file we
+    // treat the combination as: with takes precedence (most restrictive)
+    const allAgents = [...Object.keys(CODECS), "canonical"];
+    agentFilter = new Set([...withAgents, "canonical"]);
+    // Also include any agent NOT in withoutAgents
+    for (const a of allAgents) {
+      if (!withoutAgents.has(a as AgentId)) {
+        agentFilter.add(a);
+      }
+    }
+  } else if (withAgents.size > 0) {
+    agentFilter = new Set([...withAgents, "canonical"]);
+  } else if (withoutAgents.size > 0) {
+    const allAgents = [...Object.keys(CODECS), "canonical"];
+    const excluded = new Set(withoutAgents);
+    agentFilter = new Set(allAgents.filter((a) => !excluded.has(a as AgentId)));
+  }
+
+  // No with/without = canonical only (safe default)
+  // withAgents and withoutAgents are both empty, agentFilter stays undefined
+  // but discoverFiles still needs to know not to read native configs.
+  // We achieve this by passing a filter that only includes "canonical".
+  if (withAgents.size === 0 && withoutAgents.size === 0) {
+    agentFilter = new Set(["canonical"]);
+  }
+
+  return { up, agentFilter };
 }
 
 /**
- * Load and merge permission policy from all sources.
+ * Walk up from cwd, collecting agent config files.
+ * Returns files ordered outermost-first (outermost layers first,
+ * innermost/cwd layers last) so that last-defined-wins merge
+ * gives cwd the highest priority.
+ *
+ * Within each directory, committed files come before local files,
+ * so local overrides committed at the same level.
  */
-export async function loadPolicy(
-  options: PolicyLoadOptions,
-): Promise<PermissionPolicy> {
-  const { cwd, nativeSources = [] } = options;
-  const layers: AgentPermissionPolicy[] = [];
+function discoverFiles(
+  cwd: string,
+  up: number,
+  agentFilter: Set<string> | undefined,
+): DiscoveredFile[] {
+  // Collect per-directory buckets, cwd-first
+  const dirBuckets: DiscoveredFile[][] = [];
+  let current = resolve(cwd);
+  let remaining = up === Infinity ? Number.MAX_SAFE_INTEGER : up + 1;
 
-  // Layer 1: .agents/permissions.json
-  const committed = await loadCanonical(
-    join(cwd, ".agents", "permissions.json"),
-  );
-  if (committed) layers.push(committed);
+  while (remaining > 0) {
+    const bucket: DiscoveredFile[] = [];
+    for (const [agent, def] of Object.entries(AGENT_FILES) as [
+      AgentId | "canonical",
+      AgentFileDef,
+    ][]) {
+      // Apply agent filter
+      if (agentFilter && !agentFilter.has(agent)) continue;
 
-  // Layer 2: .agents/permissions.local.json
-  const local = await loadCanonical(
-    join(cwd, ".agents", "permissions.local.json"),
-  );
-  if (local) layers.push(local);
+      // Skip agents without extract (codex TOML, crush no file)
+      if (agent !== "canonical" && def.extract === undefined) continue;
 
-  // Layer 3: native configs
-  for (const source of nativeSources) {
-    const native = await loadNative(cwd, source);
-    if (native) layers.push(native);
+      const main = join(current, def.name);
+      if (existsSync(main)) {
+        bucket.push({ agent, path: main, local: false });
+      }
+
+      if (def.localName) {
+        const local = join(current, def.localName);
+        if (existsSync(local)) {
+          bucket.push({ agent, path: local, local: true });
+        }
+      }
+    }
+    dirBuckets.push(bucket);
+
+    remaining--;
+    const parent = dirname(current);
+    if (parent === current) break; // reached root
+    current = parent;
   }
 
-  return mergeLayers(layers);
+  // Reverse directory order so outermost is first.
+  // Within each directory, committed comes before local.
+  dirBuckets.reverse();
+  return dirBuckets.flat();
 }
 
-async function loadCanonical(
-  filePath: string,
-): Promise<AgentPermissionPolicy | undefined> {
-  const content = await readJsonFile(filePath);
-  if (content === undefined) return undefined;
-  const parsed = parseJson(content, filePath);
-  if (!parsed.ok) return undefined;
-  const validated = validatePolicy(parsed.value);
-  if (!validated.ok) return undefined;
-  return validated.value;
-}
+// ---------------------------------------------------------------------------
+// Reading and decoding
+// ---------------------------------------------------------------------------
 
-async function loadNative(
-  cwd: string,
-  source: "claude-code" | "codex" | "opencode",
-): Promise<AgentPermissionPolicy | undefined> {
-  // Codex uses TOML — consumer should pre-parse and pass the object.
-  if (source === "codex") return undefined;
-
-  // Only claude-code and opencode are supported (codex handled above)
-  if (!(source in AGENT_FILES)) return undefined;
-  const def = AGENT_FILES[source];
-  if (def.extract === undefined) return undefined;
-
-  const filePath = join(cwd, def.name);
-  const content = await readJsonFile(filePath);
-  if (content === undefined) return undefined;
-  const parsed = parseJson(content, filePath);
-  if (!parsed.ok) return undefined;
-
-  const result = decodeNative(source, parsed.value);
-  if (!result.ok) return undefined;
-  return result.value;
-}
-
-async function readJsonFile(filePath: string): Promise<string | undefined> {
+async function readFileContent(filePath: string): Promise<string | undefined> {
   try {
     return await readFile(filePath, "utf-8");
   } catch {
@@ -109,7 +195,39 @@ async function readJsonFile(filePath: string): Promise<string | undefined> {
   }
 }
 
-function mergeLayers(layers: AgentPermissionPolicy[]): PermissionPolicy {
+function decodeFile(
+  file: DiscoveredFile,
+  raw: unknown,
+): AgentPermissionPolicy | undefined {
+  if (file.agent === "canonical") {
+    const result = validatePolicy(raw);
+    return result.ok ? result.value : undefined;
+  }
+
+  const result = decodeNative(file.agent, raw);
+  return result.ok ? result.value : undefined;
+}
+
+async function readAndDecode(
+  file: DiscoveredFile,
+): Promise<DecodedLayer | undefined> {
+  const content = await readFileContent(file.path);
+  if (content === undefined) return undefined;
+
+  const parsed = parseJson(content, file.path);
+  if (!parsed.ok) return undefined;
+
+  const policy = decodeFile(file, parsed.value);
+  if (policy === undefined) return undefined;
+
+  return { file, policy };
+}
+
+// ---------------------------------------------------------------------------
+// Merging
+// ---------------------------------------------------------------------------
+
+function mergeLayers(layers: DecodedLayer[]): PermissionPolicy {
   if (layers.length === 0) {
     return { defaultMode: "standard" };
   }
@@ -117,11 +235,12 @@ function mergeLayers(layers: AgentPermissionPolicy[]): PermissionPolicy {
   let mode: PermissionPolicy["defaultMode"] = "standard";
   const allRules: Rule[] = [];
 
+  // Layers are outermost-first. Last-defined wins for defaultMode.
   for (const layer of layers) {
-    if (layer.defaultMode) {
-      mode = mapMode(layer.defaultMode);
+    if (layer.policy.defaultMode) {
+      mode = mapMode(layer.policy.defaultMode);
     }
-    allRules.push(...collectRules(layer));
+    allRules.push(...collectRules(layer.policy));
   }
 
   const rules = deduplicateRules(allRules);
@@ -130,4 +249,48 @@ function mergeLayers(layers: AgentPermissionPolicy[]): PermissionPolicy {
     defaultMode: mode,
     ...(rules.length > 0 ? { rules } : {}),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Load and merge permission policy from all sources.
+ *
+ * Two-pass process:
+ *   1. Discover canonical files, resolve `up`/`with`/`without` from them.
+ *   2. Re-discover all files (canonical + native) using resolved config,
+ *      decode, and merge.
+ */
+export async function loadPolicy(
+  options: PolicyLoadOptions,
+): Promise<PermissionPolicy> {
+  const { cwd } = options;
+
+  // Pass 1: discover canonical files with max walk-up to find all of them
+  const canonicalFiles = discoverFiles(cwd, Infinity, new Set(["canonical"]));
+  const canonicalLayers: DecodedLayer[] = [];
+  for (const file of canonicalFiles) {
+    const layer = await readAndDecode(file);
+    if (layer) canonicalLayers.push(layer);
+  }
+
+  if (canonicalLayers.length === 0) {
+    return { defaultMode: "standard" };
+  }
+
+  // Resolve discovery config from canonical files
+  const { up, agentFilter } = resolveDiscoveryConfig(canonicalLayers);
+
+  // Pass 2: discover all files using resolved config
+  const allFiles = discoverFiles(cwd, up, agentFilter);
+
+  const allLayers: DecodedLayer[] = [];
+  for (const file of allFiles) {
+    const layer = await readAndDecode(file);
+    if (layer) allLayers.push(layer);
+  }
+
+  return mergeLayers(allLayers);
 }
