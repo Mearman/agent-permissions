@@ -25,7 +25,8 @@
   },
   "files": [
     "dist",
-    "agent-permissions.schema.json"
+    "agent-permissions.schema.json",
+    ".claude-plugin"
   ],
   "engines": {
     "node": ">=18"

@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "agent-perms",
-      "source": "./",
+      "source": { "source": "npm", "package": "agent-perms-mcp" },
       "description": "Cross-agent permission policy sync daemon. Keeps native agent config files bidirectionally synced with .agents/permissions.json via MCP."
     }
   ]
