@@ -1,3 +1,9 @@
+## [5.6.0](https://github.com/Mearman/agent-permissions/compare/v5.5.1...v5.6.0) (2026-05-12)
+
+### Features
+
+* **mcp:** add .mcp.json and server.json for Claude Code plugin support ([94d0386](https://github.com/Mearman/agent-permissions/commit/94d0386ba7af7474df17c8a7f62ef98bf13a8fb4))
+
 ## [5.5.1](https://github.com/Mearman/agent-permissions/compare/v5.5.0...v5.5.1) (2026-05-12)
 
 ### Chores
