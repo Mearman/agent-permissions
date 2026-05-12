@@ -1,3 +1,9 @@
+## [5.9.0](https://github.com/Mearman/agent-permissions/compare/v5.8.0...v5.9.0) (2026-05-12)
+
+### Features
+
+* **release:** auto-sync plugin.json version via semantic-release ([c2523e8](https://github.com/Mearman/agent-permissions/commit/c2523e8a3ec715b19125f1f4961db2efb4103225))
+
 ## [5.8.0](https://github.com/Mearman/agent-permissions/compare/v5.7.0...v5.8.0) (2026-05-12)
 
 ### Features
