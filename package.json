@@ -59,8 +59,13 @@
     "claude-code",
     "codex",
     "opencode",
+    "crush",
     "cross-agent",
-    "policy"
+    "mcp",
+    "mcp-server",
+    "policy",
+    "sync",
+    "zod"
   ],
   "author": "Joseph Mearman",
   "license": "Apache-2.0",
