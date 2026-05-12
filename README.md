@@ -30,16 +30,16 @@ Create `.agents/permissions.json` in your project root:
 
 Every rule has a `tool`, an optional `pattern`, a `tier` (deny/ask/allow), and optional `when` conditions. Evaluation is deny-first: all deny rules are checked, then ask, then allow. Falls back to `defaultMode` when no rule matches.
 
-**Zero-translation migration:** `jq '.permissions' .claude/settings.json > .agents/permissions.json` still works — the schema accepts Claude Code's `permissions.allow/deny/ask` arrays and the loader normalises them into rules.
+**Zero-translation migration:** `jq '.permissions' .claude/settings.json > .agents/permissions.json` still works. The schema accepts Claude Code's `permissions.allow/deny/ask` arrays and the loader normalises them into rules.
 
 ## Why
 
 Every coding agent has its own permission config. Teams using multiple agents (or migrating between them) maintain separate, often contradictory permission files. This spec provides:
 
-- **One policy, many agents** — write once, convert to any agent's native format
-- **Zero-translation migration** — Claude Code's `permissions` block is valid input
-- **Superset coverage** — expresses features from all supported agents (sandboxing, named profiles, per-agent overrides, conditional rules)
-- **IDE support** — JSON Schema for autocomplete and validation ([on SchemaStore](https://schemastore/org))
+- **One policy, many agents**: write once, convert to any agent's native format
+- **Zero-translation migration**: Claude Code's `permissions` block is valid input
+- **Superset coverage**: expresses features from all supported agents (sandboxing, named profiles, per-agent overrides, conditional rules)
+- **IDE support**: JSON Schema for autocomplete and validation ([on SchemaStore](https://schemastore.org))
 
 ## File location
 
@@ -99,7 +99,7 @@ For harnesses that use config files, add the following to the `mcpServers` secti
 | Cline | `.cline/mcp.json` | `mcpServers` |
 | Cursor | `.cursor/mcp.json` | `mcpServers` |
 
-The MCP server is a background sync daemon — it exposes no tools. It reads config from `.agents/permissions.json` and keeps native agent config files in sync.
+The MCP server is a background sync daemon. It exposes no tools, reads config from `.agents/permissions.json`, and keeps native agent config files in sync.
 
 ### As a library
 
@@ -109,7 +109,7 @@ pnpm add agent-perms
 
 ## Exports
 
-The package uses [wildcard exports](https://nodejs.org/api/packages.html#subpath-patterns) — import only what you need:
+The package uses [wildcard exports](https://nodejs.org/api/packages.html#subpath-patterns): import only what you need.
 
 ### Programmatic API (`agent-perms/api`)
 
@@ -162,7 +162,7 @@ import { sync } from "agent-perms/sync";
 ```typescript
 import { type AgentPermissionPolicy } from "agent-perms/schema";
 
-// All fields are optional — a valid policy can be as minimal as `{}`.
+// All fields are optional. A valid policy can be as minimal as `{}`.
 interface AgentPermissionPolicy {
   $schema?: string;
 
@@ -172,7 +172,7 @@ interface AgentPermissionPolicy {
 
   activeProfile?: string;
 
-  // Permission rules — unified deny-first evaluation
+  // Permission rules (deny-first evaluation)
   rules?: Array<{
     tool: string;         // e.g. "Bash", "Read", "mcp__github__*"
     pattern?: string;     // absent = match any input for this tool
@@ -180,7 +180,7 @@ interface AgentPermissionPolicy {
     when?: { cwd?: string; branch?: string };  // AND logic
   }>;
 
-  // Claude Code compat — string rule arrays (normalised to rules on load)
+  // Claude Code compat: string rule arrays (normalised to rules on load)
   permissions?: {
     allow?: string[];
     deny?: string[];
@@ -215,7 +215,7 @@ interface AgentPermissionPolicy {
 
 ## Rule syntax
 
-Rules use `Tool(pattern)` strings inside `permissions` arrays — compatible with Claude Code's permission format. In the unified `rules` array, the tool and pattern are separate fields:
+Rules use `Tool(pattern)` strings inside `permissions` arrays, compatible with Claude Code's permission format. In the unified `rules` array, the tool and pattern are separate fields:
 
 | Rule object | `permissions` string | Type | Matches |
 |---|---|---|---|
@@ -232,7 +232,7 @@ Rules use `Tool(pattern)` strings inside `permissions` arrays — compatible wit
 deny rules → ask rules → allow rules → defaultMode
 ```
 
-Deny short-circuits — if any deny rule matches, the tool is blocked regardless of allow rules from any source.
+Deny short-circuits: if any deny rule matches, the tool is blocked regardless of allow rules from any source.
 
 ### Escape sequences
 
@@ -297,15 +297,15 @@ Walks up from `cwd` looking for `.agents/permissions.json` and native agent conf
 }
 ```
 
-- `with` — only load these native configs (default: canonical only)
-- `without` — load all except these
-- `up` — how many parent directories to walk (default: `"all"`)
+- `with`: only load these native configs (default: canonical only)
+- `without`: load all except these
+- `up`: how many parent directories to walk (default: `"all"`)
 
 Loads and merges layers in order (outermost-first, last-defined-wins for `defaultMode`):
 
 1. `.agents/permissions.json` (team-shared, discovered via walk-up)
 2. `.agents/permissions.local.json` (personal overrides, discovered via walk-up)
-3. Native agent configs (`.claude/settings.json`, `opencode.json`, etc.) — if `with`/`without` enables them
+3. Native agent configs (`.claude/settings.json`, `opencode.json`, etc.), if `with`/`without` enables them
 
 The loader normalises all `permissions` string arrays into structured `rules`. Deny rules from any layer short-circuit. Allow rules are additive.
 
@@ -332,9 +332,9 @@ const codexConfig = codexCodec.encode(canonicalPolicy);
 
 ¹ OpenCode's agent-specific tools have no canonical equivalent. Per-agent markdown overrides must be handled by the caller.
 
-² Codex's `on-failure` approval policy and granular approval config have no canonical equivalent. TOML serialisation is the caller's responsibility — the codec works on parsed JS objects.
+² Codex's `on-failure` approval policy and granular approval config have no canonical equivalent. TOML serialisation is the caller's responsibility; the codec works on parsed JS objects.
 
-³ Crush has no deny, no patterns, no modes — only a bare tool allowlist. Pattern rules and deny rules are lost on encode.
+³ Crush has no deny, no patterns, no modes, only a bare tool allowlist. Pattern rules and deny rules are lost on encode.
 
 ### Zero-translation migration from Claude Code
 
@@ -350,7 +350,7 @@ This works because the canonical spec accepts Claude Code's rule syntax, mode va
 import { startMcpServer } from "agent-perms/mcp";
 ```
 
-A background sync daemon that keeps native agent config files bidirectionally synced with `.agents/permissions.json`. Exposes no tools — purely filesystem sync. Configured via the `sync` field in the policy file:
+A background sync daemon that keeps native agent config files bidirectionally synced with `.agents/permissions.json`. Exposes no tools; purely filesystem sync. Configured via the `sync` field in the policy file:
 
 ```json
 {
@@ -361,9 +361,9 @@ A background sync daemon that keeps native agent config files bidirectionally sy
 }
 ```
 
-- `mode: "sync"` — one-shot sync on startup
-- `mode: "watch"` — continuous sync via `fs.watch`
-- `mode: false` — disabled
+- `mode: "sync"`: one-shot sync on startup
+- `mode: "watch"`: continuous sync via `fs.watch`
+- `mode: false`: disabled
 
 Also available as the `agent-perms-mcp` binary.
 
@@ -389,7 +389,7 @@ crush        →  .crush.json
 # Format name → reads/writes default config locations
 agent-perms convert --from claude-code --to canonical
 
-# File paths — auto-detects format from contents
+# File paths: auto-detects format from contents
 agent-perms convert --from .claude/settings.json --to crush
 
 # Piping with -
@@ -467,11 +467,11 @@ Most restrictive `defaultMode` wins.
 agent-perms mcp
 ```
 
-Starts the MCP sync daemon on stdio. No flags — all config comes from `.agents/permissions.json` via the `sync` field. Typically invoked by agent harnesses via `npx agent-perms-mcp`, not run directly.
+Starts the MCP sync daemon on stdio. No flags; all config comes from `.agents/permissions.json` via the `sync` field. Typically invoked by agent harnesses via `npx agent-perms-mcp`, not run directly.
 
 ## JSON Schema for IDE support
 
-The schema is included in [SchemaStore](https://schemastore.org) — editors that support it (VS Code, JetBrains, neovim) will automatically provide autocomplete and validation for `.agents/permissions.json` and `.agents/permissions.local.json` files with no configuration.
+The schema is included in [SchemaStore](https://schemastore.org). Editors that support it (VS Code, JetBrains, neovim) will automatically provide autocomplete and validation for `.agents/permissions.json` and `.agents/permissions.local.json` files with no configuration.
 
 To explicitly reference the schema:
 
@@ -493,7 +493,7 @@ The schema file ships with the package at `agent-perms/agent-permissions.schema.
 
 ## Examples
 
-### Minimal — allow safe tools, deny secrets
+### Minimal: allow safe tools, deny secrets
 
 ```json
 {
@@ -519,7 +519,7 @@ The schema file ships with the package at `agent-perms/agent-permissions.schema.
 }
 ```
 
-### Rules — unconditional deny
+### Rules: unconditional deny
 
 Rules without `when` always apply, regardless of cwd or branch:
 
@@ -531,7 +531,7 @@ Rules without `when` always apply, regardless of cwd or branch:
 }
 ```
 
-### Rules — conditional (cwd/branch)
+### Rules: conditional (cwd/branch)
 
 Rules with `when` only match when all conditions are met (AND logic):
 
@@ -562,7 +562,7 @@ pnpm build            # Build ESM + CJS + types + JSON Schema
 
 ### Schema source of truth
 
-The Zod schema in `src/schema.ts` is the single source of truth. The compiled JSON Schema (`agent-permissions.schema.json`) is generated via `z.toJSONSchema()` — never edit it by hand.
+The Zod schema in `src/schema.ts` is the single source of truth. The compiled JSON Schema (`agent-permissions.schema.json`) is generated via `z.toJSONSchema()`. Never edit it by hand.
 
 ### Adding a new agent codec
 
