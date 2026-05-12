@@ -1,3 +1,9 @@
+## [5.9.5](https://github.com/Mearman/agent-permissions/compare/v5.9.4...v5.9.5) (2026-05-12)
+
+### Documentation
+
+* fix formatting and SchemaStore link ([ff7c729](https://github.com/Mearman/agent-permissions/commit/ff7c729398b7be3431fef134f38819cc45b58b1f))
+
 ## [5.9.4](https://github.com/Mearman/agent-permissions/compare/v5.9.3...v5.9.4) (2026-05-12)
 
 ### Chores
