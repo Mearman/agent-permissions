@@ -1,3 +1,9 @@
+## [5.9.3](https://github.com/Mearman/agent-permissions/compare/v5.9.2...v5.9.3) (2026-05-12)
+
+### Documentation
+
+* update SchemaStore status — merged ([bba0114](https://github.com/Mearman/agent-permissions/commit/bba0114d8b2b6ac9ef1c4093b939b7a7e174e7ee))
+
 ## [5.9.2](https://github.com/Mearman/agent-permissions/compare/v5.9.1...v5.9.2) (2026-05-12)
 
 ### Documentation
