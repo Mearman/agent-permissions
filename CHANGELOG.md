@@ -1,3 +1,9 @@
+## [5.5.1](https://github.com/Mearman/agent-permissions/compare/v5.5.0...v5.5.1) (2026-05-12)
+
+### Chores
+
+* **release:** trigger republish for new alias packages ([6c01ae0](https://github.com/Mearman/agent-permissions/commit/6c01ae0d667d247df8a53ba93b9180f9120bfb81))
+
 ## [5.5.0](https://github.com/Mearman/agent-permissions/compare/v5.4.0...v5.5.0) (2026-05-12)
 
 ### Features
