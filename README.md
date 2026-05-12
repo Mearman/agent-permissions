@@ -39,7 +39,7 @@ Every coding agent has its own permission config. Teams using multiple agents (o
 - **One policy, many agents** — write once, convert to any agent's native format
 - **Zero-translation migration** — Claude Code's `permissions` block is valid input
 - **Superset coverage** — expresses features from all supported agents (sandboxing, named profiles, per-agent overrides, conditional rules)
-- **IDE support** — JSON Schema for autocomplete and validation ([SchemaStore PR](https://github.com/SchemaStore/schemastore/pull/5666) pending)
+- **IDE support** — JSON Schema for autocomplete and validation ([on SchemaStore](https://schemastore/org))
 
 ## File location
 
@@ -471,13 +471,9 @@ Starts the MCP sync daemon on stdio. No flags — all config comes from `.agents
 
 ## JSON Schema for IDE support
 
-Download the latest schema:
+The schema is included in [SchemaStore](https://schemastore.org) — editors that support it (VS Code, JetBrains, neovim) will automatically provide autocomplete and validation for `.agents/permissions.json` and `.agents/permissions.local.json` files with no configuration.
 
-```
-https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json
-```
-
-Reference from a policy file:
+To explicitly reference the schema:
 
 ```json
 {
