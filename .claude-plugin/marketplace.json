@@ -1,0 +1,13 @@
+{
+  "name": "agent-perms",
+  "owner": {
+    "name": "Mearman"
+  },
+  "plugins": [
+    {
+      "name": "agent-perms",
+      "source": "./",
+      "description": "Cross-agent permission policy sync daemon. Keeps native agent config files bidirectionally synced with .agents/permissions.json via MCP."
+    }
+  ]
+}
