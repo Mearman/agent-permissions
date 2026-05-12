@@ -188,6 +188,9 @@ jobs:
           - name: agents-permissions
           - name: agents-spec
           - name: agent-permissions-policy
+          - name: agent-permissions-mcp
+          - name: permissions-mcp
+          - name: permission-mcp
     permissions:
       id-token: write
     steps:
