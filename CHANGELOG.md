@@ -1,3 +1,9 @@
+## [5.5.0](https://github.com/Mearman/agent-permissions/compare/v5.4.0...v5.5.0) (2026-05-12)
+
+### Features
+
+* **ci:** publish alias packages agent-permissions-mcp, permissions-mcp, permission-mcp ([dd8179f](https://github.com/Mearman/agent-permissions/commit/dd8179f7579f817b5c33f75dfdd99b9debd66d7e))
+
 ## [5.4.0](https://github.com/Mearman/agent-permissions/compare/v5.3.0...v5.4.0) (2026-05-12)
 
 ### Features
