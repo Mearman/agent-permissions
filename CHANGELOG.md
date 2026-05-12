@@ -1,3 +1,9 @@
+## [5.4.0](https://github.com/Mearman/agent-permissions/compare/v5.3.0...v5.4.0) (2026-05-12)
+
+### Features
+
+* **mcp:** add MCP sync server and sync config to schema ([4cfca36](https://github.com/Mearman/agent-permissions/commit/4cfca3645b135dd1afcf282eb22a79a22800428f))
+
 ## [5.3.0](https://github.com/Mearman/agent-permissions/compare/v5.2.2...v5.3.0) (2026-05-12)
 
 ### Features
