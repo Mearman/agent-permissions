@@ -1,3 +1,9 @@
+## [5.9.1](https://github.com/Mearman/agent-permissions/compare/v5.9.0...v5.9.1) (2026-05-12)
+
+### Documentation
+
+* add MCP server and plugin marketplace installation instructions ([92eaddc](https://github.com/Mearman/agent-permissions/commit/92eaddc4615c9cd42e5f834aae7271bd9b7de435))
+
 ## [5.9.0](https://github.com/Mearman/agent-permissions/compare/v5.8.0...v5.9.0) (2026-05-12)
 
 ### Features
