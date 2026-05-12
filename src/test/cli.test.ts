@@ -607,10 +607,16 @@ void describe("CLI", () => {
     void it("syncs a single canonical file (no-op)", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
+      const schemaUrl =
+        "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
       await mkdir(join(cwd, ".agents"), { recursive: true });
       await writeFile(
         join(cwd, ".agents", "permissions.json"),
-        JSON.stringify({ defaultMode: "standard" }),
+        JSON.stringify(
+          { $schema: schemaUrl, defaultMode: "standard" },
+          null,
+          2,
+        ) + "\n",
       );
       const result = await run(["sync", "--working-dir", cwd, "--yes"]);
       assert.equal(result.exitCode, 0);

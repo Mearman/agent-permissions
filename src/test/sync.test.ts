@@ -391,14 +391,17 @@ void describe("sync", () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 
+    const schemaUrl =
+      "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
     const policy = {
+      $schema: schemaUrl,
       rules: [{ tool: "Read", tier: "allow" }],
     };
 
     await mkdir(join(cwd, ".agents"), { recursive: true });
     await writeFile(
       join(cwd, ".agents", "permissions.json"),
-      JSON.stringify(policy) + "\n",
+      JSON.stringify(policy, null, 2) + "\n",
     );
 
     const result = await sync({

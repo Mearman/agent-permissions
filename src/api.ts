@@ -280,7 +280,14 @@ export function convert(
   // Encode: canonical → agent-native
   let output: unknown;
   if (to === "canonical") {
-    output = canonical;
+    // Inject $schema so generated files get IDE support
+    const schemaUrl =
+      "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
+    if (typeof canonical === "object" && canonical !== null) {
+      output = { $schema: schemaUrl, ...canonical };
+    } else {
+      output = canonical;
+    }
   } else {
     const codec = CODECS[to];
     output = codec.encode(canonical as Parameters<(typeof codec)["encode"]>[0]);

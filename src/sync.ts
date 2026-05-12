@@ -274,11 +274,14 @@ function computeWriteTargets(
 
   // Always write canonical at cwd (unless excluded)
   const canonicalPath = join(cwd, ".agents", "permissions.json");
+  const schemaUrl =
+    "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
+  const canonicalWithSchema = { $schema: schemaUrl, ...merged };
   if (!agentFilter || agentFilter.has("canonical")) {
     targets.push({
       agent: "canonical",
       path: canonicalPath,
-      content: JSON.stringify(merged, null, 2) + "\n",
+      content: JSON.stringify(canonicalWithSchema, null, 2) + "\n",
       exists: existsSync(canonicalPath),
     });
   }
