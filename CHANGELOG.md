@@ -1,3 +1,9 @@
+## [5.7.0](https://github.com/Mearman/agent-permissions/compare/v5.6.0...v5.7.0) (2026-05-12)
+
+### Features
+
+* **mcp:** add Claude Code marketplace plugin support ([63fb629](https://github.com/Mearman/agent-permissions/commit/63fb6296865a2095a6cac8c976f3f5ad5cd13b4b))
+
 ## [5.6.0](https://github.com/Mearman/agent-permissions/compare/v5.5.1...v5.6.0) (2026-05-12)
 
 ### Features
