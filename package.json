@@ -112,5 +112,8 @@
     "typescript-eslint": "^8.59.2",
     "undici-types": "^8.2.0"
   },
-  "packageManager": "pnpm@11.0.9"
+  "packageManager": "pnpm@11.0.9",
+  "bugs": {
+    "url": "https://github.com/Mearman/agent-permissions/issues"
+  }
 }
