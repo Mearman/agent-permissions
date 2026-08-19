@@ -265,6 +265,10 @@ void describe("agent-files", () => {
     void it("returns path for crush", () => {
       assert.strictEqual(defaultFileName("crush"), ".crush.json");
     });
+
+    void it("returns OMP's literal global metadata name", () => {
+      assert.strictEqual(defaultFileName("omp"), "~/.omp/agent/config.yml");
+    });
   });
 
   // -------------------------------------------------------------------------

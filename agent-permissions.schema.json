@@ -481,7 +481,8 @@
           "codex",
           "kiro",
           "opencode",
-          "crush"
+          "crush",
+          "omp"
         ]
       },
       "description": "Agent configs to include when loading. Only these native configs are read (plus canonical). Mutually exclusive with `without`.",
@@ -501,7 +502,8 @@
           "codex",
           "kiro",
           "opencode",
-          "crush"
+          "crush",
+          "omp"
         ]
       },
       "description": "Agent configs to exclude when loading. Mutually exclusive with `with`.",

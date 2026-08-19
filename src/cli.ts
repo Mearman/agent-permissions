@@ -53,6 +53,7 @@ function isAgent(value: string): value is Agent {
 function resolveInputSpec(spec: string | undefined): string | undefined {
   if (spec === undefined || spec === "-") return undefined;
   const format = resolveFormat(spec);
+  if (format === "omp" && spec !== "omp") return resolve(spec);
   if (format) return findDefaultFile(format, process.cwd());
   return resolve(spec);
 }
@@ -61,6 +62,7 @@ function resolveInputSpec(spec: string | undefined): string | undefined {
 function resolveOutputSpec(spec: string | undefined): string | undefined {
   if (spec === undefined || spec === "-") return undefined;
   const format = resolveFormat(spec);
+  if (format === "omp" && spec !== "omp") return resolve(spec);
   if (format) {
     const fileName = AGENT_FILES[format].name;
     return resolve(join(process.cwd(), fileName));

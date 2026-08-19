@@ -5,6 +5,8 @@ import {
   validate,
   check,
   detectFormat,
+  detectFormatFromPath,
+  resolveFormat,
   ConvertError,
 } from "../api.ts";
 import type { Format } from "../api.ts";
@@ -59,6 +61,26 @@ void describe("detectFormat", () => {
     assert.equal(detectFormat({ bash: "allow", read: "deny" }), "opencode");
   });
 
+  void it("detects exact OMP fragments without claiming unrelated Bash data", () => {
+    assert.equal(
+      detectFormat({
+        bash: {
+          patterns: [
+            { match: "git status", approval: "allow" },
+            { match: "git push", approval: "prompt" },
+            { match: "rm *", approval: "deny" },
+          ],
+        },
+      }),
+      "omp",
+    );
+    assert.equal(detectFormat({ bash: { unrelated: "allow" } }), "opencode");
+    assert.equal(
+      detectFormat({ bash: { patterns: "git status" } }),
+      "opencode",
+    );
+  });
+
   void it("detects canonical from rules[] with {tool, tier} objects", () => {
     assert.equal(
       detectFormat({ rules: [{ tool: "Bash", tier: "allow" }] }),
@@ -98,6 +120,16 @@ void describe("detectFormat", () => {
     assert.equal(detectFormat("unknown"), undefined);
     assert.equal(detectFormat(null), undefined);
     assert.equal(detectFormat(42), undefined);
+  });
+});
+
+void describe("format path recognition", () => {
+  void it("recognises OMP's global YAML path", () => {
+    assert.equal(
+      detectFormatFromPath("/Users/example/.omp/agent/config.yml"),
+      "omp",
+    );
+    assert.equal(resolveFormat("omp"), "omp");
   });
 });
 
@@ -177,6 +209,57 @@ void describe("convert", () => {
       assert.ok(first.path.length > 0);
       assert.ok(first.message.length > 0);
     }
+  });
+
+  void it("converts compatible OpenCode Bash rules through OMP", () => {
+    const result = convert("opencode", "omp", {
+      bash: {
+        "git status": "allow",
+        "git push": "ask",
+        "rm *": "deny",
+      },
+      read: "allow",
+    });
+    assert.deepEqual(result.output, {
+      bash: {
+        patterns: [
+          { match: "git status", approval: "allow" },
+          { match: "git push", approval: "prompt" },
+          { match: "rm *", approval: "deny" },
+        ],
+      },
+    });
+    assert.deepEqual(convert("opencode", "omp", { read: "allow" }).output, {
+      bash: { patterns: [] },
+    });
+  });
+
+  void it("converts OMP in both directions", () => {
+    const native = {
+      bash: {
+        patterns: [
+          { match: "git status", approval: "allow" },
+          { match: "git push", approval: "prompt" },
+          { match: "rm *", approval: "deny" },
+        ],
+      },
+    };
+    const canonical = convert("omp", "canonical", native);
+    assert.equal(canonical.from, "omp");
+    assert.ok(
+      typeof canonical.output === "object" &&
+        canonical.output !== null &&
+        "rules" in canonical.output,
+    );
+    assert.deepEqual(canonical.output.rules, [
+      { tool: "Bash", pattern: "git status", tier: "allow" },
+      { tool: "Bash", pattern: "git push", tier: "ask" },
+      { tool: "Bash", pattern: "rm *", tier: "deny" },
+    ]);
+    assert.deepEqual(
+      convert("canonical", "omp", canonical.output).output,
+      native,
+    );
   });
 });
 

@@ -46,6 +46,7 @@ export const agentId = z.enum([
   "kiro",
   "opencode",
   "crush",
+  "omp",
 ]);
 
 export type AgentId = z.infer<typeof agentId>;
@@ -1232,6 +1233,83 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
   },
 });
 
+interface OmpNative {
+  bash: {
+    patterns: {
+      match: string;
+      approval: "allow" | "prompt" | "deny";
+    }[];
+  };
+}
+
+const ompApprovalToTier = {
+  allow: "allow",
+  prompt: "ask",
+  deny: "deny",
+} as const;
+
+const tierToOmpApproval = {
+  allow: "allow",
+  ask: "prompt",
+  deny: "deny",
+} as const;
+
+function decodeOmp(native: unknown): AgentPermissionPolicy {
+  if (typeof native !== "object" || native === null || Array.isArray(native)) {
+    return {};
+  }
+
+  const bash = (native as Record<string, unknown>).bash;
+  if (typeof bash !== "object" || bash === null || Array.isArray(bash)) {
+    return {};
+  }
+
+  const patterns = (bash as Record<string, unknown>).patterns;
+  if (!Array.isArray(patterns)) return {};
+
+  const rules: Rule[] = [];
+  for (const pattern of patterns) {
+    if (
+      typeof pattern !== "object" ||
+      pattern === null ||
+      Array.isArray(pattern)
+    ) {
+      continue;
+    }
+
+    const entry = pattern as Record<string, unknown>;
+    const tier =
+      typeof entry.approval === "string"
+        ? ompApprovalToTier[entry.approval as keyof typeof ompApprovalToTier]
+        : undefined;
+    if (typeof entry.match === "string" && tier !== undefined) {
+      rules.push({ tool: "Bash", pattern: entry.match, tier });
+    }
+  }
+
+  return rules.length === 0 ? {} : { rules };
+}
+
+function encodeOmp(canonical: AgentPermissionPolicy): OmpNative {
+  const patterns = collectRules(canonical).flatMap((rule) => {
+    if (rule.tool !== "Bash" || typeof rule.pattern !== "string") return [];
+
+    return [
+      {
+        match: rule.pattern,
+        approval: tierToOmpApproval[rule.tier],
+      },
+    ];
+  });
+
+  return { bash: { patterns } };
+}
+
+export const ompCodec = z.codec(z.unknown(), AgentPermissionPolicy, {
+  decode: decodeOmp,
+  encode: encodeOmp,
+});
+
 // ---------------------------------------------------------------------------
 // Codec registry
 // ---------------------------------------------------------------------------
@@ -1242,6 +1320,7 @@ export const CODECS = {
   kiro: kiroCodec,
   opencode: opencodeCodec,
   crush: crushCodec,
+  omp: ompCodec,
 } as const;
 
 export type Codecs = typeof CODECS;
