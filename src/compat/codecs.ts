@@ -26,6 +26,7 @@ import {
   ruleToString,
   collectRules,
 } from "../evaluate.ts";
+import { isRecord } from "../guards.ts";
 import {
   ClaudeCodePermissionMode,
   CodexApprovalMode,
@@ -1236,35 +1237,25 @@ const tierToOmpApproval = {
 } as const;
 
 function decodeOmp(native: unknown): AgentPermissionPolicy {
-  if (typeof native !== "object" || native === null || Array.isArray(native)) {
-    return {};
-  }
+  if (!isRecord(native)) return {};
 
-  const bash = (native as Record<string, unknown>).bash;
-  if (typeof bash !== "object" || bash === null || Array.isArray(bash)) {
-    return {};
-  }
+  const bash = native.bash;
+  if (!isRecord(bash)) return {};
 
-  const patterns = (bash as Record<string, unknown>).patterns;
+  const patterns = bash.patterns;
   if (!Array.isArray(patterns)) return {};
 
   const rules: Rule[] = [];
   for (const pattern of patterns) {
-    if (
-      typeof pattern !== "object" ||
-      pattern === null ||
-      Array.isArray(pattern)
-    ) {
-      continue;
-    }
+    if (!isRecord(pattern)) continue;
 
-    const entry = pattern as Record<string, unknown>;
+    const approval = pattern.approval;
     const tier =
-      typeof entry.approval === "string"
-        ? ompApprovalToTier[entry.approval as keyof typeof ompApprovalToTier]
+      approval === "allow" || approval === "prompt" || approval === "deny"
+        ? ompApprovalToTier[approval]
         : undefined;
-    if (typeof entry.match === "string" && tier !== undefined) {
-      rules.push({ tool: "Bash", pattern: entry.match, tier });
+    if (typeof pattern.match === "string" && tier !== undefined) {
+      rules.push({ tool: "Bash", pattern: pattern.match, tier });
     }
   }
 
@@ -1273,7 +1264,8 @@ function decodeOmp(native: unknown): AgentPermissionPolicy {
 
 function encodeOmp(canonical: AgentPermissionPolicy): OmpNative {
   const patterns = collectRules(canonical).flatMap((rule) => {
-    if (rule.tool !== "Bash" || typeof rule.pattern !== "string") return [];
+    if (rule.tool.toLowerCase() !== "bash" || typeof rule.pattern !== "string")
+      return [];
 
     return [
       {

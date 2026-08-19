@@ -22,7 +22,8 @@ import { existsSync } from "node:fs";
 import { type AgentPermissionPolicy, type Rule } from "./schema.ts";
 import {
   AGENT_FILES,
-  parseJson,
+  defaultFilePath,
+  parseAgentFile,
   validatePolicy,
   decodeNative,
 } from "./agent-files.ts";
@@ -72,6 +73,7 @@ interface DecodedLayer {
 function resolveDiscoveryConfig(canonicalLayers: DecodedLayer[]): {
   up: number;
   agentFilter: Set<string> | undefined;
+  globalAgents: Set<AgentId>;
 } {
   let up = Infinity;
   // Set<string>, not Set<AgentId>: the filters compare against Object.keys() output (plain strings) and carry "canonical" alongside agent ids.
@@ -125,7 +127,7 @@ function resolveDiscoveryConfig(canonicalLayers: DecodedLayer[]): {
     agentFilter = new Set(["canonical"]);
   }
 
-  return { up, agentFilter };
+  return { up, agentFilter, globalAgents: withAgents };
 }
 
 /**
@@ -140,9 +142,10 @@ function discoverFiles(
   cwd: string,
   up: number,
   agentFilter: Set<string> | undefined,
+  globalAgents: Set<AgentId>,
 ): DiscoveredFile[] {
-  // Collect per-directory buckets, cwd-first
   const dirBuckets: DiscoveredFile[][] = [];
+  const globalFiles: DiscoveredFile[] = [];
   let current = resolve(cwd);
   let remaining = up === Infinity ? Number.MAX_SAFE_INTEGER : up + 1;
 
@@ -153,9 +156,8 @@ function discoverFiles(
       const agent: AgentId | "canonical" = key;
       // Apply agent filter
       if (agentFilter && !agentFilter.has(agent)) continue;
-
-      // Skip agents without extract (codex TOML, crush no file)
       if (agent !== "canonical" && def.extract === undefined) continue;
+      if (def.global) continue;
 
       const main = join(current, def.name);
       if (existsSync(main)) {
@@ -173,14 +175,27 @@ function discoverFiles(
 
     remaining--;
     const parent = dirname(current);
-    if (parent === current) break; // reached root
+    if (parent === current) break;
     current = parent;
   }
 
-  // Reverse directory order so outermost is first.
-  // Within each directory, committed comes before local.
+  for (const [key, def] of Object.entries(AGENT_FILES)) {
+    if (!isAgentId(key)) continue;
+    const agent: AgentId = key;
+    if (
+      !def.global ||
+      !globalAgents.has(agent) ||
+      (agentFilter && !agentFilter.has(agent)) ||
+      def.extract === undefined
+    ) {
+      continue;
+    }
+    const path = defaultFilePath(agent, cwd);
+    if (existsSync(path)) globalFiles.push({ agent, path, local: false });
+  }
+
   dirBuckets.reverse();
-  return dirBuckets.flat();
+  return [...dirBuckets.flat(), ...globalFiles];
 }
 
 // ---------------------------------------------------------------------------
@@ -214,7 +229,7 @@ async function readAndDecode(
   const content = await readFileContent(file.path);
   if (content === undefined) return undefined;
 
-  const parsed = parseJson(content, file.path);
+  const parsed = parseAgentFile(file.agent, content, file.path);
   if (!parsed.ok) return undefined;
 
   const policy = decodeFile(file, parsed.value);
@@ -269,7 +284,12 @@ export async function loadPolicy(
   const { cwd } = options;
 
   // Pass 1: discover canonical files with max walk-up to find all of them
-  const canonicalFiles = discoverFiles(cwd, Infinity, new Set(["canonical"]));
+  const canonicalFiles = discoverFiles(
+    cwd,
+    Infinity,
+    new Set(["canonical"]),
+    new Set(),
+  );
   const canonicalLayers: DecodedLayer[] = [];
   for (const file of canonicalFiles) {
     const layer = await readAndDecode(file);
@@ -281,10 +301,10 @@ export async function loadPolicy(
   }
 
   // Resolve discovery config from canonical files
-  const { up, agentFilter } = resolveDiscoveryConfig(canonicalLayers);
+  const { up, agentFilter, globalAgents } =
+    resolveDiscoveryConfig(canonicalLayers);
 
-  // Pass 2: discover all files using resolved config
-  const allFiles = discoverFiles(cwd, up, agentFilter);
+  const allFiles = discoverFiles(cwd, up, agentFilter, globalAgents);
 
   const allLayers: DecodedLayer[] = [];
   for (const file of allFiles) {

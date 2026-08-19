@@ -11,6 +11,7 @@ import { mkdtemp, rm, writeFile, mkdir, readFile } from "node:fs/promises";
 import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { parse as parseYaml } from "yaml";
 
 const CLI = join(import.meta.dirname, "..", "cli.ts");
 
@@ -343,7 +344,7 @@ void describe("CLI", () => {
       assert.equal(result.exitCode, 0);
     });
 
-    void it("converts JSON through an OMP config.yml path", async () => {
+    void it("converts YAML through an OMP config.yml path", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       const ompDir = join(cwd, ".omp", "agent");
@@ -351,15 +352,7 @@ void describe("CLI", () => {
       await mkdir(ompDir, { recursive: true });
       await writeFile(
         ompPath,
-        JSON.stringify({
-          bash: {
-            patterns: [
-              { match: "git status", approval: "allow" },
-              { match: "git push", approval: "prompt" },
-              { match: "rm *", approval: "deny" },
-            ],
-          },
-        }),
+        "bash:\n  patterns:\n    - match: git status\n      approval: allow\n    - match: git push\n      approval: prompt\n    - match: rm *\n      approval: deny\n",
       );
       const decoded = await run([
         "convert",
@@ -399,7 +392,7 @@ void describe("CLI", () => {
         "-",
       ]);
       assert.equal(encoded.exitCode, 0);
-      assert.deepEqual(JSON.parse(encoded.stdout), {
+      assert.deepEqual(parseYaml(encoded.stdout), {
         bash: {
           patterns: [
             { match: "git status", approval: "allow" },
@@ -441,7 +434,7 @@ void describe("CLI", () => {
         outputPath,
       ]);
       assert.equal(result.exitCode, 0);
-      assert.deepEqual(JSON.parse(await readFile(outputPath, "utf-8")), {
+      assert.deepEqual(parseYaml(await readFile(outputPath, "utf-8")), {
         bash: {
           patterns: [
             { match: "rm *", approval: "deny" },

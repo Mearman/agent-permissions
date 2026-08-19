@@ -140,32 +140,20 @@ export function detectFormat(value: unknown): Format | undefined {
   // Kiro: allowedTools or toolsSettings
   if (Array.isArray(obj.allowedTools) || "toolsSettings" in obj) return "kiro";
 
-  if (
-    Object.keys(obj).length === 1 &&
-    typeof obj.bash === "object" &&
-    obj.bash !== null &&
-    !Array.isArray(obj.bash)
-  ) {
-    const bash = obj.bash as Record<string, unknown>;
-    const patterns = bash.patterns as unknown[];
+  if (Object.keys(obj).length === 1 && isRecord(obj.bash)) {
+    const bash = obj.bash;
+    const patterns = bash.patterns;
     if (
       Object.keys(bash).length === 1 &&
       Array.isArray(patterns) &&
       patterns.every((pattern) => {
-        if (
-          typeof pattern !== "object" ||
-          pattern === null ||
-          Array.isArray(pattern)
-        ) {
-          return false;
-        }
-        const entry = pattern as Record<string, unknown>;
+        if (!isRecord(pattern)) return false;
         return (
-          Object.keys(entry).length === 2 &&
-          typeof entry.match === "string" &&
-          (entry.approval === "allow" ||
-            entry.approval === "prompt" ||
-            entry.approval === "deny")
+          Object.keys(pattern).length === 2 &&
+          typeof pattern.match === "string" &&
+          (pattern.approval === "allow" ||
+            pattern.approval === "prompt" ||
+            pattern.approval === "deny")
         );
       })
     ) {

@@ -31,7 +31,9 @@ import {
 } from "./evaluate.ts";
 import {
   AGENT_FILES,
-  parseJson,
+  defaultFilePath,
+  parseAgentFile,
+  stringifyAgentFile,
   validatePolicy,
   decodeNative,
 } from "./agent-files.ts";
@@ -100,6 +102,7 @@ function detectFiles(dir: string): AgentFile[] {
   for (const [key, def] of Object.entries(AGENT_FILES)) {
     if (!isAgentId(key) && key !== "canonical") continue;
     const agent: AgentId | "canonical" = key;
+    if (def.global) continue;
     const main = join(dir, def.name);
     if (existsSync(main)) {
       found.push({ agent, path: main, local: false });
@@ -116,20 +119,30 @@ function detectFiles(dir: string): AgentFile[] {
 }
 
 /** Walk up from cwd, collecting agent files. */
-function collectFiles(cwd: string, up: number): AgentFile[] {
+function collectFiles(
+  cwd: string,
+  up: number,
+  globalAgents: Set<AgentId>,
+): AgentFile[] {
   const files: AgentFile[] = [];
   let current = resolve(cwd);
   let remaining = up === Infinity ? Number.MAX_SAFE_INTEGER : up + 1;
 
   while (remaining > 0) {
-    const found = detectFiles(current);
-    files.push(...found);
+    files.push(...detectFiles(current));
     remaining--;
 
     const parent = dirname(current);
-    if (parent === current) break; // reached root
-
+    if (parent === current) break;
     current = parent;
+  }
+
+  for (const [key, def] of Object.entries(AGENT_FILES)) {
+    if (!isAgentId(key)) continue;
+    const agent: AgentId = key;
+    if (!def.global || !globalAgents.has(agent)) continue;
+    const path = defaultFilePath(agent, cwd);
+    if (existsSync(path)) files.push({ agent, path, local: false });
   }
 
   return files;
@@ -169,7 +182,7 @@ async function readAndDecode(
   } catch {
     return undefined;
   }
-  const parsed = parseJson(content, file.path);
+  const parsed = parseAgentFile(file.agent, content, file.path);
   if (!parsed.ok) return undefined;
 
   // Canonical files parse directly
@@ -295,7 +308,7 @@ function computeWriteTargets(
     if (agent === "codex" || agent === "crush") continue; // TOML / no file
 
     const def = AGENT_FILES[agent];
-    const filePath = join(cwd, def.name);
+    const filePath = defaultFilePath(agent, cwd);
     const fileExists = existsSync(filePath);
 
     if (!fileExists && !create) continue;
@@ -318,7 +331,7 @@ function computeWriteTargets(
     targets.push({
       agent,
       path: filePath,
-      content: JSON.stringify(encoded, null, 2) + "\n",
+      content: stringifyAgentFile(agent, encoded, false),
       exists: fileExists,
     });
   }
@@ -389,8 +402,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   // Build agent filter from --with/--without
   const agentFilter = buildAgentFilter(withList, withoutList);
 
-  // 1. Collect files by walking up
-  const files = collectFiles(cwd, up);
+  const files = collectFiles(cwd, up, new Set(withList));
 
   if (files.length === 0) {
     process.stderr.write(

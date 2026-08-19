@@ -92,6 +92,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -130,7 +131,6 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.2",
     "undici-types": "^8.2.0",
-    "yaml": "^2.9.0",
     "yaml-eslint-parser": "^2.1.0"
   },
   "packageManager": "pnpm@11.21.0",
