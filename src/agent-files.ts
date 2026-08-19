@@ -63,6 +63,7 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
     extract: (raw) => raw,
     wrap: (encoded) => encoded,
   },
+  omp: { name: "~/.omp/agent/config.yml" },
 };
 
 /** Get the default file name for a format. */

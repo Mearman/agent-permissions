@@ -342,6 +342,114 @@ void describe("CLI", () => {
       );
       assert.equal(result.exitCode, 0);
     });
+
+    void it("converts JSON through an OMP config.yml path", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      const ompDir = join(cwd, ".omp", "agent");
+      const ompPath = join(ompDir, "config.yml");
+      await mkdir(ompDir, { recursive: true });
+      await writeFile(
+        ompPath,
+        JSON.stringify({
+          bash: {
+            patterns: [
+              { match: "git status", approval: "allow" },
+              { match: "git push", approval: "prompt" },
+              { match: "rm *", approval: "deny" },
+            ],
+          },
+        }),
+      );
+      const decoded = await run([
+        "convert",
+        "--from",
+        ompPath,
+        "--to",
+        "canonical",
+        "--output",
+        "-",
+      ]);
+      assert.equal(decoded.exitCode, 0);
+      const decodedOutput = JSON.parse(decoded.stdout) as { rules: unknown };
+      assert.deepEqual(decodedOutput.rules, [
+        { tool: "Bash", pattern: "git status", tier: "allow" },
+        { tool: "Bash", pattern: "git push", tier: "ask" },
+        { tool: "Bash", pattern: "rm *", tier: "deny" },
+      ]);
+
+      const canonicalPath = join(cwd, "policy.json");
+      await writeFile(
+        canonicalPath,
+        JSON.stringify({
+          rules: [
+            { tool: "Bash", pattern: "git status", tier: "allow" },
+            { tool: "Bash", pattern: "git push", tier: "ask" },
+            { tool: "Bash", pattern: "rm *", tier: "deny" },
+          ],
+        }),
+      );
+      const encoded = await run([
+        "convert",
+        "--from",
+        canonicalPath,
+        "--to",
+        "omp",
+        "--output",
+        "-",
+      ]);
+      assert.equal(encoded.exitCode, 0);
+      assert.deepEqual(JSON.parse(encoded.stdout), {
+        bash: {
+          patterns: [
+            { match: "git status", approval: "allow" },
+            { match: "git push", approval: "prompt" },
+            { match: "rm *", approval: "deny" },
+          ],
+        },
+      });
+    });
+
+    void it("writes lossy OMP output for compatible Bash policies", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      const policyPath = join(cwd, "policy.json");
+      const outputPath = join(cwd, "config.yml");
+      await writeFile(
+        policyPath,
+        JSON.stringify({
+          defaultMode: "restricted",
+          rules: [
+            { tool: "Bash", pattern: "rm *", tier: "deny" },
+            {
+              tool: "Bash",
+              pattern: "git log",
+              tier: "allow",
+              when: { cwd: "/repo" },
+            },
+            { tool: "Read", pattern: "src/**", tier: "allow" },
+          ],
+        }),
+      );
+      const result = await run([
+        "convert",
+        "--from",
+        policyPath,
+        "--to",
+        "omp",
+        "--output",
+        outputPath,
+      ]);
+      assert.equal(result.exitCode, 0);
+      assert.deepEqual(JSON.parse(await readFile(outputPath, "utf-8")), {
+        bash: {
+          patterns: [
+            { match: "rm *", approval: "deny" },
+            { match: "git log", approval: "allow" },
+          ],
+        },
+      });
+    });
   });
 
   // =========================================================================
