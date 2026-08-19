@@ -1329,6 +1329,19 @@ void describe("ompCodec", () => {
     assert.deepEqual(ompCodec.encode(ompCodec.decode(native)), native);
   });
 
+  void it("projects case-insensitive Bash rules", () => {
+    assert.deepEqual(
+      ompCodec.encode({
+        rules: [{ tool: "bash", pattern: "git status", tier: "allow" }],
+      }),
+      {
+        bash: {
+          patterns: [{ match: "git status", approval: "allow" }],
+        },
+      },
+    );
+  });
+
   void it("projects canonical rules to representable OMP patterns", () => {
     const canonical = {
       permissions: {

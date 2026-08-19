@@ -1292,7 +1292,8 @@ function decodeOmp(native: unknown): AgentPermissionPolicy {
 
 function encodeOmp(canonical: AgentPermissionPolicy): OmpNative {
   const patterns = collectRules(canonical).flatMap((rule) => {
-    if (rule.tool !== "Bash" || typeof rule.pattern !== "string") return [];
+    if (rule.tool.toLowerCase() !== "bash" || typeof rule.pattern !== "string")
+      return [];
 
     return [
       {

@@ -1,24 +1,22 @@
-/**
- * Unit tests for agent-files.ts — parseJson, validatePolicy, decodeNative,
- * writeJsonFile, findDefaultFile, defaultFileName.
- */
-
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
 
 import {
-  parseJson,
-  validatePolicy,
-  decodeNative,
-  writeJsonFile,
-  findDefaultFile,
   defaultFileName,
-  ok,
+  defaultFilePath,
+  decodeNative,
   fail,
+  findDefaultFile,
+  ok,
+  parseAgentFile,
+  parseJson,
+  stringifyAgentFile,
   type Result,
+  validatePolicy,
+  writeFileContent,
 } from "../agent-files.ts";
 
 /** Extract value from a Result, asserting it's ok. */
@@ -117,6 +115,30 @@ void describe("agent-files", () => {
     void it("includes source in error message", () => {
       const err = unwrapErr(parseJson("!!!", "my-config.json"));
       assert.ok(err.startsWith("my-config.json"));
+    });
+  });
+
+  void describe("parseAgentFile", () => {
+    void it("parses YAML OMP configuration", () => {
+      const parsed = parseAgentFile(
+        "omp",
+        "bash:\n  patterns:\n    - match: git status\n      approval: allow\n",
+        "config.yml",
+      );
+      assert.deepStrictEqual(unwrap(parsed), {
+        bash: { patterns: [{ match: "git status", approval: "allow" }] },
+      });
+    });
+
+    void it("serializes OMP configuration as YAML", () => {
+      assert.strictEqual(
+        stringifyAgentFile(
+          "omp",
+          { bash: { patterns: [{ match: "git status", approval: "allow" }] } },
+          false,
+        ),
+        "bash:\n  patterns:\n    - match: git status\n      approval: allow\n",
+      );
     });
   });
 
@@ -224,6 +246,15 @@ void describe("agent-files", () => {
       );
     });
 
+    void it("decodes OMP config successfully", () => {
+      assert.strictEqual(
+        decodeNative("omp", {
+          bash: { patterns: [{ match: "git status", approval: "allow" }] },
+        }).ok,
+        true,
+      );
+    });
+
     void it("fails when raw is not an object for claude-code", () => {
       const err = unwrapErr(decodeNative("claude-code", "not an object"));
       assert.ok(err.includes("no permissions payload"));
@@ -266,8 +297,8 @@ void describe("agent-files", () => {
       assert.strictEqual(defaultFileName("crush"), ".crush.json");
     });
 
-    void it("returns OMP's literal global metadata name", () => {
-      assert.strictEqual(defaultFileName("omp"), "~/.omp/agent/config.yml");
+    void it("returns OMP's global relative name", () => {
+      assert.strictEqual(defaultFileName("omp"), ".omp/agent/config.yml");
     });
   });
 
@@ -328,14 +359,26 @@ void describe("agent-files", () => {
         join(dir, "opencode.json"),
       );
     });
+
+    void it("resolves OMP to the global config path", () => {
+      const dir = isolate();
+      assert.strictEqual(
+        findDefaultFile("omp", dir),
+        join(homedir(), ".omp", "agent", "config.yml"),
+      );
+      assert.strictEqual(
+        defaultFilePath("omp", dir),
+        join(homedir(), ".omp", "agent", "config.yml"),
+      );
+    });
   });
 
   // -------------------------------------------------------------------------
-  void describe("writeJsonFile", () => {
+  void describe("writeFileContent", () => {
     void it("writes to existing directory", async () => {
       const dir = isolate();
       const filePath = join(dir, "output.json");
-      await writeJsonFile(filePath, '{"test": true}');
+      await writeFileContent(filePath, '{"test": true}');
 
       const { readFileSync } = await import("node:fs");
       assert.strictEqual(readFileSync(filePath, "utf-8"), '{"test": true}');
@@ -344,7 +387,7 @@ void describe("agent-files", () => {
     void it("creates parent directories", async () => {
       const dir = isolate();
       const filePath = join(dir, "sub", "dir", "output.json");
-      await writeJsonFile(filePath, '{"nested": true}');
+      await writeFileContent(filePath, '{"nested": true}');
 
       const { readFileSync } = await import("node:fs");
       assert.strictEqual(readFileSync(filePath, "utf-8"), '{"nested": true}');
@@ -354,7 +397,7 @@ void describe("agent-files", () => {
       const dir = isolate();
       const filePath = join(dir, "output.json");
       writeFileSync(filePath, "old content");
-      await writeJsonFile(filePath, "new content");
+      await writeFileContent(filePath, "new content");
 
       const { readFileSync } = await import("node:fs");
       assert.strictEqual(readFileSync(filePath, "utf-8"), "new content");

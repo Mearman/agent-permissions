@@ -5,9 +5,11 @@
  * and provides read/write helpers for the convert/validate/check/sync pipeline.
  */
 
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { type AgentId } from "./compat/codecs.ts";
 import { type Format } from "./api.ts";
 
@@ -17,10 +19,10 @@ import { type Format } from "./api.ts";
 
 /** Per-format config file info. */
 export interface AgentFileDef {
-  /** Relative path to the main config file. */
   name: string;
-  /** Relative path to the local override file (read-only, never written). */
   localName?: string;
+  global?: boolean;
+  format?: "yaml";
   /**
    * Extract the permissions payload from a parsed native config.
    * Returns undefined if the config doesn't contain a permissions block.
@@ -66,12 +68,24 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
     extract: (raw) => raw,
     wrap: (encoded) => encoded,
   },
-  omp: { name: "~/.omp/agent/config.yml" },
+  omp: {
+    name: ".omp/agent/config.yml",
+    global: true,
+    format: "yaml",
+    extract: (raw) => raw,
+    wrap: (encoded) => encoded,
+  },
 };
 
 /** Get the default file name for a format. */
 export function defaultFileName(format: Format): string {
   return AGENT_FILES[format].name;
+}
+export function defaultFilePath(format: Format, startDir: string): string {
+  const def = AGENT_FILES[format];
+  return def.global
+    ? join(homedir(), def.name)
+    : join(resolve(startDir), def.name);
 }
 
 // ---------------------------------------------------------------------------
@@ -83,16 +97,18 @@ export function defaultFileName(format: Format): string {
  * Returns the first existing file found, or the default path in `startDir`.
  */
 export function findDefaultFile(format: Format, startDir: string): string {
-  const fileName = defaultFileName(format);
+  const def = AGENT_FILES[format];
+  if (def.global) return defaultFilePath(format, startDir);
+
   let dir = resolve(startDir);
   for (;;) {
-    const candidate = join(dir, fileName);
+    const candidate = join(dir, def.name);
     if (existsSync(candidate)) return candidate;
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
-  return join(resolve(startDir), fileName);
+  return defaultFilePath(format, startDir);
 }
 
 // ---------------------------------------------------------------------------
@@ -139,9 +155,29 @@ export function parseJson(raw: string, source: string): Result<unknown> {
     return fail(`${source}: invalid JSON`);
   }
 }
+export function parseAgentFile(
+  format: Format,
+  raw: string,
+  source: string,
+): Result<unknown> {
+  if (AGENT_FILES[format].format !== "yaml") return parseJson(raw, source);
+  try {
+    return ok(parseYaml(raw));
+  } catch {
+    return fail(`${source}: invalid YAML`);
+  }
+}
 
-/** Write JSON to a file, creating parent directories as needed. */
-export async function writeJsonFile(
+export function stringifyAgentFile(
+  format: Format,
+  value: unknown,
+  compact: boolean,
+): string {
+  if (AGENT_FILES[format].format === "yaml") return stringifyYaml(value);
+  return JSON.stringify(value, null, compact ? undefined : 2) + "\n";
+}
+
+export async function writeFileContent(
   path: string,
   content: string,
 ): Promise<void> {
