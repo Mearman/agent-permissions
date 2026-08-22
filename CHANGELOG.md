@@ -1,3 +1,9 @@
+## [5.11.1](https://github.com/Mearman/agent-permissions/compare/v5.11.0...v5.11.1) (2026-08-22)
+
+### Bug Fixes
+
+* **ci:** gate the audit fix PR on its own CI run instead of branch protection ([c05322c](https://github.com/Mearman/agent-permissions/commit/c05322c2ba7156a3e7e4c1975f56503d761090a3))
+
 ## [5.11.0](https://github.com/Mearman/agent-permissions/compare/v5.10.0...v5.11.0) (2026-08-22)
 
 ### Features
