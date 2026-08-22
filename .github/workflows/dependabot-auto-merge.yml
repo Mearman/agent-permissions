@@ -47,9 +47,11 @@ jobs:
           for PR in ${{ steps.find-prs.outputs.numbers }}; do
             echo "Processing PR #$PR..."
 
+            # `gh pr checks` reports its verdict in the exit code, not the output: 0 means every check passed, 8 means some are still pending, and anything else means at least one failed. Grepping the output for a verdict phrase the command never prints means no green PR is ever recognised — the loop just burns its whole polling budget on a PR whose checks have already passed.
             for i in $(seq 1 60); do
-              STATUS=$(gh pr checks "$PR" 2>&1) || true
-              if echo "$STATUS" | grep -q "all checks passed"; then
+              gh pr checks "$PR" >/dev/null 2>&1
+              CHECK_STATUS=$?
+              if [ "$CHECK_STATUS" -eq 0 ]; then
                 echo "CI passed on PR #$PR, checking dependency age..."
                 node --experimental-strip-types .github/scripts/check-dependency-age.ts "$PR"
                 AGE_STATUS=$?
@@ -64,8 +66,8 @@ jobs:
                 gh pr merge --rebase "$PR"
                 continue 2
               fi
-              if echo "$STATUS" | grep -qE "fail|cancelled"; then
-                echo "CI failed on PR #$PR, skipping."
+              if [ "$CHECK_STATUS" -ne 8 ]; then
+                echo "CI failed on PR #$PR (gh pr checks exit $CHECK_STATUS), skipping."
                 continue 2
               fi
               echo "Checks pending on PR #$PR... ($i/60)"
