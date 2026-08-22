@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - main
+  # Lets the audit job's own fix-PR branch get a real check/test run: a workflow_dispatch call is explicitly exempt from GitHub's rule that events caused by the default GITHUB_TOKEN (a push, a PR opened via `gh pr create`) never trigger another workflow run.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -42,9 +44,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
+      actions: write
     outputs:
       fixed: ${{ steps.audit-fix.outputs.fixed }}
-      sha: ${{ steps.commit.outputs.sha }}
     steps:
       - uses: actions/checkout@v6
 
@@ -63,19 +66,25 @@ jobs:
         env:
           AUDIT_LEVEL: high
 
-      # Only push from main itself: a PR run has nothing of its own to push to, and this keeps the fix commit out of branches this workflow doesn't own.
-      - name: Commit auto-fixed overrides
-        id: commit
+      # Only open a PR from main itself: a PR run has nothing of its own to fix a PR against, and this keeps the fix branch out of branches this workflow doesn't own. Landing the fix through a PR (gated by main's required Check/Test status checks) rather than a direct push means a bad fix can never reach main in the first place, instead of relying on catching it after the fact.
+      - name: Open a PR with the auto-fixed overrides
         if: steps.audit-fix.outputs.fixed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          BRANCH="audit-autofix/$(date -u +%Y%m%d%H%M%S)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add package.json pnpm-lock.yaml
           git commit -m "fix(deps): apply aged security overrides
 
           $(cat /tmp/audit-fix-commit-body.txt)"
-          git push
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git push origin "$BRANCH"
+          gh pr create --title "fix(deps): apply aged security overrides" --body-file /tmp/audit-fix-commit-body.txt --base main --head "$BRANCH"
+          gh pr merge --rebase --auto "$BRANCH"
+          # A push authenticated with GITHUB_TOKEN (the git push above, same as opening the PR) never triggers another workflow run on its own — dispatch one explicitly so the required status checks this PR is waiting on actually get produced.
+          gh workflow run ci.yml --ref "$BRANCH"
 
   check:
     name: Check
@@ -84,10 +93,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      # A push authenticated with the default GITHUB_TOKEN never triggers a new workflow run, so audit's own fix commit (if any) would otherwise go completely untested — check out it explicitly rather than the original, now-superseded triggering commit.
       - uses: actions/checkout@v6
         with:
-          ref: ${{ needs.audit.outputs.sha || github.sha }}
           persist-credentials: false
 
       - uses: pnpm/action-setup@v6.0.5
@@ -123,7 +130,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ needs.audit.outputs.sha || github.sha }}
           persist-credentials: false
 
       - uses: pnpm/action-setup@v6.0.5
@@ -147,7 +153,7 @@ jobs:
   release:
     name: Release
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [audit, check, test]
+    needs: [check, test]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -159,7 +165,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ needs.audit.outputs.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
