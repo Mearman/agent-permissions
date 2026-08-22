@@ -1,3 +1,9 @@
+## [5.11.2](https://github.com/Mearman/agent-permissions/compare/v5.11.1...v5.11.2) (2026-08-22)
+
+### Bug Fixes
+
+* **ci:** read gh pr checks' verdict from its exit code, not its output ([a26a743](https://github.com/Mearman/agent-permissions/commit/a26a7439b5f4a7f5950d9e1bebba62f0574fdc7c))
+
 ## [5.11.1](https://github.com/Mearman/agent-permissions/compare/v5.11.0...v5.11.1) (2026-08-22)
 
 ### Bug Fixes
