@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { appendFileSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 
 interface AuditAdvisory {
   module_name: string;
@@ -21,7 +21,7 @@ interface Candidate {
   range: string;
 }
 
-// pnpm 11.0.9 only honours override selectors written to package.json's `pnpm.overrides` field on a non-workspace project — an equivalent `overrides:` key in pnpm-workspace.yaml is silently ignored (confirmed empirically). Also confirmed empirically: adding a new override for a package that already has a resolved lockfile entry does NOT get applied by an incremental `pnpm install`, even with `--force` or `pnpm dedupe` — only deleting pnpm-lock.yaml and letting pnpm regenerate it from scratch reliably re-resolves against the new override. minimumReleaseAge still gates that fresh resolution, so this doesn't reopen the grace period for the packages actually being fixed; it does mean every other dependency can also drift to a newer in-range, aged version on a fix run, which `check` and `test` still gate as usual afterwards.
+// pnpm 11.0.9 only honours override selectors written to package.json's `pnpm.overrides` field on a non-workspace project — an equivalent `overrides:` key in pnpm-workspace.yaml is silently ignored (confirmed empirically). Confirmed empirically too: `pnpm update <name>` reliably re-resolves an already-locked package against a newly added override; a plain `pnpm install` (incremental or --force, with no package named) does not. `pnpm update` is also load-bearing for staying targeted — deleting node_modules/pnpm-lock.yaml and reinstalling from scratch also applies overrides, but incidentally re-resolves every *other* dependency (including dev tooling like prettier/eslint) to whatever satisfies its own range today, which can silently change formatting/lint rules for code this script never touched and break the commit step's own pre-push hook on files with no relation to the fix.
 const PACKAGE_FILE = "package.json";
 const LOCKFILE = "pnpm-lock.yaml";
 const auditLevel = process.env.AUDIT_LEVEL ?? "high";
@@ -72,6 +72,12 @@ function runAudit(): AuditReport {
   return parsed;
 }
 
+function githubAdvisoryIdsIn(report: AuditReport): Set<string> {
+  return new Set(
+    Object.values(report.advisories).map((a) => a.github_advisory_id),
+  );
+}
+
 function readPackageJson(): Record<string, unknown> {
   const parsed: unknown = JSON.parse(readFileSync(PACKAGE_FILE, "utf8"));
   if (!isRecord(parsed)) {
@@ -104,18 +110,11 @@ function currentOverrides(
   return result;
 }
 
-function freshInstall(): boolean {
-  // Deleting only the lockfile isn't enough — confirmed empirically that pnpm still leaves an already-linked node_modules resolution alone in that case, silently ignoring the very override this script just added. Removing node_modules too forces genuine full re-resolution; pnpm's content-addressable store keeps this fast.
-  rmSync(LOCKFILE, { force: true });
-  rmSync("node_modules", { force: true, recursive: true });
-  return spawnSync("pnpm", ["install"], { encoding: "utf8" }).status === 0;
-}
-
 function restoreFromGit(): void {
   spawnSync("git", ["checkout", "--", LOCKFILE, PACKAGE_FILE], {
     encoding: "utf8",
   });
-  // freshInstall() deletes node_modules before every attempt; a plain `git checkout` only restores the two tracked files, so reinstall to leave a working environment behind for whatever runs next (the final re-audit below, or any later step in this same job).
+  // `pnpm update` only touches the packages it's told to; a plain `git checkout` restores the two tracked files but leaves node_modules linked against whatever the last attempt resolved, so resync it for whatever runs next (the final re-audit below, or any later step in this same job).
   spawnSync("pnpm", ["install", "--frozen-lockfile"], { encoding: "utf8" });
 }
 
@@ -137,25 +136,42 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-function tryInstallWith(
+// pnpm's own exit code from `update` is not a reliable signal that an override actually took effect — confirmed empirically: an unsatisfiable override (no published version clears it) still exits 0, silently leaving the package at whatever it could otherwise resolve. The only trustworthy signal is re-auditing and checking whether each candidate's own specific advisories are gone. A non-zero exit from `update` itself does mean something more fundamental broke (e.g. an unresolvable peer conflict) and is reported as `conflicted` so the caller can isolate which candidate is responsible.
+function attemptBatch(
   pkgBefore: Record<string, unknown>,
   baseOverrides: Record<string, string>,
   batch: Candidate[],
-): boolean {
+): { succeeded: Candidate[]; conflicted: boolean } {
   const overrides = { ...baseOverrides };
   for (const c of batch) overrides[c.overrideKey] = c.range;
   writePackageJson(withOverrides(pkgBefore, overrides));
-  return freshInstall();
+
+  const names = [
+    ...new Set(batch.flatMap((c) => c.advisories.map((a) => a.module_name))),
+  ];
+  const updated =
+    spawnSync("pnpm", ["update", ...names], { encoding: "utf8" }).status === 0;
+  if (!updated) {
+    return { succeeded: [], conflicted: true };
+  }
+
+  const present = githubAdvisoryIdsIn(runAudit());
+  const succeeded = batch.filter((c) =>
+    c.advisories.every((a) => !present.has(a.github_advisory_id)),
+  );
+  return { succeeded, conflicted: false };
 }
 
-// A single candidate that can never install (its patched range has no version clearing minimumReleaseAge yet, or it conflicts with peers) must not sink every other, independently-fixable candidate in the same batch. Bisect on failure; if two halves that each install fine independently still fail combined (a genuine cross-candidate conflict), fall back to a linear greedy pass, which always terminates with a verified-working subset.
+// A single candidate whose override the registry can never satisfy (or that conflicts with peers) must not sink every other, independently-fixable candidate in the same batch. attemptBatch's own audit check already tells us exactly which candidates in a batch succeeded when the update itself ran cleanly, so bisection is only needed to isolate a genuine `conflicted` (non-zero exit) failure; if two halves that each update fine independently still conflict combined, fall back to a linear greedy pass, which always terminates with a verified-working subset.
 function resolveMaximalSubset(
   pkgBefore: Record<string, unknown>,
   baseOverrides: Record<string, string>,
   batch: Candidate[],
 ): Candidate[] {
   if (batch.length === 0) return [];
-  if (tryInstallWith(pkgBefore, baseOverrides, batch)) return batch;
+
+  const attempt = attemptBatch(pkgBefore, baseOverrides, batch);
+  if (!attempt.conflicted) return attempt.succeeded;
   if (batch.length === 1) return [];
 
   const mid = Math.floor(batch.length / 2);
@@ -171,7 +187,9 @@ function resolveMaximalSubset(
   );
   const combined = [...leftOk, ...rightOk];
   if (combined.length === 0) return [];
-  if (tryInstallWith(pkgBefore, baseOverrides, combined)) return combined;
+
+  const combinedAttempt = attemptBatch(pkgBefore, baseOverrides, combined);
+  if (!combinedAttempt.conflicted) return combinedAttempt.succeeded;
 
   return greedyResolve(pkgBefore, baseOverrides, combined);
 }
@@ -183,8 +201,8 @@ function greedyResolve(
 ): Candidate[] {
   const working: Candidate[] = [];
   for (const c of batch) {
-    const attempt = [...working, c];
-    if (tryInstallWith(pkgBefore, baseOverrides, attempt)) {
+    const attempt = attemptBatch(pkgBefore, baseOverrides, [...working, c]);
+    if (!attempt.conflicted && attempt.succeeded.includes(c)) {
       working.push(c);
     }
   }
@@ -193,7 +211,7 @@ function greedyResolve(
 
 const initial = runAudit();
 const advisories = Object.values(initial.advisories);
-const initialIds = new Set(advisories.map((a) => a.github_advisory_id));
+const initialIds = githubAdvisoryIdsIn(initial);
 
 const deferred: { advisory: AuditAdvisory; reason: string }[] = [];
 const candidatesByKey = new Map<string, Candidate>();
@@ -242,30 +260,16 @@ if (candidates.length > 0) {
   fixed = resolveMaximalSubset(pkgBefore, baseOverrides, candidates);
   const notFixed = candidates.filter((c) => !fixed.includes(c));
 
-  // resolveMaximalSubset's own recursion can leave the working tree reflecting a failed attempt (greedyResolve doesn't roll back after a rejected candidate) rather than the `fixed` set it settles on, so land on a known-clean final state explicitly: an exact reinstall of the verified set when something worked, or a plain git revert when nothing did — a fresh install with zero overrides isn't guaranteed byte-identical to the committed lockfile even though it should behave the same.
+  // Land on a final, clean state: exactly the overrides that verified as fixed, so the committed lockfile never carries an inert entry for a candidate that didn't pan out.
   if (fixed.length > 0) {
-    if (!tryInstallWith(pkgBefore, baseOverrides, fixed)) {
+    const final = attemptBatch(pkgBefore, baseOverrides, fixed);
+    if (final.conflicted || final.succeeded.length !== fixed.length) {
       fail(
-        "Could not reproduce the verified-working override set on the final install pass",
+        "Could not reproduce the verified-working override set on the final update pass",
       );
     }
   } else {
     restoreFromGit();
-  }
-
-  const afterFix = runAudit();
-  const stillPresent = new Set(
-    Object.values(afterFix.advisories).map((a) => a.github_advisory_id),
-  );
-
-  for (const c of fixed) {
-    for (const advisory of c.advisories) {
-      if (stillPresent.has(advisory.github_advisory_id)) {
-        fail(
-          `${advisory.github_advisory_id} (${advisory.module_name}) was overridden but still appears in the post-fix audit`,
-        );
-      }
-    }
   }
 
   for (const c of notFixed) {
@@ -279,7 +283,7 @@ if (candidates.length > 0) {
   }
 }
 
-// Anything at or above the audit level that wasn't present before this run's changes is a brand-new problem introduced by an override or by the incidental full re-resolution in freshInstall() — never ship that silently just because the advisories we set out to fix are gone.
+// Anything at or above the audit level that wasn't present before this run's changes is a brand-new problem introduced by an override or by its transitive fallout — never ship that silently just because the advisories we set out to fix are gone.
 const final = runAudit();
 const newlyIntroduced = Object.values(final.advisories).filter(
   (a) => !initialIds.has(a.github_advisory_id),
