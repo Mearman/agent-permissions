@@ -1,3 +1,16 @@
+## [5.10.0](https://github.com/Mearman/agent-permissions/compare/v5.9.5...v5.10.0) (2026-08-22)
+
+### Features
+
+* **ci:** auto-fix aged security overrides and gate merges by dependency age ([6bc4924](https://github.com/Mearman/agent-permissions/commit/6bc4924412c99593b81d6663abd1fc9bb55f6932))
+
+### Bug Fixes
+
+* add bugs.url to package.json for npm metadata ([4dab097](https://github.com/Mearman/agent-permissions/commit/4dab097664864283a0a4bacbec02c3d2e096d642))
+* **ci:** stop the audit auto-fix from drifting unrelated dependency versions ([cdddfd9](https://github.com/Mearman/agent-permissions/commit/cdddfd9236a4a0782ea5a7a8af11a987f5655c31))
+* **deps:** apply aged security overrides ([d56b679](https://github.com/Mearman/agent-permissions/commit/d56b679be1186c3c6b72947fc17a4c22a0a3459c))
+* **deps:** block installs of packages published within the last 7 days ([92a3b8d](https://github.com/Mearman/agent-permissions/commit/92a3b8d1d94109458ac44fb146defbfe433bfeac))
+
 ## [5.9.5](https://github.com/Mearman/agent-permissions/compare/v5.9.4...v5.9.5) (2026-05-12)
 
 ### Documentation
