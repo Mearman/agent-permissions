@@ -9,7 +9,7 @@
  */
 
 import { parseArgs } from "node:util";
-import { resolve, join } from "node:path";
+import { resolve } from "node:path";
 import { existsSync } from "node:fs";
 import {
   convert,
@@ -22,7 +22,7 @@ import {
 import { agentId } from "./compat/codecs.ts";
 import { sync } from "./sync.ts";
 import {
-  AGENT_FILES,
+  defaultFilePath,
   findDefaultFile,
   parseAgentFile,
   parseJson,
@@ -65,10 +65,7 @@ function resolveOutputSpec(spec: string | undefined): string | undefined {
   if (spec === undefined || spec === "-") return undefined;
   const format = resolveFormat(spec);
   if (format === "omp" && spec !== "omp") return resolve(spec);
-  if (format) {
-    const fileName = AGENT_FILES[format].name;
-    return resolve(join(process.cwd(), fileName));
-  }
+  if (format) return defaultFilePath(format, process.cwd());
   return resolve(spec);
 }
 function firstString(
@@ -209,9 +206,15 @@ async function validateCommand(args: string[]): Promise<void> {
   const inputSpec = firstString(values.input, values.in);
   const inputPath = resolveInputSpec(inputSpec);
   const source = inputPath ?? "stdin";
+  const format =
+    inputSpec !== undefined && inputSpec !== "-"
+      ? resolveFormat(inputSpec)
+      : undefined;
 
   const raw = await readInput(inputPath);
-  const parsed = parseJson(raw, source);
+  const parsed = format
+    ? parseAgentFile(format, raw, source)
+    : parseJson(raw, source);
   if (!parsed.ok) error(parsed.error);
   const json = parsed.value;
 
@@ -248,11 +251,18 @@ async function checkCommand(args: string[]): Promise<void> {
   if (!values.tool) error("--tool is required");
   if (values.input === undefined) error("--input is required");
 
-  const inputPath = resolveInputSpec(values["policy-file"]);
+  const policySpec = values["policy-file"];
+  const inputPath = resolveInputSpec(policySpec);
   const source = inputPath ?? "stdin";
+  const format =
+    policySpec !== undefined && policySpec !== "-"
+      ? resolveFormat(policySpec)
+      : undefined;
 
   const raw = await readInput(inputPath);
-  const parsed = parseJson(raw, source);
+  const parsed = format
+    ? parseAgentFile(format, raw, source)
+    : parseJson(raw, source);
   if (!parsed.ok) error(parsed.error);
   const json = parsed.value;
 

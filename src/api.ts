@@ -8,7 +8,11 @@
 
 import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
 import { evaluate, collectRules, mapMode } from "./evaluate.ts";
-import { validatePolicy, type ValidationError } from "./agent-files.ts";
+import {
+  AGENT_FILES,
+  validatePolicy,
+  type ValidationError,
+} from "./agent-files.ts";
 export type { ValidationError } from "./agent-files.ts";
 import { basename } from "node:path";
 
@@ -141,7 +145,6 @@ export function detectFormat(value: unknown): Format | undefined {
   if (Array.isArray(obj.allowedTools) || "toolsSettings" in obj) return "kiro";
 
   if (
-    Object.keys(obj).length === 1 &&
     typeof obj.bash === "object" &&
     obj.bash !== null &&
     !Array.isArray(obj.bash)
@@ -149,7 +152,6 @@ export function detectFormat(value: unknown): Format | undefined {
     const bash = obj.bash as Record<string, unknown>;
     const patterns = bash.patterns as unknown[];
     if (
-      Object.keys(bash).length === 1 &&
       Array.isArray(patterns) &&
       patterns.every((pattern) => {
         if (
@@ -310,11 +312,13 @@ export function convert(
     canonical = result.value;
   } else {
     const codec = CODECS[fromAgent];
+    const extract = AGENT_FILES[fromAgent].extract;
+    const payload = extract ? (extract(json) ?? json) : json;
     canonical = (
       codec as {
         decode: (input: unknown) => unknown;
       }
-    ).decode(json);
+    ).decode(payload);
   }
 
   // Count rules in intermediate canonical form
