@@ -8,7 +8,7 @@ export default defineConfig(
   { ignores: ["dist/", "node_modules/", "coverage/"] },
 
   {
-    files: ["src/**/*.ts"],
+    files: ["src/**/*.ts", ".github/scripts/**/*.ts"],
     extends: [
       eslint.configs.recommended,
       ...configs.strictTypeChecked,

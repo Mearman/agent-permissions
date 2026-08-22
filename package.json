@@ -35,8 +35,8 @@
     "build": "turbo run _build",
     "dev": "tsdown --watch",
     "_typecheck": "tsc --noEmit",
-    "_lint": "eslint --cache src",
-    "_lint:fix": "eslint --cache --fix src",
+    "_lint": "eslint --cache src .github/scripts",
+    "_lint:fix": "eslint --cache --fix src .github/scripts",
     "_test": "node --experimental-strip-types --test 'src/test/*.test.ts'",
     "_build": "tsdown",
     "typecheck": "turbo run _typecheck",
@@ -110,7 +110,8 @@
     "turbo": "^2.9.12",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.2",
-    "undici-types": "^8.2.0"
+    "undici-types": "^8.2.0",
+    "yaml": "^2.9.0"
   },
   "packageManager": "pnpm@11.0.9",
   "bugs": {

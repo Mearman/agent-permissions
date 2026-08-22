@@ -17,6 +17,6 @@
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["src"],
+  "include": ["src", ".github/scripts"],
   "exclude": ["node_modules", "dist"]
 }

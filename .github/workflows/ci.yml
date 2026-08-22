@@ -9,20 +9,20 @@ on:
       - main
 
 permissions:
-  contents: write
-  id-token: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 jobs:
   lint-commits:
     name: Lint commits
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v6.0.5
 
@@ -40,6 +40,11 @@ jobs:
   audit:
     name: Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      fixed: ${{ steps.audit-fix.outputs.fixed }}
+      sha: ${{ steps.commit.outputs.sha }}
     steps:
       - uses: actions/checkout@v6
 
@@ -52,14 +57,38 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm audit --audit-level high
+      - name: Audit (auto-fix findings with an aged patch, defer the rest)
+        id: audit-fix
+        run: node --experimental-strip-types .github/scripts/audit-autofix.ts
+        env:
+          AUDIT_LEVEL: high
+
+      # Only push from main itself: a PR run has nothing of its own to push to, and this keeps the fix commit out of branches this workflow doesn't own.
+      - name: Commit auto-fixed overrides
+        id: commit
+        if: steps.audit-fix.outputs.fixed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json pnpm-lock.yaml
+          git commit -m "fix(deps): apply aged security overrides
+
+          $(cat /tmp/audit-fix-commit-body.txt)"
+          git push
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   check:
     name: Check
     needs: audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
+      # A push authenticated with the default GITHUB_TOKEN never triggers a new workflow run, so audit's own fix commit (if any) would otherwise go completely untested — check out it explicitly rather than the original, now-superseded triggering commit.
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.audit.outputs.sha || github.sha }}
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v6.0.5
 
@@ -83,6 +112,8 @@ jobs:
     name: Test — Node ${{ matrix.node-version }}
     needs: audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       matrix:
         node-version:
@@ -91,6 +122,9 @@ jobs:
           - 26
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.audit.outputs.sha || github.sha }}
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v6.0.5
 
@@ -113,13 +147,19 @@ jobs:
   release:
     name: Release
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [check, test]
+    needs: [audit, check, test]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
     outputs:
       released: ${{ steps.detect-release.outputs.released }}
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ needs.audit.outputs.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -155,7 +195,7 @@ jobs:
           else
             echo "released=false" >> "$GITHUB_OUTPUT"
           fi
-          exit $EXIT_CODE
+          exit "$EXIT_CODE"
 
       - name: Upload schema to release
         if: steps.detect-release.outputs.released == 'true'
@@ -197,6 +237,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: main
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v6.0.5
 
@@ -229,6 +270,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: main
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v6.0.5
 

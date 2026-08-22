@@ -17,6 +17,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6.0.5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .tool-versions
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
 
       - name: Find Dependabot PRs
         id: find-prs
@@ -39,7 +50,17 @@ jobs:
             for i in $(seq 1 60); do
               STATUS=$(gh pr checks "$PR" 2>&1) || true
               if echo "$STATUS" | grep -q "all checks passed"; then
-                echo "CI passed on PR #$PR, merging."
+                echo "CI passed on PR #$PR, checking dependency age..."
+                node --experimental-strip-types .github/scripts/check-dependency-age.ts "$PR"
+                AGE_STATUS=$?
+                if [ "$AGE_STATUS" -eq 1 ]; then
+                  echo "PR #$PR bumps a package published within the last 7 days, skipping until it ages out."
+                  continue 2
+                elif [ "$AGE_STATUS" -ne 0 ]; then
+                  echo "::error::Dependency age check failed unexpectedly for PR #$PR (exit $AGE_STATUS) — skipping without merging, needs investigation."
+                  continue 2
+                fi
+                echo "PR #$PR passed the age check, merging."
                 gh pr merge --rebase "$PR"
                 continue 2
               fi
