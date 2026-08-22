@@ -1,3 +1,9 @@
+## [5.11.0](https://github.com/Mearman/agent-permissions/compare/v5.10.0...v5.11.0) (2026-08-22)
+
+### Features
+
+* **ci:** land the audit auto-fix through a PR instead of a direct push ([b098e5c](https://github.com/Mearman/agent-permissions/commit/b098e5c08ba83b9d654f1734ae5572c9636d065c))
+
 ## [5.10.0](https://github.com/Mearman/agent-permissions/compare/v5.9.5...v5.10.0) (2026-08-22)
 
 ### Features
