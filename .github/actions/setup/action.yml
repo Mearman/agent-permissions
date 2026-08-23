@@ -12,6 +12,10 @@ inputs:
     description: Node version to install; empty means the .tool-versions file (the repo baseline).
     required: false
     default: ""
+  registry-url:
+    description: npm registry for setup-node to write into .npmrc; empty leaves it unset (publish to npmjs with OIDC).
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -23,12 +27,14 @@ runs:
       with:
         node-version-file: .tool-versions
         cache: pnpm
+        registry-url: ${{ inputs.registry-url }}
 
     - uses: actions/setup-node@v7
       if: inputs.node-version != ''
       with:
         node-version: ${{ inputs.node-version }}
         cache: pnpm
+        registry-url: ${{ inputs.registry-url }}
 
     - run: pnpm install --frozen-lockfile
       shell: bash

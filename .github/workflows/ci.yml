@@ -295,6 +295,7 @@ jobs:
         with:
           task: build
           command: pnpm build
+          registry-url: https://npm.pkg.github.com
 
       - name: Publish
         run: |
