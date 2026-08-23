@@ -21,13 +21,13 @@ Make the change, run `pnpm check` and `pnpm test`, commit. The pre-push hook run
 
 ## Where things are
 
-| Path | Purpose |
-|---|---|
-| `src/schema.ts` | The Zod schema — single source of truth for the policy format |
-| `src/compat/` | Bidirectional codecs for each supported agent |
-| `.github/scripts/` | CI helper scripts (audit auto-fix, dependency age gate), unit-tested from `src/test/` |
-| `.github/workflows/ci.yml` | The whole pipeline: audit (self-fixing), check, test matrix, release, publishes |
-| `spec/examples/` | Example policies validated against the schema in tests |
+| Path                       | Purpose                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------- |
+| `src/schema.ts`            | The Zod schema — single source of truth for the policy format                         |
+| `src/compat/`              | Bidirectional codecs for each supported agent                                         |
+| `.github/scripts/`         | CI helper scripts (audit auto-fix, dependency age gate), unit-tested from `src/test/` |
+| `.github/workflows/ci.yml` | The whole pipeline: audit (self-fixing), check, test matrix, release, publishes       |
+| `spec/examples/`           | Example policies validated against the schema in tests                                |
 
 ## Pull requests
 

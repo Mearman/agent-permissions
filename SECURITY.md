@@ -10,7 +10,7 @@ Report privately through [GitHub security advisories](https://github.com/Mearman
 
 ## What this package does with trust
 
-`agent-perms` is a policy *toolkit*: it evaluates, converts, and syncs permission configuration files. It never executes the agents whose configs it reads, and the MCP daemon only reads and writes local config files. Treat a vulnerability in rule evaluation (a deny rule that fails closed, a conversion that drops a deny) as security-relevant even without a traditional exploit primitive.
+`agent-perms` is a policy _toolkit_: it evaluates, converts, and syncs permission configuration files. It never executes the agents whose configs it reads, and the MCP daemon only reads and writes local config files. Treat a vulnerability in rule evaluation (a deny rule that fails closed, a conversion that drops a deny) as security-relevant even without a traditional exploit primitive.
 
 ## Supply-chain posture
 

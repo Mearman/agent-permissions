@@ -23,7 +23,12 @@ Create `.agents/permissions.json` in your project root:
     { "tool": "Read", "tier": "allow" },
     { "tool": "Grep", "tier": "allow" },
     { "tool": "Bash", "pattern": "git push:*", "tier": "ask" },
-    { "tool": "Bash", "pattern": "npm run *", "tier": "allow", "when": { "cwd": "./packages/*" } }
+    {
+      "tool": "Bash",
+      "pattern": "npm run *",
+      "tier": "allow",
+      "when": { "cwd": "./packages/*" }
+    }
   ]
 }
 ```
@@ -43,9 +48,9 @@ Every coding agent has its own permission config. Teams using multiple agents (o
 
 ## File location
 
-| File | Purpose | Git |
-|---|---|---|
-| `.agents/permissions.json` | Team-shared policy | Committed |
+| File                             | Purpose            | Git        |
+| -------------------------------- | ------------------ | ---------- |
+| `.agents/permissions.json`       | Team-shared policy | Committed  |
 | `.agents/permissions.local.json` | Personal overrides | Gitignored |
 
 Both files are merged at load time. Deny rules from any source short-circuit before allow rules.
@@ -90,14 +95,14 @@ For harnesses that use config files, add the following to the `mcpServers` secti
 }
 ```
 
-| Harness | Config file | Config key |
-|---|---|---|
-| Claude Code | `.mcp.json` (project) / `~/.claude.json` (user) | `mcpServers` |
-| Codex | `~/.codex/config.toml` | `[mcp_servers.agent-perms]` |
-| Gemini CLI | `~/.gemini/settings.json` | `mcpServers` |
-| Crush | `.crush.json` / `~/.config/crush/crush.json` | `mcp` |
-| Cline | `.cline/mcp.json` | `mcpServers` |
-| Cursor | `.cursor/mcp.json` | `mcpServers` |
+| Harness     | Config file                                     | Config key                  |
+| ----------- | ----------------------------------------------- | --------------------------- |
+| Claude Code | `.mcp.json` (project) / `~/.claude.json` (user) | `mcpServers`                |
+| Codex       | `~/.codex/config.toml`                          | `[mcp_servers.agent-perms]` |
+| Gemini CLI  | `~/.gemini/settings.json`                       | `mcpServers`                |
+| Crush       | `.crush.json` / `~/.config/crush/crush.json`    | `mcp`                       |
+| Cline       | `.cline/mcp.json`                               | `mcpServers`                |
+| Cursor      | `.cursor/mcp.json`                              | `mcpServers`                |
 
 The MCP server is a background sync daemon. It exposes no tools, reads config from `.agents/permissions.json`, and keeps native agent config files in sync.
 
@@ -120,8 +125,8 @@ import { convert, validate, check, detectFormat } from "agent-perms/api";
 
 // Convert between formats (auto-detects source)
 const result = convert(undefined, "canonical", claudeCodeJson);
-result.output;   // canonical object
-result.from;     // "claude-code" (detected)
+result.output; // canonical object
+result.from; // "claude-code" (detected)
 result.ruleCount; // 3
 
 // Validate a policy
@@ -174,10 +179,10 @@ interface AgentPermissionPolicy {
 
   // Permission rules (deny-first evaluation)
   rules?: Array<{
-    tool: string;         // e.g. "Bash", "Read", "mcp__github__*"
-    pattern?: string;     // absent = match any input for this tool
+    tool: string; // e.g. "Bash", "Read", "mcp__github__*"
+    pattern?: string; // absent = match any input for this tool
     tier: "allow" | "deny" | "ask";
-    when?: { cwd?: string; branch?: string };  // AND logic
+    when?: { cwd?: string; branch?: string }; // AND logic
   }>;
 
   // Claude Code compat: string rule arrays (normalised to rules on load)
@@ -217,14 +222,14 @@ interface AgentPermissionPolicy {
 
 Rules use `Tool(pattern)` strings inside `permissions` arrays, compatible with Claude Code's permission format. In the unified `rules` array, the tool and pattern are separate fields:
 
-| Rule object | `permissions` string | Type | Matches |
-|---|---|---|---|
-| `{ tool: "Read" }` | `Read` | Bare | All invocations of `Read` |
-| `{ tool: "Bash", pattern: "git status" }` | `Bash(git status)` | Exact | Exactly `git status` |
-| `{ tool: "Bash", pattern: "npm:*" }` | `Bash(npm:*)` | Prefix | `npm` + space + anything |
-| `{ tool: "Bash", pattern: "git commit *" }` | `Bash(git commit *)` | Wildcard | `git commit` + anything |
-| `{ tool: "Bash", pattern: "domain:evil.com" }` | `Bash(domain:evil.com)` | Domain | Commands containing `evil.com` |
-| `{ tool: "mcp__github" }` | `mcp__github` | MCP server | All tools from `github` MCP server |
+| Rule object                                    | `permissions` string    | Type       | Matches                            |
+| ---------------------------------------------- | ----------------------- | ---------- | ---------------------------------- |
+| `{ tool: "Read" }`                             | `Read`                  | Bare       | All invocations of `Read`          |
+| `{ tool: "Bash", pattern: "git status" }`      | `Bash(git status)`      | Exact      | Exactly `git status`               |
+| `{ tool: "Bash", pattern: "npm:*" }`           | `Bash(npm:*)`           | Prefix     | `npm` + space + anything           |
+| `{ tool: "Bash", pattern: "git commit *" }`    | `Bash(git commit *)`    | Wildcard   | `git commit` + anything            |
+| `{ tool: "Bash", pattern: "domain:evil.com" }` | `Bash(domain:evil.com)` | Domain     | Commands containing `evil.com`     |
+| `{ tool: "mcp__github" }`                      | `mcp__github`           | MCP server | All tools from `github` MCP server |
 
 ### Evaluation order
 
@@ -236,17 +241,21 @@ Deny short-circuits: if any deny rule matches, the tool is blocked regardless of
 
 ### Escape sequences
 
-| Escape | Meaning |
-|---|---|
-| `\(` | Literal `(` in pattern |
-| `\)` | Literal `)` in pattern |
-| `\*` | Literal `*` (not a wildcard) |
-| `\\` | Literal `\` |
+| Escape | Meaning                      |
+| ------ | ---------------------------- |
+| `\(`   | Literal `(` in pattern       |
+| `\)`   | Literal `)` in pattern       |
+| `\*`   | Literal `*` (not a wildcard) |
+| `\\`   | Literal `\`                  |
 
 ## Evaluator
 
 ```typescript
-import { evaluate, type PermissionPolicy, type EvaluationContext } from "agent-perms/evaluate";
+import {
+  evaluate,
+  type PermissionPolicy,
+  type EvaluationContext,
+} from "agent-perms/evaluate";
 
 const policy: PermissionPolicy = {
   defaultMode: "standard",
@@ -323,12 +332,12 @@ const policy = claudeCodeCodec.decode(claudeSettings.permissions);
 const codexConfig = codexCodec.encode(canonicalPolicy);
 ```
 
-| Agent | Native format | Codec | Fidelity |
-|---|---|---|---|
-| **Claude Code** | `Tool(pattern)` rule strings in `.claude/settings.json` | `claudeCodeCodec` | Lossless |
-| **OpenCode** | Per-tool `ask/allow/deny` objects in `config.json` | `opencodeCodec` | Near-lossless¹ |
-| **Codex** | Named profiles + sandbox in TOML config | `codexCodec` | Near-lossless² |
-| **Crush** | Tool allowlist in `config.json` | `crushCodec` | Lossy³ |
+| Agent           | Native format                                           | Codec             | Fidelity       |
+| --------------- | ------------------------------------------------------- | ----------------- | -------------- |
+| **Claude Code** | `Tool(pattern)` rule strings in `.claude/settings.json` | `claudeCodeCodec` | Lossless       |
+| **OpenCode**    | Per-tool `ask/allow/deny` objects in `config.json`      | `opencodeCodec`   | Near-lossless¹ |
+| **Codex**       | Named profiles + sandbox in TOML config                 | `codexCodec`      | Near-lossless² |
+| **Crush**       | Tool allowlist in `config.json`                         | `crushCodec`      | Lossy³         |
 
 ¹ OpenCode's agent-specific tools have no canonical equivalent. Per-agent markdown overrides must be handled by the caller.
 
@@ -399,13 +408,13 @@ cat settings.json | agent-perms convert --from - --to canonical --output -
 agent-perms convert --from claude-code --to canonical --output my-policy.json
 ```
 
-| Flag | Short | Aliases | Description |
-|------|-------|---------|-------------|
-| `--from` | `-f` | `--input`, `--in` | Source (format, file, or `-` for stdin) |
-| `--to` | `-t` | | Target format or file (required) |
-| `--output` | `-o` | `--out` | Output file (overrides `--to` path), or `-` for stdout |
-| `--compact` | `-c` | | Single-line JSON |
-| `--verbose` | `-v` | | Show decode/encode summary on stderr |
+| Flag        | Short | Aliases           | Description                                            |
+| ----------- | ----- | ----------------- | ------------------------------------------------------ |
+| `--from`    | `-f`  | `--input`, `--in` | Source (format, file, or `-` for stdin)                |
+| `--to`      | `-t`  |                   | Target format or file (required)                       |
+| `--output`  | `-o`  | `--out`           | Output file (overrides `--to` path), or `-` for stdout |
+| `--compact` | `-c`  |                   | Single-line JSON                                       |
+| `--verbose` | `-v`  |                   | Show decode/encode summary on stderr                   |
 
 ### validate
 
@@ -415,9 +424,9 @@ agent-perms validate --input .agents/permissions.json
 echo '...' | agent-perms validate --input -
 ```
 
-| Flag | Short | Aliases | Description |
-|------|-------|---------|-------------|
-| `--input` | `-i` | `--in` | Policy file (format, file, or `-` for stdin) |
+| Flag      | Short | Aliases | Description                                  |
+| --------- | ----- | ------- | -------------------------------------------- |
+| `--input` | `-i`  | `--in`  | Policy file (format, file, or `-` for stdin) |
 
 Exits 0 if valid, 2 with error details if not.
 
@@ -428,12 +437,12 @@ agent-perms check --tool Bash --input "git status" --policy-file canonical
 agent-perms check --tool Bash --input "git status" --policy-file .agents/permissions.json
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--tool` | Tool name (required) |
-| `--input` | Tool input string (required) |
-| `--policy-file` | Policy file (format, file, or `-` for stdin) |
-| `--cwd`, `--branch` | Evaluation context |
+| Flag                | Description                                  |
+| ------------------- | -------------------------------------------- |
+| `--tool`            | Tool name (required)                         |
+| `--input`           | Tool input string (required)                 |
+| `--policy-file`     | Policy file (format, file, or `-` for stdin) |
+| `--cwd`, `--branch` | Evaluation context                           |
 
 Exits 0 with `allow` or 1 with `deny`.
 
@@ -446,17 +455,17 @@ agent-perms sync -w claude-code -w opencode
 agent-perms sync -x codex
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--working-dir` | `-d` | Starting directory (default: cwd) |
-| `--up <n\|all>` | `-u` | Ascend n parent directories (default: all) |
-| `--with <agent>` | `-w` | Only sync these agents (repeatable) |
-| `--without <agent>` | `-x` | Sync all except these agents (repeatable) |
-| `--yes` | `-y` | Apply without prompting |
-| `--dry-run` | | Show changes only, never write |
-| `--create` | `-c` | Create config files that don't exist |
-| `--verbose` | `-v` | Show rule provenance |
-| `--backup` | `-b` | Write `.bak` files before overwriting |
+| Flag                | Short | Description                                |
+| ------------------- | ----- | ------------------------------------------ |
+| `--working-dir`     | `-d`  | Starting directory (default: cwd)          |
+| `--up <n\|all>`     | `-u`  | Ascend n parent directories (default: all) |
+| `--with <agent>`    | `-w`  | Only sync these agents (repeatable)        |
+| `--without <agent>` | `-x`  | Sync all except these agents (repeatable)  |
+| `--yes`             | `-y`  | Apply without prompting                    |
+| `--dry-run`         |       | Show changes only, never write             |
+| `--create`          | `-c`  | Create config files that don't exist       |
+| `--verbose`         | `-v`  | Show rule provenance                       |
+| `--backup`          | `-b`  | Write `.bak` files before overwriting      |
 
 Sync merges rules with deny-first semantics (deny > ask > allow for same tool+pattern).
 Most restrictive `defaultMode` wins.
@@ -525,9 +534,7 @@ Rules without `when` always apply, regardless of cwd or branch:
 
 ```json
 {
-  "rules": [
-    { "tool": "Bash", "pattern": "npm publish:*", "tier": "deny" }
-  ]
+  "rules": [{ "tool": "Bash", "pattern": "npm publish:*", "tier": "deny" }]
 }
 ```
 

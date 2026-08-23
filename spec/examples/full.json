@@ -10,7 +10,11 @@
     { "tool": "Bash", "pattern": "npm run test:*", "tier": "allow" },
     { "tool": "Read", "tier": "allow" },
     { "tool": "Grep", "tier": "allow" },
-    { "tool": "WebFetch", "pattern": "domain:docs.example.com", "tier": "allow" },
+    {
+      "tool": "WebFetch",
+      "pattern": "domain:docs.example.com",
+      "tier": "allow"
+    },
     { "tool": "Bash", "pattern": "rm -rf /", "tier": "deny" },
     { "tool": "Bash", "pattern": "sudo:*", "tier": "deny" },
     { "tool": "Bash", "pattern": "curl * | bash", "tier": "deny" },
@@ -20,8 +24,18 @@
     { "tool": "Bash", "pattern": "npm publish:*", "tier": "deny" },
     { "tool": "Bash", "pattern": "git push:*", "tier": "ask" },
     { "tool": "Write", "pattern": "./production/**", "tier": "ask" },
-    { "tool": "Bash", "pattern": "npm run *", "tier": "allow", "when": { "cwd": "./packages/*" } },
-    { "tool": "Write", "pattern": "./config/**", "tier": "ask", "when": { "branch": "main" } }
+    {
+      "tool": "Bash",
+      "pattern": "npm run *",
+      "tier": "allow",
+      "when": { "cwd": "./packages/*" }
+    },
+    {
+      "tool": "Write",
+      "pattern": "./config/**",
+      "tier": "ask",
+      "when": { "branch": "main" }
+    }
   ],
   "profiles": {
     "development": {
@@ -34,10 +48,7 @@
         "Grep",
         "Glob"
       ],
-      "deny": [
-        "Bash(sudo:*)",
-        "Bash(rm -rf /)"
-      ]
+      "deny": ["Bash(sudo:*)", "Bash(rm -rf /)"]
     },
     "review": {
       "allow": ["Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)"],
@@ -57,10 +68,7 @@
   },
   "delegation": {
     "maxDepth": 2,
-    "nonDelegable": [
-      "Bash(sudo:*)",
-      "Write(./.agents/**)"
-    ],
+    "nonDelegable": ["Bash(sudo:*)", "Write(./.agents/**)"],
     "bubbleUp": true,
     "agents": {
       "review": {

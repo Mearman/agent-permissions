@@ -8,12 +8,5 @@
   },
   "repository": "https://github.com/Mearman/agent-permissions",
   "license": "Apache-2.0",
-  "keywords": [
-    "permissions",
-    "agent",
-    "mcp",
-    "sync",
-    "policy",
-    "cross-agent"
-  ]
+  "keywords": ["permissions", "agent", "mcp", "sync", "policy", "cross-agent"]
 }

@@ -17,8 +17,11 @@
     "_test": {
       "outputs": []
     },
+    "_format": {
+      "inputs": ["README.md", "SECURITY.md", "CONTRIBUTING.md", "package.json", "tsconfig.json", "server.json", "pnpm-workspace.yaml", "spec/examples/**", ".claude-plugin/**", ".agents/**", ".github/workflows/**"]
+    },
     "_check": {
-      "dependsOn": ["_typecheck", "_lint", "_build"],
+      "dependsOn": ["_typecheck", "_lint", "_build", "_format"],
       "outputs": []
     },
     "_test:coverage": {
