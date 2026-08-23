@@ -7,12 +7,7 @@
     },
     "_typecheck": {
       "outputs": ["*.tsbuildinfo"],
-      "inputs": [
-        "src/**/*.ts",
-        "*.config.ts",
-        "tsconfig.json",
-        ".github/scripts/**/*.ts"
-      ]
+      "inputs": ["src/**/*.ts", "*.config.ts", "tsconfig.json", ".github/scripts/**/*.ts"]
     },
     "_lint": {
       "outputs": [".eslintcache"],
@@ -20,6 +15,7 @@
         "src/**/*",
         ".github/**/*",
         "*.config.ts",
+        "prettier.config.ts",
         "*.md",
         "*.json",
         "tsconfig.json",
