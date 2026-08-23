@@ -2,7 +2,7 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "_build": {
-      "outputs": ["dist/**"],
+      "outputs": ["dist/**", "agent-permissions.schema.json"],
       "inputs": ["src/**/*.ts", "tsdown.config.ts", "tsconfig.json"]
     },
     "_typecheck": {
@@ -25,7 +25,9 @@
         "tsconfig.json",
         "spec/examples/**",
         ".claude-plugin/**",
-        ".agents/permissions.json"
+        ".agents/permissions.json",
+        "pnpm-workspace.yaml",
+        "scripts/**/*"
       ]
     },
     "_lint:fix": {
@@ -34,7 +36,13 @@
     },
     "_test": {
       "outputs": [],
-      "inputs": ["src/**/*.ts", "spec/examples/**", "tsconfig.json"]
+      "inputs": [
+        "src/**/*.ts",
+        "spec/examples/**",
+        "tsconfig.json",
+        "agent-permissions.schema.json"
+      ],
+      "dependsOn": ["_build"]
     },
     "_pkgcheck": {
       "dependsOn": ["_build"],
@@ -46,7 +54,13 @@
     },
     "_test:coverage": {
       "outputs": [],
-      "inputs": ["src/**/*.ts", "spec/examples/**", "tsconfig.json"]
+      "inputs": [
+        "src/**/*.ts",
+        "spec/examples/**",
+        "tsconfig.json",
+        "agent-permissions.schema.json"
+      ],
+      "dependsOn": ["_build"]
     },
     "_validate": {
       "dependsOn": ["_check", "_test", "_pkgcheck"],

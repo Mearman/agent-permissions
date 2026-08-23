@@ -110,7 +110,7 @@
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.8",
     "@semantic-release/npm": "^13.1.5",
-    "@types/node": "^25.6.2",
+    "@types/node": "^24.13.3",
     "@types/semver": "^7.8.0",
     "conventional-changelog-conventionalcommits": "^9.3.1",
     "eslint": "^10.3.0",
@@ -138,10 +138,6 @@
     "url": "https://github.com/Mearman/agent-permissions/issues"
   },
   "pnpm": {
-    "overrides": {
-      "undici@>=7.23.0 <7.28.0": ">=7.28.0",
-      "undici@>=7.0.0 <7.28.0": ">=7.28.0",
-      "undici@>=7.0.0 <7.29.0": ">=7.29.0"
-    }
+    "overrides": {}
   }
 }

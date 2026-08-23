@@ -67,6 +67,21 @@ export default defineConfig(
   },
 
   {
+    // Plain JavaScript (scripts/smoke-dist.mjs and any future tooling): recommended rules plus prettier, so no file type in the repo escapes the one gate.
+    files: ["**/*.{js,mjs,cjs}"],
+    extends: [eslint.configs.recommended],
+    plugins: {
+      prettier: eslintPluginPrettier,
+    },
+    languageOptions: {
+      globals: { process: "readonly", console: "readonly", Buffer: "readonly" },
+    },
+    rules: {
+      "prettier/prettier": "error",
+    },
+  },
+
+  {
     // Tests legitimately assert on shapes the compiler already knows: type assertions and non-null assertions are allowed here without inline escapes, and unused destructured fields are common in table-driven cases.
     files: ["src/test/**/*.ts", ".github/scripts/*.test.ts"],
     rules: {
