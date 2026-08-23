@@ -9,6 +9,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { type AgentId } from "./compat/codecs.ts";
+import { isRecord } from "./guards.ts";
 import { type Format } from "./api.ts";
 
 // ---------------------------------------------------------------------------
@@ -44,9 +45,8 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
     name: ".claude/settings.json",
     localName: ".claude/settings.local.json",
     extract: (raw) => {
-      if (typeof raw !== "object" || raw === null) return undefined;
-      if (!("permissions" in raw)) return undefined;
-      return (raw as Record<string, unknown>).permissions;
+      if (!isRecord(raw) || !("permissions" in raw)) return undefined;
+      return raw.permissions;
     },
     wrap: (encoded) => ({ permissions: encoded }),
   },
@@ -54,9 +54,8 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
   opencode: {
     name: "opencode.json",
     extract: (raw) => {
-      if (typeof raw !== "object" || raw === null) return undefined;
-      if (!("permission" in raw)) return undefined;
-      return (raw as Record<string, unknown>).permission;
+      if (!isRecord(raw) || !("permission" in raw)) return undefined;
+      return raw.permission;
     },
     wrap: (encoded) => ({ permission: encoded }),
   },
@@ -117,9 +116,14 @@ export function fail<T>(error: string): Result<T> {
 
 /** Read stdin as a string. */
 export async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = [];
+  const chunks: Uint8Array[] = [];
   for await (const chunk of process.stdin) {
-    chunks.push(chunk as Buffer);
+    // The stream's iterator types its chunks as `any`; instanceof narrows without an assertion. Buffer is a Uint8Array subclass, so binary chunks take the first branch.
+    if (chunk instanceof Uint8Array) {
+      chunks.push(chunk);
+    } else if (typeof chunk === "string") {
+      chunks.push(new TextEncoder().encode(chunk));
+    }
   }
   return Buffer.concat(chunks).toString("utf-8");
 }
@@ -210,9 +214,9 @@ export function decodeNative(format: AgentId, raw: unknown): ValidateResult {
   const codec = CODECS[format];
   let decoded: unknown;
   try {
-    decoded = (codec as { decode: (input: unknown) => unknown }).decode(
-      payload,
-    );
+    // The payload genuinely is unknown here (an extract() output), while each zod codec's decode is typed for its own native input — a payload of the wrong shape throws inside decode and lands in the catch below.
+    // @ts-expect-error unknown payload passed to a native-typed decode; invalid shapes throw and are handled by the catch
+    decoded = codec.decode(payload);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     return {

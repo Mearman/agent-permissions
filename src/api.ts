@@ -9,6 +9,8 @@
 import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
 import { evaluate, collectRules, mapMode } from "./evaluate.ts";
 import { validatePolicy, type ValidationError } from "./agent-files.ts";
+import { isAgentId, isRecord } from "./guards.ts";
+import { AgentPermissionPolicy } from "./schema.ts";
 export type { ValidationError } from "./agent-files.ts";
 import { basename } from "node:path";
 
@@ -95,8 +97,8 @@ export function detectFormatFromPath(filePath: string): Format | undefined {
  */
 export function resolveFormat(spec: string): Format | undefined {
   // Check agent names first
-  if (spec === "canonical" || AGENTS.includes(spec as AgentId)) {
-    return spec as Format;
+  if (spec === "canonical" || isAgentId(spec)) {
+    return spec;
   }
 
   // Try file path detection
@@ -120,8 +122,8 @@ export function detectFormat(value: unknown): Format | undefined {
     return undefined;
   }
 
-  if (typeof value !== "object" || value === null) return undefined;
-  const obj = value as Record<string, unknown>;
+  if (!isRecord(value)) return undefined;
+  const obj = value;
 
   // Crush: required allowed_tools array
   if (Array.isArray(obj.allowed_tools)) return "crush";
@@ -177,8 +179,8 @@ export function detectFormat(value: unknown): Format | undefined {
   }
 
   // Canonical: permissions with allow/deny/ask containing string rules
-  if (typeof obj.permissions === "object" && obj.permissions !== null) {
-    const perms = obj.permissions as Record<string, unknown>;
+  if (isRecord(obj.permissions)) {
+    const perms = obj.permissions;
     if (
       ("allow" in perms && typeof perms.allow !== "undefined") ||
       ("deny" in perms && typeof perms.deny !== "undefined")
@@ -260,18 +262,20 @@ export function convert(
   }
 
   // Decode: agent-native → canonical
-  let canonical: unknown;
+  let canonical: AgentPermissionPolicy;
   if (fromAgent === "canonical") {
     const result = validatePolicy(json);
     if (!result.ok) throw new ConvertError(result.error, result.errors);
     canonical = result.value;
   } else {
     const codec = CODECS[fromAgent];
-    canonical = (
-      codec as {
-        decode: (input: unknown) => unknown;
-      }
-    ).decode(json);
+    // The decoded agent config is unknown-shaped here while the zod codec's decode is typed for its own native input — a config of the wrong shape throws inside decode.
+    // @ts-expect-error unknown JSON passed to a native-typed decode; invalid shapes throw and surface as conversion errors
+    canonical = codec.decode(json);
+    const validated = validatePolicy(canonical);
+    if (!validated.ok)
+      throw new ConvertError(validated.error, validated.errors);
+    canonical = validated.value;
   }
 
   // Count rules in intermediate canonical form
@@ -283,14 +287,10 @@ export function convert(
     // Inject $schema so generated files get IDE support
     const schemaUrl =
       "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
-    if (typeof canonical === "object" && canonical !== null) {
-      output = { $schema: schemaUrl, ...canonical };
-    } else {
-      output = canonical;
-    }
+    output = { $schema: schemaUrl, ...canonical };
   } else {
     const codec = CODECS[to];
-    output = codec.encode(canonical as Parameters<(typeof codec)["encode"]>[0]);
+    output = codec.encode(canonical);
   }
 
   return { output, from: fromAgent, ruleCount };
@@ -372,13 +372,8 @@ export class ConvertError extends Error {
 // ---------------------------------------------------------------------------
 
 function countRules(canonical: unknown): number {
-  if (
-    canonical !== null &&
-    typeof canonical === "object" &&
-    "rules" in (canonical as Record<string, unknown>)
-  ) {
-    const rules = (canonical as Record<string, unknown>).rules;
-    if (Array.isArray(rules)) return rules.length;
+  if (isRecord(canonical) && Array.isArray(canonical.rules)) {
+    return canonical.rules.length;
   }
   return 0;
 }

@@ -21,7 +21,6 @@ import { existsSync } from "node:fs";
 import { type AgentPermissionPolicy, type Rule } from "./schema.ts";
 import {
   AGENT_FILES,
-  type AgentFileDef,
   parseJson,
   validatePolicy,
   decodeNative,
@@ -33,6 +32,7 @@ import {
   type PermissionPolicy,
 } from "./evaluate.ts";
 import { type AgentId, CODECS } from "./compat/codecs.ts";
+import { isAgentId } from "./guards.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,8 +73,9 @@ function resolveDiscoveryConfig(canonicalLayers: DecodedLayer[]): {
   agentFilter: Set<string> | undefined;
 } {
   let up = Infinity;
-  const withAgents = new Set<AgentId>();
-  const withoutAgents = new Set<AgentId>();
+  // Set<string>, not Set<AgentId>: the filters compare against Object.keys() output (plain strings) and carry "canonical" alongside agent ids.
+  const withAgents = new Set<string>();
+  const withoutAgents = new Set<string>();
 
   // canonicalLayers are outermost-first after reverse.
   for (const layer of canonicalLayers) {
@@ -103,7 +104,7 @@ function resolveDiscoveryConfig(canonicalLayers: DecodedLayer[]): {
     agentFilter = new Set([...withAgents, "canonical"]);
     // Also include any agent NOT in withoutAgents
     for (const a of allAgents) {
-      if (!withoutAgents.has(a as AgentId)) {
+      if (!withoutAgents.has(a)) {
         agentFilter.add(a);
       }
     }
@@ -112,7 +113,7 @@ function resolveDiscoveryConfig(canonicalLayers: DecodedLayer[]): {
   } else if (withoutAgents.size > 0) {
     const allAgents = [...Object.keys(CODECS), "canonical"];
     const excluded = new Set(withoutAgents);
-    agentFilter = new Set(allAgents.filter((a) => !excluded.has(a as AgentId)));
+    agentFilter = new Set(allAgents.filter((a) => !excluded.has(a)));
   }
 
   // No with/without = canonical only (safe default)
@@ -147,10 +148,9 @@ function discoverFiles(
 
   while (remaining > 0) {
     const bucket: DiscoveredFile[] = [];
-    for (const [agent, def] of Object.entries(AGENT_FILES) as [
-      AgentId | "canonical",
-      AgentFileDef,
-    ][]) {
+    for (const [key, def] of Object.entries(AGENT_FILES)) {
+      if (!isAgentId(key) && key !== "canonical") continue;
+      const agent: AgentId | "canonical" = key;
       // Apply agent filter
       if (agentFilter && !agentFilter.has(agent)) continue;
 

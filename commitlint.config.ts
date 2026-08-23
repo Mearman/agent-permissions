@@ -1,5 +1,5 @@
 import type { UserConfig } from "@commitlint/types";
-import { commitTypes } from "./release.config";
+import { commitTypes } from "./release.config.ts";
 
 const config: UserConfig = {
   extends: ["@commitlint/config-conventional"],

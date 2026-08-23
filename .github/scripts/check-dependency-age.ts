@@ -16,7 +16,11 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 
 // pnpm-lock.yaml is a multi-document YAML stream when the project pins its own pnpm binary via packageManagerDependencies: one document for that self-management lockfile, one for the actual project dependencies. Both have their own `packages:` map, so the project document must be identified by its `importers['.'].dependencies` / `devDependencies`, not just picked as "the packages section".
 export function projectDocument(yamlText: string): Record<string, unknown> {
-  const docs = parseAllDocuments(yamlText).map((d) => d.toJS() as unknown);
+  const docs = parseAllDocuments(yamlText).map((d) => {
+    // toJS() is typed `any` in the yaml package; park it in an explicitly unknown-typed binding so nothing downstream inherits the any.
+    const js: unknown = d.toJS();
+    return js;
+  });
   const projectDoc = docs.find((d): d is Record<string, unknown> => {
     if (!isRecord(d) || !isRecord(d.importers)) return false;
     const root = d.importers["."];

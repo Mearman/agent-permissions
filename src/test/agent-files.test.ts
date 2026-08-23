@@ -23,26 +23,18 @@ import {
 
 /** Extract value from a Result, asserting it's ok. */
 function unwrap<T>(result: Result<T>): T {
-  assert.strictEqual(
-    result.ok,
-    true,
-    `expected ok result, got: ${JSON.stringify(result)}`,
-  );
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- assert throws on mismatch, this narrows the type
-  if (result.ok) return result.value;
-  throw new Error("unreachable");
+  if (!result.ok) {
+    throw new Error(`expected ok result, got: ${JSON.stringify(result)}`);
+  }
+  return result.value;
 }
 
 /** Extract error from a Result, asserting it's not ok. */
 function unwrapErr<T>(result: Result<T>): string {
-  assert.strictEqual(
-    result.ok,
-    false,
-    `expected error result, got: ${JSON.stringify(result)}`,
-  );
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- assert throws on mismatch, this narrows the type
-  if (!result.ok) return result.error;
-  throw new Error("unreachable");
+  if (result.ok) {
+    throw new Error(`expected error result, got: ${JSON.stringify(result)}`);
+  }
+  return result.error;
 }
 
 /** Type guard for ValidateResult ok branch with errors array. */

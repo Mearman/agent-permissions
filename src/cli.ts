@@ -42,7 +42,10 @@ function error(message: string): never {
 }
 
 function isAgent(value: string): value is Agent {
-  return AGENTS.includes(value as Agent);
+  for (const agent of AGENTS) {
+    if (agent === value) return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------

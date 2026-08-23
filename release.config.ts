@@ -1,5 +1,3 @@
-import type { GlobalConfig } from "semantic-release";
-
 type ReleaseLevel = "major" | "minor" | "patch" | false;
 
 interface CommitType {
@@ -27,7 +25,7 @@ export const commitTypes: readonly CommitType[] = [
   { type: "chore", release: "patch", section: "Chores" },
 ];
 
-const config: GlobalConfig = {
+const config = {
   branches: [{ name: "main", channel: "latest" }],
   plugins: [
     [
@@ -55,13 +53,18 @@ const config: GlobalConfig = {
       "@semantic-release/exec",
       {
         prepareCmd:
-          "jq --indent 2 '.version = \"${nextRelease.version}\"' .claude-plugin/plugin.json > /tmp/plugin.json && mv /tmp/plugin.json .claude-plugin/plugin.json && jq --indent 2 '.version = \"${nextRelease.version}\" | .packages[0].version = \"${nextRelease.version}\"' server.json > /tmp/server.json && mv /tmp/server.json server.json",
+          'jq --indent 2 \'.version = "${nextRelease.version}"\' .claude-plugin/plugin.json > /tmp/plugin.json && mv /tmp/plugin.json .claude-plugin/plugin.json && jq --indent 2 \'.version = "${nextRelease.version}" | .packages[0].version = "${nextRelease.version}"\' server.json > /tmp/server.json && mv /tmp/server.json server.json',
       },
     ],
     [
       "@semantic-release/git",
       {
-        assets: ["package.json", "CHANGELOG.md", ".claude-plugin/plugin.json", "server.json"],
+        assets: [
+          "package.json",
+          "CHANGELOG.md",
+          ".claude-plugin/plugin.json",
+          "server.json",
+        ],
         message: "chore(release): ${nextRelease.version}",
       },
     ],

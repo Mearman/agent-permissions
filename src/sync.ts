@@ -21,6 +21,7 @@ import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { AgentPermissionPolicy, type Rule } from "./schema.ts";
 import { CODECS, type AgentId } from "./compat/codecs.ts";
+import { isAgentId, isPermissionMode } from "./guards.ts";
 import {
   collectRules,
   deduplicateRules,
@@ -28,7 +29,6 @@ import {
 } from "./evaluate.ts";
 import {
   AGENT_FILES,
-  type AgentFileDef,
   parseJson,
   validatePolicy,
   decodeNative,
@@ -95,10 +95,9 @@ interface AgentFile {
 function detectFiles(dir: string): AgentFile[] {
   const found: AgentFile[] = [];
 
-  for (const [agent, def] of Object.entries(AGENT_FILES) as [
-    AgentId | "canonical",
-    AgentFileDef,
-  ][]) {
+  for (const [key, def] of Object.entries(AGENT_FILES)) {
+    if (!isAgentId(key) && key !== "canonical") continue;
+    const agent: AgentId | "canonical" = key;
     const main = join(dir, def.name);
     if (existsSync(main)) {
       found.push({ agent, path: main, local: false });
@@ -233,8 +232,8 @@ function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
 
   const result: AgentPermissionPolicy = {};
 
-  if (defaultMode)
-    result.defaultMode = defaultMode as AgentPermissionPolicy["defaultMode"];
+  if (defaultMode !== undefined && isPermissionMode(defaultMode))
+    result.defaultMode = defaultMode;
 
   if (rules.length > 0) result.rules = rules;
 
@@ -287,7 +286,9 @@ function computeWriteTargets(
   }
 
   // Write native configs at cwd
-  for (const agent of Object.keys(CODECS) as AgentId[]) {
+  for (const key of Object.keys(CODECS)) {
+    if (!isAgentId(key)) continue;
+    const agent: AgentId = key;
     if (agentFilter && !agentFilter.has(agent)) continue;
     if (agent === "codex" || agent === "crush") continue; // TOML / no file
 
@@ -564,8 +565,9 @@ function buildAgentFilter(
   if (withoutList.length > 0) {
     // --without: include all except listed
     const allAgents = [...Object.keys(CODECS), "canonical"];
-    const excluded = new Set(withoutList);
-    return new Set(allAgents.filter((a) => !excluded.has(a as AgentId)));
+    // Set<string> so the filter can compare plain key strings against the excluded names.
+    const excluded = new Set<string>(withoutList);
+    return new Set(allAgents.filter((a) => !excluded.has(a)));
   }
 
   return undefined;
