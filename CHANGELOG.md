@@ -1,3 +1,9 @@
+## [6.0.1](https://github.com/Mearman/agent-permissions/compare/v6.0.0...v6.0.1) (2026-08-23)
+
+### Bug Fixes
+
+* **ci:** publish the MCP entry through agent-perms and authenticate the registry guard ([a1d7c7c](https://github.com/Mearman/agent-permissions/commit/a1d7c7c41eae75a669fc1308f6db7ecf8bc38196))
+
 ## [6.0.0](https://github.com/Mearman/agent-permissions/compare/v5.11.3...v6.0.0) (2026-08-23)
 
 ### ⚠ BREAKING CHANGES
