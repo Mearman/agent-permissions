@@ -38,10 +38,11 @@ runs:
       uses: actions/cache@v5
       with:
         path: .turbo
-        key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-${{ github.run_id }}
+        # Node-scoped: turbo's task hashes do not include the node version, so an unscoped key would let one matrix leg replay its cached results on another leg (a plain-test result standing in for the coverage run). The "file" fallback scopes runs that use the .tool-versions baseline.
+        key: turbo-${{ runner.os }}-node-${{ inputs.node-version == '' && 'file' || inputs.node-version }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-${{ github.run_id }}
         restore-keys: |
-          turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-
-          turbo-${{ runner.os }}-
+          turbo-${{ runner.os }}-node-${{ inputs.node-version == '' && 'file' || inputs.node-version }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-
+          turbo-${{ runner.os }}-node-${{ inputs.node-version == '' && 'file' || inputs.node-version }}-
 
     # ESLint's own cache skips re-linting unchanged files on a cold turbo cache (config change, new runner); keyed on everything that changes lint outcomes.
     - name: Restore eslint cache
