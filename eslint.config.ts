@@ -6,9 +6,20 @@ import eslintConfigPrettier from "eslint-config-prettier/flat";
 import eslintPluginPrettier from "eslint-plugin-prettier";
 import depend from "eslint-plugin-depend";
 import { configs } from "typescript-eslint";
+import * as yamlEslintParser from "yaml-eslint-parser";
 
 export default defineConfig(
-  { ignores: ["dist/", "node_modules/", "coverage/"] },
+  // The generated schema's formatting is owned by the tsdown plugin that writes it, the lockfile by pnpm, and .turbo holds local task-cache JSON no gate should ever read.
+  {
+    ignores: [
+      "dist/",
+      "node_modules/",
+      "coverage/",
+      ".turbo/",
+      "agent-permissions.schema.json",
+      "pnpm-lock.yaml",
+    ],
+  },
 
   {
     // Every TypeScript file that participates in the program: src, the CI helper scripts, and the root-level config files themselves, so a bad release or commitlint config is caught by the same gate as library code.
@@ -62,22 +73,36 @@ export default defineConfig(
   },
 
   {
+    // Prettier runs through the eslint prettier plugin here too (the plugin supports the json language), so one gate and one --fix covers JSON as well.
     files: ["**/*.json"],
-    ignores: ["pnpm-lock.yaml", "package-lock.json"],
-    plugins: { json },
+    plugins: { json, prettier: eslintPluginPrettier },
     language: "json/json",
     rules: {
       "json/no-duplicate-keys": "error",
       "json/no-empty-keys": "error",
+      "prettier/prettier": "error",
     },
   },
 
   {
     files: ["**/*.md"],
-    plugins: { markdown },
+    plugins: { markdown, prettier: eslintPluginPrettier },
     language: "markdown/gfm",
     rules: {
       "markdown/no-html": "error",
+      "prettier/prettier": "error",
+    },
+  },
+
+  {
+    // Workflow and workspace YAML: parsed by yaml-eslint-parser (a parser, not a language -- YAML is JS-representable), syntax-checked by the parse itself and formatted by prettier through the same plugin.
+    files: ["**/*.yaml", "**/*.yml"],
+    plugins: { prettier: eslintPluginPrettier },
+    languageOptions: {
+      parser: yamlEslintParser,
+    },
+    rules: {
+      "prettier/prettier": "error",
     },
   },
 

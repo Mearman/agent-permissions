@@ -3,3 +3,7 @@ allowBuilds:
 
 # Blocks resolution of any package version published less than 7 days ago, including transitive dependencies and audit-driven overrides. Mitigates compromised-maintainer / just-published-malicious-version supply chain attacks by giving the ecosystem time to catch a bad release before this repo ever installs it.
 minimumReleaseAge: 10080
+
+# get-tsconfig (a knip transitive) ships registry metadata with no time field, which minimumReleaseAge cannot evaluate — exempt it rather than weakening the age gate itself.
+minimumReleaseAgeExclude:
+  - get-tsconfig

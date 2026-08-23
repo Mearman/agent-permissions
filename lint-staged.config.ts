@@ -1,10 +1,4 @@
 export default {
-  "src/**/*.{ts,tsx}": "eslint --cache --fix",
-  ".github/**/*.ts": "eslint --cache --fix",
-  "{README,SECURITY,CONTRIBUTING}.md": "prettier --write",
-  "{package,tsconfig,server}.json": "prettier --write",
-  "pnpm-workspace.yaml": "prettier --write",
-  "spec/examples/*.json": "prettier --write",
-  ".claude-plugin/plugin.json": "prettier --write",
-  ".github/workflows/*.yml": "prettier --write",
+  // One gate: eslint --fix formats and fixes every file type it covers (TypeScript directly, and JSON/Markdown/YAML through the prettier plugin), matching the _lint task exactly.
+  "**/*.{ts,tsx,md,json,yaml,yml}": "eslint --cache --fix",
 };
