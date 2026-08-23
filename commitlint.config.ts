@@ -19,6 +19,7 @@ const config: UserConfig = {
         "sync",
         "mcp",
         "agent-files",
+        "pkg",
         "build",
         "release",
         "ci",
