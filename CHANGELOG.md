@@ -1,3 +1,15 @@
+## [6.0.4](https://github.com/Mearman/agent-permissions/compare/v6.0.3...v6.0.4) (2026-08-23)
+
+### Tests
+
+* add a harmless comment to the composite setup action ([bcd4300](https://github.com/Mearman/agent-permissions/commit/bcd430043d35f7fd032d3d7183b6903cab426032))
+* check out the repo before the probe attempts its merge ([9ba3383](https://github.com/Mearman/agent-permissions/commit/9ba3383b57bf691b30552f535e995dc49e684225))
+* probe whether GITHUB_TOKEN can merge a PR touching only .github/actions ([3808815](https://github.com/Mearman/agent-permissions/commit/3808815ee82ca9df984f78b86a20b6804bfc3155))
+
+### Chores
+
+* **ci:** remove the token-scope diagnostic workflow ([08f4a1c](https://github.com/Mearman/agent-permissions/commit/08f4a1c7033c135bb148a02c5e808fd0cd8d5e24))
+
 ## [6.0.3](https://github.com/Mearman/agent-permissions/compare/v6.0.2...v6.0.3) (2026-08-23)
 
 ### Bug Fixes
