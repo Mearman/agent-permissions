@@ -1,3 +1,10 @@
+## [6.0.2](https://github.com/Mearman/agent-permissions/compare/v6.0.1...v6.0.2) (2026-08-23)
+
+### Bug Fixes
+
+* **build:** exempt the release-rewritten plugin manifest from format gating ([f367144](https://github.com/Mearman/agent-permissions/commit/f367144a6f37b80b8946b43d3deb219ae3683a36))
+* **ci:** carry the npm registry through the shared setup action ([21a7512](https://github.com/Mearman/agent-permissions/commit/21a7512a0c81482466faf25eaf49f90e6648b837))
+
 ## [6.0.1](https://github.com/Mearman/agent-permissions/compare/v6.0.0...v6.0.1) (2026-08-23)
 
 ### Bug Fixes
