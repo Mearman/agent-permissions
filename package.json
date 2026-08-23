@@ -133,11 +133,8 @@
     "yaml": "^2.9.0",
     "yaml-eslint-parser": "^2.1.0"
   },
-  "packageManager": "pnpm@11.0.9",
+  "packageManager": "pnpm@11.21.0",
   "bugs": {
     "url": "https://github.com/Mearman/agent-permissions/issues"
-  },
-  "pnpm": {
-    "overrides": {}
   }
 }
