@@ -8,6 +8,7 @@ import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { mkdtemp, rm, writeFile, mkdir, readFile } from "node:fs/promises";
+import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -23,9 +24,11 @@ function run(
   stdin?: string,
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
+    // A throwaway cwd per invocation: the CLI resolves and writes config files relative to cwd, and running it from the repo root made the suite overwrite the repo's own dogfooded .agents/permissions.json.
     const child = execFile(
       "node",
       ["--experimental-strip-types", CLI, ...args],
+      { cwd: mkdtempSync(join(tmpdir(), "agent-perms-cli-")) },
       (err, stdout, stderr) => {
         const exitCode =
           err !== null && typeof err.code === "number" ? err.code : 0;
