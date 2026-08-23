@@ -63,7 +63,15 @@ jobs:
                   continue 2
                 fi
                 echo "PR #$PR passed the age check, merging."
-                gh pr merge --rebase "$PR"
+                # A pull request whose diff edits anything under .github/workflows — which is what every GitHub-Actions version bump is — cannot be merged by the default token at all: `workflows` is a PAT/App permission with no GITHUB_TOKEN scope, so GitHub refuses the merge outright. That is a known, structural skip, not a failure: leave it open for a human (or a PAT-secret-backed rerun) and keep sweeping the rest.
+                if gh pr merge --rebase "$PR" 2>&1 | tee "/tmp/merge-$PR.log"; then
+                  continue 2
+                fi
+                if grep -q "without .workflows. permission" "/tmp/merge-$PR.log"; then
+                  echo "::warning::PR #$PR edits workflow files, which the default token can never merge — left open for a human merge."
+                  continue 2
+                fi
+                echo "::error::merging PR #$PR failed unexpectedly; left open for inspection."
                 continue 2
               fi
               if [ "$CHECK_STATUS" -ne 8 ]; then
