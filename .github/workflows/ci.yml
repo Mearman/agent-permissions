@@ -27,15 +27,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
       - uses: ./.github/actions/setup
         with:
           task: lint-commits
           command: pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+          fetch-depth: "0"
 
   audit:
     name: Audit
@@ -49,14 +45,14 @@ jobs:
     outputs:
       fixed: ${{ steps.audit-setup.outputs.fixed }}
     steps:
-      - uses: actions/checkout@v7
-
       - name: Audit (auto-fix findings with an aged patch, defer the rest)
         id: audit-setup
         uses: ./.github/actions/setup
         with:
           task: audit
           command: node --experimental-strip-types .github/scripts/audit-autofix.ts
+          # This job commits and pushes a fix branch with GITHUB_TOKEN below; the checkout must persist its credentials for that push to authenticate.
+          persist-credentials: "true"
         env:
           AUDIT_LEVEL: high
 
@@ -114,9 +110,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
         with:
-          persist-credentials: false
+          task: check
+          command: pnpm check
 
       # Workflow YAML linting: two shell/YAML-level bugs in these workflows were found by actionlint run by hand during a CI debugging session; nothing in CI checked them until now.
       - name: Lint workflow YAML (actionlint)
@@ -124,11 +121,6 @@ jobs:
           VERSION="1.7.7"
           curl -sSfL "https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash" | bash -s -- "$VERSION"
           ./actionlint -color
-
-      - uses: ./.github/actions/setup
-        with:
-          task: check
-          command: pnpm check
 
       # `pnpm check` builds inside _check, so a stale committed schema (a src/schema.ts edit committed without a rebuild) shows up as a diff here rather than shipping silently. Dependencies are already installed by the composite above, so the remaining gates are plain steps.
       - name: Committed JSON Schema is fresh
@@ -156,10 +148,6 @@ jobs:
           - node-version: 26
             command: pnpm test:coverage
     steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
       - uses: ./.github/actions/setup
         with:
           task: test-node-${{ matrix.node-version }}
@@ -185,15 +173,11 @@ jobs:
       released: ${{ steps.detect-release.outputs.released }}
       tag: ${{ steps.detect-release.outputs.tag }}
     steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
       - uses: ./.github/actions/setup
         with:
           task: build
           command: pnpm build
+          fetch-depth: "0"
 
       - name: Release
         id: detect-release
@@ -252,16 +236,12 @@ jobs:
     permissions:
       id-token: write
     steps:
-      # The release tag, not main: a push landing between the release job finishing and this job starting would otherwise build newer source and publish it under the just-tagged version.
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.release.outputs.tag }}
-          persist-credentials: false
-
       - uses: ./.github/actions/setup
         with:
           task: build
           command: pnpm build
+          # The release tag, not main: a push landing between the release job finishing and this job starting would otherwise build newer source and publish it under the just-tagged version.
+          ref: ${{ needs.release.outputs.tag }}
 
       - name: Publish
         run: |
@@ -286,16 +266,12 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.release.outputs.tag }}
-          persist-credentials: false
-
       - uses: ./.github/actions/setup
         with:
           task: build
           command: pnpm build
           registry-url: https://npm.pkg.github.com
+          ref: ${{ needs.release.outputs.tag }}
 
       - name: Publish
         run: |
