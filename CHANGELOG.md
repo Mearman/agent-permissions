@@ -1,3 +1,9 @@
+## [6.1.0](https://github.com/Mearman/agent-permissions/compare/v6.0.4...v6.1.0) (2026-08-23)
+
+### Features
+
+* **ci:** let Dependabot see the actions pinned inside the composite ([f13e056](https://github.com/Mearman/agent-permissions/commit/f13e0564c7ef67c617a00d5d3480b918e5e80ba6))
+
 ## [6.0.4](https://github.com/Mearman/agent-permissions/compare/v6.0.3...v6.0.4) (2026-08-23)
 
 ### Tests
