@@ -18,7 +18,7 @@ export interface AuditReport {
   advisories: Record<string, AuditAdvisory>;
 }
 
-export interface Candidate {
+interface Candidate {
   advisories: AuditAdvisory[];
   overrideKey: string;
   range: string;
@@ -37,7 +37,7 @@ const auditLevel = process.env.AUDIT_LEVEL ?? "high";
 // pnpm audits its own pinned binary (module_name "pnpm") alongside the npm dependency graph. That finding isn't fixable via `overrides` — overrides only steer node_modules resolution, not which pnpm binary CI invokes — so it always goes straight to deferred.
 const NOT_OVERRIDABLE = new Set(["pnpm"]);
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
@@ -259,18 +259,21 @@ export function classifyAdvisories(advisories: AuditAdvisory[]): Classified {
   return { deferred, candidates: [...candidatesByKey.values()] };
 }
 
-// An override is inert when every version of its package that the lockfile actually resolves already satisfies the override's target: it forces nothing today. The autofix only ever adds overrides, so without this pass the map accumulates one entry per historical advisory forever. Dropping inert entries is self-correcting rather than risky: if a future update resolves back into a vulnerable range, the next audit run re-adds the override through the same fix path.
+// An override is inert when no version its selector could rewrite is present: the selector is the vulnerable range on the key (`pkg@<range>`), and the override only acts on resolutions matching that range. If nothing resolved matches the selector, the override forces nothing today -- regardless of what the package resolves outside the selector. The autofix only ever adds overrides, so without this pass the map accumulates one entry per historical advisory forever. Dropping inert entries is self-correcting rather than risky: if a future update resolves back into a vulnerable range, the next audit run re-adds the override through the same fix path.
 export function inertOverrideKeys(
   overrides: Record<string, string>,
   resolvedVersions: Map<string, Set<string>>,
 ): string[] {
   const inert: string[] = [];
-  for (const [key, target] of Object.entries(overrides)) {
+  for (const key of Object.keys(overrides)) {
     const at = key.lastIndexOf("@");
+    // A bare `pkg` key (no @range selector) matches every version and is never provably inert; a missing package is left for the same reason.
+    if (at <= 0) continue;
     const pkg = key.slice(0, at);
+    const selector = key.slice(at + 1);
     const versions = resolvedVersions.get(pkg);
     if (versions === undefined || versions.size === 0) continue;
-    if ([...versions].every((v) => satisfies(v, target))) {
+    if (![...versions].some((v) => satisfies(v, selector))) {
       inert.push(key);
     }
   }

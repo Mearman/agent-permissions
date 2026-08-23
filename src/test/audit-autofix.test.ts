@@ -175,19 +175,27 @@ packages:
     assert.equal(resolved.has("pnpm"), false);
   });
 
-  void it("flags overrides whose every resolved version already satisfies the target", () => {
+  void it("flags overrides whose selector matches no resolved version, ignoring out-of-selector resolutions", () => {
     const resolved = resolvedVersionsFromLockfileText(LOCKFILE);
     const inert = inertOverrideKeys(
       {
-        // both resolved undici versions satisfy >=6.27.0 -- inert
+        // no resolved undici is <6.27.0, so the selector can never rewrite anything -- inert
         "undici@<6.27.0": ">=6.27.0",
-        // 6.28.0 does not satisfy >=7.0.0 -- load-bearing, kept
+        // 6.28.0 matches the selector >=7.0.0 <7.29.0? no -- but 7.25.0-style logic aside, 6.28.0 is outside it and 7.29.0 is outside it too (range excludes 7.29.0), so nothing matches -- inert
         "undici@>=7.0.0 <7.29.0": ">=7.29.0",
+        // a selector that DOES match 7.29.0 would be load-bearing; this one does not
+        "undici@>=8.0.0": ">=8.1.0",
         // package absent from the lockfile -- kept (nothing proves it will not return)
         "ghost@<2.0.0": ">=2.0.0",
+        // bare selector-less key -- never provably inert, kept
+        undici2: ">=1.0.0",
       },
       resolved,
     );
-    assert.deepEqual(inert, ["undici@<6.27.0"]);
+    assert.deepEqual(inert, [
+      "undici@<6.27.0",
+      "undici@>=7.0.0 <7.29.0",
+      "undici@>=8.0.0",
+    ]);
   });
 });
