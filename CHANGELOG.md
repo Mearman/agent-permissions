@@ -1,3 +1,44 @@
+## [6.0.0](https://github.com/Mearman/agent-permissions/compare/v5.11.3...v6.0.0) (2026-08-23)
+
+### ⚠ BREAKING CHANGES
+
+* engines.node is now >=24; consumers on Node 18-23 can
+no longer install this package.
+
+### Features
+
+* **build:** complete the turbo graph and make pre-push the full gate ([1257f1a](https://github.com/Mearman/agent-permissions/commit/1257f1a1129beeb44ddf55265eea7b250a6a77a9))
+* **build:** one eslint gate for every file type, plus knip and package checks ([10182f0](https://github.com/Mearman/agent-permissions/commit/10182f03eaa42986521382eebbf92696cadb3e84))
+* **build:** prettier coverage for the YAML, JSON, and Markdown surface ([1e9cdc6](https://github.com/Mearman/agent-permissions/commit/1e9cdc62786240b02b0042f13153d1c86359567c))
+* **build:** raise lint to the full strictness set and eliminate every type assertion ([cb42ad1](https://github.com/Mearman/agent-permissions/commit/cb42ad1008b476f2c38dab258b8c3caff86d11c2))
+* **ci:** prune inert security overrides instead of accumulating them ([cc750c8](https://github.com/Mearman/agent-permissions/commit/cc750c87e42112f1d65d9865131184d8b858580b))
+* **ci:** rebuild the pipeline around a shared setup action and real gates ([37b737b](https://github.com/Mearman/agent-permissions/commit/37b737b9b53cf130ff5fe55ce9d8e33754b9bcb0))
+* dogfood the product with a committed .agents/permissions.json ([d757900](https://github.com/Mearman/agent-permissions/commit/d757900872f460b943c17a4957183545483fef06))
+* require Node 24, the current LTS, as the baseline ([2825ddc](https://github.com/Mearman/agent-permissions/commit/2825ddc18f95d1c4ce0fd5d4f457e71417d80369))
+
+### Bug Fixes
+
+* **build:** cover plain-JS files, type to the runtime floor, and close the turbo cache gaps ([e525c1a](https://github.com/Mearman/agent-permissions/commit/e525c1aee23a82ad5f92db63b40beb388f09639c))
+* **ci:** align action pins and repair output plumbing in the pipeline ([7010001](https://github.com/Mearman/agent-permissions/commit/701000181cedad26c9966370860315b4626ce968))
+* **ci:** judge override inertness by the selector and roll back prunes honestly ([c7ac3e9](https://github.com/Mearman/agent-permissions/commit/c7ac3e9a1204c4c34d8f9856fccf4c6fc9ab6a44))
+* **ci:** scope the turbo cache key per node version ([ef40087](https://github.com/Mearman/agent-permissions/commit/ef400871724d30ab1d48a98c5797d1043dc99c93))
+* **cli:** treat an explicit --help as a successful invocation ([ea0b3ec](https://github.com/Mearman/agent-permissions/commit/ea0b3ec1cff12238591e54a7dff851008866c3a0))
+* **pkg:** point the MCP registry entry at the alias that exists ([745bcb4](https://github.com/Mearman/agent-permissions/commit/745bcb41575fc0aa330c3e65aa4260ba2b8404c4))
+* **pkg:** restore bare-package resolution with a root exports entry ([3dea947](https://github.com/Mearman/agent-permissions/commit/3dea9479e5f462540479bdf99849f4ec763b5847))
+* **release:** accept the pkg scope for package-manifest commits ([f54eccd](https://github.com/Mearman/agent-permissions/commit/f54eccd5626e456bf51f5c1ad294de7f9e3eb777))
+* **release:** drive commitlint and semantic-release from one commitTypes source ([bd27df2](https://github.com/Mearman/agent-permissions/commit/bd27df2e8fc06e4649efabf7baf9162caa4faaa1))
+* **release:** stamp server.json's version fields on every release ([c20a625](https://github.com/Mearman/agent-permissions/commit/c20a625f41643b8db50ceee1c2086d7f0280327d))
+
+### Documentation
+
+* add a security policy, contributing guide, and LF normalisation ([71aaf07](https://github.com/Mearman/agent-permissions/commit/71aaf072c3d647387914f7bc125f2a60d4e8d49a))
+
+### Tests
+
+* **ci:** unit-test the CI helper scripts' pure logic ([91a66a0](https://github.com/Mearman/agent-permissions/commit/91a66a063c6525e55e9d785df704eddd013b6c91))
+* **cli:** run every CLI invocation from a throwaway cwd ([3453086](https://github.com/Mearman/agent-permissions/commit/3453086350f89893bfa41d007cf8fae27f9896af))
+* **schema:** hold the committed JSON schema against the schema source ([ffc0cee](https://github.com/Mearman/agent-permissions/commit/ffc0cee3b2cf750605e52e7ce19b855ee3ddae3c))
+
 ## [5.11.3](https://github.com/Mearman/agent-permissions/compare/v5.11.2...v5.11.3) (2026-08-23)
 
 ### Bug Fixes

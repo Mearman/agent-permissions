@@ -1,12 +1,19 @@
 {
   "name": "agent-perms",
   "description": "Cross-agent permission policy sync daemon. Keeps native agent config files (.claude/settings.json, opencode.json, etc.) bidirectionally synced with .agents/permissions.json. No tools exposed — purely a background sync service.",
-  "version": "5.11.3",
+  "version": "6.0.0",
   "author": {
     "name": "Joseph Mearman",
     "url": "https://github.com/Mearman"
   },
   "repository": "https://github.com/Mearman/agent-permissions",
   "license": "Apache-2.0",
-  "keywords": ["permissions", "agent", "mcp", "sync", "policy", "cross-agent"]
+  "keywords": [
+    "permissions",
+    "agent",
+    "mcp",
+    "sync",
+    "policy",
+    "cross-agent"
+  ]
 }
