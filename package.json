@@ -12,6 +12,15 @@
     "agent-perms-mcp": "./dist/cli.mjs"
   },
   "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/schema.d.mts",
+        "require": "./dist/schema.d.cts"
+      },
+      "import": "./dist/schema.mjs",
+      "require": "./dist/schema.cjs",
+      "default": "./dist/schema.cjs"
+    },
     "./*": {
       "types": {
         "import": "./dist/*.d.mts",
