@@ -356,8 +356,9 @@ async function syncCommand(args: string[]): Promise<void> {
 // Main
 // ---------------------------------------------------------------------------
 
-function usage(): never {
-  process.stderr.write(`agent-perms — cross-agent permission policy tool
+function usage(stream: "stdout" | "stderr"): void {
+  const target = stream === "stdout" ? process.stdout : process.stderr;
+  target.write(`agent-perms — cross-agent permission policy tool
 
 Usage:
   agent-perms convert [--from <spec>] --to <spec>
@@ -422,7 +423,6 @@ Examples:
   agent-perms sync -x codex
   agent-perms sync -w claude-code --create
 `);
-  process.exit(1);
 }
 
 async function main(): Promise<void> {
@@ -454,13 +454,15 @@ async function main(): Promise<void> {
       break;
     case "--help":
     case "-h":
-      usage();
-      break;
+      // An explicit help request is a successful invocation: usage on stdout, exit 0.
+      usage("stdout");
+      return;
     default:
       if (command) {
         process.stderr.write(`unknown command: ${command}\n\n`);
       }
-      usage();
+      usage("stderr");
+      process.exit(1);
   }
 }
 

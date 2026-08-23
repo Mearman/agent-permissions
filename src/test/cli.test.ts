@@ -788,19 +788,20 @@ void describe("CLI", () => {
   // =========================================================================
   void describe("usage and routing", () => {
     void it("shows usage with --help", async () => {
+      // An explicit help request is a successful invocation: exit 0, usage on stdout.
       const result = await run(["--help"]);
-      assert.equal(result.exitCode, 1);
-      assert.match(result.stderr, /agent-perms/);
-      assert.match(result.stderr, /convert/);
-      assert.match(result.stderr, /validate/);
-      assert.match(result.stderr, /check/);
-      assert.match(result.stderr, /sync/);
+      assert.equal(result.exitCode, 0);
+      assert.match(result.stdout, /agent-perms/);
+      assert.match(result.stdout, /convert/);
+      assert.match(result.stdout, /validate/);
+      assert.match(result.stdout, /check/);
+      assert.match(result.stdout, /sync/);
     });
 
     void it("shows usage with -h", async () => {
       const result = await run(["-h"]);
-      assert.equal(result.exitCode, 1);
-      assert.match(result.stderr, /agent-perms/);
+      assert.equal(result.exitCode, 0);
+      assert.match(result.stdout, /agent-perms/);
     });
 
     void it("shows usage for unknown command", async () => {
