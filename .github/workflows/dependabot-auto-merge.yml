@@ -51,12 +51,13 @@ jobs:
 
             # `gh pr checks` reports its verdict in the exit code, not the output: 0 means every check passed, 8 means some are still pending, and anything else means at least one failed. Grepping the output for a verdict phrase the command never prints means no green PR is ever recognised — the loop just burns its whole polling budget on a PR whose checks have already passed.
             for i in $(seq 1 60); do
-              gh pr checks "$PR" >/dev/null 2>&1
-              CHECK_STATUS=$?
+              # `cmd; STATUS=$?` does not capture the real exit code under this runner's default `bash -e`: a non-zero exit on the bare command line aborts the whole script before the assignment on the next line ever runs. `cmd || STATUS=$?` is the exempted form -- the failing command sits on the left of `||`, so its non-zero status doesn't trigger errexit.
+              CHECK_STATUS=0
+              gh pr checks "$PR" >/dev/null 2>&1 || CHECK_STATUS=$?
               if [ "$CHECK_STATUS" -eq 0 ]; then
                 echo "CI passed on PR #$PR, checking dependency age..."
-                node --experimental-strip-types .github/scripts/check-dependency-age.ts "$PR"
-                AGE_STATUS=$?
+                AGE_STATUS=0
+                node --experimental-strip-types .github/scripts/check-dependency-age.ts "$PR" || AGE_STATUS=$?
                 if [ "$AGE_STATUS" -eq 1 ]; then
                   echo "PR #$PR bumps a package published within the last 7 days, skipping until it ages out."
                   continue 2
