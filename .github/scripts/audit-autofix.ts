@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { satisfies } from "semver";
+import { parseAllDocuments } from "yaml";
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 
 export interface AuditAdvisory {
@@ -257,6 +259,56 @@ export function classifyAdvisories(advisories: AuditAdvisory[]): Classified {
   return { deferred, candidates: [...candidatesByKey.values()] };
 }
 
+// An override is inert when every version of its package that the lockfile actually resolves already satisfies the override's target: it forces nothing today. The autofix only ever adds overrides, so without this pass the map accumulates one entry per historical advisory forever. Dropping inert entries is self-correcting rather than risky: if a future update resolves back into a vulnerable range, the next audit run re-adds the override through the same fix path.
+export function inertOverrideKeys(
+  overrides: Record<string, string>,
+  resolvedVersions: Map<string, Set<string>>,
+): string[] {
+  const inert: string[] = [];
+  for (const [key, target] of Object.entries(overrides)) {
+    const at = key.lastIndexOf("@");
+    const pkg = key.slice(0, at);
+    const versions = resolvedVersions.get(pkg);
+    if (versions === undefined || versions.size === 0) continue;
+    if ([...versions].every((v) => satisfies(v, target))) {
+      inert.push(key);
+    }
+  }
+  return inert;
+}
+
+// The resolved package@version set from the lockfile's project document (the multi-document stream's second document), minus peer-dependency suffixes.
+export function resolvedVersionsFromLockfileText(
+  yamlText: string,
+): Map<string, Set<string>> {
+  const docs = parseAllDocuments(yamlText).map((d) => {
+    const js: unknown = d.toJS();
+    return js;
+  });
+  const projectDoc = docs.find(
+    (d): d is Record<string, unknown> =>
+      isRecord(d) &&
+      isRecord(d.importers) &&
+      isRecord(d.importers["."]) &&
+      ("dependencies" in d.importers["."] ||
+        "devDependencies" in d.importers["."]),
+  );
+  if (projectDoc === undefined || !isRecord(projectDoc.packages)) {
+    throw new Error("lockfile had no project packages map");
+  }
+  const byPackage = new Map<string, Set<string>>();
+  for (const key of Object.keys(projectDoc.packages)) {
+    const stripped = key.replace(/(\([^)]*\))+$/, "");
+    const at = stripped.lastIndexOf("@");
+    const pkg = stripped.slice(0, at);
+    const version = stripped.slice(at + 1);
+    const existing = byPackage.get(pkg) ?? new Set<string>();
+    existing.add(version);
+    byPackage.set(pkg, existing);
+  }
+  return byPackage;
+}
+
 // Wrapped in a main guard so the helpers above stay importable from the test suite: node executes this file directly for real runs, and the unit tests import the helpers without touching package.json or the lockfile.
 function main(): void {
   const initial = runAudit();
@@ -307,6 +359,49 @@ function main(): void {
     );
   }
 
+  // Prune inert overrides: entries whose package the lockfile already resolves entirely inside the override's target. The pruned package.json rides the same fix PR, and the pruned state is verified below before it is kept -- anything that regresses restores the pre-prune files.
+  let prunedKeys: string[] = [];
+  const pkgNow = readPackageJson();
+  const overridesNow = currentOverrides(pkgNow);
+  const inert = inertOverrideKeys(
+    overridesNow,
+    resolvedVersionsFromLockfileText(readFileSync(LOCKFILE, "utf8")),
+  );
+  if (inert.length > 0) {
+    const inertSet = new Set(inert);
+    const pruned: Record<string, string> = {};
+    for (const [key, value] of Object.entries(overridesNow)) {
+      if (!inertSet.has(key)) pruned[key] = value;
+    }
+    writePackageJson(withOverrides(pkgNow, pruned));
+    if (spawnSync("pnpm", ["install"], { encoding: "utf8" }).status === 0) {
+      const postPrune = runAudit();
+      // Clean means: no advisory is present that this run did not start with -- the prune resurrected nothing the fixes removed and introduced nothing new.
+      const regressed = Object.values(postPrune.advisories).some(
+        (a) => !initialIds.has(a.github_advisory_id),
+      );
+      if (!regressed) {
+        appendSummary(
+          `\n### Pruned inert overrides\n\n${inert.map((k) => `- ${k} (every resolved version already satisfies the target)`).join("\n")}\n`,
+        );
+        console.log(
+          `Pruned ${String(inert.length)} inert override(s); the reduced set still audits clean.`,
+        );
+        prunedKeys = inert;
+      } else {
+        restoreFromGit();
+        console.log(
+          "::warning::override prune regressed the audit; keeping the unpruned set.",
+        );
+      }
+    } else {
+      restoreFromGit();
+      console.log(
+        "::warning::override prune install failed; keeping the unpruned set.",
+      );
+    }
+  }
+
   if (deferred.length > 0) {
     const lines = deferred.map(
       (d) =>
@@ -351,7 +446,20 @@ function main(): void {
     );
   }
 
-  const fixedFlag = fixedAdvisories.length > 0 ? "true" : "false";
+  if (prunedKeys.length > 0 && fixedAdvisories.length === 0) {
+    // A prune-only run is still a change that must land through the fix PR; give it a commit body.
+    writeFileSync(
+      "/tmp/audit-fix-commit-body.txt",
+      prunedKeys
+        .map(
+          (k) =>
+            `- prune ${k}: every resolved version already satisfies the override target`,
+        )
+        .join("\n"),
+    );
+  }
+  const fixedFlag =
+    fixedAdvisories.length > 0 || prunedKeys.length > 0 ? "true" : "false";
   setOutput("fixed", fixedFlag);
   // The CI job invokes this through a composite action, which cannot carry a step's GITHUB_OUTPUT up to the job; the file is the channel the job re-emits from.
   writeFileSync("/tmp/audit-fix-fixed.txt", fixedFlag);

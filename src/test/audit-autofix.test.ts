@@ -3,8 +3,10 @@ import { describe, it } from "node:test";
 import {
   classifyAdvisories,
   currentOverrides,
+  inertOverrideKeys,
   isAuditAdvisory,
   isAuditReport,
+  resolvedVersionsFromLockfileText,
   withOverrides,
   type AuditAdvisory,
 } from "../../.github/scripts/audit-autofix.ts";
@@ -134,5 +136,58 @@ void describe("classifyAdvisories", () => {
       }),
     ]);
     assert.equal(candidates.length, 3);
+  });
+});
+
+void describe("override pruning", () => {
+  const LOCKFILE = `---
+lockfileVersion: '9.0'
+
+packages:
+
+  pnpm@11.0.9: {}
+
+---
+lockfileVersion: '9.0'
+
+importers:
+
+  '.':
+    dependencies:
+      zod: 4.4.3
+
+packages:
+
+  undici@6.28.0:
+    resolution: {integrity: sha512-x}
+
+  undici@7.29.0:
+    resolution: {integrity: sha512-y}
+
+  '@scope/pkg@1.0.0(peer@2.0.0)':
+    resolution: {integrity: sha512-z}
+`;
+
+  void it("resolves the project document's package versions, peer suffixes stripped", () => {
+    const resolved = resolvedVersionsFromLockfileText(LOCKFILE);
+    assert.deepEqual(resolved.get("undici"), new Set(["6.28.0", "7.29.0"]));
+    assert.deepEqual(resolved.get("@scope/pkg"), new Set(["1.0.0"]));
+    assert.equal(resolved.has("pnpm"), false);
+  });
+
+  void it("flags overrides whose every resolved version already satisfies the target", () => {
+    const resolved = resolvedVersionsFromLockfileText(LOCKFILE);
+    const inert = inertOverrideKeys(
+      {
+        // both resolved undici versions satisfy >=6.27.0 -- inert
+        "undici@<6.27.0": ">=6.27.0",
+        // 6.28.0 does not satisfy >=7.0.0 -- load-bearing, kept
+        "undici@>=7.0.0 <7.29.0": ">=7.29.0",
+        // package absent from the lockfile -- kept (nothing proves it will not return)
+        "ghost@<2.0.0": ">=2.0.0",
+      },
+      resolved,
+    );
+    assert.deepEqual(inert, ["undici@<6.27.0"]);
   });
 });
