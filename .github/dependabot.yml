@@ -8,6 +8,10 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     rebase-strategy: auto
+    reviewers:
+      - 'Mearman'
+    assignees:
+      - 'Mearman'
     labels:
       - dependencies
     commit-message:
@@ -37,6 +41,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    reviewers:
+      - 'Mearman'
+    assignees:
+      - 'Mearman'
     labels:
       - ci
       - dependencies
