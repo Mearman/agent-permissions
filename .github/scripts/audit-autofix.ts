@@ -1,8 +1,8 @@
-import { spawnSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
-import { satisfies } from "semver";
-import { Document, parseAllDocuments, parseDocument } from "yaml";
-import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
+import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
+import { satisfies } from 'semver';
+import { Document, parseAllDocuments, parseDocument } from 'yaml';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 
 export interface AuditAdvisory {
   module_name: string;
@@ -30,64 +30,58 @@ export interface Classified {
 }
 
 // pnpm 11.0.9 only honoured override selectors written to package.json's `pnpm.overrides` field; pnpm 11.21.0 flipped this -- it now silently ignores that field (a warning, not an error, so nothing failed loudly) and only reads `overrides:` from pnpm-workspace.yaml, confirmed empirically against both versions. Also confirmed empirically: adding a new override for a package that already has a resolved lockfile entry does NOT get applied by an incremental `pnpm install`, even with `--force` or `pnpm dedupe` — only deleting pnpm-lock.yaml and letting pnpm regenerate it from scratch reliably re-resolves against the new override. minimumReleaseAge still gates that fresh resolution, so this doesn't reopen the grace period for the packages actually being fixed; it does mean every other dependency can also drift to a newer in-range, aged version on a fix run, which `check` and `test` still gate as usual afterwards.
-const WORKSPACE_FILE = "pnpm-workspace.yaml";
-const LOCKFILE = "pnpm-lock.yaml";
-const auditLevel = process.env.AUDIT_LEVEL ?? "high";
+const WORKSPACE_FILE = 'pnpm-workspace.yaml';
+const LOCKFILE = 'pnpm-lock.yaml';
+const auditLevel = process.env.AUDIT_LEVEL ?? 'high';
 
 // pnpm audits its own pinned binary (module_name "pnpm") alongside the npm dependency graph. That finding isn't fixable via `overrides` — overrides only steer node_modules resolution, not which pnpm binary CI invokes — so it always goes straight to deferred.
-const NOT_OVERRIDABLE = new Set(["pnpm"]);
+const NOT_OVERRIDABLE = new Set(['pnpm']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function isAuditAdvisory(value: unknown): value is AuditAdvisory {
   if (!isRecord(value)) return false;
   return (
-    typeof value.module_name === "string" &&
-    typeof value.vulnerable_versions === "string" &&
-    typeof value.patched_versions === "string" &&
-    typeof value.severity === "string" &&
-    typeof value.github_advisory_id === "string" &&
-    typeof value.title === "string" &&
-    typeof value.url === "string"
+    typeof value.module_name === 'string' &&
+    typeof value.vulnerable_versions === 'string' &&
+    typeof value.patched_versions === 'string' &&
+    typeof value.severity === 'string' &&
+    typeof value.github_advisory_id === 'string' &&
+    typeof value.title === 'string' &&
+    typeof value.url === 'string'
   );
 }
 
 export function isAuditReport(value: unknown): value is AuditReport {
   if (!isRecord(value)) return false;
-  if (!("advisories" in value) || !isRecord(value.advisories)) return false;
+  if (!('advisories' in value) || !isRecord(value.advisories)) return false;
   return Object.values(value.advisories).every(isAuditAdvisory);
 }
 
 function runAudit(): AuditReport {
-  const result = spawnSync(
-    "pnpm",
-    ["audit", "--audit-level", auditLevel, "--json"],
-    { encoding: "utf8" },
-  );
+  const result = spawnSync('pnpm', ['audit', '--audit-level', auditLevel, '--json'], {
+    encoding: 'utf8',
+  });
   if (!result.stdout) {
     throw new Error(
-      `pnpm audit produced no stdout (spawn error: ${String(result.error)}, stderr: ${result.stderr})`,
+      `pnpm audit produced no stdout (spawn error: ${String(result.error)}, stderr: ${result.stderr})`
     );
   }
   const parsed: unknown = JSON.parse(result.stdout);
   if (!isAuditReport(parsed)) {
-    throw new Error(
-      "pnpm audit --json output did not match the expected shape",
-    );
+    throw new Error('pnpm audit --json output did not match the expected shape');
   }
   return parsed;
 }
 
 function githubAdvisoryIdsIn(report: AuditReport): Set<string> {
-  return new Set(
-    Object.values(report.advisories).map((a) => a.github_advisory_id),
-  );
+  return new Set(Object.values(report.advisories).map((a) => a.github_advisory_id));
 }
 
 function readWorkspaceDoc(): Document {
-  return parseDocument(readFileSync(WORKSPACE_FILE, "utf8"));
+  return parseDocument(readFileSync(WORKSPACE_FILE, 'utf8'));
 }
 
 function writeWorkspaceDoc(doc: Document): void {
@@ -95,37 +89,33 @@ function writeWorkspaceDoc(doc: Document): void {
 }
 
 // Mutates a clone rather than the original document, and preserves every other key and comment in pnpm-workspace.yaml (minimumReleaseAge, its exclusions, allowBuilds) -- a naive parse-to-object-then-JSON.stringify round trip would silently discard all of that.
-export function withOverrides(
-  workspace: Document,
-  overrides: Record<string, string>,
-): Document {
+export function withOverrides(workspace: Document, overrides: Record<string, string>): Document {
   const cloned = workspace.clone();
   // An empty map is written as a bare `overrides: {}` line that never goes away on its own -- deleting the key when there is nothing to override keeps a fully-pruned file clean instead of accumulating dead boilerplate.
   if (Object.keys(overrides).length === 0) {
-    cloned.delete("overrides");
+    cloned.delete('overrides');
   } else {
-    cloned.set("overrides", overrides);
+    cloned.set('overrides', overrides);
   }
   return cloned;
 }
 
 export function currentOverrides(workspace: Document): Record<string, string> {
   const parsed: unknown = workspace.toJS();
-  const overrides =
-    isRecord(parsed) && isRecord(parsed.overrides) ? parsed.overrides : {};
+  const overrides = isRecord(parsed) && isRecord(parsed.overrides) ? parsed.overrides : {};
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(overrides)) {
-    if (typeof value === "string") result[key] = value;
+    if (typeof value === 'string') result[key] = value;
   }
   return result;
 }
 
 function restoreFromGit(): void {
-  spawnSync("git", ["checkout", "--", LOCKFILE, WORKSPACE_FILE], {
-    encoding: "utf8",
+  spawnSync('git', ['checkout', '--', LOCKFILE, WORKSPACE_FILE], {
+    encoding: 'utf8',
   });
   // `pnpm update` only touches the packages it's told to; a plain `git checkout` restores the two tracked files but leaves node_modules linked against whatever the last attempt resolved, so resync it for whatever runs next (the final re-audit below, or any later step in this same job).
-  spawnSync("pnpm", ["install", "--frozen-lockfile"], { encoding: "utf8" });
+  spawnSync('pnpm', ['install', '--frozen-lockfile'], { encoding: 'utf8' });
 }
 
 function setOutput(name: string, value: string): void {
@@ -150,24 +140,21 @@ function fail(message: string): never {
 function attemptBatch(
   workspace: Document,
   baseOverrides: Record<string, string>,
-  batch: Candidate[],
+  batch: Candidate[]
 ): { succeeded: Candidate[]; conflicted: boolean } {
   const overrides = { ...baseOverrides };
   for (const c of batch) overrides[c.overrideKey] = c.range;
   writeWorkspaceDoc(withOverrides(workspace, overrides));
 
-  const names = [
-    ...new Set(batch.flatMap((c) => c.advisories.map((a) => a.module_name))),
-  ];
-  const updated =
-    spawnSync("pnpm", ["update", ...names], { encoding: "utf8" }).status === 0;
+  const names = [...new Set(batch.flatMap((c) => c.advisories.map((a) => a.module_name)))];
+  const updated = spawnSync('pnpm', ['update', ...names], { encoding: 'utf8' }).status === 0;
   if (!updated) {
     return { succeeded: [], conflicted: true };
   }
 
   const present = githubAdvisoryIdsIn(runAudit());
   const succeeded = batch.filter((c) =>
-    c.advisories.every((a) => !present.has(a.github_advisory_id)),
+    c.advisories.every((a) => !present.has(a.github_advisory_id))
   );
   return { succeeded, conflicted: false };
 }
@@ -176,7 +163,7 @@ function attemptBatch(
 function resolveMaximalSubset(
   workspace: Document,
   baseOverrides: Record<string, string>,
-  batch: Candidate[],
+  batch: Candidate[]
 ): Candidate[] {
   if (batch.length === 0) return [];
 
@@ -185,16 +172,8 @@ function resolveMaximalSubset(
   if (batch.length === 1) return [];
 
   const mid = Math.floor(batch.length / 2);
-  const leftOk = resolveMaximalSubset(
-    workspace,
-    baseOverrides,
-    batch.slice(0, mid),
-  );
-  const rightOk = resolveMaximalSubset(
-    workspace,
-    baseOverrides,
-    batch.slice(mid),
-  );
+  const leftOk = resolveMaximalSubset(workspace, baseOverrides, batch.slice(0, mid));
+  const rightOk = resolveMaximalSubset(workspace, baseOverrides, batch.slice(mid));
   const combined = [...leftOk, ...rightOk];
   if (combined.length === 0) return [];
 
@@ -207,7 +186,7 @@ function resolveMaximalSubset(
 function greedyResolve(
   workspace: Document,
   baseOverrides: Record<string, string>,
-  batch: Candidate[],
+  batch: Candidate[]
 ): Candidate[] {
   const working: Candidate[] = [];
   for (const c of batch) {
@@ -231,15 +210,15 @@ export function classifyAdvisories(advisories: AuditAdvisory[]): Classified {
       deferred.push({
         advisory,
         reason:
-          "pnpm self-audit finding — requires bumping the packageManager field, not a dependency override",
+          'pnpm self-audit finding — requires bumping the packageManager field, not a dependency override',
       });
       continue;
     }
 
-    if (!advisory.patched_versions || advisory.patched_versions === "<0.0.0") {
+    if (!advisory.patched_versions || advisory.patched_versions === '<0.0.0') {
       deferred.push({
         advisory,
-        reason: "no patched version exists upstream yet",
+        reason: 'no patched version exists upstream yet',
       });
       continue;
     }
@@ -264,11 +243,11 @@ export function classifyAdvisories(advisories: AuditAdvisory[]): Classified {
 // An override is inert when no version its selector could rewrite is present: the selector is the vulnerable range on the key (`pkg@<range>`), and the override only acts on resolutions matching that range. If nothing resolved matches the selector, the override forces nothing today -- regardless of what the package resolves outside the selector. The autofix only ever adds overrides, so without this pass the map accumulates one entry per historical advisory forever. Dropping inert entries is self-correcting rather than risky: if a future update resolves back into a vulnerable range, the next audit run re-adds the override through the same fix path.
 export function inertOverrideKeys(
   overrides: Record<string, string>,
-  resolvedVersions: Map<string, Set<string>>,
+  resolvedVersions: Map<string, Set<string>>
 ): string[] {
   const inert: string[] = [];
   for (const key of Object.keys(overrides)) {
-    const at = key.lastIndexOf("@");
+    const at = key.lastIndexOf('@');
     // A bare `pkg` key (no @range selector) matches every version and is never provably inert; a missing package is left for the same reason.
     if (at <= 0) continue;
     const pkg = key.slice(0, at);
@@ -283,9 +262,7 @@ export function inertOverrideKeys(
 }
 
 // The resolved package@version set from the lockfile's project document (the multi-document stream's second document), minus peer-dependency suffixes.
-export function resolvedVersionsFromLockfileText(
-  yamlText: string,
-): Map<string, Set<string>> {
+export function resolvedVersionsFromLockfileText(yamlText: string): Map<string, Set<string>> {
   const docs = parseAllDocuments(yamlText).map((d) => {
     const js: unknown = d.toJS();
     return js;
@@ -294,17 +271,16 @@ export function resolvedVersionsFromLockfileText(
     (d): d is Record<string, unknown> =>
       isRecord(d) &&
       isRecord(d.importers) &&
-      isRecord(d.importers["."]) &&
-      ("dependencies" in d.importers["."] ||
-        "devDependencies" in d.importers["."]),
+      isRecord(d.importers['.']) &&
+      ('dependencies' in d.importers['.'] || 'devDependencies' in d.importers['.'])
   );
   if (projectDoc === undefined || !isRecord(projectDoc.packages)) {
-    throw new Error("lockfile had no project packages map");
+    throw new Error('lockfile had no project packages map');
   }
   const byPackage = new Map<string, Set<string>>();
   for (const key of Object.keys(projectDoc.packages)) {
-    const stripped = key.replace(/(\([^)]*\))+$/, "");
-    const at = stripped.lastIndexOf("@");
+    const stripped = key.replace(/(\([^)]*\))+$/, '');
+    const at = stripped.lastIndexOf('@');
     const pkg = stripped.slice(0, at);
     const version = stripped.slice(at + 1);
     const existing = byPackage.get(pkg) ?? new Set<string>();
@@ -334,9 +310,7 @@ function main(): void {
     if (fixed.length > 0) {
       const final = attemptBatch(workspaceBefore, baseOverrides, fixed);
       if (final.conflicted || final.succeeded.length !== fixed.length) {
-        fail(
-          "Could not reproduce the verified-working override set on the final update pass",
-        );
+        fail('Could not reproduce the verified-working override set on the final update pass');
       }
     } else {
       restoreFromGit();
@@ -347,7 +321,7 @@ function main(): void {
         deferred.push({
           advisory,
           reason:
-            "no version satisfies both the patched range and the 7-day minimumReleaseAge window yet (or a resolution conflict)",
+            'no version satisfies both the patched range and the 7-day minimumReleaseAge window yet (or a resolution conflict)',
         });
       }
     }
@@ -356,11 +330,11 @@ function main(): void {
   // Anything at or above the audit level that wasn't present before this run's changes is a brand-new problem introduced by an override or by its transitive fallout — never ship that silently just because the advisories we set out to fix are gone.
   const final = runAudit();
   const newlyIntroduced = Object.values(final.advisories).filter(
-    (a) => !initialIds.has(a.github_advisory_id),
+    (a) => !initialIds.has(a.github_advisory_id)
   );
   if (newlyIntroduced.length > 0) {
     fail(
-      `The fix introduced new advisories not present before this run: ${newlyIntroduced.map((a) => `${a.github_advisory_id} (${a.module_name})`).join(", ")}`,
+      `The fix introduced new advisories not present before this run: ${newlyIntroduced.map((a) => `${a.github_advisory_id} (${a.module_name})`).join(', ')}`
     );
   }
 
@@ -370,7 +344,7 @@ function main(): void {
   const overridesNow = currentOverrides(workspaceNow);
   const inert = inertOverrideKeys(
     overridesNow,
-    resolvedVersionsFromLockfileText(readFileSync(LOCKFILE, "utf8")),
+    resolvedVersionsFromLockfileText(readFileSync(LOCKFILE, 'utf8'))
   );
   if (inert.length > 0) {
     const inertSet = new Set(inert);
@@ -379,47 +353,43 @@ function main(): void {
       if (!inertSet.has(key)) pruned[key] = value;
     }
     writeWorkspaceDoc(withOverrides(workspaceNow, pruned));
-    if (spawnSync("pnpm", ["install"], { encoding: "utf8" }).status === 0) {
+    if (spawnSync('pnpm', ['install'], { encoding: 'utf8' }).status === 0) {
       const postPrune = runAudit();
       // Clean means: no advisory is present that this run did not start with -- the prune resurrected nothing the fixes removed and introduced nothing new.
       const regressed = Object.values(postPrune.advisories).some(
-        (a) => !initialIds.has(a.github_advisory_id),
+        (a) => !initialIds.has(a.github_advisory_id)
       );
       if (!regressed) {
         appendSummary(
-          `\n### Pruned inert overrides\n\n${inert.map((k) => `- ${k} (every resolved version already satisfies the target)`).join("\n")}\n`,
+          `\n### Pruned inert overrides\n\n${inert.map((k) => `- ${k} (every resolved version already satisfies the target)`).join('\n')}\n`
         );
         console.log(
-          `Pruned ${String(inert.length)} inert override(s); the reduced set still audits clean.`,
+          `Pruned ${String(inert.length)} inert override(s); the reduced set still audits clean.`
         );
         prunedKeys = inert;
       } else {
         restoreFromGit();
-        console.log(
-          "::warning::override prune regressed the audit; keeping the unpruned set.",
-        );
+        console.log('::warning::override prune regressed the audit; keeping the unpruned set.');
       }
     } else {
       restoreFromGit();
-      console.log(
-        "::warning::override prune install failed; keeping the unpruned set.",
-      );
+      console.log('::warning::override prune install failed; keeping the unpruned set.');
     }
   }
 
   if (deferred.length > 0) {
     const lines = deferred.map(
       (d) =>
-        `::warning::${d.advisory.github_advisory_id} (${d.advisory.module_name}, ${d.advisory.severity}) not auto-fixed: ${d.reason} — ${d.advisory.url}`,
+        `::warning::${d.advisory.github_advisory_id} (${d.advisory.module_name}, ${d.advisory.severity}) not auto-fixed: ${d.reason} — ${d.advisory.url}`
     );
-    console.log(lines.join("\n"));
+    console.log(lines.join('\n'));
     appendSummary(
       `\n### Deferred audit findings\n\n| Advisory | Package | Severity | Reason |\n|---|---|---|---|\n${deferred
         .map(
           (d) =>
-            `| [${d.advisory.github_advisory_id}](${d.advisory.url}) | ${d.advisory.module_name} | ${d.advisory.severity} | ${d.reason} |`,
+            `| [${d.advisory.github_advisory_id}](${d.advisory.url}) | ${d.advisory.module_name} | ${d.advisory.severity} | ${d.reason} |`
         )
-        .join("\n")}\n`,
+        .join('\n')}\n`
     );
   }
 
@@ -428,7 +398,7 @@ function main(): void {
       advisory,
       overrideKey: c.overrideKey,
       range: c.range,
-    })),
+    }))
   );
 
   if (fixedAdvisories.length > 0) {
@@ -436,49 +406,42 @@ function main(): void {
       `\n### Auto-fixed audit findings\n\n| Advisory | Package | Patched range applied |\n|---|---|---|\n${fixedAdvisories
         .map(
           (f) =>
-            `| [${f.advisory.github_advisory_id}](${f.advisory.url}) | ${f.advisory.module_name} | ${f.range} |`,
+            `| [${f.advisory.github_advisory_id}](${f.advisory.url}) | ${f.advisory.module_name} | ${f.range} |`
         )
-        .join("\n")}\n`,
+        .join('\n')}\n`
     );
     writeFileSync(
-      "/tmp/audit-fix-commit-body.txt",
+      '/tmp/audit-fix-commit-body.txt',
       fixedAdvisories
         .map(
           (f) =>
-            `- ${f.advisory.module_name} (${f.overrideKey}) -> ${f.range}: ${f.advisory.github_advisory_id} ${f.advisory.url}`,
+            `- ${f.advisory.module_name} (${f.overrideKey}) -> ${f.range}: ${f.advisory.github_advisory_id} ${f.advisory.url}`
         )
-        .join("\n"),
+        .join('\n')
     );
   }
 
   if (prunedKeys.length > 0) {
     // Pruned keys ride the same fix-PR commit body as any fixed advisories in the same run; a prune-only run still needs a body of its own.
     const pruneLines = prunedKeys
-      .map(
-        (k) =>
-          `- prune ${k}: every resolved version already satisfies the override target`,
-      )
-      .join("\n");
+      .map((k) => `- prune ${k}: every resolved version already satisfies the override target`)
+      .join('\n');
     if (fixedAdvisories.length === 0) {
-      writeFileSync("/tmp/audit-fix-commit-body.txt", pruneLines);
+      writeFileSync('/tmp/audit-fix-commit-body.txt', pruneLines);
     } else {
-      appendFileSync("/tmp/audit-fix-commit-body.txt", `\n${pruneLines}`);
+      appendFileSync('/tmp/audit-fix-commit-body.txt', `\n${pruneLines}`);
     }
   }
-  const fixedFlag =
-    fixedAdvisories.length > 0 || prunedKeys.length > 0 ? "true" : "false";
-  setOutput("fixed", fixedFlag);
+  const fixedFlag = fixedAdvisories.length > 0 || prunedKeys.length > 0 ? 'true' : 'false';
+  setOutput('fixed', fixedFlag);
   // The CI job invokes this through a composite action, which cannot carry a step's GITHUB_OUTPUT up to the job; the file is the channel the job re-emits from.
-  writeFileSync("/tmp/audit-fix-fixed.txt", fixedFlag);
+  writeFileSync('/tmp/audit-fix-fixed.txt', fixedFlag);
 
   console.log(
-    `Audit complete: ${String(fixedAdvisories.length)} fixed, ${String(deferred.length)} deferred (non-blocking).`,
+    `Audit complete: ${String(fixedAdvisories.length)} fixed, ${String(deferred.length)} deferred (non-blocking).`
   );
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }
