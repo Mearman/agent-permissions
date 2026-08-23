@@ -247,7 +247,6 @@ jobs:
           - name: agents-permissions
           - name: agents-spec
           - name: agent-permissions-policy
-          - name: agents-permissions-mcp
           - name: permissions-mcp
           - name: permission-mcp
     permissions:
@@ -301,7 +300,7 @@ jobs:
         run: |
           npm pkg set name=@mearman/agent-perms
           VERSION=$(node -p "require('./package.json').version")
-          if npm view "@mearman/agent-perms@${VERSION}" version --registry https://npm.pkg.github.com >/dev/null 2>&1; then
+          if npm view "@mearman/agent-perms@${VERSION}" version >/dev/null 2>&1; then
             echo "@mearman/agent-perms@${VERSION} already published; skipping."
             exit 0
           fi

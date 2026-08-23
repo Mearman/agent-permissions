@@ -66,7 +66,7 @@ Some agent harnesses provide a one-command install:
 **Claude Code (MCP):**
 
 ```bash
-claude mcp add agent-perms -- npx -y agent-perms-mcp
+claude mcp add agent-perms -- npx -y agent-perms mcp
 ```
 
 **Claude Code (plugin marketplace):**
@@ -79,7 +79,7 @@ claude mcp add agent-perms -- npx -y agent-perms-mcp
 **OpenAI Codex:**
 
 ```bash
-codex mcp add agent-perms -- npx -y agent-perms-mcp
+codex mcp add agent-perms -- npx -y agent-perms mcp
 ```
 
 #### Manual configuration
@@ -90,7 +90,7 @@ For harnesses that use config files, add the following to the `mcpServers` secti
 {
   "agent-perms": {
     "command": "npx",
-    "args": ["-y", "agent-perms-mcp"]
+    "args": ["-y", "agent-perms", "mcp"]
   }
 }
 ```
