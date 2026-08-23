@@ -1,3 +1,5 @@
+## [6.1.3](https://github.com/Mearman/agent-permissions/compare/v6.1.2...v6.1.3) (2026-08-23)
+
 ## [6.1.2](https://github.com/Mearman/agent-permissions/compare/v6.1.1...v6.1.2) (2026-08-23)
 
 ## [6.1.1](https://github.com/Mearman/agent-permissions/compare/v6.1.0...v6.1.1) (2026-08-23)
