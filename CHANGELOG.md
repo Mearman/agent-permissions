@@ -1,3 +1,16 @@
+## [5.11.3](https://github.com/Mearman/agent-permissions/compare/v5.11.2...v5.11.3) (2026-08-23)
+
+### Bug Fixes
+
+* **ci:** skip workflow-file bumps gracefully instead of failing the merge sweep ([80ae9aa](https://github.com/Mearman/agent-permissions/commit/80ae9aac5c489995ac51aeeb0c2579a27c0f0b46))
+
+### CI
+
+* **deps:** bump actions/cache from 5 to 6 ([aced775](https://github.com/Mearman/agent-permissions/commit/aced775539bccc8d47a11fd97d4b3b2805f4e932))
+* **deps:** bump actions/checkout from 6 to 7 ([d39fec6](https://github.com/Mearman/agent-permissions/commit/d39fec66c178874cea47d20c84f8debad2b67d97))
+* **deps:** bump actions/setup-node from 6 to 7 ([9713547](https://github.com/Mearman/agent-permissions/commit/9713547eda549d1317b065a107bd9d7ecb30d4a6))
+* **deps:** bump pnpm/action-setup from 6.0.5 to 6.0.10 ([ab0d655](https://github.com/Mearman/agent-permissions/commit/ab0d65571f5b2053a8730aaa3bf4ff4f38ae5fd7))
+
 ## [5.11.2](https://github.com/Mearman/agent-permissions/compare/v5.11.1...v5.11.2) (2026-08-22)
 
 ### Bug Fixes
