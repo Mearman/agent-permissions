@@ -351,7 +351,10 @@ function main(): void {
     );
   }
 
-  setOutput("fixed", fixedAdvisories.length > 0 ? "true" : "false");
+  const fixedFlag = fixedAdvisories.length > 0 ? "true" : "false";
+  setOutput("fixed", fixedFlag);
+  // The CI job invokes this through a composite action, which cannot carry a step's GITHUB_OUTPUT up to the job; the file is the channel the job re-emits from.
+  writeFileSync("/tmp/audit-fix-fixed.txt", fixedFlag);
 
   console.log(
     `Audit complete: ${String(fixedAdvisories.length)} fixed, ${String(deferred.length)} deferred (non-blocking).`,

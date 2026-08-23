@@ -1,0 +1,59 @@
+name: Setup and Run
+description: pnpm + Node (from .tool-versions, or the node-version input) + frozen install + the CI caches, then run a task. Requires checkout before use.
+
+inputs:
+  task:
+    description: Task identifier for the step name; selects the eslint cache when the task is lint.
+    required: true
+  command:
+    description: Shell command to execute after install.
+    required: true
+  node-version:
+    description: Node version to install; empty means the .tool-versions file (the repo baseline).
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v6.0.5
+
+    - uses: actions/setup-node@v6
+      if: inputs.node-version == ''
+      with:
+        node-version-file: .tool-versions
+        cache: pnpm
+
+    - uses: actions/setup-node@v6
+      if: inputs.node-version != ''
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - run: pnpm install --frozen-lockfile
+      shell: bash
+
+    # Turbo's cache keyed on the inputs that can change a task outcome (lockfile + task graph), with the run id in the primary key so every run saves a fresh entry and restore-keys fall back to the nearest match -- an exact-hit restore on an unchanged dependency graph instead of the old github.sha keys, which could only ever hit via the prefix fallback.
+    - name: Restore turbo cache
+      uses: actions/cache@v5
+      with:
+        path: .turbo
+        key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-${{ github.run_id }}
+        restore-keys: |
+          turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-
+          turbo-${{ runner.os }}-
+
+    # ESLint's own cache skips re-linting unchanged files on a cold turbo cache (config change, new runner); keyed on everything that changes lint outcomes.
+    - name: Restore eslint cache
+      if: inputs.task == 'lint'
+      uses: actions/cache@v5
+      with:
+        path: .eslintcache
+        key: eslint-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'tsconfig.json', 'pnpm-lock.yaml') }}-${{ github.run_id }}
+        restore-keys: |
+          eslint-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'tsconfig.json', 'pnpm-lock.yaml') }}-
+          eslint-${{ runner.os }}-
+
+    - name: Run ${{ inputs.task }}
+      run: ${{ inputs.command }}
+      shell: bash

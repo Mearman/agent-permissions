@@ -10,6 +10,11 @@ on:
   # Lets the audit job's own fix-PR branch get a real check/test run: a workflow_dispatch call is explicitly exempt from GitHub's rule that events caused by the default GITHUB_TOKEN (a push, a PR opened via `gh pr create`) never trigger another workflow run.
   workflow_dispatch:
 
+# A new push to a PR supersedes that PR's in-flight run; a push to main never cancels, because the audit job's fix-PR poll loop and the release job both make mid-run decisions a cancel would truncate.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
@@ -18,30 +23,25 @@ jobs:
     name: Lint commits
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v6.0.10
-
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/setup
         with:
-          node-version-file: .tool-versions
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Lint commit messages
-        run: |
-          pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+          task: lint-commits
+          command: pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
 
   audit:
     name: Audit
     runs-on: ubuntu-latest
+    # Generous: the fix-PR step polls a dispatched CI run (up to 60 x 20s) after the audit itself.
+    timeout-minutes: 45
     permissions:
       contents: write
       pull-requests: write
@@ -49,24 +49,22 @@ jobs:
     outputs:
       fixed: ${{ steps.audit-fix.outputs.fixed }}
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6.0.10
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .tool-versions
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
+      - uses: actions/checkout@v6
 
       - name: Audit (auto-fix findings with an aged patch, defer the rest)
-        id: audit-fix
-        run: node --experimental-strip-types .github/scripts/audit-autofix.ts
+        uses: ./.github/actions/setup
+        with:
+          task: audit
+          command: node --experimental-strip-types .github/scripts/audit-autofix.ts
         env:
           AUDIT_LEVEL: high
 
-      # Only open a PR from main itself: a PR run has nothing of its own to fix a PR against, and this keeps the fix branch out of branches this workflow doesn't own. Landing the fix through a PR means a bad fix stays off main entirely: the merge below happens only after a full CI run on the fix branch has passed. Required-status-check branch protection would block bad merges for every PR, but on a personal repo it also blocks the release job's own push (GITHUB_TOKEN has no bypass actor available outside an org), so the gate lives here instead: dispatch CI on the fix branch, wait for its result, rebase-merge only on green, and leave the PR open for a human on anything less.
+      # The composite action does not carry the script's GITHUB_OUTPUT through to this job's outputs, so the script also writes /tmp/audit-fix-fixed.txt and it is re-emitted here.
+      - name: Re-emit audit outputs
+        id: audit-fix
+        run: echo "fixed=$(cat /tmp/audit-fix-fixed.txt)" >> "$GITHUB_OUTPUT"
+
+      # Only open a PR from main itself: a PR run has nothing of its own to fix a PR against, and this keeps the fix branch out of branches this workflow doesn't own. Landing the fix through a PR means a bad fix stays off main entirely: the merge below happens only after a full CI run on the fix branch has passed.
       - name: Open a PR with the auto-fixed overrides
         if: steps.audit-fix.outputs.fixed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -116,71 +114,72 @@ jobs:
     name: Check
     needs: audit
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v6.0.10
+      # Workflow YAML linting: two shell/YAML-level bugs in these workflows were found by actionlint run by hand during a CI debugging session; nothing in CI checked them until now.
+      - name: Lint workflow YAML (actionlint)
+        run: |
+          VERSION="v1.7.7"
+          curl -sSfL "https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash" | bash -s -- "$VERSION"
+          ./actionlint -color
 
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/setup
         with:
-          node-version-file: .tool-versions
-          cache: pnpm
+          task: check
+          command: pnpm check
 
-      - run: pnpm install --frozen-lockfile
+      # `pnpm check` builds inside _check, so a stale committed schema (a src/schema.ts edit committed without a rebuild) shows up as a diff here rather than shipping silently. Dependencies are already installed by the composite above, so the remaining gates are plain steps.
+      - name: Committed JSON Schema is fresh
+        run: git diff --exit-code agent-permissions.schema.json
 
-      - uses: actions/cache@v6
-        with:
-          path: .turbo
-          key: turbo-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-${{ runner.os }}-
+      - name: knip
+        run: pnpm exec knip
 
-      - run: pnpm check
+      - name: Package checks (publint, attw, dist smoke)
+        run: pnpm pkgcheck
 
   test:
     name: Test — Node ${{ matrix.node-version }}
     needs: audit
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     strategy:
       matrix:
-        node-version:
-          - 22
-          - 24
-          - 26
+        include:
+          # The LTS floor runs the plain suite; the newest release runs the coverage-gated variant, so the 80% thresholds are enforced in CI and not only when someone remembers locally.
+          - node-version: 24
+            command: pnpm test
+          - node-version: 26
+            command: pnpm test:coverage
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v6.0.10
-
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/setup
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - uses: actions/cache@v6
-        with:
-          path: .turbo
-          key: turbo-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-${{ runner.os }}-
-
-      - run: pnpm test
+          task: test-node-${{ matrix.node-version }}
+          command: ${{ matrix.command }}
+          node-version: "${{ matrix.node-version }}"
 
   release:
     name: Release
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: [check, test]
     runs-on: ubuntu-latest
+    # Serialises release runs: two pushes landing close together otherwise race two semantic-release runs against the same next version, changelog commit, and npm publish. Never cancel mid-release — an interrupted cascade leaves published packages without their dependents' bumps.
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    timeout-minutes: 25
     permissions:
       contents: write
       issues: write
@@ -188,30 +187,17 @@ jobs:
       id-token: write
     outputs:
       released: ${{ steps.detect-release.outputs.released }}
+      tag: ${{ steps.detect-release.outputs.tag }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v6.0.10
-
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/setup
         with:
-          node-version-file: .tool-versions
-          cache: pnpm
-          # Do NOT set registry-url — it creates an .npmrc that overrides OIDC
-
-      - run: pnpm install --frozen-lockfile
-
-      - uses: actions/cache@v6
-        with:
-          path: .turbo
-          key: turbo-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-${{ runner.os }}-
-
-      - run: pnpm build
+          task: build
+          command: pnpm build
 
       - name: Release
         id: detect-release
@@ -225,6 +211,10 @@ jobs:
             echo "released=true" >> "$GITHUB_OUTPUT"
           else
             echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+          TAG=$(grep -oP 'Created tag \Kv[0-9]+\.[0-9]+\.[0-9]+' release-output.txt)
+          if [ -n "$TAG" ]; then
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           fi
           exit "$EXIT_CODE"
 
@@ -253,38 +243,39 @@ jobs:
     runs-on: ubuntu-latest
     needs: release
     if: needs.release.outputs.released == 'true'
+    timeout-minutes: 15
     strategy:
       matrix:
         include:
           - name: agents-permissions
           - name: agents-spec
           - name: agent-permissions-policy
-          - name: agent-permissions-mcp
+          - name: agent-perms-mcp
           - name: permissions-mcp
           - name: permission-mcp
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v7
+      # The release tag, not main: a push landing between the release job finishing and this job starting would otherwise build newer source and publish it under the just-tagged version.
+      - uses: actions/checkout@v6
         with:
-          ref: main
+          ref: ${{ needs.release.outputs.tag }}
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v6.0.10
-
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/setup
         with:
-          node-version-file: .tool-versions
-          cache: pnpm
-          # Do NOT set registry-url — it creates an .npmrc that overrides OIDC
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm build
+          task: build
+          command: pnpm build
 
       - name: Publish
         run: |
           npm pkg set name=${{ matrix.name }}
+          # Idempotent re-runs: if this alias version already exists in the registry (a partially-failed prior run), skip rather than collide.
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "${{ matrix.name }}@${VERSION}" version >/dev/null 2>&1; then
+            echo "${{ matrix.name }}@${VERSION} already published; skipping."
+            exit 0
+          fi
           pnpm publish --access public --no-git-checks --provenance
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -294,30 +285,29 @@ jobs:
     runs-on: ubuntu-latest
     needs: release
     if: needs.release.outputs.released == 'true'
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
-          ref: main
+          ref: ${{ needs.release.outputs.tag }}
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v6.0.10
-
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/setup
         with:
-          node-version-file: .tool-versions
-          cache: pnpm
-          registry-url: https://npm.pkg.github.com
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm build
+          task: build
+          command: pnpm build
 
       - name: Publish
         run: |
           npm pkg set name=@mearman/agent-perms
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@mearman/agent-perms@${VERSION}" version --registry https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "@mearman/agent-perms@${VERSION} already published; skipping."
+            exit 0
+          fi
           pnpm publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
