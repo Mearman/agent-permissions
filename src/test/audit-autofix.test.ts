@@ -66,6 +66,15 @@ void describe("override bookkeeping", () => {
     assert.match(next.toString(), /overrides:\n\s+a: "1"/);
   });
 
+  void it("withOverrides deletes the key entirely for an empty map, rather than writing an empty one", () => {
+    const workspace = parseDocument(
+      'overrides:\n  a: "1"\nminimumReleaseAge: 10080\n',
+    );
+    const next = withOverrides(workspace, {});
+    assert.deepEqual(next.toJS(), { minimumReleaseAge: 10080 });
+    assert.doesNotMatch(next.toString(), /overrides/);
+  });
+
   void it("currentOverrides reads back only string-valued entries", () => {
     const workspace = parseDocument(
       "overrides:\n  keep: ^1.0.0\n  drop: 42\n  also: null\n",

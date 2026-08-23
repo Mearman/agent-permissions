@@ -100,7 +100,12 @@ export function withOverrides(
   overrides: Record<string, string>,
 ): Document {
   const cloned = workspace.clone();
-  cloned.set("overrides", overrides);
+  // An empty map is written as a bare `overrides: {}` line that never goes away on its own -- deleting the key when there is nothing to override keeps a fully-pruned file clean instead of accumulating dead boilerplate.
+  if (Object.keys(overrides).length === 0) {
+    cloned.delete("overrides");
+  } else {
+    cloned.set("overrides", overrides);
+  }
   return cloned;
 }
 
