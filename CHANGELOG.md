@@ -1,3 +1,9 @@
+## [6.0.3](https://github.com/Mearman/agent-permissions/compare/v6.0.2...v6.0.3) (2026-08-23)
+
+### Bug Fixes
+
+* **ci:** dispatch a release run after a GITHUB_TOKEN dependency-bump merge ([c96f6de](https://github.com/Mearman/agent-permissions/commit/c96f6de5bd815910e2f0088089e6af1a87a4dbfb))
+
 ## [6.0.2](https://github.com/Mearman/agent-permissions/compare/v6.0.1...v6.0.2) (2026-08-23)
 
 ### Bug Fixes
