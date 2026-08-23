@@ -16,15 +16,15 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: pnpm/action-setup@v6.0.5
+    - uses: pnpm/action-setup@v6.0.10
 
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@v7
       if: inputs.node-version == ''
       with:
         node-version-file: .tool-versions
         cache: pnpm
 
-    - uses: actions/setup-node@v6
+    - uses: actions/setup-node@v7
       if: inputs.node-version != ''
       with:
         node-version: ${{ inputs.node-version }}
@@ -35,7 +35,7 @@ runs:
 
     # Turbo's cache keyed on the inputs that can change a task outcome (lockfile + task graph), with the run id in the primary key so every run saves a fresh entry and restore-keys fall back to the nearest match -- an exact-hit restore on an unchanged dependency graph instead of the old github.sha keys, which could only ever hit via the prefix fallback.
     - name: Restore turbo cache
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: .turbo
         # Node-scoped: turbo's task hashes do not include the node version, so an unscoped key would let one matrix leg replay its cached results on another leg (a plain-test result standing in for the coverage run). The "file" fallback scopes runs that use the .tool-versions baseline.
@@ -44,17 +44,13 @@ runs:
           turbo-${{ runner.os }}-node-${{ inputs.node-version == '' && 'file' || inputs.node-version }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-
           turbo-${{ runner.os }}-node-${{ inputs.node-version == '' && 'file' || inputs.node-version }}-
 
-    # ESLint's own cache skips re-linting unchanged files on a cold turbo cache (config change, new runner); keyed on everything that changes lint outcomes.
-    - name: Restore eslint cache
-      if: inputs.task == 'lint'
-      uses: actions/cache@v5
-      with:
-        path: .eslintcache
-        key: eslint-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'tsconfig.json', 'pnpm-lock.yaml') }}-${{ github.run_id }}
-        restore-keys: |
-          eslint-${{ runner.os }}-${{ hashFiles('eslint.config.ts', 'tsconfig.json', 'pnpm-lock.yaml') }}-
-          eslint-${{ runner.os }}-
-
     - name: Run ${{ inputs.task }}
+      id: run
       run: ${{ inputs.command }}
       shell: bash
+
+# A run step's GITHUB_OUTPUT surfaces through the composite's own outputs, so callers can read steps.<this-action's-id>.outputs.fixed directly.
+outputs:
+  fixed:
+    description: The "fixed" output of the task that ran (audit-autofix), when it sets one.
+    value: ${{ steps.run.outputs.fixed }}

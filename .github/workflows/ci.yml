@@ -27,7 +27,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -47,11 +47,12 @@ jobs:
       pull-requests: write
       actions: write
     outputs:
-      fixed: ${{ steps.audit-fix.outputs.fixed }}
+      fixed: ${{ steps.audit-setup.outputs.fixed }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Audit (auto-fix findings with an aged patch, defer the rest)
+        id: audit-setup
         uses: ./.github/actions/setup
         with:
           task: audit
@@ -59,14 +60,9 @@ jobs:
         env:
           AUDIT_LEVEL: high
 
-      # The composite action does not carry the script's GITHUB_OUTPUT through to this job's outputs, so the script also writes /tmp/audit-fix-fixed.txt and it is re-emitted here.
-      - name: Re-emit audit outputs
-        id: audit-fix
-        run: echo "fixed=$(cat /tmp/audit-fix-fixed.txt)" >> "$GITHUB_OUTPUT"
-
       # Only open a PR from main itself: a PR run has nothing of its own to fix a PR against, and this keeps the fix branch out of branches this workflow doesn't own. Landing the fix through a PR means a bad fix stays off main entirely: the merge below happens only after a full CI run on the fix branch has passed.
       - name: Open a PR with the auto-fixed overrides
-        if: steps.audit-fix.outputs.fixed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.audit-setup.outputs.fixed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -118,14 +114,14 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       # Workflow YAML linting: two shell/YAML-level bugs in these workflows were found by actionlint run by hand during a CI debugging session; nothing in CI checked them until now.
       - name: Lint workflow YAML (actionlint)
         run: |
-          VERSION="v1.7.7"
+          VERSION="1.7.7"
           curl -sSfL "https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash" | bash -s -- "$VERSION"
           ./actionlint -color
 
@@ -160,7 +156,7 @@ jobs:
           - node-version: 26
             command: pnpm test:coverage
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -189,7 +185,7 @@ jobs:
       released: ${{ steps.detect-release.outputs.released }}
       tag: ${{ steps.detect-release.outputs.tag }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -212,7 +208,8 @@ jobs:
           else
             echo "released=false" >> "$GITHUB_OUTPUT"
           fi
-          TAG=$(grep -oP 'Created tag \Kv[0-9]+\.[0-9]+\.[0-9]+' release-output.txt)
+          # || true because the runner's default bash -e kills the script on a failing command substitution, and a no-release re-run legitimately has no tag line to find -- the step's exit must remain semantic-release's own.
+          TAG=$(grep -oP 'Created tag \Kv[0-9]+\.[0-9]+\.[0-9]+' release-output.txt || true)
           if [ -n "$TAG" ]; then
             echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           fi
@@ -250,14 +247,14 @@ jobs:
           - name: agents-permissions
           - name: agents-spec
           - name: agent-permissions-policy
-          - name: agent-perms-mcp
+          - name: agents-permissions-mcp
           - name: permissions-mcp
           - name: permission-mcp
     permissions:
       id-token: write
     steps:
       # The release tag, not main: a push landing between the release job finishing and this job starting would otherwise build newer source and publish it under the just-tagged version.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.release.outputs.tag }}
           persist-credentials: false
@@ -290,7 +287,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.release.outputs.tag }}
           persist-credentials: false
