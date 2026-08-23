@@ -1,5 +1,5 @@
 name: Setup and Run
-description: Checkout + pnpm + Node (from .tool-versions, or the node-version input) + frozen install + the CI caches, then run a task.
+description: pnpm + Node (from .tool-versions, or the node-version input) + frozen install + the CI caches, then run a task. Requires checkout before use.
 
 inputs:
   task:
@@ -16,29 +16,10 @@ inputs:
     description: npm registry for setup-node to write into .npmrc; empty leaves it unset (publish to npmjs with OIDC).
     required: false
     default: ""
-  fetch-depth:
-    description: Passed through to actions/checkout's fetch-depth.
-    required: false
-    default: "1"
-  ref:
-    description: Passed through to actions/checkout's ref; empty resolves the triggering ref as normal.
-    required: false
-    default: ""
-  persist-credentials:
-    description: Passed through to actions/checkout's persist-credentials; a job that pushes or opens a PR with GITHUB_TOKEN needs this true.
-    required: false
-    default: "false"
 
 runs:
   using: composite
   steps:
-    # actions/checkout is the one pin every job in this repo needs, so it lives here rather than as a `uses:` line in any workflow file: GitHub's workflow-scope push restriction on GITHUB_TOKEN is keyed to files under .github/workflows specifically (verified directly against this repo), not the whole .github tree, so a Dependabot bump to this pin lands as a diff scoped to .github/actions/setup/action.yml and GITHUB_TOKEN can merge it -- an actions/checkout bump pinned inside a workflow file could not be.
-    - uses: actions/checkout@v7
-      with:
-        fetch-depth: ${{ inputs.fetch-depth }}
-        ref: ${{ inputs.ref }}
-        persist-credentials: ${{ inputs.persist-credentials }}
-
     - uses: pnpm/action-setup@v6.0.10
 
     - uses: actions/setup-node@v7

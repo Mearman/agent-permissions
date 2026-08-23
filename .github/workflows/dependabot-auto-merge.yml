@@ -17,10 +17,18 @@ jobs:
     if: github.actor == 'dependabot[bot]' || github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/setup
+      - uses: actions/checkout@v7
         with:
-          task: dependabot-auto-merge
-          command: pnpm --version
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6.0.10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
 
       - name: Find Dependabot PRs
         id: find-prs
@@ -57,7 +65,7 @@ jobs:
                   continue 2
                 fi
                 echo "PR #$PR passed the age check, merging."
-                # A pull request whose diff edits anything under .github/workflows cannot be merged by the default token at all: `workflows` is a PAT/App permission with no GITHUB_TOKEN scope, so GitHub refuses the merge outright. Most action-version bumps land instead as a diff scoped to .github/actions/setup/action.yml (verified directly against this repo: that path is outside the restriction), which this token merges fine -- this fallback now only fires for a bump to an action pinned directly in a workflow file, or a genuine workflow-file edit. That is a known, structural skip, not a failure: leave it open for a human (or a PAT-secret-backed rerun) and keep sweeping the rest.
+                # A pull request whose diff edits anything under .github/workflows — which is what every GitHub-Actions version bump is — cannot be merged by the default token at all: `workflows` is a PAT/App permission with no GITHUB_TOKEN scope, so GitHub refuses the merge outright. That is a known, structural skip, not a failure: leave it open for a human (or a PAT-secret-backed rerun) and keep sweeping the rest.
                 if gh pr merge --rebase "$PR" 2>&1 | tee "/tmp/merge-$PR.log"; then
                   MERGED=1
                   continue 2
