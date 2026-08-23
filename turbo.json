@@ -2,34 +2,54 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "_build": {
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "inputs": ["src/**/*.ts", "tsdown.config.ts", "tsconfig.json"]
     },
     "_typecheck": {
-      "outputs": []
+      "outputs": ["*.tsbuildinfo"],
+      "inputs": [
+        "src/**/*.ts",
+        "*.config.ts",
+        "tsconfig.json",
+        ".github/scripts/**/*.ts"
+      ]
     },
     "_lint": {
-      "outputs": [".eslintcache"]
+      "outputs": [".eslintcache"],
+      "inputs": [
+        "src/**/*",
+        ".github/**/*",
+        "*.config.ts",
+        "*.md",
+        "*.json",
+        "tsconfig.json",
+        "spec/examples/**",
+        ".claude-plugin/**",
+        ".agents/permissions.json"
+      ]
     },
     "_lint:fix": {
       "outputs": [".eslintcache"],
       "cache": false
     },
     "_test": {
-      "outputs": []
+      "outputs": [],
+      "inputs": ["src/**/*.ts", "spec/examples/**", "tsconfig.json"]
     },
     "_pkgcheck": {
       "dependsOn": ["_build"],
-      "inputs": ["dist/**"]
+      "inputs": ["dist/**", "scripts/smoke-dist.mjs", "package.json"]
     },
     "_check": {
       "dependsOn": ["_typecheck", "_lint", "_build"],
       "outputs": []
     },
     "_test:coverage": {
-      "outputs": []
+      "outputs": [],
+      "inputs": ["src/**/*.ts", "spec/examples/**", "tsconfig.json"]
     },
     "_validate": {
-      "dependsOn": ["_check", "_test"],
+      "dependsOn": ["_check", "_test", "_pkgcheck"],
       "outputs": []
     }
   }

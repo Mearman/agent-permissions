@@ -49,6 +49,7 @@
     "check": "turbo run _check",
     "pkgcheck": "turbo run _build --force && pnpm run _pkgcheck",
     "validate": "turbo run _validate",
+    "fix": "pnpm run _lint:fix",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run",
     "prepare": "husky"
