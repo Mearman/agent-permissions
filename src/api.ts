@@ -5,13 +5,13 @@
  * Import: import { convert, validate, check, detectFormat } from "agent-perms/api";
  */
 
-import { CODECS, agentId, type AgentId } from './compat/codecs.ts';
-import { evaluate, collectRules, mapMode } from './evaluate.ts';
-import { validatePolicy, type ValidationError } from './agent-files.ts';
-import { isAgentId, isRecord } from './guards.ts';
-import { AgentPermissionPolicy } from './schema.ts';
-export type { ValidationError } from './agent-files.ts';
-import { basename } from 'node:path';
+import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
+import { evaluate, collectRules, mapMode } from "./evaluate.ts";
+import { validatePolicy, type ValidationError } from "./agent-files.ts";
+import { isAgentId, isRecord } from "./guards.ts";
+import { AgentPermissionPolicy } from "./schema.ts";
+export type { ValidationError } from "./agent-files.ts";
+import { basename } from "node:path";
 
 const AGENTS = agentId.options;
 
@@ -20,7 +20,7 @@ const AGENTS = agentId.options;
 // ---------------------------------------------------------------------------
 
 /** Supported format identifiers, including canonical. */
-export type Format = AgentId | 'canonical';
+export type Format = AgentId | "canonical";
 
 /** Result of a successful conversion. */
 export interface ConvertResult {
@@ -43,7 +43,7 @@ export interface ValidateResult {
 /** Result of checking a tool call against a policy. */
 export interface CheckResult {
   /** The evaluation decision. */
-  decision: 'allow' | 'deny' | 'ask';
+  decision: "allow" | "deny" | "ask";
 }
 
 // ---------------------------------------------------------------------------
@@ -63,24 +63,27 @@ export interface CheckResult {
  */
 export function detectFormatFromPath(filePath: string): Format | undefined {
   const base = basename(filePath);
-  const dir = filePath.replace(/\\/g, '/');
+  const dir = filePath.replace(/\\/g, "/");
 
   // Check directory-qualified paths first
-  if (dir.endsWith('/.claude/settings.json') || dir.endsWith('/.claude/settings.local.json')) {
-    return 'claude-code';
+  if (
+    dir.endsWith("/.claude/settings.json") ||
+    dir.endsWith("/.claude/settings.local.json")
+  ) {
+    return "claude-code";
   }
   if (
-    dir.endsWith('/.agents/permissions.json') ||
-    dir.endsWith('/.agents/permissions.local.json')
+    dir.endsWith("/.agents/permissions.json") ||
+    dir.endsWith("/.agents/permissions.local.json")
   ) {
-    return 'canonical';
+    return "canonical";
   }
-  if (dir.endsWith('/.kiro/permissions.json')) return 'kiro';
+  if (dir.endsWith("/.kiro/permissions.json")) return "kiro";
 
   // Check basenames
-  if (base === 'opencode.json') return 'opencode';
-  if (base === 'codex.toml') return 'codex';
-  if (base === '.crush.json') return 'crush';
+  if (base === "opencode.json") return "opencode";
+  if (base === "codex.toml") return "codex";
+  if (base === ".crush.json") return "crush";
 
   return undefined;
 }
@@ -93,7 +96,7 @@ export function detectFormatFromPath(filePath: string): Format | undefined {
  */
 export function resolveFormat(spec: string): Format | undefined {
   // Check agent names first
-  if (spec === 'canonical' || isAgentId(spec)) {
+  if (spec === "canonical" || isAgentId(spec)) {
     return spec;
   }
 
@@ -112,8 +115,8 @@ export function resolveFormat(spec: string): Format | undefined {
  * keys (bash, read, edit, …)
  */
 export function detectFormat(value: unknown): Format | undefined {
-  if (typeof value === 'string') {
-    if (value === 'allow' || value === 'deny') return 'opencode';
+  if (typeof value === "string") {
+    if (value === "allow" || value === "deny") return "opencode";
     return undefined;
   }
 
@@ -121,83 +124,93 @@ export function detectFormat(value: unknown): Format | undefined {
   const obj = value;
 
   // Crush: required allowed_tools array
-  if (Array.isArray(obj.allowed_tools)) return 'crush';
+  if (Array.isArray(obj.allowed_tools)) return "crush";
 
   // Kiro: allowedTools or toolsSettings
-  if (Array.isArray(obj.allowedTools) || 'toolsSettings' in obj) return 'kiro';
+  if (Array.isArray(obj.allowedTools) || "toolsSettings" in obj) return "kiro";
 
   // Codex: approval_policy, sandbox_mode, or permissions as record of named profiles
-  if ('approval_policy' in obj || 'sandbox_mode' in obj || 'default_permissions' in obj) {
-    return 'codex';
+  if (
+    "approval_policy" in obj ||
+    "sandbox_mode" in obj ||
+    "default_permissions" in obj
+  ) {
+    return "codex";
   }
 
   // Claude Code: allow/deny/ask arrays of strings, additionalDirectories
   if (
-    ('allow' in obj && Array.isArray(obj.allow)) ||
-    ('deny' in obj && Array.isArray(obj.deny)) ||
-    ('ask' in obj && Array.isArray(obj.ask))
+    ("allow" in obj && Array.isArray(obj.allow)) ||
+    ("deny" in obj && Array.isArray(obj.deny)) ||
+    ("ask" in obj && Array.isArray(obj.ask))
   ) {
     // Distinguish from canonical: Claude Code arrays contain plain strings,
     // canonical `rules` contains objects with {tool, tier}
     const check = (arr: unknown): boolean =>
-      Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'string';
-    if (check(obj.allow) || check(obj.deny) || check(obj.ask)) return 'claude-code';
+      Array.isArray(arr) && arr.length > 0 && typeof arr[0] === "string";
+    if (check(obj.allow) || check(obj.deny) || check(obj.ask))
+      return "claude-code";
   }
 
   // Canonical: rules array of {tool, tier} objects
   if (Array.isArray(obj.rules)) {
     const first: unknown = obj.rules[0];
-    if (typeof first === 'object' && first !== null && 'tool' in first && 'tier' in first) {
-      return 'canonical';
+    if (
+      typeof first === "object" &&
+      first !== null &&
+      "tool" in first &&
+      "tier" in first
+    ) {
+      return "canonical";
     }
   }
 
   // Canonical: top-level keys like sandbox, profiles, delegation, network
   if (
-    'sandbox' in obj ||
-    'profiles' in obj ||
-    'delegation' in obj ||
-    'network' in obj ||
-    'activeProfile' in obj
+    "sandbox" in obj ||
+    "profiles" in obj ||
+    "delegation" in obj ||
+    "network" in obj ||
+    "activeProfile" in obj
   ) {
-    return 'canonical';
+    return "canonical";
   }
 
   // Canonical: permissions with allow/deny/ask containing string rules
   if (isRecord(obj.permissions)) {
     const perms = obj.permissions;
     if (
-      ('allow' in perms && typeof perms.allow !== 'undefined') ||
-      ('deny' in perms && typeof perms.deny !== 'undefined')
+      ("allow" in perms && typeof perms.allow !== "undefined") ||
+      ("deny" in perms && typeof perms.deny !== "undefined")
     ) {
-      return 'canonical';
+      return "canonical";
     }
   }
 
   // OpenCode: object with lowercase tool keys
   const ocTools = new Set([
-    'bash',
-    'read',
-    'edit',
-    'glob',
-    'grep',
-    'list',
-    'task',
-    'external_directory',
-    'todowrite',
-    'question',
-    'webfetch',
-    'websearch',
-    'lsp',
-    'doom_loop',
-    'skill',
+    "bash",
+    "read",
+    "edit",
+    "glob",
+    "grep",
+    "list",
+    "task",
+    "external_directory",
+    "todowrite",
+    "question",
+    "webfetch",
+    "websearch",
+    "lsp",
+    "doom_loop",
+    "skill",
   ]);
   for (const key of Object.keys(obj)) {
-    if (ocTools.has(key)) return 'opencode';
+    if (ocTools.has(key)) return "opencode";
   }
 
   // Fallback: if there's a `permissions` key with `defaultMode`, likely canonical
-  if ('defaultMode' in obj) return 'canonical';
+  if ("defaultMode" in obj) return "canonical";
 
   return undefined;
 }
@@ -217,7 +230,11 @@ export function detectFormat(value: unknown): Format | undefined {
  *
  * @throws Error on invalid input, unknown format, or codec failure.
  */
-export function convert(from: Format | undefined, to: Format, json: unknown): ConvertResult {
+export function convert(
+  from: Format | undefined,
+  to: Format,
+  json: unknown,
+): ConvertResult {
   // Auto-detect --from
   let fromAgent: Format;
   if (from !== undefined) {
@@ -225,24 +242,28 @@ export function convert(from: Format | undefined, to: Format, json: unknown): Co
   } else {
     const detected = detectFormat(json);
     if (!detected) {
-      throw new Error('could not auto-detect input format. Specify from explicitly.');
+      throw new Error(
+        "could not auto-detect input format. Specify from explicitly.",
+      );
     }
     fromAgent = detected;
   }
 
   // Validate formats
-  if (fromAgent !== 'canonical' && !AGENTS.includes(fromAgent)) {
+  if (fromAgent !== "canonical" && !AGENTS.includes(fromAgent)) {
     throw new TypeError(
-      `unknown from format: ${fromAgent}. Valid: ${[...AGENTS, 'canonical'].join(', ')}`
+      `unknown from format: ${fromAgent}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
     );
   }
-  if (to !== 'canonical' && !AGENTS.includes(to)) {
-    throw new TypeError(`unknown to format: ${to}. Valid: ${[...AGENTS, 'canonical'].join(', ')}`);
+  if (to !== "canonical" && !AGENTS.includes(to)) {
+    throw new TypeError(
+      `unknown to format: ${to}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
+    );
   }
 
   // Decode: agent-native → canonical
   let canonical: AgentPermissionPolicy;
-  if (fromAgent === 'canonical') {
+  if (fromAgent === "canonical") {
     const result = validatePolicy(json);
     if (!result.ok) throw new ConvertError(result.error, result.errors);
     canonical = result.value;
@@ -252,7 +273,8 @@ export function convert(from: Format | undefined, to: Format, json: unknown): Co
     // @ts-expect-error unknown JSON passed to a native-typed decode; invalid shapes throw and surface as conversion errors
     canonical = codec.decode(json);
     const validated = validatePolicy(canonical);
-    if (!validated.ok) throw new ConvertError(validated.error, validated.errors);
+    if (!validated.ok)
+      throw new ConvertError(validated.error, validated.errors);
     canonical = validated.value;
   }
 
@@ -261,10 +283,10 @@ export function convert(from: Format | undefined, to: Format, json: unknown): Co
 
   // Encode: canonical → agent-native
   let output: unknown;
-  if (to === 'canonical') {
+  if (to === "canonical") {
     // Inject $schema so generated files get IDE support
     const schemaUrl =
-      'https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json';
+      "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
     output = { $schema: schemaUrl, ...canonical };
   } else {
     const codec = CODECS[to];
@@ -311,7 +333,7 @@ export function check(
   tool: string,
   input: string,
   json: unknown,
-  context?: { cwd?: string; branch?: string }
+  context?: { cwd?: string; branch?: string },
 ): CheckResult {
   const result = validatePolicy(json);
   if (!result.ok) throw new ConvertError(result.error, result.errors);
@@ -319,10 +341,15 @@ export function check(
   const policy = result.value;
 
   const rules = collectRules(policy);
-  const mode = policy.defaultMode ?? 'standard';
+  const mode = policy.defaultMode ?? "standard";
   const mappedMode = mapMode(mode);
 
-  const decision = evaluate({ defaultMode: mappedMode, rules }, tool, input, context);
+  const decision = evaluate(
+    { defaultMode: mappedMode, rules },
+    tool,
+    input,
+    context,
+  );
 
   return { decision };
 }
@@ -338,7 +365,7 @@ export class ConvertError extends Error {
 
   constructor(message: string, errors: ValidationError[]) {
     super(message);
-    this.name = 'ConvertError';
+    this.name = "ConvertError";
     this.errors = errors;
   }
 }

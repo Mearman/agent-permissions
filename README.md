@@ -121,10 +121,10 @@ The package uses [wildcard exports](https://nodejs.org/api/packages.html#subpath
 Side-effect-free functions for use as a library:
 
 ```typescript
-import { convert, validate, check, detectFormat } from 'agent-perms/api';
+import { convert, validate, check, detectFormat } from "agent-perms/api";
 
 // Convert between formats (auto-detects source)
-const result = convert(undefined, 'canonical', claudeCodeJson);
+const result = convert(undefined, "canonical", claudeCodeJson);
 result.output; // canonical object
 result.from; // "claude-code" (detected)
 result.ruleCount; // 3
@@ -133,7 +133,7 @@ result.ruleCount; // 3
 const { valid, errors } = validate(json);
 
 // Evaluate a tool call
-const { decision } = check('Bash', 'sudo rm -rf /', policy, { branch: 'main' });
+const { decision } = check("Bash", "sudo rm -rf /", policy, { branch: "main" });
 // decision: "allow" | "deny" | "ask"
 
 // Detect format from structure
@@ -144,28 +144,28 @@ const format = detectFormat(json); // "claude-code" | "crush" | "kiro" | ...
 
 ```typescript
 // Zod schemas (single source of truth)
-import { AgentPermissionPolicy } from 'agent-perms/schema';
+import { AgentPermissionPolicy } from "agent-perms/schema";
 
 // Deny-first evaluator
-import { evaluate } from 'agent-perms/evaluate';
+import { evaluate } from "agent-perms/evaluate";
 
 // Multi-layer policy loader
-import { loadPolicy } from 'agent-perms/loader';
+import { loadPolicy } from "agent-perms/loader";
 
 // Bidirectional codecs for each agent
-import { claudeCodeCodec } from 'agent-perms/compat/codecs';
+import { claudeCodeCodec } from "agent-perms/compat/codecs";
 
 // SDK enum alignment checks
-import { claudeCodeModes } from 'agent-perms/compat/enums';
+import { claudeCodeModes } from "agent-perms/compat/enums";
 
 // Sync filesystem configs
-import { sync } from 'agent-perms/sync';
+import { sync } from "agent-perms/sync";
 ```
 
 ## Schema overview
 
 ```typescript
-import { type AgentPermissionPolicy } from 'agent-perms/schema';
+import { type AgentPermissionPolicy } from "agent-perms/schema";
 
 // All fields are optional. A valid policy can be as minimal as `{}`.
 interface AgentPermissionPolicy {
@@ -181,7 +181,7 @@ interface AgentPermissionPolicy {
   rules?: Array<{
     tool: string; // e.g. "Bash", "Read", "mcp__github__*"
     pattern?: string; // absent = match any input for this tool
-    tier: 'allow' | 'deny' | 'ask';
+    tier: "allow" | "deny" | "ask";
     when?: { cwd?: string; branch?: string }; // AND logic
   }>;
 
@@ -204,14 +204,14 @@ interface AgentPermissionPolicy {
   };
 
   sandbox?: {
-    mode?: 'readonly' | 'workspace-write' | 'full-access';
+    mode?: "readonly" | "workspace-write" | "full-access";
     writableRoots?: string[];
     networkAccess?: boolean;
   };
 
   network?: {
     enabled?: boolean;
-    domains?: Record<string, 'allow' | 'deny'>;
+    domains?: Record<string, "allow" | "deny">;
   };
 
   env?: Record<string, string>;
@@ -251,25 +251,29 @@ Deny short-circuits: if any deny rule matches, the tool is blocked regardless of
 ## Evaluator
 
 ```typescript
-import { evaluate, type PermissionPolicy, type EvaluationContext } from 'agent-perms/evaluate';
+import {
+  evaluate,
+  type PermissionPolicy,
+  type EvaluationContext,
+} from "agent-perms/evaluate";
 
 const policy: PermissionPolicy = {
-  defaultMode: 'standard',
+  defaultMode: "standard",
   rules: [
-    { tool: 'Bash', pattern: 'sudo:*', tier: 'deny' },
-    { tool: 'Bash', pattern: 'git:*', tier: 'allow' },
-    { tool: 'Read', tier: 'allow' },
+    { tool: "Bash", pattern: "sudo:*", tier: "deny" },
+    { tool: "Bash", pattern: "git:*", tier: "allow" },
+    { tool: "Read", tier: "allow" },
   ],
 };
 
 // Returns "deny" | "ask" | "allow"
-evaluate(policy, 'bash', 'git status'); // "allow"
-evaluate(policy, 'bash', 'sudo rm -rf /'); // "deny"
-evaluate(policy, 'bash', 'npm install'); // "ask" (falls through to defaultMode)
+evaluate(policy, "bash", "git status"); // "allow"
+evaluate(policy, "bash", "sudo rm -rf /"); // "deny"
+evaluate(policy, "bash", "npm install"); // "ask" (falls through to defaultMode)
 
 // With context for conditional rules
-const ctx: EvaluationContext = { cwd: './packages/api', branch: 'main' };
-evaluate(policy, 'bash', 'npm run build', ctx);
+const ctx: EvaluationContext = { cwd: "./packages/api", branch: "main" };
+evaluate(policy, "bash", "npm run build", ctx);
 ```
 
 Tool names are matched case-insensitively (`Bash` matches `bash`).
@@ -277,17 +281,17 @@ Tool names are matched case-insensitively (`Bash` matches `bash`).
 ### Converting string rules
 
 ```typescript
-import { normaliseStringRule } from 'agent-perms/evaluate';
+import { normaliseStringRule } from "agent-perms/evaluate";
 
 // Convert Claude Code-style string rules to structured rules
-const rule = normaliseStringRule('Bash(npm:*)', 'allow');
+const rule = normaliseStringRule("Bash(npm:*)", "allow");
 // → { tool: "Bash", pattern: "npm:*", tier: "allow" }
 ```
 
 ## Policy loader
 
 ```typescript
-import { loadPolicy } from 'agent-perms/loader';
+import { loadPolicy } from "agent-perms/loader";
 
 const policy = await loadPolicy({ cwd: process.cwd() });
 ```
@@ -319,7 +323,7 @@ The loader normalises all `permissions` string arrays into structured `rules`. D
 Bidirectional codecs convert between the canonical format and each agent's native config:
 
 ```typescript
-import { claudeCodeCodec, codexCodec } from 'agent-perms/compat/codecs';
+import { claudeCodeCodec, codexCodec } from "agent-perms/compat/codecs";
 
 // Decode agent-native → canonical
 const policy = claudeCodeCodec.decode(claudeSettings.permissions);
@@ -352,7 +356,7 @@ This works because the canonical spec accepts Claude Code's rule syntax, mode va
 ### MCP sync server
 
 ```typescript
-import { startMcpServer } from 'agent-perms/mcp';
+import { startMcpServer } from "agent-perms/mcp";
 ```
 
 A background sync daemon that keeps native agent config files bidirectionally synced with `.agents/permissions.json`. Exposes no tools; purely filesystem sync. Configured via the `sync` field in the policy file:

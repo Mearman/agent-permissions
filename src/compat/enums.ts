@@ -11,26 +11,26 @@
  * "./enums.ts" // type
  */
 
-import * as z from 'zod';
+import * as z from "zod";
 
 import type {
   PermissionMode as ClaudeSdkPermissionMode,
   PermissionBehavior as ClaudeSdkPermissionBehavior,
-} from '@anthropic-ai/claude-agent-sdk';
+} from "@anthropic-ai/claude-agent-sdk";
 
 import type {
   ApprovalMode as CodexSdkApprovalMode,
   SandboxMode as CodexSdkSandboxMode,
-} from '@openai/codex-sdk';
+} from "@openai/codex-sdk";
 
-import type { PermissionActionConfig as OpenCodeV2PermissionActionConfig } from '@opencode-ai/sdk/v2';
+import type { PermissionActionConfig as OpenCodeV2PermissionActionConfig } from "@opencode-ai/sdk/v2";
 
 // ---------------------------------------------------------------------------
 // Permission behaviour (allow / deny / ask)
 // ---------------------------------------------------------------------------
 
 /** Permission tier actions. Shared across Claude Code, OpenCode, and our schema. */
-export const PermissionBehavior = z.enum(['allow', 'deny', 'ask']);
+export const PermissionBehavior = z.enum(["allow", "deny", "ask"]);
 
 export type PermissionBehavior = z.infer<typeof PermissionBehavior>;
 
@@ -43,21 +43,21 @@ export type PermissionBehavior = z.infer<typeof PermissionBehavior>;
  * `@opencode-ai/sdk` `AgentConfig.permission` type.
  */
 export const OpenCodePermissionTools = z.enum([
-  'bash',
-  'doom_loop',
-  'edit',
-  'external_directory',
-  'glob',
-  'grep',
-  'list',
-  'lsp',
-  'question',
-  'read',
-  'skill',
-  'task',
-  'todowrite',
-  'webfetch',
-  'websearch',
+  "bash",
+  "doom_loop",
+  "edit",
+  "external_directory",
+  "glob",
+  "grep",
+  "list",
+  "lsp",
+  "question",
+  "read",
+  "skill",
+  "task",
+  "todowrite",
+  "webfetch",
+  "websearch",
 ]);
 
 export type OpenCodePermissionTool = z.infer<typeof OpenCodePermissionTools>;
@@ -71,12 +71,12 @@ export type OpenCodePermissionTool = z.infer<typeof OpenCodePermissionTools>;
  * `PermissionMode` type.
  */
 export const ClaudeCodePermissionMode = z.enum([
-  'acceptEdits',
-  'auto',
-  'bypassPermissions',
-  'default',
-  'dontAsk',
-  'plan',
+  "acceptEdits",
+  "auto",
+  "bypassPermissions",
+  "default",
+  "dontAsk",
+  "plan",
 ]);
 
 export type ClaudeCodePermissionMode = z.infer<typeof ClaudeCodePermissionMode>;
@@ -86,7 +86,12 @@ export type ClaudeCodePermissionMode = z.infer<typeof ClaudeCodePermissionMode>;
 // ---------------------------------------------------------------------------
 
 /** Codex's approval policy values, sourced from `@openai/codex-sdk` `ApprovalMode` type. */
-export const CodexApprovalMode = z.enum(['never', 'on-failure', 'on-request', 'untrusted']);
+export const CodexApprovalMode = z.enum([
+  "never",
+  "on-failure",
+  "on-request",
+  "untrusted",
+]);
 
 export type CodexApprovalMode = z.infer<typeof CodexApprovalMode>;
 
@@ -95,7 +100,11 @@ export type CodexApprovalMode = z.infer<typeof CodexApprovalMode>;
 // ---------------------------------------------------------------------------
 
 /** Codex's sandbox mode values, sourced from `@openai/codex-sdk` `SandboxMode` type. */
-export const CodexSandboxMode = z.enum(['danger-full-access', 'read-only', 'workspace-write']);
+export const CodexSandboxMode = z.enum([
+  "danger-full-access",
+  "read-only",
+  "workspace-write",
+]);
 
 export type CodexSandboxMode = z.infer<typeof CodexSandboxMode>;
 
@@ -103,7 +112,7 @@ export type CodexSandboxMode = z.infer<typeof CodexSandboxMode>;
 // Codex — FilesystemAccess
 // ---------------------------------------------------------------------------
 
-export const CodexFilesystemAccess = z.enum(['none', 'read', 'write']);
+export const CodexFilesystemAccess = z.enum(["none", "read", "write"]);
 
 export type CodexFilesystemAccess = z.infer<typeof CodexFilesystemAccess>;
 
@@ -112,7 +121,7 @@ export type CodexFilesystemAccess = z.infer<typeof CodexFilesystemAccess>;
 // ---------------------------------------------------------------------------
 // Codex domain rules only use allow/deny, not ask.
 
-export const CodexDomainAccess = z.enum(['allow', 'deny']);
+export const CodexDomainAccess = z.enum(["allow", "deny"]);
 
 export type CodexDomainAccess = z.infer<typeof CodexDomainAccess>;
 
@@ -122,32 +131,36 @@ export type CodexDomainAccess = z.infer<typeof CodexDomainAccess>;
 // These produce compile errors if our Zod enums diverge from the upstream
 // SDK types. Each const forces evaluation of the conditional
 
-type _AssertClaudeModes = [ClaudeCodePermissionMode] extends [ClaudeSdkPermissionMode]
+type _AssertClaudeModes = [ClaudeCodePermissionMode] extends [
+  ClaudeSdkPermissionMode,
+]
   ? [ClaudeSdkPermissionMode] extends [ClaudeCodePermissionMode]
     ? true
-    : 'SDK has modes missing from ClaudeCodePermissionMode'
-  : 'ClaudeCodePermissionMode has modes missing from SDK';
+    : "SDK has modes missing from ClaudeCodePermissionMode"
+  : "ClaudeCodePermissionMode has modes missing from SDK";
 export const _assertClaudeModes: _AssertClaudeModes = true;
 
-type _AssertClaudeBehaviors = [PermissionBehavior] extends [ClaudeSdkPermissionBehavior]
+type _AssertClaudeBehaviors = [PermissionBehavior] extends [
+  ClaudeSdkPermissionBehavior,
+]
   ? [ClaudeSdkPermissionBehavior] extends [PermissionBehavior]
     ? true
-    : 'SDK has behaviors missing from PermissionBehavior'
-  : 'PermissionBehavior has behaviors missing from SDK';
+    : "SDK has behaviors missing from PermissionBehavior"
+  : "PermissionBehavior has behaviors missing from SDK";
 export const _assertClaudeBehaviors: _AssertClaudeBehaviors = true;
 
 type _AssertCodexApproval = [CodexApprovalMode] extends [CodexSdkApprovalMode]
   ? [CodexSdkApprovalMode] extends [CodexApprovalMode]
     ? true
-    : 'SDK has approval modes missing from CodexApprovalMode'
-  : 'CodexApprovalMode has approval modes missing from SDK';
+    : "SDK has approval modes missing from CodexApprovalMode"
+  : "CodexApprovalMode has approval modes missing from SDK";
 export const _assertCodexApproval: _AssertCodexApproval = true;
 
 type _AssertCodexSandbox = [CodexSandboxMode] extends [CodexSdkSandboxMode]
   ? [CodexSdkSandboxMode] extends [CodexSandboxMode]
     ? true
-    : 'SDK has sandbox modes missing from CodexSandboxMode'
-  : 'CodexSandboxMode has sandbox modes missing from SDK';
+    : "SDK has sandbox modes missing from CodexSandboxMode"
+  : "CodexSandboxMode has sandbox modes missing from SDK";
 export const _assertCodexSandbox: _AssertCodexSandbox = true;
 
 // ---------------------------------------------------------------------------
@@ -163,6 +176,6 @@ type OpenCodeAction = OpenCodeV2PermissionActionConfig;
 type _AssertOpenCodeBehavior = [PermissionBehavior] extends [OpenCodeAction]
   ? [OpenCodeAction] extends [PermissionBehavior]
     ? true
-    : 'OpenCode SDK has actions missing from PermissionBehavior'
-  : 'PermissionBehavior has actions missing from OpenCode SDK';
+    : "OpenCode SDK has actions missing from PermissionBehavior"
+  : "PermissionBehavior has actions missing from OpenCode SDK";
 export const _assertOpenCodeBehavior: _AssertOpenCodeBehavior = true;

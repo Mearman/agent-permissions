@@ -9,9 +9,9 @@ updates:
     open-pull-requests-limit: 5
     rebase-strategy: auto
     reviewers:
-      - 'Mearman'
+      - "Mearman"
     assignees:
-      - 'Mearman'
+      - "Mearman"
     labels:
       - dependencies
     commit-message:
@@ -22,14 +22,14 @@ updates:
       dev-dependencies:
         dependency-type: development
         patterns:
-          - '*'
+          - "*"
         update-types:
           - minor
           - patch
       production-dependencies:
         dependency-type: production
         patterns:
-          - '*'
+          - "*"
         update-types:
           - patch
 
@@ -42,9 +42,9 @@ updates:
       interval: weekly
       day: monday
     reviewers:
-      - 'Mearman'
+      - "Mearman"
     assignees:
-      - 'Mearman'
+      - "Mearman"
     labels:
       - ci
       - dependencies

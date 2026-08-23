@@ -18,14 +18,23 @@
  * - Codex skipped (TOML), Crush skipped (no file)
  */
 
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
-import { existsSync } from 'node:fs';
-import { AgentPermissionPolicy, type Rule } from './schema.ts';
-import { CODECS, type AgentId } from './compat/codecs.ts';
-import { isAgentId, isPermissionMode } from './guards.ts';
-import { collectRules, deduplicateRules, mostRestrictiveMode } from './evaluate.ts';
-import { AGENT_FILES, parseJson, validatePolicy, decodeNative } from './agent-files.ts';
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { AgentPermissionPolicy, type Rule } from "./schema.ts";
+import { CODECS, type AgentId } from "./compat/codecs.ts";
+import { isAgentId, isPermissionMode } from "./guards.ts";
+import {
+  collectRules,
+  deduplicateRules,
+  mostRestrictiveMode,
+} from "./evaluate.ts";
+import {
+  AGENT_FILES,
+  parseJson,
+  validatePolicy,
+  decodeNative,
+} from "./agent-files.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -63,9 +72,9 @@ export interface FileChange {
   /** Absolute path to the file. */
   path: string;
   /** Agent this file belongs to. */
-  agent: AgentId | 'canonical';
+  agent: AgentId | "canonical";
   /** "create" | "update" */
-  kind: 'create' | 'update';
+  kind: "create" | "update";
   /** Current content (null for new files). */
   current: string | null;
   /** Proposed content. */
@@ -77,7 +86,7 @@ export interface FileChange {
 // ---------------------------------------------------------------------------
 
 interface AgentFile {
-  agent: AgentId | 'canonical';
+  agent: AgentId | "canonical";
   /** Absolute path to the config file. */
   path: string;
   /** Whether this is a local override (read-only, never written). */
@@ -89,8 +98,8 @@ function detectFiles(dir: string): AgentFile[] {
   const found: AgentFile[] = [];
 
   for (const [key, def] of Object.entries(AGENT_FILES)) {
-    if (!isAgentId(key) && key !== 'canonical') continue;
-    const agent: AgentId | 'canonical' = key;
+    if (!isAgentId(key) && key !== "canonical") continue;
+    const agent: AgentId | "canonical" = key;
     const main = join(dir, def.name);
     if (existsSync(main)) {
       found.push({ agent, path: main, local: false });
@@ -137,10 +146,14 @@ interface DecodedSource {
 
 async function readAndDecode(
   file: AgentFile,
-  agentFilter: Set<string> | undefined
+  agentFilter: Set<string> | undefined,
 ): Promise<DecodedSource | undefined> {
   // Skip if --with/--without excludes this agent
-  if (agentFilter && !agentFilter.has(file.agent) && file.agent !== 'canonical') {
+  if (
+    agentFilter &&
+    !agentFilter.has(file.agent) &&
+    file.agent !== "canonical"
+  ) {
     return undefined;
   }
 
@@ -152,7 +165,7 @@ async function readAndDecode(
   // Read and parse
   let content: string;
   try {
-    content = await readFile(file.path, 'utf-8');
+    content = await readFile(file.path, "utf-8");
   } catch {
     return undefined;
   }
@@ -160,7 +173,7 @@ async function readAndDecode(
   if (!parsed.ok) return undefined;
 
   // Canonical files parse directly
-  if (file.agent === 'canonical') {
+  if (file.agent === "canonical") {
     const validated = validatePolicy(parsed.value);
     if (!validated.ok) return undefined;
     return { file, policy: validated.value };
@@ -184,12 +197,12 @@ function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
   let defaultMode: string | undefined;
   const allRules: Rule[] = [];
   const additionalDirectories: string[] = [];
-  let sandbox: AgentPermissionPolicy['sandbox'];
-  let network: AgentPermissionPolicy['network'];
-  let profiles: AgentPermissionPolicy['profiles'];
+  let sandbox: AgentPermissionPolicy["sandbox"];
+  let network: AgentPermissionPolicy["network"];
+  let profiles: AgentPermissionPolicy["profiles"];
   let activeProfile: string | undefined;
-  let delegation: AgentPermissionPolicy['delegation'];
-  let env: AgentPermissionPolicy['env'];
+  let delegation: AgentPermissionPolicy["delegation"];
+  let env: AgentPermissionPolicy["env"];
 
   for (const { policy } of sources) {
     // defaultMode: most restrictive wins
@@ -221,7 +234,8 @@ function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
 
   const result: AgentPermissionPolicy = {};
 
-  if (defaultMode !== undefined && isPermissionMode(defaultMode)) result.defaultMode = defaultMode;
+  if (defaultMode !== undefined && isPermissionMode(defaultMode))
+    result.defaultMode = defaultMode;
 
   if (rules.length > 0) result.rules = rules;
 
@@ -244,7 +258,7 @@ function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
 // ---------------------------------------------------------------------------
 
 interface WriteTarget {
-  agent: AgentId | 'canonical';
+  agent: AgentId | "canonical";
   path: string;
   content: string;
   exists: boolean;
@@ -255,20 +269,20 @@ function computeWriteTargets(
   merged: AgentPermissionPolicy,
   sources: DecodedSource[],
   agentFilter: Set<string> | undefined,
-  create: boolean
+  create: boolean,
 ): WriteTarget[] {
   const targets: WriteTarget[] = [];
 
   // Always write canonical at cwd (unless excluded)
-  const canonicalPath = join(cwd, '.agents', 'permissions.json');
+  const canonicalPath = join(cwd, ".agents", "permissions.json");
   const schemaUrl =
-    'https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json';
+    "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
   const canonicalWithSchema = { $schema: schemaUrl, ...merged };
-  if (!agentFilter || agentFilter.has('canonical')) {
+  if (!agentFilter || agentFilter.has("canonical")) {
     targets.push({
-      agent: 'canonical',
+      agent: "canonical",
       path: canonicalPath,
-      content: JSON.stringify(canonicalWithSchema, null, 2) + '\n',
+      content: JSON.stringify(canonicalWithSchema, null, 2) + "\n",
       exists: existsSync(canonicalPath),
     });
   }
@@ -278,7 +292,7 @@ function computeWriteTargets(
     if (!isAgentId(key)) continue;
     const agent: AgentId = key;
     if (agentFilter && !agentFilter.has(agent)) continue;
-    if (agent === 'codex' || agent === 'crush') continue; // TOML / no file
+    if (agent === "codex" || agent === "crush") continue; // TOML / no file
 
     const def = AGENT_FILES[agent];
     const filePath = join(cwd, def.name);
@@ -304,7 +318,7 @@ function computeWriteTargets(
     targets.push({
       agent,
       path: filePath,
-      content: JSON.stringify(encoded, null, 2) + '\n',
+      content: JSON.stringify(encoded, null, 2) + "\n",
       exists: fileExists,
     });
   }
@@ -317,25 +331,25 @@ function computeWriteTargets(
 // ---------------------------------------------------------------------------
 
 function formatChange(change: FileChange): string {
-  const kind = change.kind === 'create' ? '+' : '~';
-  const label = change.agent === 'canonical' ? 'canonical' : change.agent;
+  const kind = change.kind === "create" ? "+" : "~";
+  const label = change.agent === "canonical" ? "canonical" : change.agent;
 
   let output = `${kind} ${label}: ${change.path}\n`;
 
-  if (change.kind === 'create') {
-    output += '  (new file)\n';
+  if (change.kind === "create") {
+    output += "  (new file)\n";
     // Show first few lines
-    const lines = change.proposed.split('\n').slice(0, 10);
+    const lines = change.proposed.split("\n").slice(0, 10);
     for (const line of lines) {
       output += `  ${line}\n`;
     }
-    if (change.proposed.split('\n').length > 10) {
-      output += '  ...\n';
+    if (change.proposed.split("\n").length > 10) {
+      output += "  ...\n";
     }
   } else {
     // Show diff-like summary
-    const currentLines = (change.current ?? '').split('\n');
-    const proposedLines = change.proposed.split('\n');
+    const currentLines = (change.current ?? "").split("\n");
+    const proposedLines = change.proposed.split("\n");
 
     const added = proposedLines.filter((l) => !currentLines.includes(l));
     const removed = currentLines.filter((l) => !proposedLines.includes(l));
@@ -380,18 +394,18 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
 
   if (files.length === 0) {
     process.stderr.write(
-      'No permission configs found. Create .agents/permissions.json to get started.\n'
+      "No permission configs found. Create .agents/permissions.json to get started.\n",
     );
     return { changes: [], applied: false };
   }
 
   if (verbose) {
-    process.stderr.write('Detected config files:\n');
+    process.stderr.write("Detected config files:\n");
     for (const f of files) {
-      const local = f.local ? ' (local, read-only)' : '';
+      const local = f.local ? " (local, read-only)" : "";
       process.stderr.write(`  ${f.agent}: ${f.path}${local}\n`);
     }
-    process.stderr.write('\n');
+    process.stderr.write("\n");
   }
 
   // 2. Read and decode all sources
@@ -404,14 +418,14 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
       if (verbose) {
         const rules = collectRules(decoded.policy);
         process.stderr.write(
-          `  ${file.agent} (${file.path}): ${String(rules.length)} rules, mode=${decoded.policy.defaultMode ?? 'standard'}\n`
+          `  ${file.agent} (${file.path}): ${String(rules.length)} rules, mode=${decoded.policy.defaultMode ?? "standard"}\n`,
         );
       }
     }
   }
 
   if (sources.length === 0) {
-    process.stderr.write('No readable permission configs found.\n');
+    process.stderr.write("No readable permission configs found.\n");
     return { changes: [], applied: false };
   }
 
@@ -421,15 +435,21 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   if (verbose) {
     const rules = collectRules(merged);
     process.stderr.write(
-      `\nMerged: ${String(rules.length)} rules, mode=${merged.defaultMode ?? 'standard'}\n`
+      `\nMerged: ${String(rules.length)} rules, mode=${merged.defaultMode ?? "standard"}\n`,
     );
   }
 
   // 4. Compute write targets
-  const targets = computeWriteTargets(cwd, merged, sources, agentFilter, create);
+  const targets = computeWriteTargets(
+    cwd,
+    merged,
+    sources,
+    agentFilter,
+    create,
+  );
 
   if (targets.length === 0) {
-    process.stderr.write('No write targets.\n');
+    process.stderr.write("No write targets.\n");
     return { changes: [], applied: false };
   }
 
@@ -439,7 +459,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     let current: string | null = null;
     if (target.exists) {
       try {
-        current = await readFile(target.path, 'utf-8');
+        current = await readFile(target.path, "utf-8");
       } catch {
         current = null;
       }
@@ -457,42 +477,42 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
         // Fall through to string comparison if parse fails
         if (current === target.content) continue;
       }
-    } else if (target.content === '') {
+    } else if (target.content === "") {
       continue;
     }
 
     changes.push({
       path: target.path,
       agent: target.agent,
-      kind: target.exists ? 'update' : 'create',
+      kind: target.exists ? "update" : "create",
       current,
       proposed: target.content,
     });
   }
 
   if (changes.length === 0) {
-    process.stderr.write('Already in sync — no changes needed.\n');
+    process.stderr.write("Already in sync — no changes needed.\n");
     return { changes: [], applied: true };
   }
 
   // 6. Display changes
-  process.stderr.write('\nChanges:\n\n');
+  process.stderr.write("\nChanges:\n\n");
   for (const change of changes) {
     process.stderr.write(formatChange(change));
-    process.stderr.write('\n');
+    process.stderr.write("\n");
   }
 
   // 7. Apply or prompt
   if (dryRun) {
-    process.stderr.write('(dry run — no changes written)\n');
+    process.stderr.write("(dry run — no changes written)\n");
     return { changes, applied: false };
   }
 
   if (!yes) {
-    process.stderr.write('Apply these changes? [y/N] ');
+    process.stderr.write("Apply these changes? [y/N] ");
     const answer = await readLine();
-    if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
-      process.stderr.write('Aborted.\n');
+    if (answer.toLowerCase() !== "y" && answer.toLowerCase() !== "yes") {
+      process.stderr.write("Aborted.\n");
       return { changes, applied: false };
     }
   }
@@ -501,7 +521,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   for (const change of changes) {
     // Backup if requested and file exists
     if (backup && change.current !== null) {
-      await writeFile(change.path + '.bak', change.current);
+      await writeFile(change.path + ".bak", change.current);
     }
 
     // Ensure directory exists
@@ -521,8 +541,8 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
 
 function readLine(): Promise<string> {
   return new Promise((resolve) => {
-    process.stdin.setEncoding('utf-8');
-    process.stdin.once('data', (data: string) => {
+    process.stdin.setEncoding("utf-8");
+    process.stdin.once("data", (data: string) => {
       resolve(data.trim());
     });
   });
@@ -532,17 +552,20 @@ function readLine(): Promise<string> {
  * Build an agent filter from --with and --without lists. Returns undefined when no filtering is
  * needed (all agents included). --with and --without are mutually exclusive.
  */
-function buildAgentFilter(withList: AgentId[], withoutList: AgentId[]): Set<string> | undefined {
+function buildAgentFilter(
+  withList: AgentId[],
+  withoutList: AgentId[],
+): Set<string> | undefined {
   if (withList.length > 0) {
     // --with: only include listed agents + canonical
     const filter = new Set<string>(withList);
-    filter.add('canonical');
+    filter.add("canonical");
     return filter;
   }
 
   if (withoutList.length > 0) {
     // --without: include all except listed
-    const allAgents = [...Object.keys(CODECS), 'canonical'];
+    const allAgents = [...Object.keys(CODECS), "canonical"];
     // Set<string> so the filter can compare plain key strings against the excluded names.
     const excluded = new Set<string>(withoutList);
     return new Set(allAgents.filter((a) => !excluded.has(a)));

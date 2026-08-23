@@ -11,11 +11,11 @@ inputs:
   node-version:
     description: Node version to install; empty means the .tool-versions file (the repo baseline).
     required: false
-    default: ''
+    default: ""
   registry-url:
     description: npm registry for setup-node to write into .npmrc; empty leaves it unset (publish to npmjs with OIDC).
     required: false
-    default: ''
+    default: ""
 
 runs:
   using: composite

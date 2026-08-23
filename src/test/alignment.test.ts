@@ -7,23 +7,25 @@
  * divergence.
  */
 
-import { describe, it } from 'node:test';
-import * as assert from 'node:assert/strict';
-import { PermissionMode, SandboxMode } from '../schema.ts';
+import { describe, it } from "node:test";
+import * as assert from "node:assert/strict";
+import { PermissionMode, SandboxMode } from "../schema.ts";
 import {
   ClaudeCodePermissionMode,
   CodexApprovalMode,
   CodexSandboxMode,
   OpenCodePermissionTools,
-} from '../compat/enums.ts';
-import { opencodeCodec } from '../compat/codecs.ts';
+} from "../compat/enums.ts";
+import { opencodeCodec } from "../compat/codecs.ts";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 /** Extract enum values from a Zod enum schema. */
-function zodEnumValues(schema: { _zod: { values: Set<unknown> } }): readonly string[] {
+function zodEnumValues(schema: {
+  _zod: { values: Set<unknown> };
+}): readonly string[] {
   return [...schema._zod.values].map(String);
 }
 
@@ -31,16 +33,19 @@ function zodEnumValues(schema: { _zod: { values: Set<unknown> } }): readonly str
 // Claude Code SDK
 // ---------------------------------------------------------------------------
 
-void describe('SDK alignment — Claude Code', () => {
-  void it('our schema includes every Claude Code SDK PermissionMode value', () => {
+void describe("SDK alignment — Claude Code", () => {
+  void it("our schema includes every Claude Code SDK PermissionMode value", () => {
     const ours = new Set(zodEnumValues(PermissionMode));
     for (const mode of zodEnumValues(ClaudeCodePermissionMode)) {
-      assert.ok(ours.has(mode), `Our schema is missing Claude Code mode: ${mode}`);
+      assert.ok(
+        ours.has(mode),
+        `Our schema is missing Claude Code mode: ${mode}`,
+      );
     }
   });
 
-  void it('PermissionBehavior values match our permission tier names', () => {
-    const tierNames = ['allow', 'deny', 'ask'];
+  void it("PermissionBehavior values match our permission tier names", () => {
+    const tierNames = ["allow", "deny", "ask"];
     const ours = new Set(zodEnumValues(PermissionMode));
     assert.ok(ours.size > 0);
     assert.strictEqual(tierNames.length, 3);
@@ -51,29 +56,29 @@ void describe('SDK alignment — Claude Code', () => {
 // Codex SDK
 // ---------------------------------------------------------------------------
 
-void describe('SDK alignment — Codex', () => {
-  void it('our codec covers every Codex SDK ApprovalMode value', () => {
+void describe("SDK alignment — Codex", () => {
+  void it("our codec covers every Codex SDK ApprovalMode value", () => {
     const approvalModes = zodEnumValues(CodexApprovalMode);
     assert.strictEqual(approvalModes.length, 4);
-    assert.ok(approvalModes.includes('never'));
-    assert.ok(approvalModes.includes('on-failure'));
-    assert.ok(approvalModes.includes('on-request'));
-    assert.ok(approvalModes.includes('untrusted'));
+    assert.ok(approvalModes.includes("never"));
+    assert.ok(approvalModes.includes("on-failure"));
+    assert.ok(approvalModes.includes("on-request"));
+    assert.ok(approvalModes.includes("untrusted"));
   });
 
-  void it('our codec covers every Codex SDK SandboxMode value', () => {
+  void it("our codec covers every Codex SDK SandboxMode value", () => {
     const sdkModes = zodEnumValues(CodexSandboxMode);
     const ourModes = new Set(zodEnumValues(SandboxMode));
     const mappings: readonly [string, string][] = [
-      ['read-only', 'readonly'],
-      ['workspace-write', 'workspace-write'],
-      ['danger-full-access', 'full-access'],
+      ["read-only", "readonly"],
+      ["workspace-write", "workspace-write"],
+      ["danger-full-access", "full-access"],
     ];
     assert.strictEqual(sdkModes.length, mappings.length);
     for (const [sdkMode, ourMode] of mappings) {
       assert.ok(
         ourModes.has(ourMode),
-        `Our schema is missing sandbox mode "${ourMode}" (mapped from Codex "${sdkMode}")`
+        `Our schema is missing sandbox mode "${ourMode}" (mapped from Codex "${sdkMode}")`,
       );
     }
   });
@@ -83,19 +88,19 @@ void describe('SDK alignment — Codex', () => {
 // OpenCode SDK
 // ---------------------------------------------------------------------------
 
-void describe('SDK alignment — OpenCode', () => {
-  void it('our codec handles every OpenCode SDK permission tool', () => {
+void describe("SDK alignment — OpenCode", () => {
+  void it("our codec handles every OpenCode SDK permission tool", () => {
     const sdkTools = zodEnumValues(OpenCodePermissionTools);
     // Our codec's ocToCanonical map covers mapped tools; OC_UNMAPPED_TOOLS are
     // intentionally skipped during decode.
-    const unmapped = new Set(['doom_loop', 'question', 'todowrite', 'skill']);
+    const unmapped = new Set(["doom_loop", "question", "todowrite", "skill"]);
     // Decode a policy with each tool set to "allow" — if the tool is in the
     // codec schema, it will decode without error. Unmapped tools are skipped.
     for (const tool of sdkTools) {
       if (unmapped.has(tool)) continue;
       assert.doesNotThrow(
-        () => opencodeCodec.decode({ [tool]: 'allow' }),
-        `OpenCode codec should accept SDK permission tool: ${tool}`
+        () => opencodeCodec.decode({ [tool]: "allow" }),
+        `OpenCode codec should accept SDK permission tool: ${tool}`,
       );
     }
   });

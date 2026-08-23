@@ -28,18 +28,18 @@
  * - `when.cwd` / `when.branch` conditions (AND logic)
  */
 
-import type { Rule, RuleCondition } from './schema.ts';
+import type { Rule, RuleCondition } from "./schema.ts";
 
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
 
-export type PermissionDecision = 'deny' | 'ask' | 'allow';
+export type PermissionDecision = "deny" | "ask" | "allow";
 
-export type PermissionTier = 'deny' | 'ask' | 'allow';
+export type PermissionTier = "deny" | "ask" | "allow";
 
 export interface PermissionPolicy {
-  defaultMode: 'autonomous' | 'standard' | 'restricted' | 'readonly';
+  defaultMode: "autonomous" | "standard" | "restricted" | "readonly";
   rules?: Rule[];
 }
 
@@ -65,11 +65,11 @@ export interface EvaluationContext {
  * - `"mcp__github__*"` → `{ tool: "mcp__github__*", tier }`
  */
 export function normaliseStringRule(rule: string, tier: PermissionTier): Rule {
-  const openIdx = findFirstUnescaped(rule, '(');
+  const openIdx = findFirstUnescaped(rule, "(");
   if (openIdx === -1) {
     return { tool: rule, tier };
   }
-  const closeIdx = findLastUnescaped(rule, ')');
+  const closeIdx = findLastUnescaped(rule, ")");
   if (closeIdx === -1 || closeIdx <= openIdx || closeIdx !== rule.length - 1) {
     return { tool: rule, tier };
   }
@@ -78,7 +78,7 @@ export function normaliseStringRule(rule: string, tier: PermissionTier): Rule {
     return { tool: rule, tier };
   }
   const rawContent = rule.slice(openIdx + 1, closeIdx);
-  if (rawContent === '' || rawContent === '*') {
+  if (rawContent === "" || rawContent === "*") {
     return { tool, tier };
   }
   return { tool, pattern: rawContent, tier };
@@ -90,16 +90,16 @@ export function normaliseStringRule(rule: string, tier: PermissionTier): Rule {
 
 /** Parsed pattern — determines how a rule's pattern matches input. */
 type ParsedPattern =
-  | { type: 'bare' }
-  | { type: 'exact'; content: string }
-  | { type: 'prefix'; prefix: string }
-  | { type: 'wildcard'; pattern: string };
+  | { type: "bare" }
+  | { type: "exact"; content: string }
+  | { type: "prefix"; prefix: string }
+  | { type: "wildcard"; pattern: string };
 
 // Null-byte sentinels for safe wildcard escaping (compiled once).
-const ESCAPED_STAR = '\x00STAR\x00';
-const ESCAPED_BACKSLASH = '\x00BACKSLASH\x00';
-const ESCAPED_STAR_RE = new RegExp(ESCAPED_STAR, 'g');
-const ESCAPED_BACKSLASH_RE = new RegExp(ESCAPED_BACKSLASH, 'g');
+const ESCAPED_STAR = "\x00STAR\x00";
+const ESCAPED_BACKSLASH = "\x00BACKSLASH\x00";
+const ESCAPED_STAR_RE = new RegExp(ESCAPED_STAR, "g");
+const ESCAPED_BACKSLASH_RE = new RegExp(ESCAPED_BACKSLASH, "g");
 
 /**
  * Parse a pattern string as rule content (from `Rule.pattern`). Determines rule type from the
@@ -107,10 +107,10 @@ const ESCAPED_BACKSLASH_RE = new RegExp(ESCAPED_BACKSLASH, 'g');
  */
 function parsePattern(pattern: string): ParsedPattern {
   // Domain pattern: "domain:example.com" — substring match on input
-  if (pattern.startsWith('domain:')) {
+  if (pattern.startsWith("domain:")) {
     return {
-      type: 'wildcard',
-      pattern: '*' + pattern.slice(7) + '*',
+      type: "wildcard",
+      pattern: "*" + pattern.slice(7) + "*",
     };
   }
 
@@ -118,17 +118,17 @@ function parsePattern(pattern: string): ParsedPattern {
   const prefixMatch = /^(.+):\*$/.exec(pattern);
   if (prefixMatch?.[1]) {
     const prefix = unescapeContent(prefixMatch[1]);
-    return { type: 'prefix', prefix };
+    return { type: "prefix", prefix };
   }
 
   // Wildcard: has unescaped * (check raw content before unescaping)
   if (hasUnescapedWildcard(pattern)) {
-    return { type: 'wildcard', pattern };
+    return { type: "wildcard", pattern };
   }
 
   // Exact: unescape for the final comparison string
   const content = unescapeContent(pattern);
-  return { type: 'exact', content };
+  return { type: "exact", content };
 }
 
 // ---------------------------------------------------------------------------
@@ -138,13 +138,13 @@ function parsePattern(pattern: string): ParsedPattern {
 /** Match a parsed pattern against input. */
 function matchPattern(parsed: ParsedPattern, input: string): boolean {
   switch (parsed.type) {
-    case 'bare':
+    case "bare":
       return true;
-    case 'exact':
+    case "exact":
       return parsed.content === input;
-    case 'prefix':
-      return input === parsed.prefix || input.startsWith(parsed.prefix + ' ');
-    case 'wildcard':
+    case "prefix":
+      return input === parsed.prefix || input.startsWith(parsed.prefix + " ");
+    case "wildcard":
       return matchWildcard(parsed.pattern, input);
   }
 }
@@ -152,8 +152,10 @@ function matchPattern(parsed: ParsedPattern, input: string): boolean {
 /** Simple glob for tool name matching. Supports * (any chars) in pattern. */
 function globMatch(pattern: string, text: string): boolean {
   if (pattern === text) return true;
-  if (!pattern.includes('*')) return false;
-  const regexStr = pattern.replace(/[.+?^${}()|[\]\\'']/g, '\\$&').replace(/\*/g, '.*');
+  if (!pattern.includes("*")) return false;
+  const regexStr = pattern
+    .replace(/[.+?^${}()|[\]\\'']/g, "\\$&")
+    .replace(/\*/g, ".*");
   return new RegExp(`^${regexStr}$`).test(text);
 }
 
@@ -171,9 +173,9 @@ function toolNamesMatch(ruleTool: string, eventTool: string): boolean {
   if (r === e) return true;
 
   // MCP tool name matching
-  if (r.startsWith('mcp__') && e.startsWith('mcp__')) {
-    const rParts = r.split('__');
-    const eParts = e.split('__');
+  if (r.startsWith("mcp__") && e.startsWith("mcp__")) {
+    const rParts = r.split("__");
+    const eParts = e.split("__");
 
     if (rParts.length === 2 && eParts.length >= 3) {
       // "mcp__server" → all tools from that server
@@ -181,9 +183,9 @@ function toolNamesMatch(ruleTool: string, eventTool: string): boolean {
     }
     if (rParts.length === 3 && eParts.length >= 3) {
       // "mcp__server__*" → all tools from server
-      if (rParts[2] === '*') return rParts[1] === eParts[1];
+      if (rParts[2] === "*") return rParts[1] === eParts[1];
       // "mcp__*__something" → wildcard server name
-      if (rParts[1] === '*') {
+      if (rParts[1] === "*") {
         const rTool = rParts[2];
         const eTool = eParts[2];
         if (rTool === undefined || eTool === undefined) return false;
@@ -209,17 +211,17 @@ function matchWildcard(pattern: string, command: string): boolean {
   const trimmed = pattern.trim();
 
   // Phase 1: Process escape sequences into sentinels
-  let processed = '';
+  let processed = "";
   let i = 0;
   while (i < trimmed.length) {
-    if (trimmed[i] === '\\' && i + 1 < trimmed.length) {
+    if (trimmed[i] === "\\" && i + 1 < trimmed.length) {
       const next = trimmed[i + 1];
-      if (next === '*') {
+      if (next === "*") {
         processed += ESCAPED_STAR;
         i += 2;
         continue;
       }
-      if (next === '\\') {
+      if (next === "\\") {
         processed += ESCAPED_BACKSLASH;
         i += 2;
         continue;
@@ -231,21 +233,23 @@ function matchWildcard(pattern: string, command: string): boolean {
   }
 
   // Phase 2: Escape regex special chars (except *)
-  const escaped = processed.replace(/[.+?^${}()|[\]\\'"]/g, '\\$&');
+  const escaped = processed.replace(/[.+?^${}()|[\]\\'"]/g, "\\$&");
 
   // Phase 3: Unescaped * → .*
-  let regexStr = escaped.replace(/\*/g, '.*');
+  let regexStr = escaped.replace(/\*/g, ".*");
 
   // Phase 4: Restore sentinels as escaped literals
-  regexStr = regexStr.replace(ESCAPED_STAR_RE, '\\*').replace(ESCAPED_BACKSLASH_RE, '\\\\');
+  regexStr = regexStr
+    .replace(ESCAPED_STAR_RE, "\\*")
+    .replace(ESCAPED_BACKSLASH_RE, "\\\\");
 
   // Phase 5: Trailing " *" (single wildcard) → match bare command too
   const unescapedStarCount = (processed.match(/\*/g) ?? []).length;
-  if (regexStr.endsWith(' .*') && unescapedStarCount === 1) {
-    regexStr = regexStr.slice(0, -3) + '( .*)?';
+  if (regexStr.endsWith(" .*") && unescapedStarCount === 1) {
+    regexStr = regexStr.slice(0, -3) + "( .*)?";
   }
 
-  const regex = new RegExp(`^${regexStr}$`, 's');
+  const regex = new RegExp(`^${regexStr}$`, "s");
   return regex.test(command);
 }
 
@@ -270,15 +274,15 @@ function matchConditions(when: RuleCondition, ctx: EvaluationContext): boolean {
  */
 function globMatchPath(pattern: string, text: string): boolean {
   if (pattern === text) return true;
-  if (!pattern.includes('*') && !pattern.includes('?')) return false;
+  if (!pattern.includes("*") && !pattern.includes("?")) return false;
 
   // Normalise ** → matches anything including /
   const regexStr = pattern
-    .replace(/[.+^${}()|[\]\\'"]/g, '\\$&')
-    .replace(/\*\*/g, '⟪DOUBLESTAR⟫')
-    .replace(/\*/g, '[^/]*')
-    .replace(/⟪DOUBLESTAR⟫/g, '.*')
-    .replace(/\?/g, '[^/]');
+    .replace(/[.+^${}()|[\]\\'"]/g, "\\$&")
+    .replace(/\*\*/g, "⟪DOUBLESTAR⟫")
+    .replace(/\*/g, "[^/]*")
+    .replace(/⟪DOUBLESTAR⟫/g, ".*")
+    .replace(/\?/g, "[^/]");
 
   return new RegExp(`^${regexStr}$`).test(text);
 }
@@ -287,7 +291,7 @@ function globMatchPath(pattern: string, text: string): boolean {
 // Main evaluator
 // ---------------------------------------------------------------------------
 
-const TIERS: readonly PermissionTier[] = ['deny', 'ask', 'allow'];
+const TIERS: readonly PermissionTier[] = ["deny", "ask", "allow"];
 
 /**
  * Evaluate a tool call against the permission policy.
@@ -298,7 +302,7 @@ export function evaluate(
   policy: PermissionPolicy,
   toolName: string,
   input: string,
-  ctx: EvaluationContext = {}
+  ctx: EvaluationContext = {},
 ): PermissionDecision {
   const { rules } = policy;
   if (rules && rules.length > 0) {
@@ -319,16 +323,18 @@ export function evaluate(
   return defaultDecision(policy.defaultMode);
 }
 
-function defaultDecision(mode: PermissionPolicy['defaultMode']): PermissionDecision {
+function defaultDecision(
+  mode: PermissionPolicy["defaultMode"],
+): PermissionDecision {
   switch (mode) {
-    case 'autonomous':
-      return 'allow';
-    case 'readonly':
-      return 'deny';
-    case 'restricted':
-      return 'ask';
+    case "autonomous":
+      return "allow";
+    case "readonly":
+      return "deny";
+    case "restricted":
+      return "ask";
     default:
-      return 'ask';
+      return "ask";
   }
 }
 
@@ -342,7 +348,7 @@ function findFirstUnescaped(str: string, char: string): number {
     if (str[i] === char) {
       let bs = 0;
       let j = i - 1;
-      while (j >= 0 && str[j] === '\\') {
+      while (j >= 0 && str[j] === "\\") {
         bs++;
         j--;
       }
@@ -358,7 +364,7 @@ function findLastUnescaped(str: string, char: string): number {
     if (str[i] === char) {
       let bs = 0;
       let j = i - 1;
-      while (j >= 0 && str[j] === '\\') {
+      while (j >= 0 && str[j] === "\\") {
         bs++;
         j--;
       }
@@ -370,12 +376,12 @@ function findLastUnescaped(str: string, char: string): number {
 
 /** Check if pattern has unescaped * (not :* suffix). */
 function hasUnescapedWildcard(pattern: string): boolean {
-  if (pattern.endsWith(':*')) return false;
+  if (pattern.endsWith(":*")) return false;
   for (let i = 0; i < pattern.length; i++) {
-    if (pattern[i] === '*') {
+    if (pattern[i] === "*") {
       let bs = 0;
       let j = i - 1;
-      while (j >= 0 && pattern[j] === '\\') {
+      while (j >= 0 && pattern[j] === "\\") {
         bs++;
         j--;
       }
@@ -388,10 +394,10 @@ function hasUnescapedWildcard(pattern: string): boolean {
 /** Unescape content: ( → (, ) → ), * → *, \ → \ */
 function unescapeContent(content: string): string {
   return content
-    .replace(/\\\(/g, '(')
-    .replace(/\\\)/g, ')')
-    .replace(/\\\*/g, '*')
-    .replace(/\\\\/g, '\\');
+    .replace(/\\\(/g, "(")
+    .replace(/\\\)/g, ")")
+    .replace(/\\\*/g, "*")
+    .replace(/\\\\/g, "\\");
 }
 
 // ---------------------------------------------------------------------------
@@ -426,13 +432,19 @@ export function collectRules(policy: {
 
   if (policy.permissions) {
     if (policy.permissions.deny) {
-      result.push(...policy.permissions.deny.map((r) => normaliseStringRule(r, 'deny')));
+      result.push(
+        ...policy.permissions.deny.map((r) => normaliseStringRule(r, "deny")),
+      );
     }
     if (policy.permissions.ask) {
-      result.push(...policy.permissions.ask.map((r) => normaliseStringRule(r, 'ask')));
+      result.push(
+        ...policy.permissions.ask.map((r) => normaliseStringRule(r, "ask")),
+      );
     }
     if (policy.permissions.allow) {
-      result.push(...policy.permissions.allow.map((r) => normaliseStringRule(r, 'allow')));
+      result.push(
+        ...policy.permissions.allow.map((r) => normaliseStringRule(r, "allow")),
+      );
     }
   }
 
@@ -474,26 +486,26 @@ const TIER_RANK: Record<PermissionTier, number> = {
  * Agent-specific names (bypassPermissions, dontAsk, plan) are mapped to their canonical
  * equivalents.
  */
-export function mapMode(mode: string): PermissionPolicy['defaultMode'] {
+export function mapMode(mode: string): PermissionPolicy["defaultMode"] {
   switch (mode) {
-    case 'autonomous':
-    case 'bypassPermissions':
-    case 'dontAsk':
-      return 'autonomous';
-    case 'restricted':
-    case 'plan':
-      return 'restricted';
-    case 'readonly':
-      return 'readonly';
+    case "autonomous":
+    case "bypassPermissions":
+    case "dontAsk":
+      return "autonomous";
+    case "restricted":
+    case "plan":
+      return "restricted";
+    case "readonly":
+      return "readonly";
     default:
-      return 'standard';
+      return "standard";
   }
 }
 
 /** Compare two mode strings by restrictiveness. Returns the more restrictive of the two. */
 export function mostRestrictiveMode(
   a: string | undefined,
-  b: string | undefined
+  b: string | undefined,
 ): string | undefined {
   if (a === undefined) return b;
   if (b === undefined) return a;
@@ -504,7 +516,7 @@ export function mostRestrictiveMode(
 
 /** Rule identity key for deduplication (tool + pattern, excluding tier). */
 export function ruleKey(rule: Rule): string {
-  return `${rule.tool}:${rule.pattern ?? ''}`;
+  return `${rule.tool}:${rule.pattern ?? ""}`;
 }
 
 /**

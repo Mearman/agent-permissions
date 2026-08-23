@@ -1,4 +1,4 @@
-type ReleaseLevel = 'major' | 'minor' | 'patch' | false;
+type ReleaseLevel = "major" | "minor" | "patch" | false;
 
 interface CommitType {
   readonly type: string;
@@ -17,59 +17,64 @@ interface CommitType {
  * commitlint's jiti loader has no such limit, so it imports commitTypes from here.
  */
 export const commitTypes: readonly CommitType[] = [
-  { type: 'feat', release: 'minor', section: 'Features' },
-  { type: 'fix', release: 'patch', section: 'Bug Fixes' },
-  { type: 'revert', release: 'patch', section: 'Reverts' },
-  { type: 'refactor', release: 'patch', section: 'Refactoring' },
-  { type: 'perf', release: 'patch', section: 'Performance Improvements' },
-  { type: 'docs', release: 'patch', section: 'Documentation' },
-  { type: 'style', release: 'patch', section: 'Styles' },
-  { type: 'test', release: 'patch', section: 'Tests' },
-  { type: 'build', release: 'patch', section: 'Build' },
-  { type: 'ci', release: 'patch', section: 'CI' },
-  { type: 'chore', release: 'patch', section: 'Chores' },
+  { type: "feat", release: "minor", section: "Features" },
+  { type: "fix", release: "patch", section: "Bug Fixes" },
+  { type: "revert", release: "patch", section: "Reverts" },
+  { type: "refactor", release: "patch", section: "Refactoring" },
+  { type: "perf", release: "patch", section: "Performance Improvements" },
+  { type: "docs", release: "patch", section: "Documentation" },
+  { type: "style", release: "patch", section: "Styles" },
+  { type: "test", release: "patch", section: "Tests" },
+  { type: "build", release: "patch", section: "Build" },
+  { type: "ci", release: "patch", section: "CI" },
+  { type: "chore", release: "patch", section: "Chores" },
 ];
 
 const config = {
-  branches: [{ name: 'main', channel: 'latest' }],
+  branches: [{ name: "main", channel: "latest" }],
   plugins: [
     [
-      '@semantic-release/commit-analyzer',
+      "@semantic-release/commit-analyzer",
       {
-        preset: 'conventionalcommits',
+        preset: "conventionalcommits",
         releaseRules: [
-          { breaking: true, release: 'major' },
+          { breaking: true, release: "major" },
           ...commitTypes.map((t) => ({ type: t.type, release: t.release })),
         ],
       },
     ],
     [
-      '@semantic-release/release-notes-generator',
+      "@semantic-release/release-notes-generator",
       {
-        preset: 'conventionalcommits',
+        preset: "conventionalcommits",
         presetConfig: {
           types: commitTypes.map((t) => ({ type: t.type, section: t.section })),
         },
       },
     ],
-    '@semantic-release/changelog',
-    '@semantic-release/npm',
+    "@semantic-release/changelog",
+    "@semantic-release/npm",
     [
-      '@semantic-release/exec',
+      "@semantic-release/exec",
       {
         prepareCmd:
           'jq --indent 2 \'.version = "${nextRelease.version}"\' .claude-plugin/plugin.json > /tmp/plugin.json && mv /tmp/plugin.json .claude-plugin/plugin.json && jq --indent 2 \'.version = "${nextRelease.version}" | .packages[0].version = "${nextRelease.version}"\' server.json > /tmp/server.json && mv /tmp/server.json server.json',
       },
     ],
     [
-      '@semantic-release/git',
+      "@semantic-release/git",
       {
-        assets: ['package.json', 'CHANGELOG.md', '.claude-plugin/plugin.json', 'server.json'],
-        message: 'chore(release): ${nextRelease.version}',
+        assets: [
+          "package.json",
+          "CHANGELOG.md",
+          ".claude-plugin/plugin.json",
+          "server.json",
+        ],
+        message: "chore(release): ${nextRelease.version}",
       },
     ],
     [
-      '@semantic-release/github',
+      "@semantic-release/github",
       {
         releasedLabels: false,
       },

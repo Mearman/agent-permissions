@@ -8,9 +8,9 @@
  * Exit codes: 0 = success, 1 = error, 2 = validation failure.
  */
 
-import { parseArgs } from 'node:util';
-import { resolve, join } from 'node:path';
-import { existsSync } from 'node:fs';
+import { parseArgs } from "node:util";
+import { resolve, join } from "node:path";
+import { existsSync } from "node:fs";
 import {
   convert,
   validate as validateApi,
@@ -18,16 +18,16 @@ import {
   resolveFormat,
   ConvertError,
   type Format,
-} from './api.ts';
-import { agentId } from './compat/codecs.ts';
-import { sync } from './sync.ts';
+} from "./api.ts";
+import { agentId } from "./compat/codecs.ts";
+import { sync } from "./sync.ts";
 import {
   AGENT_FILES,
   findDefaultFile,
   readInput,
   parseJson,
   writeJsonFile,
-} from './agent-files.ts';
+} from "./agent-files.ts";
 
 const AGENTS = agentId.options;
 type Agent = (typeof AGENTS)[number];
@@ -54,7 +54,7 @@ function isAgent(value: string): value is Agent {
 
 /** Resolve a spec to an input file path. Format name → walk up, file path → direct, "-" → stdin. */
 function resolveInputSpec(spec: string | undefined): string | undefined {
-  if (spec === undefined || spec === '-') return undefined;
+  if (spec === undefined || spec === "-") return undefined;
   const format = resolveFormat(spec);
   if (format) return findDefaultFile(format, process.cwd());
   return resolve(spec);
@@ -62,7 +62,7 @@ function resolveInputSpec(spec: string | undefined): string | undefined {
 
 /** Resolve a spec to an output file path. Format name → cwd, file path → direct, "-" → stdout. */
 function resolveOutputSpec(spec: string | undefined): string | undefined {
-  if (spec === undefined || spec === '-') return undefined;
+  if (spec === undefined || spec === "-") return undefined;
   const format = resolveFormat(spec);
   if (format) {
     const fileName = AGENT_FILES[format].name;
@@ -70,19 +70,23 @@ function resolveOutputSpec(spec: string | undefined): string | undefined {
   }
   return resolve(spec);
 }
-function firstString(...values: (string | boolean | undefined)[]): string | undefined {
+function firstString(
+  ...values: (string | boolean | undefined)[]
+): string | undefined {
   for (const v of values) {
-    if (typeof v === 'string') return v;
+    if (typeof v === "string") return v;
   }
   return undefined;
 }
 
-function allStrings(...values: ((string | boolean | undefined)[] | undefined)[]): string[] {
+function allStrings(
+  ...values: ((string | boolean | undefined)[] | undefined)[]
+): string[] {
   const result: string[] = [];
   for (const arr of values) {
     if (arr === undefined) continue;
     for (const v of arr) {
-      if (typeof v === 'string') result.push(v);
+      if (typeof v === "string") result.push(v);
     }
   }
   return result;
@@ -96,14 +100,14 @@ async function convertCommand(args: string[]): Promise<void> {
   const { values } = parseArgs({
     args,
     options: {
-      from: { type: 'string', short: 'f' },
-      to: { type: 'string', short: 't' },
-      input: { type: 'string' },
-      in: { type: 'string' },
-      output: { type: 'string', short: 'o' },
-      out: { type: 'string' },
-      compact: { type: 'boolean', short: 'c' },
-      verbose: { type: 'boolean', short: 'v' },
+      from: { type: "string", short: "f" },
+      to: { type: "string", short: "t" },
+      input: { type: "string" },
+      in: { type: "string" },
+      output: { type: "string", short: "o" },
+      out: { type: "string" },
+      compact: { type: "boolean", short: "c" },
+      verbose: { type: "boolean", short: "v" },
     },
     strict: true,
   });
@@ -114,17 +118,21 @@ async function convertCommand(args: string[]): Promise<void> {
   const toSpec = values.to;
   // --output/--out overrides destination (--to might set it too)
   const outputSpec = firstString(values.output, values.out);
-  if (toSpec === undefined) error('--to is required');
+  if (toSpec === undefined) error("--to is required");
 
   // Resolve input: format name finds file, file path reads directly, omitted = stdin
   const inputPath = resolveInputSpec(fromSpec);
   let fromFormat: Format | undefined;
-  if (fromSpec !== undefined && fromSpec !== '-') {
+  if (fromSpec !== undefined && fromSpec !== "-") {
     fromFormat = resolveFormat(fromSpec);
     // If not a known format name and not an existing file, it's an unknown format
-    if (fromFormat === undefined && inputPath !== undefined && !existsSync(inputPath)) {
+    if (
+      fromFormat === undefined &&
+      inputPath !== undefined &&
+      !existsSync(inputPath)
+    ) {
       error(
-        `unknown --from format: ${fromSpec}. Use an agent name, a config file path, or "-" for stdin`
+        `unknown --from format: ${fromSpec}. Use an agent name, a config file path, or "-" for stdin`,
       );
     }
   }
@@ -133,14 +141,16 @@ async function convertCommand(args: string[]): Promise<void> {
   const toFormat = resolveFormat(toSpec);
   if (!toFormat) {
     error(
-      `unknown --to format: ${toSpec}. Use an agent name (claude-code, codex, kiro, opencode, crush, canonical), a config file path, or "-" for stdout`
+      `unknown --to format: ${toSpec}. Use an agent name (claude-code, codex, kiro, opencode, crush, canonical), a config file path, or "-" for stdout`,
     );
   }
-  const outputPath = outputSpec ? resolveOutputSpec(outputSpec) : resolveOutputSpec(toSpec);
+  const outputPath = outputSpec
+    ? resolveOutputSpec(outputSpec)
+    : resolveOutputSpec(toSpec);
 
   // No need to validate --from — auto-detect handles unknown file paths
 
-  const source = inputPath ?? 'stdin';
+  const source = inputPath ?? "stdin";
   const raw = await readInput(inputPath);
   const parsed = parseJson(raw, source);
   if (!parsed.ok) error(parsed.error);
@@ -150,7 +160,7 @@ async function convertCommand(args: string[]): Promise<void> {
     const result = convert(fromFormat, toFormat, json);
 
     const indent = values.compact ? undefined : 2;
-    const jsonStr = JSON.stringify(result.output, null, indent) + '\n';
+    const jsonStr = JSON.stringify(result.output, null, indent) + "\n";
 
     if (outputPath) {
       await writeJsonFile(outputPath, jsonStr);
@@ -159,9 +169,9 @@ async function convertCommand(args: string[]): Promise<void> {
     }
 
     if (values.verbose) {
-      const dest = outputPath ?? 'stdout';
+      const dest = outputPath ?? "stdout";
       process.stderr.write(
-        `Decoded ${result.from} → canonical (${String(result.ruleCount)} rules), encoded → ${toFormat}, wrote ${dest}\n`
+        `Decoded ${result.from} → canonical (${String(result.ruleCount)} rules), encoded → ${toFormat}, wrote ${dest}\n`,
       );
     }
   } catch (e) {
@@ -185,15 +195,15 @@ async function validateCommand(args: string[]): Promise<void> {
   const { values } = parseArgs({
     args,
     options: {
-      input: { type: 'string', short: 'i' },
-      in: { type: 'string' },
+      input: { type: "string", short: "i" },
+      in: { type: "string" },
     },
     strict: true,
   });
 
   const inputSpec = firstString(values.input, values.in);
   const inputPath = resolveInputSpec(inputSpec);
-  const source = inputPath ?? 'stdin';
+  const source = inputPath ?? "stdin";
 
   const raw = await readInput(inputPath);
   const parsed = parseJson(raw, source);
@@ -202,11 +212,11 @@ async function validateCommand(args: string[]): Promise<void> {
 
   const result = validateApi(json);
   if (result.valid) {
-    process.stdout.write('valid\n');
+    process.stdout.write("valid\n");
     return;
   }
 
-  process.stderr.write('validation errors:\n');
+  process.stderr.write("validation errors:\n");
   for (const err of result.errors) {
     process.stderr.write(`  ${err.path}: ${err.message}\n`);
   }
@@ -221,20 +231,20 @@ async function checkCommand(args: string[]): Promise<void> {
   const { values } = parseArgs({
     args,
     options: {
-      tool: { type: 'string' },
-      input: { type: 'string' },
-      'policy-file': { type: 'string' },
-      cwd: { type: 'string' },
-      branch: { type: 'string' },
+      tool: { type: "string" },
+      input: { type: "string" },
+      "policy-file": { type: "string" },
+      cwd: { type: "string" },
+      branch: { type: "string" },
     },
     strict: true,
   });
 
-  if (!values.tool) error('--tool is required');
-  if (values.input === undefined) error('--input is required');
+  if (!values.tool) error("--tool is required");
+  if (values.input === undefined) error("--input is required");
 
-  const inputPath = resolveInputSpec(values['policy-file']);
-  const source = inputPath ?? 'stdin';
+  const inputPath = resolveInputSpec(values["policy-file"]);
+  const source = inputPath ?? "stdin";
 
   const raw = await readInput(inputPath);
   const parsed = parseJson(raw, source);
@@ -247,7 +257,7 @@ async function checkCommand(args: string[]): Promise<void> {
     if (values.branch !== undefined) ctx.branch = values.branch;
     const result = checkApi(values.tool, values.input, json, ctx);
     process.stdout.write(`${result.decision}\n`);
-    process.exit(result.decision === 'deny' ? 1 : 0);
+    process.exit(result.decision === "deny" ? 1 : 0);
   } catch (e) {
     if (e instanceof ConvertError) {
       process.stderr.write(`error: ${e.message}\n`);
@@ -269,24 +279,24 @@ async function syncCommand(args: string[]): Promise<void> {
   const { values } = parseArgs({
     args,
     options: {
-      'working-dir': { type: 'string', short: 'd' },
-      up: { type: 'string', default: 'all', short: 'u' },
-      with: { type: 'string', multiple: true, short: 'w' },
-      without: { type: 'string', multiple: true, short: 'x' },
-      include: { type: 'string', multiple: true },
-      exclude: { type: 'string', multiple: true },
-      yes: { type: 'boolean', short: 'y' },
-      'dry-run': { type: 'boolean' },
-      create: { type: 'boolean', short: 'c' },
-      verbose: { type: 'boolean', short: 'v' },
-      backup: { type: 'boolean', short: 'b' },
+      "working-dir": { type: "string", short: "d" },
+      up: { type: "string", default: "all", short: "u" },
+      with: { type: "string", multiple: true, short: "w" },
+      without: { type: "string", multiple: true, short: "x" },
+      include: { type: "string", multiple: true },
+      exclude: { type: "string", multiple: true },
+      yes: { type: "boolean", short: "y" },
+      "dry-run": { type: "boolean" },
+      create: { type: "boolean", short: "c" },
+      verbose: { type: "boolean", short: "v" },
+      backup: { type: "boolean", short: "b" },
     },
     strict: true,
   });
 
   // Parse --up value
   let up: number;
-  if (values.up === 'all') {
+  if (values.up === "all") {
     up = Infinity;
   } else {
     up = Number(values.up);
@@ -301,25 +311,33 @@ async function syncCommand(args: string[]): Promise<void> {
   const withoutRaw = allStrings(values.without, values.exclude);
 
   if (withRaw.length > 0 && withoutRaw.length > 0) {
-    error('--with and --without are mutually exclusive');
+    error("--with and --without are mutually exclusive");
   }
 
   // Validate agent names
   const withAgents: Agent[] = [];
   for (const w of withRaw) {
-    if (w === 'canonical') continue;
-    if (!isAgent(w)) error(`unknown agent: ${w}. Valid: ${[...AGENTS, 'canonical'].join(', ')}`);
+    if (w === "canonical") continue;
+    if (!isAgent(w))
+      error(
+        `unknown agent: ${w}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
+      );
     withAgents.push(w);
   }
 
   const withoutAgents: Agent[] = [];
   for (const w of withoutRaw) {
-    if (w === 'canonical') continue;
-    if (!isAgent(w)) error(`unknown agent: ${w}. Valid: ${[...AGENTS, 'canonical'].join(', ')}`);
+    if (w === "canonical") continue;
+    if (!isAgent(w))
+      error(
+        `unknown agent: ${w}. Valid: ${[...AGENTS, "canonical"].join(", ")}`,
+      );
     withoutAgents.push(w);
   }
 
-  const cwd = values['working-dir'] ? resolve(values['working-dir']) : process.cwd();
+  const cwd = values["working-dir"]
+    ? resolve(values["working-dir"])
+    : process.cwd();
 
   await sync({
     cwd,
@@ -327,7 +345,7 @@ async function syncCommand(args: string[]): Promise<void> {
     with: withAgents,
     without: withoutAgents,
     yes: values.yes ?? false,
-    dryRun: values['dry-run'] ?? false,
+    dryRun: values["dry-run"] ?? false,
     create: values.create ?? false,
     verbose: values.verbose ?? false,
     backup: values.backup ?? false,
@@ -338,8 +356,8 @@ async function syncCommand(args: string[]): Promise<void> {
 // Main
 // ---------------------------------------------------------------------------
 
-function usage(stream: 'stdout' | 'stderr'): void {
-  const target = stream === 'stdout' ? process.stdout : process.stderr;
+function usage(stream: "stdout" | "stderr"): void {
+  const target = stream === "stdout" ? process.stdout : process.stderr;
   target.write(`agent-perms — cross-agent permission policy tool
 
 Usage:
@@ -409,9 +427,9 @@ Examples:
 
 async function main(): Promise<void> {
   // If invoked as agent-perms-mcp, route directly to MCP server
-  const binName = process.argv[1]?.split('/').pop() ?? '';
-  if (binName === 'agent-perms-mcp') {
-    await import('./mcp.ts');
+  const binName = process.argv[1]?.split("/").pop() ?? "";
+  if (binName === "agent-perms-mcp") {
+    await import("./mcp.ts");
     return;
   }
 
@@ -419,36 +437,38 @@ async function main(): Promise<void> {
   const command = args[0];
 
   switch (command) {
-    case 'convert':
+    case "convert":
       await convertCommand(args.slice(1));
       break;
-    case 'validate':
+    case "validate":
       await validateCommand(args.slice(1));
       break;
-    case 'check':
+    case "check":
       await checkCommand(args.slice(1));
       break;
-    case 'sync':
+    case "sync":
       await syncCommand(args.slice(1));
       break;
-    case 'mcp':
-      await import('./mcp.ts');
+    case "mcp":
+      await import("./mcp.ts");
       break;
-    case '--help':
-    case '-h':
+    case "--help":
+    case "-h":
       // An explicit help request is a successful invocation: usage on stdout, exit 0.
-      usage('stdout');
+      usage("stdout");
       return;
     default:
       if (command) {
         process.stderr.write(`unknown command: ${command}\n\n`);
       }
-      usage('stderr');
+      usage("stderr");
       process.exit(1);
   }
 }
 
 main().catch((e: unknown) => {
-  process.stderr.write(`fatal: ${e instanceof Error ? e.message : String(e)}\n`);
+  process.stderr.write(
+    `fatal: ${e instanceof Error ? e.message : String(e)}\n`,
+  );
   process.exit(1);
 });
