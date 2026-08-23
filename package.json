@@ -29,7 +29,7 @@
     ".claude-plugin"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=24"
   },
   "scripts": {
     "build": "turbo run _build",
