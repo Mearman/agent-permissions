@@ -822,9 +822,7 @@ type CodexSandboxWorkspaceWrite = NonNullable<
 
 export interface CodexProfile {
   filesystem?:
-    | CodexFilesystemAccess
-    | Record<string, CodexFilesystemAccess>
-    | undefined;
+    CodexFilesystemAccess | Record<string, CodexFilesystemAccess> | undefined;
   network?:
     | {
         enabled?: boolean | undefined;
