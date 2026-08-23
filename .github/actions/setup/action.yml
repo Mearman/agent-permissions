@@ -1,4 +1,5 @@
 name: Setup and Run
+# probe: harmless comment-only change, touches no workflow file
 description: pnpm + Node (from .tool-versions, or the node-version input) + frozen install + the CI caches, then run a task. Requires checkout before use.
 
 inputs:
