@@ -112,7 +112,7 @@
     "@semantic-release/npm": "^13.1.5",
     "@types/node": "^24.13.3",
     "@types/semver": "^7.8.0",
-    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "conventional-changelog-conventionalcommits": "^10.3.0",
     "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-depend": "^1.5.0",
