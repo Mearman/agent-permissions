@@ -65,7 +65,7 @@ jobs:
                   continue 2
                 fi
                 echo "PR #$PR passed the age check, merging."
-                # A pull request whose diff edits anything under .github/workflows — which is what every GitHub-Actions version bump is — cannot be merged by the default token at all: `workflows` is a PAT/App permission with no GITHUB_TOKEN scope, so GitHub refuses the merge outright. That is a known, structural skip, not a failure: leave it open for a human (or a PAT-secret-backed rerun) and keep sweeping the rest.
+                # A pull request whose diff edits anything under .github/workflows cannot be merged by the default token at all: `workflows` is a PAT/App permission with no GITHUB_TOKEN scope, so GitHub refuses the merge outright. Verified directly against this repo that the restriction is keyed to that path specifically: a bump to pnpm/action-setup, actions/setup-node, or actions/cache lands as a diff scoped to .github/actions/setup/action.yml instead (a composite action definition, not a workflow file) and merges fine -- only actions/checkout itself, pinned directly in every workflow file because a local composite action cannot check the repo out before its own definition is readable, still needs a human. That is a known, structural skip, not a failure: leave it open for a human (or a PAT-secret-backed rerun) and keep sweeping the rest.
                 if gh pr merge --rebase "$PR" 2>&1 | tee "/tmp/merge-$PR.log"; then
                   MERGED=1
                   continue 2
