@@ -11,6 +11,7 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
       - run: gh pr merge --rebase "${{ inputs.pr }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
