@@ -1,0 +1,20 @@
+{
+  "$schema": "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+  "defaultMode": "standard",
+  "rules": [
+    { "tool": "Read", "tier": "allow" },
+    { "tool": "Grep", "tier": "allow" },
+    { "tool": "Glob", "tier": "allow" },
+    { "tool": "Bash", "pattern": "git status", "tier": "allow" },
+    { "tool": "Bash", "pattern": "git diff:*", "tier": "allow" },
+    { "tool": "Bash", "pattern": "git log:*", "tier": "allow" },
+    { "tool": "Bash", "pattern": "pnpm check", "tier": "allow" },
+    { "tool": "Bash", "pattern": "pnpm test", "tier": "allow" },
+    { "tool": "Bash", "pattern": "pnpm build", "tier": "allow" },
+    { "tool": "Bash", "pattern": "sudo:*", "tier": "deny" },
+    { "tool": "Read", "pattern": "./.env*", "tier": "deny" },
+    { "tool": "Bash", "pattern": "npm publish:*", "tier": "deny" },
+    { "tool": "Bash", "pattern": "pnpm publish:*", "tier": "deny" },
+    { "tool": "Bash", "pattern": "git push:*", "tier": "ask" }
+  ]
+}

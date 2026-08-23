@@ -6,5 +6,9 @@ dist/
 .eslintcache
 .turbo/
 
-# Test artefacts
-.agents/
+# Local agent state (test fixtures use tmp dirs); the committed team policy is the one exception
+.agents/*
+!.agents/permissions.json
+
+# OS noise
+.DS_Store
