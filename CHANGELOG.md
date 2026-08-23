@@ -1,3 +1,9 @@
+## [6.1.1](https://github.com/Mearman/agent-permissions/compare/v6.1.0...v6.1.1) (2026-08-23)
+
+### Bug Fixes
+
+* **ci:** capture gh pr checks and age-check exit codes without aborting under -e ([9e7a443](https://github.com/Mearman/agent-permissions/commit/9e7a443ff97028ec9a5af1122a4d9dda7bd1ba24)), closes [#16](https://github.com/Mearman/agent-permissions/issues/16)
+
 ## [6.1.0](https://github.com/Mearman/agent-permissions/compare/v6.0.4...v6.1.0) (2026-08-23)
 
 ### Features
