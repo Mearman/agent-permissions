@@ -70,7 +70,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add package.json pnpm-lock.yaml
+          git add pnpm-workspace.yaml pnpm-lock.yaml
           git commit -m "fix(deps): apply aged security overrides
 
           $(cat /tmp/audit-fix-commit-body.txt)"

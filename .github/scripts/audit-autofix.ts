@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { satisfies } from "semver";
-import { parseAllDocuments } from "yaml";
+import { Document, parseAllDocuments, parseDocument } from "yaml";
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 
 export interface AuditAdvisory {
@@ -29,8 +29,8 @@ export interface Classified {
   candidates: Candidate[];
 }
 
-// pnpm 11.0.9 only honours override selectors written to package.json's `pnpm.overrides` field on a non-workspace project — an equivalent `overrides:` key in pnpm-workspace.yaml is silently ignored (confirmed empirically). Also confirmed empirically: adding a new override for a package that already has a resolved lockfile entry does NOT get applied by an incremental `pnpm install`, even with `--force` or `pnpm dedupe` — only deleting pnpm-lock.yaml and letting pnpm regenerate it from scratch reliably re-resolves against the new override. minimumReleaseAge still gates that fresh resolution, so this doesn't reopen the grace period for the packages actually being fixed; it does mean every other dependency can also drift to a newer in-range, aged version on a fix run, which `check` and `test` still gate as usual afterwards.
-const PACKAGE_FILE = "package.json";
+// pnpm 11.0.9 only honoured override selectors written to package.json's `pnpm.overrides` field; pnpm 11.21.0 flipped this -- it now silently ignores that field (a warning, not an error, so nothing failed loudly) and only reads `overrides:` from pnpm-workspace.yaml, confirmed empirically against both versions. Also confirmed empirically: adding a new override for a package that already has a resolved lockfile entry does NOT get applied by an incremental `pnpm install`, even with `--force` or `pnpm dedupe` — only deleting pnpm-lock.yaml and letting pnpm regenerate it from scratch reliably re-resolves against the new override. minimumReleaseAge still gates that fresh resolution, so this doesn't reopen the grace period for the packages actually being fixed; it does mean every other dependency can also drift to a newer in-range, aged version on a fix run, which `check` and `test` still gate as usual afterwards.
+const WORKSPACE_FILE = "pnpm-workspace.yaml";
 const LOCKFILE = "pnpm-lock.yaml";
 const auditLevel = process.env.AUDIT_LEVEL ?? "high";
 
@@ -86,31 +86,28 @@ function githubAdvisoryIdsIn(report: AuditReport): Set<string> {
   );
 }
 
-function readPackageJson(): Record<string, unknown> {
-  const parsed: unknown = JSON.parse(readFileSync(PACKAGE_FILE, "utf8"));
-  if (!isRecord(parsed)) {
-    throw new Error(`${PACKAGE_FILE} did not parse to an object`);
-  }
-  return parsed;
+function readWorkspaceDoc(): Document {
+  return parseDocument(readFileSync(WORKSPACE_FILE, "utf8"));
 }
 
-function writePackageJson(doc: Record<string, unknown>): void {
-  writeFileSync(PACKAGE_FILE, `${JSON.stringify(doc, null, 2)}\n`);
+function writeWorkspaceDoc(doc: Document): void {
+  writeFileSync(WORKSPACE_FILE, doc.toString());
 }
 
+// Mutates a clone rather than the original document, and preserves every other key and comment in pnpm-workspace.yaml (minimumReleaseAge, its exclusions, allowBuilds) -- a naive parse-to-object-then-JSON.stringify round trip would silently discard all of that.
 export function withOverrides(
-  pkg: Record<string, unknown>,
+  workspace: Document,
   overrides: Record<string, string>,
-): Record<string, unknown> {
-  const pnpmField = isRecord(pkg.pnpm) ? pkg.pnpm : {};
-  return { ...pkg, pnpm: { ...pnpmField, overrides } };
+): Document {
+  const cloned = workspace.clone();
+  cloned.set("overrides", overrides);
+  return cloned;
 }
 
-export function currentOverrides(
-  pkg: Record<string, unknown>,
-): Record<string, string> {
-  const pnpmField = isRecord(pkg.pnpm) ? pkg.pnpm : {};
-  const overrides = isRecord(pnpmField.overrides) ? pnpmField.overrides : {};
+export function currentOverrides(workspace: Document): Record<string, string> {
+  const parsed: unknown = workspace.toJS();
+  const overrides =
+    isRecord(parsed) && isRecord(parsed.overrides) ? parsed.overrides : {};
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(overrides)) {
     if (typeof value === "string") result[key] = value;
@@ -119,7 +116,7 @@ export function currentOverrides(
 }
 
 function restoreFromGit(): void {
-  spawnSync("git", ["checkout", "--", LOCKFILE, PACKAGE_FILE], {
+  spawnSync("git", ["checkout", "--", LOCKFILE, WORKSPACE_FILE], {
     encoding: "utf8",
   });
   // `pnpm update` only touches the packages it's told to; a plain `git checkout` restores the two tracked files but leaves node_modules linked against whatever the last attempt resolved, so resync it for whatever runs next (the final re-audit below, or any later step in this same job).
@@ -146,13 +143,13 @@ function fail(message: string): never {
 
 // pnpm's own exit code from `update` is not a reliable signal that an override actually took effect — confirmed empirically: an unsatisfiable override (no published version clears it) still exits 0, silently leaving the package at whatever it could otherwise resolve. The only trustworthy signal is re-auditing and checking whether each candidate's own specific advisories are gone. A non-zero exit from `update` itself does mean something more fundamental broke (e.g. an unresolvable peer conflict) and is reported as `conflicted` so the caller can isolate which candidate is responsible.
 function attemptBatch(
-  pkgBefore: Record<string, unknown>,
+  workspace: Document,
   baseOverrides: Record<string, string>,
   batch: Candidate[],
 ): { succeeded: Candidate[]; conflicted: boolean } {
   const overrides = { ...baseOverrides };
   for (const c of batch) overrides[c.overrideKey] = c.range;
-  writePackageJson(withOverrides(pkgBefore, overrides));
+  writeWorkspaceDoc(withOverrides(workspace, overrides));
 
   const names = [
     ...new Set(batch.flatMap((c) => c.advisories.map((a) => a.module_name))),
@@ -172,44 +169,44 @@ function attemptBatch(
 
 // A single candidate whose override the registry can never satisfy (or that conflicts with peers) must not sink every other, independently-fixable candidate in the same batch. attemptBatch's own audit check already tells us exactly which candidates in a batch succeeded when the update itself ran cleanly, so bisection is only needed to isolate a genuine `conflicted` (non-zero exit) failure; if two halves that each update fine independently still conflict combined, fall back to a linear greedy pass, which always terminates with a verified-working subset.
 function resolveMaximalSubset(
-  pkgBefore: Record<string, unknown>,
+  workspace: Document,
   baseOverrides: Record<string, string>,
   batch: Candidate[],
 ): Candidate[] {
   if (batch.length === 0) return [];
 
-  const attempt = attemptBatch(pkgBefore, baseOverrides, batch);
+  const attempt = attemptBatch(workspace, baseOverrides, batch);
   if (!attempt.conflicted) return attempt.succeeded;
   if (batch.length === 1) return [];
 
   const mid = Math.floor(batch.length / 2);
   const leftOk = resolveMaximalSubset(
-    pkgBefore,
+    workspace,
     baseOverrides,
     batch.slice(0, mid),
   );
   const rightOk = resolveMaximalSubset(
-    pkgBefore,
+    workspace,
     baseOverrides,
     batch.slice(mid),
   );
   const combined = [...leftOk, ...rightOk];
   if (combined.length === 0) return [];
 
-  const combinedAttempt = attemptBatch(pkgBefore, baseOverrides, combined);
+  const combinedAttempt = attemptBatch(workspace, baseOverrides, combined);
   if (!combinedAttempt.conflicted) return combinedAttempt.succeeded;
 
-  return greedyResolve(pkgBefore, baseOverrides, combined);
+  return greedyResolve(workspace, baseOverrides, combined);
 }
 
 function greedyResolve(
-  pkgBefore: Record<string, unknown>,
+  workspace: Document,
   baseOverrides: Record<string, string>,
   batch: Candidate[],
 ): Candidate[] {
   const working: Candidate[] = [];
   for (const c of batch) {
-    const attempt = attemptBatch(pkgBefore, baseOverrides, [...working, c]);
+    const attempt = attemptBatch(workspace, baseOverrides, [...working, c]);
     if (!attempt.conflicted && attempt.succeeded.includes(c)) {
       working.push(c);
     }
@@ -322,15 +319,15 @@ function main(): void {
   let fixed: Candidate[] = [];
 
   if (candidates.length > 0) {
-    const pkgBefore = readPackageJson();
-    const baseOverrides = currentOverrides(pkgBefore);
+    const workspaceBefore = readWorkspaceDoc();
+    const baseOverrides = currentOverrides(workspaceBefore);
 
-    fixed = resolveMaximalSubset(pkgBefore, baseOverrides, candidates);
+    fixed = resolveMaximalSubset(workspaceBefore, baseOverrides, candidates);
     const notFixed = candidates.filter((c) => !fixed.includes(c));
 
     // Land on a final, clean state: exactly the overrides that verified as fixed, so the committed lockfile never carries an inert entry for a candidate that didn't pan out.
     if (fixed.length > 0) {
-      const final = attemptBatch(pkgBefore, baseOverrides, fixed);
+      const final = attemptBatch(workspaceBefore, baseOverrides, fixed);
       if (final.conflicted || final.succeeded.length !== fixed.length) {
         fail(
           "Could not reproduce the verified-working override set on the final update pass",
@@ -362,10 +359,10 @@ function main(): void {
     );
   }
 
-  // Prune inert overrides: entries whose package the lockfile already resolves entirely inside the override's target. The pruned package.json rides the same fix PR, and the pruned state is verified below before it is kept -- anything that regresses restores the pre-prune files.
+  // Prune inert overrides: entries whose package the lockfile already resolves entirely inside the override's target. The pruned pnpm-workspace.yaml rides the same fix PR, and the pruned state is verified below before it is kept -- anything that regresses restores the pre-prune files.
   let prunedKeys: string[] = [];
-  const pkgNow = readPackageJson();
-  const overridesNow = currentOverrides(pkgNow);
+  const workspaceNow = readWorkspaceDoc();
+  const overridesNow = currentOverrides(workspaceNow);
   const inert = inertOverrideKeys(
     overridesNow,
     resolvedVersionsFromLockfileText(readFileSync(LOCKFILE, "utf8")),
@@ -376,7 +373,7 @@ function main(): void {
     for (const [key, value] of Object.entries(overridesNow)) {
       if (!inertSet.has(key)) pruned[key] = value;
     }
-    writePackageJson(withOverrides(pkgNow, pruned));
+    writeWorkspaceDoc(withOverrides(workspaceNow, pruned));
     if (spawnSync("pnpm", ["install"], { encoding: "utf8" }).status === 0) {
       const postPrune = runAudit();
       // Clean means: no advisory is present that this run did not start with -- the prune resurrected nothing the fixes removed and introduced nothing new.
@@ -449,17 +446,19 @@ function main(): void {
     );
   }
 
-  if (prunedKeys.length > 0 && fixedAdvisories.length === 0) {
-    // A prune-only run is still a change that must land through the fix PR; give it a commit body.
-    writeFileSync(
-      "/tmp/audit-fix-commit-body.txt",
-      prunedKeys
-        .map(
-          (k) =>
-            `- prune ${k}: every resolved version already satisfies the override target`,
-        )
-        .join("\n"),
-    );
+  if (prunedKeys.length > 0) {
+    // Pruned keys ride the same fix-PR commit body as any fixed advisories in the same run; a prune-only run still needs a body of its own.
+    const pruneLines = prunedKeys
+      .map(
+        (k) =>
+          `- prune ${k}: every resolved version already satisfies the override target`,
+      )
+      .join("\n");
+    if (fixedAdvisories.length === 0) {
+      writeFileSync("/tmp/audit-fix-commit-body.txt", pruneLines);
+    } else {
+      appendFileSync("/tmp/audit-fix-commit-body.txt", `\n${pruneLines}`);
+    }
   }
   const fixedFlag =
     fixedAdvisories.length > 0 || prunedKeys.length > 0 ? "true" : "false";

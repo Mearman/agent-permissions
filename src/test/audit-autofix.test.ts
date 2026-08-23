@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { parseDocument } from "yaml";
 import {
   classifyAdvisories,
   currentOverrides,
@@ -45,33 +46,32 @@ void describe("audit report guards", () => {
 });
 
 void describe("override bookkeeping", () => {
-  void it("withOverrides adds an overrides map without disturbing the rest of package.json", () => {
-    const pkg = { name: "x", version: "1.0.0" };
-    const next = withOverrides(pkg, { "undici@<7": ">=7" });
-    assert.deepEqual(next, {
-      name: "x",
-      version: "1.0.0",
-      pnpm: { overrides: { "undici@<7": ">=7" } },
+  void it("withOverrides adds an overrides map without disturbing the rest of the document", () => {
+    const workspace = parseDocument('packages:\n  - "."\n');
+    const next = withOverrides(workspace, { "undici@<7": ">=7" });
+    assert.deepEqual(next.toJS(), {
+      packages: ["."],
+      overrides: { "undici@<7": ">=7" },
     });
-    // The input object is not mutated.
-    assert.deepEqual(pkg, { name: "x", version: "1.0.0" });
+    // The input document is not mutated.
+    assert.deepEqual(workspace.toJS(), { packages: ["."] });
   });
 
-  void it("withOverrides preserves sibling pnpm fields", () => {
-    const pkg = { pnpm: { onlyBuiltDependencies: ["esbuild"] } };
-    const next = withOverrides(pkg, { a: "1" });
-    assert.deepEqual(next.pnpm, {
-      onlyBuiltDependencies: ["esbuild"],
-      overrides: { a: "1" },
-    });
+  void it("withOverrides preserves comments elsewhere in the document", () => {
+    const workspace = parseDocument(
+      "# a load-bearing comment\nminimumReleaseAge: 10080\n",
+    );
+    const next = withOverrides(workspace, { a: "1" });
+    assert.match(next.toString(), /# a load-bearing comment/);
+    assert.match(next.toString(), /overrides:\n\s+a: "1"/);
   });
 
   void it("currentOverrides reads back only string-valued entries", () => {
-    const pkg = {
-      pnpm: { overrides: { keep: "^1.0.0", drop: 42, also: null } },
-    };
-    assert.deepEqual(currentOverrides(pkg), { keep: "^1.0.0" });
-    assert.deepEqual(currentOverrides({}), {});
+    const workspace = parseDocument(
+      "overrides:\n  keep: ^1.0.0\n  drop: 42\n  also: null\n",
+    );
+    assert.deepEqual(currentOverrides(workspace), { keep: "^1.0.0" });
+    assert.deepEqual(currentOverrides(parseDocument("")), {});
   });
 });
 
