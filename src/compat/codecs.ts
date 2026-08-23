@@ -14,9 +14,18 @@
  * z.encode(claudeCodeCodec, canonical);
  */
 
-import * as z from 'zod';
-import { AgentPermissionPolicy, type PermissionTiers, type Rule, type Sandbox } from '../schema.ts';
-import { normaliseStringRule, ruleToString, collectRules } from '../evaluate.ts';
+import * as z from "zod";
+import {
+  AgentPermissionPolicy,
+  type PermissionTiers,
+  type Rule,
+  type Sandbox,
+} from "../schema.ts";
+import {
+  normaliseStringRule,
+  ruleToString,
+  collectRules,
+} from "../evaluate.ts";
 import {
   ClaudeCodePermissionMode,
   CodexApprovalMode,
@@ -24,13 +33,19 @@ import {
   CodexFilesystemAccess,
   CodexSandboxMode,
   PermissionBehavior,
-} from './enums.ts';
+} from "./enums.ts";
 
 // ---------------------------------------------------------------------------
 // Canonical agent identifiers
 // ---------------------------------------------------------------------------
 
-export const agentId = z.enum(['claude-code', 'codex', 'kiro', 'opencode', 'crush']);
+export const agentId = z.enum([
+  "claude-code",
+  "codex",
+  "kiro",
+  "opencode",
+  "crush",
+]);
 
 export type AgentId = z.infer<typeof agentId>;
 
@@ -55,67 +70,77 @@ const claudeCodeNative = z
 
 type ClaudeCodeNative = z.infer<typeof claudeCodeNative>;
 
-export const claudeCodeCodec = z.codec(claudeCodeNative, AgentPermissionPolicy, {
-  decode(native) {
-    const rules: Rule[] = [];
+export const claudeCodeCodec = z.codec(
+  claudeCodeNative,
+  AgentPermissionPolicy,
+  {
+    decode(native) {
+      const rules: Rule[] = [];
 
-    if (native.deny) {
-      rules.push(...native.deny.map((r) => normaliseStringRule(r, 'deny')));
-    }
-    if (native.ask) {
-      rules.push(...native.ask.map((r) => normaliseStringRule(r, 'ask')));
-    }
-    if (native.allow) {
-      rules.push(...native.allow.map((r) => normaliseStringRule(r, 'allow')));
-    }
-
-    const result: Partial<AgentPermissionPolicy> = {};
-    if (rules.length > 0) result.rules = rules;
-    if (native.additionalDirectories?.length) {
-      result.permissions = {
-        additionalDirectories: native.additionalDirectories,
-      };
-    }
-    if (native.defaultMode) {
-      result.defaultMode = native.defaultMode;
-    }
-
-    return result;
-  },
-  encode(canonical) {
-    const result: Partial<ClaudeCodeNative> = {};
-
-    const allRules = collectRules(canonical);
-    if (allRules.length > 0) {
-      result.deny = allRules.filter((r) => r.tier === 'deny').map(ruleToString);
-      result.ask = allRules.filter((r) => r.tier === 'ask').map(ruleToString);
-      result.allow = allRules.filter((r) => r.tier === 'allow').map(ruleToString);
-    }
-
-    if (canonical.permissions?.additionalDirectories?.length) {
-      result.additionalDirectories = canonical.permissions.additionalDirectories;
-    }
-
-    // defaultMode — only include modes that Claude Code accepts
-    const ccDefaultMode = canonical.defaultMode ?? canonical.permissions?.defaultMode;
-    if (ccDefaultMode) {
-      const claudeCodeModes = [
-        'acceptEdits',
-        'auto',
-        'bypassPermissions',
-        'default',
-        'dontAsk',
-        'plan',
-      ] as const;
-      const match = claudeCodeModes.find((m) => m === ccDefaultMode);
-      if (match) {
-        result.defaultMode = match;
+      if (native.deny) {
+        rules.push(...native.deny.map((r) => normaliseStringRule(r, "deny")));
       }
-    }
+      if (native.ask) {
+        rules.push(...native.ask.map((r) => normaliseStringRule(r, "ask")));
+      }
+      if (native.allow) {
+        rules.push(...native.allow.map((r) => normaliseStringRule(r, "allow")));
+      }
 
-    return result;
+      const result: Partial<AgentPermissionPolicy> = {};
+      if (rules.length > 0) result.rules = rules;
+      if (native.additionalDirectories?.length) {
+        result.permissions = {
+          additionalDirectories: native.additionalDirectories,
+        };
+      }
+      if (native.defaultMode) {
+        result.defaultMode = native.defaultMode;
+      }
+
+      return result;
+    },
+    encode(canonical) {
+      const result: Partial<ClaudeCodeNative> = {};
+
+      const allRules = collectRules(canonical);
+      if (allRules.length > 0) {
+        result.deny = allRules
+          .filter((r) => r.tier === "deny")
+          .map(ruleToString);
+        result.ask = allRules.filter((r) => r.tier === "ask").map(ruleToString);
+        result.allow = allRules
+          .filter((r) => r.tier === "allow")
+          .map(ruleToString);
+      }
+
+      if (canonical.permissions?.additionalDirectories?.length) {
+        result.additionalDirectories =
+          canonical.permissions.additionalDirectories;
+      }
+
+      // defaultMode — only include modes that Claude Code accepts
+      const ccDefaultMode =
+        canonical.defaultMode ?? canonical.permissions?.defaultMode;
+      if (ccDefaultMode) {
+        const claudeCodeModes = [
+          "acceptEdits",
+          "auto",
+          "bypassPermissions",
+          "default",
+          "dontAsk",
+          "plan",
+        ] as const;
+        const match = claudeCodeModes.find((m) => m === ccDefaultMode);
+        if (match) {
+          result.defaultMode = match;
+        }
+      }
+
+      return result;
+    },
   },
-});
+);
 
 // ---------------------------------------------------------------------------
 // OpenCode codec
@@ -153,16 +178,16 @@ const opencodeNative = z.union([
 
 /** Map OpenCode tool names to our canonical names. OpenCode uses lowercase; we use PascalCase. */
 const ocToCanonical: Record<string, string> = {
-  bash: 'Bash',
-  read: 'Read',
-  edit: 'Edit',
-  glob: 'Glob',
-  grep: 'Grep',
-  list: 'Glob', // list ≈ Glob
-  webfetch: 'WebFetch',
-  websearch: 'WebFetch', // websearch ≈ WebFetch
-  task: 'Agent', // subagent spawning ≈ Agent
-  codesearch: 'Grep', // codesearch ≈ Grep
+  bash: "Bash",
+  read: "Read",
+  edit: "Edit",
+  glob: "Glob",
+  grep: "Grep",
+  list: "Glob", // list ≈ Glob
+  webfetch: "WebFetch",
+  websearch: "WebFetch", // websearch ≈ WebFetch
+  task: "Agent", // subagent spawning ≈ Agent
+  codesearch: "Grep", // codesearch ≈ Grep
 };
 
 /**
@@ -170,29 +195,35 @@ const ocToCanonical: Record<string, string> = {
  * OpenCode equivalent.
  */
 const canonicalToOc: Record<string, string> = {
-  Bash: 'bash',
-  Read: 'read',
-  Write: 'edit', // write → edit in OpenCode
-  Edit: 'edit',
-  Glob: 'glob',
-  Grep: 'grep',
-  WebFetch: 'webfetch',
-  Agent: 'task',
+  Bash: "bash",
+  Read: "read",
+  Write: "edit", // write → edit in OpenCode
+  Edit: "edit",
+  Glob: "glob",
+  Grep: "grep",
+  WebFetch: "webfetch",
+  Agent: "task",
 };
 
 /** Tools with no canonical mapping — silently skipped during decode. */
-const OC_UNMAPPED_TOOLS = new Set(['doom_loop', 'lsp', 'skill', 'question', 'todowrite']);
+const OC_UNMAPPED_TOOLS = new Set([
+  "doom_loop",
+  "lsp",
+  "skill",
+  "question",
+  "todowrite",
+]);
 
 export const opencodeCodec = z.codec(opencodeNative, AgentPermissionPolicy, {
   decode(native) {
     // Shorthand "allow"/"deny" applies to everything
-    if (typeof native === 'string') {
+    if (typeof native === "string") {
       const mode =
-        native === 'allow'
-          ? ('autonomous' as const)
-          : native === 'deny'
-            ? ('restricted' as const)
-            : ('standard' as const);
+        native === "allow"
+          ? ("autonomous" as const)
+          : native === "deny"
+            ? ("restricted" as const)
+            : ("standard" as const);
       return { defaultMode: mode };
     }
 
@@ -204,16 +235,16 @@ export const opencodeCodec = z.codec(opencodeNative, AgentPermissionPolicy, {
       if (rule === undefined) continue;
       if (OC_UNMAPPED_TOOLS.has(ocTool)) continue;
 
-      if (ocTool === 'external_directory') {
-        if (typeof rule === 'object') {
+      if (ocTool === "external_directory") {
+        if (typeof rule === "object") {
           for (const [dir, action] of Object.entries(rule)) {
-            if (action === 'allow') additionalDirectories.push(dir);
+            if (action === "allow") additionalDirectories.push(dir);
           }
         }
         continue;
       }
 
-      if (typeof rule === 'string') {
+      if (typeof rule === "string") {
         // Shorthand action for entire tool
         const canonicalTool = ocToCanonical[ocTool] ?? ocTool;
         rules.push({
@@ -245,15 +276,15 @@ export const opencodeCodec = z.codec(opencodeNative, AgentPermissionPolicy, {
   },
   encode(canonical) {
     const allRules = collectRules(canonical);
-    if (allRules.length === 0) return { bash: 'ask' };
+    if (allRules.length === 0) return { bash: "ask" };
 
-    const result: Record<string, Record<string, 'allow' | 'deny' | 'ask'>> = {};
+    const result: Record<string, Record<string, "allow" | "deny" | "ask">> = {};
 
     for (const rule of allRules) {
       const ocTool = canonicalToOc[rule.tool];
       if (!ocTool) continue;
 
-      const pattern = rule.pattern ? rule.pattern.replace(/:\*$/, ' *') : '*';
+      const pattern = rule.pattern ? rule.pattern.replace(/:\*$/, " *") : "*";
 
       let toolRules = result[ocTool];
       if (!toolRules) {
@@ -265,9 +296,9 @@ export const opencodeCodec = z.codec(opencodeNative, AgentPermissionPolicy, {
 
     // Map sandbox.writableRoots → external_directory
     if (canonical.sandbox?.writableRoots?.length) {
-      const extDir: Record<string, 'allow'> = {};
+      const extDir: Record<string, "allow"> = {};
       for (const root of canonical.sandbox.writableRoots) {
-        extDir[root] = 'allow';
+        extDir[root] = "allow";
       }
       result.external_directory = extDir;
     }
@@ -275,10 +306,10 @@ export const opencodeCodec = z.codec(opencodeNative, AgentPermissionPolicy, {
     // If any tool has only a single "*" pattern, simplify to shorthand
     const simplified: Record<string, unknown> = { ...result };
     for (const [tool, patterns] of Object.entries(result)) {
-      if (tool === 'external_directory') continue;
+      if (tool === "external_directory") continue;
       const keys = Object.keys(patterns);
-      if (keys.length === 1 && keys[0] === '*') {
-        simplified[tool] = patterns['*'];
+      if (keys.length === 1 && keys[0] === "*") {
+        simplified[tool] = patterns["*"];
       }
     }
 
@@ -300,31 +331,31 @@ const crushNative = z
 
 /** Map Crush tool names to canonical names. */
 const crushToCanonical: Record<string, string> = {
-  view: 'Read',
-  ls: 'Glob',
-  grep: 'Grep',
-  edit: 'Edit',
-  multiedit: 'Edit',
-  write: 'Write',
-  bash: 'Bash',
-  fetch: 'WebFetch',
-  agentic_fetch: 'WebFetch',
-  glob: 'Glob',
-  download: 'WebFetch',
-  sourcegraph: 'Grep',
-  agent: 'Agent',
-  todos: 'Agent',
+  view: "Read",
+  ls: "Glob",
+  grep: "Grep",
+  edit: "Edit",
+  multiedit: "Edit",
+  write: "Write",
+  bash: "Bash",
+  fetch: "WebFetch",
+  agentic_fetch: "WebFetch",
+  glob: "Glob",
+  download: "WebFetch",
+  sourcegraph: "Grep",
+  agent: "Agent",
+  todos: "Agent",
 };
 
 const canonicalToCrush: Record<string, string> = {
-  Read: 'view',
-  Glob: 'glob',
-  Grep: 'grep',
-  Edit: 'edit',
-  Write: 'write',
-  Bash: 'bash',
-  WebFetch: 'fetch',
-  Agent: 'agent',
+  Read: "view",
+  Glob: "glob",
+  Grep: "grep",
+  Edit: "edit",
+  Write: "write",
+  Bash: "bash",
+  WebFetch: "fetch",
+  Agent: "agent",
 };
 
 export const crushCodec = z.codec(crushNative, AgentPermissionPolicy, {
@@ -333,7 +364,7 @@ export const crushCodec = z.codec(crushNative, AgentPermissionPolicy, {
     for (const tool of native.allowed_tools) {
       // MCP tools pass through as-is (mcp_server_tool format)
       const canonical = crushToCanonical[tool] ?? tool;
-      rules.push({ tool: canonical, tier: 'allow' });
+      rules.push({ tool: canonical, tier: "allow" });
     }
     return { rules };
   },
@@ -342,7 +373,7 @@ export const crushCodec = z.codec(crushNative, AgentPermissionPolicy, {
     const allowed: string[] = [];
     for (const rule of allRules) {
       // Only bare allow rules — Crush has no deny, no patterns
-      if (rule.tier !== 'allow') continue;
+      if (rule.tier !== "allow") continue;
       if (rule.pattern !== undefined) continue;
       const crushTool = canonicalToCrush[rule.tool];
       if (crushTool) allowed.push(crushTool);
@@ -377,17 +408,17 @@ export const crushCodec = z.codec(crushNative, AgentPermissionPolicy, {
 
 /** Kiro → canonical tool name mapping. */
 const kiroToCanonical: Record<string, string> = {
-  read: 'Read',
-  write: 'Write',
-  shell: 'Bash',
-  aws: 'Aws',
-  glob: 'Glob',
-  grep: 'Grep',
-  web_search: 'WebSearch',
-  web_fetch: 'WebFetch',
-  code: 'Code',
-  delegate: 'Delegate',
-  subagent: 'Agent',
+  read: "Read",
+  write: "Write",
+  shell: "Bash",
+  aws: "Aws",
+  glob: "Glob",
+  grep: "Grep",
+  web_search: "WebSearch",
+  web_fetch: "WebFetch",
+  code: "Code",
+  delegate: "Delegate",
+  subagent: "Agent",
 };
 
 /** Canonical → Kiro tool name mapping (reverse of kiroToCanonical). */
@@ -401,7 +432,7 @@ for (const [kiro, canonical] of Object.entries(kiroToCanonical)) {
  * with \A/\z; we store the pattern without anchors.
  */
 function stripKiroAnchors(pattern: string): string {
-  return pattern.replace(/^\\A/, '').replace(/\\z$/, '');
+  return pattern.replace(/^\\A/, "").replace(/\\z$/, "");
 }
 
 /** Add Kiro regex anchors to a pattern for native output. */
@@ -411,7 +442,7 @@ function addKiroAnchors(pattern: string): string {
 
 /** Check if a Kiro allowedTools entry is an MCP reference (starts with @) vs a built-in tool name. */
 function isKiroMcpRef(entry: string): boolean {
-  return entry.startsWith('@');
+  return entry.startsWith("@");
 }
 
 /**
@@ -419,7 +450,8 @@ function isKiroMcpRef(entry: string): boolean {
  * MCP refs use @server/tool format.
  */
 function kiroGlobToPattern(glob: string): string | undefined {
-  if (!isKiroMcpRef(glob) && !glob.includes('*') && !glob.includes('?')) return undefined;
+  if (!isKiroMcpRef(glob) && !glob.includes("*") && !glob.includes("?"))
+    return undefined;
   return glob;
 }
 
@@ -482,13 +514,13 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
       for (const entry of native.allowedTools) {
         if (isKiroMcpRef(entry)) {
           // MCP reference: @server, @server/tool, @server/prefix_*
-          rules.push({ tool: entry, tier: 'allow' });
+          rules.push({ tool: entry, tier: "allow" });
         } else {
           const canonical = kiroToCanonical[entry] ?? entry;
           const pattern = kiroGlobToPattern(entry);
           rules.push({
             tool: canonical,
-            tier: 'allow',
+            tier: "allow",
             ...(pattern && { pattern }),
           });
         }
@@ -503,23 +535,23 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
         if (ts.shell.deniedCommands) {
           for (const cmd of ts.shell.deniedCommands) {
             rules.push({
-              tool: 'Bash',
+              tool: "Bash",
               pattern: stripKiroAnchors(cmd),
-              tier: 'deny',
+              tier: "deny",
             });
           }
         }
         if (ts.shell.allowedCommands) {
           for (const cmd of ts.shell.allowedCommands) {
             rules.push({
-              tool: 'Bash',
+              tool: "Bash",
               pattern: stripKiroAnchors(cmd),
-              tier: 'allow',
+              tier: "allow",
             });
           }
         }
         if (ts.shell.denyByDefault) {
-          result.defaultMode = 'restricted';
+          result.defaultMode = "restricted";
         }
         // autoAllowReadonly is a Kiro-specific behaviour flag; no canonical mapping
       }
@@ -528,12 +560,12 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
       if (ts.read) {
         if (ts.read.deniedPaths) {
           for (const path of ts.read.deniedPaths) {
-            rules.push({ tool: 'Read', pattern: path, tier: 'deny' });
+            rules.push({ tool: "Read", pattern: path, tier: "deny" });
           }
         }
         if (ts.read.allowedPaths) {
           for (const path of ts.read.allowedPaths) {
-            rules.push({ tool: 'Read', pattern: path, tier: 'allow' });
+            rules.push({ tool: "Read", pattern: path, tier: "allow" });
           }
         }
       }
@@ -542,12 +574,12 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
       if (ts.write) {
         if (ts.write.deniedPaths) {
           for (const path of ts.write.deniedPaths) {
-            rules.push({ tool: 'Write', pattern: path, tier: 'deny' });
+            rules.push({ tool: "Write", pattern: path, tier: "deny" });
           }
         }
         if (ts.write.allowedPaths) {
           for (const path of ts.write.allowedPaths) {
-            rules.push({ tool: 'Write', pattern: path, tier: 'allow' });
+            rules.push({ tool: "Write", pattern: path, tier: "allow" });
           }
         }
       }
@@ -557,18 +589,18 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
         if (ts.aws.deniedServices) {
           for (const svc of ts.aws.deniedServices) {
             rules.push({
-              tool: 'Aws',
+              tool: "Aws",
               pattern: `service:${svc}`,
-              tier: 'deny',
+              tier: "deny",
             });
           }
         }
         if (ts.aws.allowedServices) {
           for (const svc of ts.aws.allowedServices) {
             rules.push({
-              tool: 'Aws',
+              tool: "Aws",
               pattern: `service:${svc}`,
-              tier: 'allow',
+              tier: "allow",
             });
           }
         }
@@ -579,18 +611,18 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
         if (ts.web_fetch.blocked) {
           for (const urlPattern of ts.web_fetch.blocked) {
             rules.push({
-              tool: 'WebFetch',
+              tool: "WebFetch",
               pattern: `url:${stripKiroAnchors(urlPattern)}`,
-              tier: 'deny',
+              tier: "deny",
             });
           }
         }
         if (ts.web_fetch.trusted) {
           for (const urlPattern of ts.web_fetch.trusted) {
             rules.push({
-              tool: 'WebFetch',
+              tool: "WebFetch",
               pattern: `url:${stripKiroAnchors(urlPattern)}`,
-              tier: 'allow',
+              tier: "allow",
             });
           }
         }
@@ -606,17 +638,19 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
     const result: Partial<KiroNative> = {};
 
     const allowedTools: string[] = [];
-    const shellSettings: NonNullable<KiroNative['toolsSettings']>['shell'] = {};
-    const readSettings: NonNullable<KiroNative['toolsSettings']>['read'] = {};
-    const writeSettings: NonNullable<KiroNative['toolsSettings']>['write'] = {};
-    const awsSettings: NonNullable<KiroNative['toolsSettings']>['aws'] = {};
-    const webFetchSettings: NonNullable<KiroNative['toolsSettings']>['web_fetch'] = {};
+    const shellSettings: NonNullable<KiroNative["toolsSettings"]>["shell"] = {};
+    const readSettings: NonNullable<KiroNative["toolsSettings"]>["read"] = {};
+    const writeSettings: NonNullable<KiroNative["toolsSettings"]>["write"] = {};
+    const awsSettings: NonNullable<KiroNative["toolsSettings"]>["aws"] = {};
+    const webFetchSettings: NonNullable<
+      KiroNative["toolsSettings"]
+    >["web_fetch"] = {};
 
     for (const rule of allRules) {
       const kiroTool = canonicalToKiro[rule.tool];
 
       // Bare allow rules (no pattern) → allowedTools
-      if (rule.tier === 'allow' && rule.pattern === undefined) {
+      if (rule.tier === "allow" && rule.pattern === undefined) {
         if (isKiroMcpRef(rule.tool)) {
           allowedTools.push(rule.tool);
         } else if (kiroTool) {
@@ -626,64 +660,68 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
       }
 
       // Patterned rules → toolsSettings
-      if (rule.tool === 'Bash' && rule.pattern !== undefined) {
-        if (rule.tier === 'deny') {
+      if (rule.tool === "Bash" && rule.pattern !== undefined) {
+        if (rule.tier === "deny") {
           shellSettings.deniedCommands ??= [];
           shellSettings.deniedCommands.push(addKiroAnchors(rule.pattern));
-        } else if (rule.tier === 'allow') {
+        } else if (rule.tier === "allow") {
           shellSettings.allowedCommands ??= [];
           shellSettings.allowedCommands.push(addKiroAnchors(rule.pattern));
         }
-      } else if (rule.tool === 'Read' && rule.pattern !== undefined) {
-        if (rule.tier === 'deny') {
+      } else if (rule.tool === "Read" && rule.pattern !== undefined) {
+        if (rule.tier === "deny") {
           readSettings.deniedPaths ??= [];
           readSettings.deniedPaths.push(rule.pattern);
-        } else if (rule.tier === 'allow') {
+        } else if (rule.tier === "allow") {
           readSettings.allowedPaths ??= [];
           readSettings.allowedPaths.push(rule.pattern);
         }
-      } else if (rule.tool === 'Write' && rule.pattern !== undefined) {
-        if (rule.tier === 'deny') {
+      } else if (rule.tool === "Write" && rule.pattern !== undefined) {
+        if (rule.tier === "deny") {
           writeSettings.deniedPaths ??= [];
           writeSettings.deniedPaths.push(rule.pattern);
-        } else if (rule.tier === 'allow') {
+        } else if (rule.tier === "allow") {
           writeSettings.allowedPaths ??= [];
           writeSettings.allowedPaths.push(rule.pattern);
         }
-      } else if (rule.tool === 'Aws' && rule.pattern?.startsWith('service:')) {
-        const svc = rule.pattern.slice('service:'.length);
-        if (rule.tier === 'deny') {
+      } else if (rule.tool === "Aws" && rule.pattern?.startsWith("service:")) {
+        const svc = rule.pattern.slice("service:".length);
+        if (rule.tier === "deny") {
           awsSettings.deniedServices ??= [];
           awsSettings.deniedServices.push(svc);
-        } else if (rule.tier === 'allow') {
+        } else if (rule.tier === "allow") {
           awsSettings.allowedServices ??= [];
           awsSettings.allowedServices.push(svc);
         }
-      } else if (rule.tool === 'WebFetch' && rule.pattern?.startsWith('url:')) {
-        const urlPattern = rule.pattern.slice('url:'.length);
-        if (rule.tier === 'deny') {
+      } else if (rule.tool === "WebFetch" && rule.pattern?.startsWith("url:")) {
+        const urlPattern = rule.pattern.slice("url:".length);
+        if (rule.tier === "deny") {
           webFetchSettings.blocked ??= [];
           webFetchSettings.blocked.push(addKiroAnchors(urlPattern));
-        } else if (rule.tier === 'allow') {
+        } else if (rule.tier === "allow") {
           webFetchSettings.trusted ??= [];
           webFetchSettings.trusted.push(addKiroAnchors(urlPattern));
         }
       }
     }
 
-    if (canonical.defaultMode === 'restricted') {
+    if (canonical.defaultMode === "restricted") {
       shellSettings.denyByDefault = true;
     }
 
     if (allowedTools.length > 0) result.allowedTools = allowedTools;
 
-    const toolsSettings: NonNullable<KiroNative['toolsSettings']> = {};
-    if (Object.keys(shellSettings).length > 0) toolsSettings.shell = shellSettings;
+    const toolsSettings: NonNullable<KiroNative["toolsSettings"]> = {};
+    if (Object.keys(shellSettings).length > 0)
+      toolsSettings.shell = shellSettings;
     if (Object.keys(readSettings).length > 0) toolsSettings.read = readSettings;
-    if (Object.keys(writeSettings).length > 0) toolsSettings.write = writeSettings;
+    if (Object.keys(writeSettings).length > 0)
+      toolsSettings.write = writeSettings;
     if (Object.keys(awsSettings).length > 0) toolsSettings.aws = awsSettings;
-    if (Object.keys(webFetchSettings).length > 0) toolsSettings.web_fetch = webFetchSettings;
-    if (Object.keys(toolsSettings).length > 0) result.toolsSettings = toolsSettings;
+    if (Object.keys(webFetchSettings).length > 0)
+      toolsSettings.web_fetch = webFetchSettings;
+    if (Object.keys(toolsSettings).length > 0)
+      result.toolsSettings = toolsSettings;
 
     return result;
   },
@@ -763,79 +801,90 @@ const codexNative = z.object({
           })
           .partial()
           .optional(),
-      })
+      }),
     )
     .optional(),
 });
 
 type CodexNative = z.infer<typeof codexNative>;
-type CodexSandboxWorkspaceWrite = NonNullable<CodexNative['sandbox_workspace_write']>;
+type CodexSandboxWorkspaceWrite = NonNullable<
+  CodexNative["sandbox_workspace_write"]
+>;
 
 export interface CodexProfile {
-  filesystem?: CodexFilesystemAccess | Record<string, CodexFilesystemAccess> | undefined;
+  filesystem?:
+    CodexFilesystemAccess | Record<string, CodexFilesystemAccess> | undefined;
   network?:
     | {
         enabled?: boolean | undefined;
-        domains?: Record<string, 'allow' | 'deny'> | undefined;
+        domains?: Record<string, "allow" | "deny"> | undefined;
       }
     | undefined;
 }
 
 /** Map Codex approval_policy to canonical defaultMode. */
-function codexApprovalToMode(policy: CodexApprovalPolicy): AgentPermissionPolicy['defaultMode'] {
-  if (typeof policy === 'string') {
+function codexApprovalToMode(
+  policy: CodexApprovalPolicy,
+): AgentPermissionPolicy["defaultMode"] {
+  if (typeof policy === "string") {
     switch (policy) {
-      case 'untrusted':
-        return 'restricted';
-      case 'on-request':
-        return 'standard';
-      case 'on-failure':
-        return 'standard';
-      case 'never':
-        return 'autonomous';
+      case "untrusted":
+        return "restricted";
+      case "on-request":
+        return "standard";
+      case "on-failure":
+        return "standard";
+      case "never":
+        return "autonomous";
     }
   }
   // Granular — treat as standard (some ops auto-approved, some ask)
-  return 'standard';
+  return "standard";
 }
 
 /** Map canonical defaultMode back to Codex approval_policy. */
-function modeToCodexApproval(mode: AgentPermissionPolicy['defaultMode']): CodexApprovalPolicy {
-  if (mode === 'autonomous' || mode === 'bypassPermissions' || mode === 'dontAsk') {
-    return 'never';
+function modeToCodexApproval(
+  mode: AgentPermissionPolicy["defaultMode"],
+): CodexApprovalPolicy {
+  if (
+    mode === "autonomous" ||
+    mode === "bypassPermissions" ||
+    mode === "dontAsk"
+  ) {
+    return "never";
   }
-  if (mode === 'restricted' || mode === 'plan' || mode === 'readonly') {
-    return 'untrusted';
+  if (mode === "restricted" || mode === "plan" || mode === "readonly") {
+    return "untrusted";
   }
   // standard, acceptEdits, default
-  return 'on-request';
+  return "on-request";
 }
 
 /** Map Codex sandbox_mode to canonical sandbox.mode. */
 function codexSandboxToCanonical(
-  mode: z.infer<typeof CodexSandboxMode>
-): 'readonly' | 'workspace-write' | 'full-access' {
+  mode: z.infer<typeof CodexSandboxMode>,
+): "readonly" | "workspace-write" | "full-access" {
   switch (mode) {
-    case 'read-only':
-      return 'readonly';
-    case 'workspace-write':
-      return 'workspace-write';
-    case 'danger-full-access':
-      return 'full-access';
+    case "read-only":
+      return "readonly";
+    case "workspace-write":
+      return "workspace-write";
+    case "danger-full-access":
+      return "full-access";
   }
 }
 
 /** Map canonical sandbox.mode back to Codex sandbox_mode. */
 function canonicalSandboxToCodex(
-  mode: 'readonly' | 'workspace-write' | 'full-access'
+  mode: "readonly" | "workspace-write" | "full-access",
 ): z.infer<typeof CodexSandboxMode> {
   switch (mode) {
-    case 'readonly':
-      return 'read-only';
-    case 'workspace-write':
-      return 'workspace-write';
-    case 'full-access':
-      return 'danger-full-access';
+    case "readonly":
+      return "read-only";
+    case "workspace-write":
+      return "workspace-write";
+    case "full-access":
+      return "danger-full-access";
   }
 }
 
@@ -845,33 +894,36 @@ function canonicalSandboxToCodex(
  */
 function codexFilesystemToRules(
   fs: CodexFilesystemAccess | Record<string, CodexFilesystemAccess>,
-  rules: Rule[]
+  rules: Rule[],
 ): void {
-  if (typeof fs === 'string') {
-    if (fs === 'read') {
-      rules.push({ tool: 'Write', tier: 'deny' }, { tool: 'Edit', tier: 'deny' });
-    } else if (fs === 'none') {
+  if (typeof fs === "string") {
+    if (fs === "read") {
       rules.push(
-        { tool: 'Read', tier: 'deny' },
-        { tool: 'Write', tier: 'deny' },
-        { tool: 'Edit', tier: 'deny' }
+        { tool: "Write", tier: "deny" },
+        { tool: "Edit", tier: "deny" },
+      );
+    } else if (fs === "none") {
+      rules.push(
+        { tool: "Read", tier: "deny" },
+        { tool: "Write", tier: "deny" },
+        { tool: "Edit", tier: "deny" },
       );
     }
     return;
   }
 
   for (const [path, mode] of Object.entries(fs)) {
-    const rulePath = path.startsWith('/') ? `.${path}` : path;
-    if (mode === 'none') {
+    const rulePath = path.startsWith("/") ? `.${path}` : path;
+    if (mode === "none") {
       rules.push(
-        { tool: 'Read', pattern: rulePath, tier: 'deny' },
-        { tool: 'Write', pattern: rulePath, tier: 'deny' },
-        { tool: 'Edit', pattern: rulePath, tier: 'deny' }
+        { tool: "Read", pattern: rulePath, tier: "deny" },
+        { tool: "Write", pattern: rulePath, tier: "deny" },
+        { tool: "Edit", pattern: rulePath, tier: "deny" },
       );
-    } else if (mode === 'read') {
+    } else if (mode === "read") {
       rules.push(
-        { tool: 'Write', pattern: rulePath, tier: 'deny' },
-        { tool: 'Edit', pattern: rulePath, tier: 'deny' }
+        { tool: "Write", pattern: rulePath, tier: "deny" },
+        { tool: "Edit", pattern: rulePath, tier: "deny" },
       );
     }
   }
@@ -880,11 +932,11 @@ function codexFilesystemToRules(
 export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
   decode(native) {
     const rules: Rule[] = [];
-    const networkDomains: Record<string, 'allow' | 'deny'> = {};
+    const networkDomains: Record<string, "allow" | "deny"> = {};
     const namedProfiles: Record<string, Partial<PermissionTiers>> = {};
 
     // --- approval_policy → defaultMode ---
-    let defaultMode: AgentPermissionPolicy['defaultMode'] | undefined;
+    let defaultMode: AgentPermissionPolicy["defaultMode"] | undefined;
     if (native.approval_policy) {
       defaultMode = codexApprovalToMode(native.approval_policy);
     }
@@ -907,11 +959,14 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
     }
 
     // --- sandbox_mode "read-only" override ---
-    if (native.sandbox_mode === 'read-only') {
-      defaultMode = 'readonly';
-      rules.push({ tool: 'Write', tier: 'deny' }, { tool: 'Edit', tier: 'deny' });
-    } else if (native.sandbox_mode === 'danger-full-access') {
-      if (!native.approval_policy) defaultMode = 'autonomous';
+    if (native.sandbox_mode === "read-only") {
+      defaultMode = "readonly";
+      rules.push(
+        { tool: "Write", tier: "deny" },
+        { tool: "Edit", tier: "deny" },
+      );
+    } else if (native.sandbox_mode === "danger-full-access") {
+      if (!native.approval_policy) defaultMode = "autonomous";
     }
 
     // --- Named permission profiles ---
@@ -926,11 +981,13 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
       }
 
       if (profile.network?.domains) {
-        for (const [domain, action] of Object.entries(profile.network.domains)) {
+        for (const [domain, action] of Object.entries(
+          profile.network.domains,
+        )) {
           profileRules.push({
-            tool: 'WebFetch',
+            tool: "WebFetch",
             pattern: `domain:${domain}`,
-            tier: action === 'allow' ? 'allow' : 'deny',
+            tier: action === "allow" ? "allow" : "deny",
           });
         }
       }
@@ -947,8 +1004,10 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
       // Store as named profile (using string arrays for compat)
       if (profileRules.length > 0) {
         namedProfiles[name] = {
-          deny: profileRules.filter((r) => r.tier === 'deny').map(ruleToString),
-          allow: profileRules.filter((r) => r.tier === 'allow').map(ruleToString),
+          deny: profileRules.filter((r) => r.tier === "deny").map(ruleToString),
+          allow: profileRules
+            .filter((r) => r.tier === "allow")
+            .map(ruleToString),
         };
       }
     }
@@ -998,20 +1057,23 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
       }
     } else if (canonical.defaultMode) {
       // Derive sandbox_mode from defaultMode if no explicit sandbox
-      if (canonical.defaultMode === 'readonly') {
-        result.sandbox_mode = 'read-only';
+      if (canonical.defaultMode === "readonly") {
+        result.sandbox_mode = "read-only";
       } else if (
-        canonical.defaultMode === 'autonomous' ||
-        canonical.defaultMode === 'bypassPermissions'
+        canonical.defaultMode === "autonomous" ||
+        canonical.defaultMode === "bypassPermissions"
       ) {
-        result.sandbox_mode = 'danger-full-access';
+        result.sandbox_mode = "danger-full-access";
       } else {
-        result.sandbox_mode = 'workspace-write';
+        result.sandbox_mode = "workspace-write";
       }
     }
 
     // --- additionalDirectories → writable_roots ---
-    if (canonical.permissions?.additionalDirectories?.length && !result.sandbox_workspace_write) {
+    if (
+      canonical.permissions?.additionalDirectories?.length &&
+      !result.sandbox_workspace_write
+    ) {
       result.sandbox_workspace_write = {
         writable_roots: canonical.permissions.additionalDirectories,
       };
@@ -1019,28 +1081,32 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
 
     // --- Collect all rules and extract Codex-relevant info ---
     const allRules = collectRules(canonical);
-    const domains: Record<string, 'allow' | 'deny'> = {};
+    const domains: Record<string, "allow" | "deny"> = {};
     const filesystemDenyTools: Record<string, Set<string>> = {};
 
     // Extract network domains from canonical network config
     if (canonical.network?.domains) {
-      for (const [domain, action] of Object.entries(canonical.network.domains)) {
+      for (const [domain, action] of Object.entries(
+        canonical.network.domains,
+      )) {
         domains[domain] = action;
       }
     }
 
     for (const rule of allRules) {
       // Extract WebFetch domain rules
-      if (rule.tool === 'WebFetch' && rule.pattern?.startsWith('domain:')) {
+      if (rule.tool === "WebFetch" && rule.pattern?.startsWith("domain:")) {
         const domain = rule.pattern.slice(7);
-        domains[domain] = rule.tier === 'deny' ? 'deny' : 'allow';
+        domains[domain] = rule.tier === "deny" ? "deny" : "allow";
         continue;
       }
 
       // Extract path-based deny rules for filesystem mapping
       if (
-        rule.tier === 'deny' &&
-        (rule.tool === 'Read' || rule.tool === 'Write' || rule.tool === 'Edit') &&
+        rule.tier === "deny" &&
+        (rule.tool === "Read" ||
+          rule.tool === "Write" ||
+          rule.tool === "Edit") &&
         rule.pattern !== undefined
       ) {
         let tools = filesystemDenyTools[rule.pattern];
@@ -1055,10 +1121,10 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
     // Convert collected path denies to Codex filesystem modes
     const filesystem: Record<string, CodexFilesystemAccess> = {};
     for (const [path, tools] of Object.entries(filesystemDenyTools)) {
-      if (tools.has('Read')) {
-        filesystem[path] = 'none';
-      } else if (tools.has('Write') || tools.has('Edit')) {
-        filesystem[path] = 'read';
+      if (tools.has("Read")) {
+        filesystem[path] = "none";
+      } else if (tools.has("Write") || tools.has("Edit")) {
+        filesystem[path] = "read";
       }
     }
 
@@ -1068,17 +1134,19 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
       for (const [name, profileTiers] of Object.entries(canonical.profiles)) {
         const profile: CodexProfile = {};
         const profDenyTools: Record<string, Set<string>> = {};
-        const profDomains: Record<string, 'allow' | 'deny'> = {};
+        const profDomains: Record<string, "allow" | "deny"> = {};
 
         const profileRules = collectRules({ permissions: profileTiers });
         for (const rule of profileRules) {
-          if (rule.tool === 'WebFetch' && rule.pattern?.startsWith('domain:')) {
+          if (rule.tool === "WebFetch" && rule.pattern?.startsWith("domain:")) {
             const domain = rule.pattern.slice(7);
-            profDomains[domain] = rule.tier === 'deny' ? 'deny' : 'allow';
+            profDomains[domain] = rule.tier === "deny" ? "deny" : "allow";
           }
           if (
-            rule.tier === 'deny' &&
-            (rule.tool === 'Read' || rule.tool === 'Write' || rule.tool === 'Edit') &&
+            rule.tier === "deny" &&
+            (rule.tool === "Read" ||
+              rule.tool === "Write" ||
+              rule.tool === "Edit") &&
             rule.pattern !== undefined
           ) {
             let tools = profDenyTools[rule.pattern];
@@ -1092,14 +1160,15 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
 
         const profFs: Record<string, CodexFilesystemAccess> = {};
         for (const [path, tools] of Object.entries(profDenyTools)) {
-          if (tools.has('Read')) profFs[path] = 'none';
-          else if (tools.has('Write') || tools.has('Edit')) profFs[path] = 'read';
+          if (tools.has("Read")) profFs[path] = "none";
+          else if (tools.has("Write") || tools.has("Edit"))
+            profFs[path] = "read";
         }
 
         if (Object.keys(profFs).length > 0) {
           const absoluteFs: Record<string, CodexFilesystemAccess> = {};
           for (const [p, m] of Object.entries(profFs)) {
-            absoluteFs[p.startsWith('.') ? p.slice(1) : p] = m;
+            absoluteFs[p.startsWith(".") ? p.slice(1) : p] = m;
           }
           profile.filesystem = absoluteFs;
         }
@@ -1118,13 +1187,16 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
           result.default_permissions = canonical.activeProfile;
         }
       }
-    } else if (Object.keys(filesystem).length > 0 || Object.keys(domains).length > 0) {
+    } else if (
+      Object.keys(filesystem).length > 0 ||
+      Object.keys(domains).length > 0
+    ) {
       // No named profiles — create a single "default" profile from rules
       const profile: CodexProfile = {};
       if (Object.keys(filesystem).length > 0) {
         const absoluteFs: Record<string, CodexFilesystemAccess> = {};
         for (const [p, m] of Object.entries(filesystem)) {
-          absoluteFs[p.startsWith('.') ? p.slice(1) : p] = m;
+          absoluteFs[p.startsWith(".") ? p.slice(1) : p] = m;
         }
         profile.filesystem = absoluteFs;
       }
@@ -1133,7 +1205,7 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
       }
       if (Object.keys(profile).length > 0) {
         result.permissions = { default: profile };
-        result.default_permissions = 'default';
+        result.default_permissions = "default";
       }
     }
 
@@ -1146,7 +1218,7 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
 // ---------------------------------------------------------------------------
 
 export const CODECS = {
-  'claude-code': claudeCodeCodec,
+  "claude-code": claudeCodeCodec,
   codex: codexCodec,
   kiro: kiroCodec,
   opencode: opencodeCodec,

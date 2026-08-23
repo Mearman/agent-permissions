@@ -5,12 +5,12 @@
  * read/write helpers for the convert/validate/check/sync pipeline.
  */
 
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
-import { existsSync } from 'node:fs';
-import { type AgentId } from './compat/codecs.ts';
-import { isRecord } from './guards.ts';
-import { type Format } from './api.ts';
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { type AgentId } from "./compat/codecs.ts";
+import { isRecord } from "./guards.ts";
+import { type Format } from "./api.ts";
 
 // ---------------------------------------------------------------------------
 // File mapping
@@ -32,34 +32,34 @@ export interface AgentFileDef {
 }
 
 /** Default config file for each agent format, relative to a project root. */
-export const AGENT_FILES: Record<AgentId | 'canonical', AgentFileDef> = {
+export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
   canonical: {
-    name: '.agents/permissions.json',
-    localName: '.agents/permissions.local.json',
+    name: ".agents/permissions.json",
+    localName: ".agents/permissions.local.json",
     extract: (raw) => raw,
     wrap: (encoded) => encoded,
   },
-  'claude-code': {
-    name: '.claude/settings.json',
-    localName: '.claude/settings.local.json',
+  "claude-code": {
+    name: ".claude/settings.json",
+    localName: ".claude/settings.local.json",
     extract: (raw) => {
-      if (!isRecord(raw) || !('permissions' in raw)) return undefined;
+      if (!isRecord(raw) || !("permissions" in raw)) return undefined;
       return raw.permissions;
     },
     wrap: (encoded) => ({ permissions: encoded }),
   },
-  codex: { name: 'codex.toml' }, // TOML — read only if pre-parsed
+  codex: { name: "codex.toml" }, // TOML — read only if pre-parsed
   opencode: {
-    name: 'opencode.json',
+    name: "opencode.json",
     extract: (raw) => {
-      if (!isRecord(raw) || !('permission' in raw)) return undefined;
+      if (!isRecord(raw) || !("permission" in raw)) return undefined;
       return raw.permission;
     },
     wrap: (encoded) => ({ permission: encoded }),
   },
-  crush: { name: '.crush.json' }, // Crush has no standard config file
+  crush: { name: ".crush.json" }, // Crush has no standard config file
   kiro: {
-    name: '.kiro/permissions.json',
+    name: ".kiro/permissions.json",
     extract: (raw) => raw,
     wrap: (encoded) => encoded,
   },
@@ -119,17 +119,17 @@ export async function readStdin(): Promise<string> {
     // The stream's iterator types its chunks as `any`; instanceof narrows without an assertion. Buffer is a Uint8Array subclass, so binary chunks take the first branch.
     if (chunk instanceof Uint8Array) {
       chunks.push(chunk);
-    } else if (typeof chunk === 'string') {
+    } else if (typeof chunk === "string") {
       chunks.push(new TextEncoder().encode(chunk));
     }
   }
-  return Buffer.concat(chunks).toString('utf-8');
+  return Buffer.concat(chunks).toString("utf-8");
 }
 
 /** Read from a file path, or stdin if undefined. */
 export async function readInput(path: string | undefined): Promise<string> {
   if (path === undefined) return readStdin();
-  return readFile(path, 'utf-8');
+  return readFile(path, "utf-8");
 }
 
 /** Parse a JSON string. Returns a Result instead of throwing. */
@@ -142,7 +142,10 @@ export function parseJson(raw: string, source: string): Result<unknown> {
 }
 
 /** Write JSON to a file, creating parent directories as needed. */
-export async function writeJsonFile(path: string, content: string): Promise<void> {
+export async function writeJsonFile(
+  path: string,
+  content: string,
+): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, content);
 }
@@ -151,8 +154,8 @@ export async function writeJsonFile(path: string, content: string): Promise<void
 // Decode / validate helpers
 // ---------------------------------------------------------------------------
 
-import { AgentPermissionPolicy } from './schema.ts';
-import { CODECS } from './compat/codecs.ts';
+import { AgentPermissionPolicy } from "./schema.ts";
+import { CODECS } from "./compat/codecs.ts";
 
 /** Validation error for a single field. */
 export interface ValidationError {
@@ -172,12 +175,12 @@ export function validatePolicy(json: unknown): ValidateResult {
   const result = AgentPermissionPolicy.safeParse(json);
   if (result.success) return { ok: true, value: result.data };
   const errors: ValidationError[] = result.error.issues.map((issue) => ({
-    path: issue.path.length > 0 ? issue.path.join('.') : '(root)',
+    path: issue.path.length > 0 ? issue.path.join(".") : "(root)",
     message: issue.message,
   }));
   return {
     ok: false,
-    error: `validation failed: ${errors.map((e) => `${e.path}: ${e.message}`).join(', ')}`,
+    error: `validation failed: ${errors.map((e) => `${e.path}: ${e.message}`).join(", ")}`,
     errors,
   };
 }

@@ -8,7 +8,7 @@
  * Compile: pnpm build:schema
  */
 
-import * as z from 'zod';
+import * as z from "zod";
 
 // ---------------------------------------------------------------------------
 // Permission modes
@@ -39,23 +39,23 @@ import * as z from 'zod';
 export const PermissionMode = z
   .enum([
     // APP modes
-    'standard',
-    'autonomous',
-    'restricted',
-    'readonly',
+    "standard",
+    "autonomous",
+    "restricted",
+    "readonly",
     // Claude Code compatible modes
-    'plan',
-    'dontAsk',
-    'acceptEdits',
-    'bypassPermissions',
-    'default',
-    'auto',
+    "plan",
+    "dontAsk",
+    "acceptEdits",
+    "bypassPermissions",
+    "default",
+    "auto",
   ])
   .meta({
     description:
-      'Default permission mode. Agent Permission Policy modes: standard, autonomous, restricted, readonly. ' +
-      'Claude Code compatible modes: plan, dontAsk, acceptEdits, bypassPermissions, default.',
-    default: 'standard',
+      "Default permission mode. Agent Permission Policy modes: standard, autonomous, restricted, readonly. " +
+      "Claude Code compatible modes: plan, dontAsk, acceptEdits, bypassPermissions, default.",
+    default: "standard",
   });
 
 // ---------------------------------------------------------------------------
@@ -93,8 +93,9 @@ export const PermissionTiers = z
      * is never checked.
      */
     allow: z.array(PermissionRule).meta({
-      description: 'Tools auto-approved without prompting. Evaluated after deny rules.',
-      examples: ['Bash(git status)', 'Bash(npm run test:*)', 'Read', 'Grep'],
+      description:
+        "Tools auto-approved without prompting. Evaluated after deny rules.",
+      examples: ["Bash(git status)", "Bash(npm run test:*)", "Read", "Grep"],
     }),
 
     /**
@@ -103,15 +104,15 @@ export const PermissionTiers = z
      */
     deny: z.array(PermissionRule).meta({
       description:
-        'Tools always denied — short-circuits before allow and ask. A deny cannot be overridden by an allow in any other source.',
-      examples: ['Bash(sudo:*)', 'Bash(rm -rf /)', 'Read(./.env)'],
+        "Tools always denied — short-circuits before allow and ask. A deny cannot be overridden by an allow in any other source.",
+      examples: ["Bash(sudo:*)", "Bash(rm -rf /)", "Read(./.env)"],
     }),
 
     /** Tools that always prompt, even in autonomous mode. Evaluated after deny but before allow. */
     ask: z.array(PermissionRule).meta({
       description:
-        'Tools that always prompt, even in autonomous mode. Evaluated after deny but before allow.',
-      examples: ['Bash(git push:*)', 'Bash(npm publish:*)'],
+        "Tools that always prompt, even in autonomous mode. Evaluated after deny but before allow.",
+      examples: ["Bash(git push:*)", "Bash(npm publish:*)"],
     }),
 
     /**
@@ -119,8 +120,8 @@ export const PermissionTiers = z
      * absolute.
      */
     additionalDirectories: z.array(z.string()).meta({
-      description: 'Directories beyond project root that agents may access.',
-      examples: ['../shared-libs/', '/tmp/build-cache'],
+      description: "Directories beyond project root that agents may access.",
+      examples: ["../shared-libs/", "/tmp/build-cache"],
     }),
 
     /**
@@ -129,8 +130,8 @@ export const PermissionTiers = z
      */
     defaultMode: PermissionMode.meta({
       description:
-        'Default permission mode. Accepted here for Claude Code compatibility, ' +
-        'or at the top level for the canonical placement.',
+        "Default permission mode. Accepted here for Claude Code compatibility, " +
+        "or at the top level for the canonical placement.",
     }),
   })
   .partial()
@@ -143,10 +144,10 @@ export const PermissionTiers = z
 export const RuleCondition = z
   .object({
     /** Working directory pattern (glob). */
-    cwd: z.string().meta({ description: 'Working directory pattern (glob).' }),
+    cwd: z.string().meta({ description: "Working directory pattern (glob)." }),
 
     /** Git branch name pattern (glob). */
-    branch: z.string().meta({ description: 'Git branch name pattern (glob).' }),
+    branch: z.string().meta({ description: "Git branch name pattern (glob)." }),
   })
   .partial();
 
@@ -154,16 +155,16 @@ export const Rule = z
   .object({
     /** Canonical tool name (e.g. "Bash", "Read", "Write"). */
     tool: z.string().meta({
-      description: 'Canonical tool name.',
+      description: "Canonical tool name.",
       examples: [
-        'Bash',
-        'Read',
-        'Write',
-        'Edit',
-        'Grep',
-        'WebFetch',
-        'Agent',
-        'mcp__github__create_issue',
+        "Bash",
+        "Read",
+        "Write",
+        "Edit",
+        "Grep",
+        "WebFetch",
+        "Agent",
+        "mcp__github__create_issue",
       ],
     }),
 
@@ -175,22 +176,25 @@ export const Rule = z
       .string()
       .optional()
       .meta({
-        description: 'Pattern to match against tool input. When absent, matches any input.',
-        examples: ['npm run *', './config/**', 'git push --force:*'],
+        description:
+          "Pattern to match against tool input. When absent, matches any input.",
+        examples: ["npm run *", "./config/**", "git push --force:*"],
       }),
 
     /** Permission tier to apply when this rule matches. */
-    tier: z.enum(['allow', 'deny', 'ask']).meta({
-      description: 'Permission tier to apply when this rule matches.',
+    tier: z.enum(["allow", "deny", "ask"]).meta({
+      description: "Permission tier to apply when this rule matches.",
     }),
 
     /** Optional conditions. All must match for the rule to apply (AND logic). */
     when: RuleCondition.optional().meta({
-      description: 'Optional conditions. All must match for the rule to apply (AND logic).',
+      description:
+        "Optional conditions. All must match for the rule to apply (AND logic).",
     }),
   })
   .meta({
-    description: 'Permission rule. Evaluated deny-first: all deny rules, then ask, then allow.',
+    description:
+      "Permission rule. Evaluated deny-first: all deny rules, then ask, then allow.",
   });
 
 // ---------------------------------------------------------------------------
@@ -205,14 +209,15 @@ export const Delegation = z
      * @default 2
      */
     maxDepth: z.number().int().min(0).meta({
-      description: 'Maximum depth of agent nesting. 0 = no subagents allowed.',
+      description: "Maximum depth of agent nesting. 0 = no subagents allowed.",
       default: 2,
     }),
 
     /** Tools that cannot be delegated to subagents. Uses the same permission rule syntax. */
     nonDelegable: z.array(PermissionRule).meta({
-      description: 'Tools that cannot be delegated to subagents. Uses the same rule syntax.',
-      examples: ['Bash(sudo:*)', 'Write(./.agents/**)'],
+      description:
+        "Tools that cannot be delegated to subagents. Uses the same rule syntax.",
+      examples: ["Bash(sudo:*)", "Write(./.agents/**)"],
     }),
 
     /**
@@ -221,7 +226,8 @@ export const Delegation = z
      * @default true
      */
     bubbleUp: z.boolean().meta({
-      description: 'Whether subagents can request elevated permissions from their parent.',
+      description:
+        "Whether subagents can request elevated permissions from their parent.",
       default: true,
     }),
 
@@ -234,12 +240,12 @@ export const Delegation = z
      */
     agents: z.record(z.string(), PermissionTiers).meta({
       description:
-        'Per-agent permission overrides. Keys are agent names or glob patterns. ' +
-        'Values replace (not merge with) the parent policy for that agent.',
+        "Per-agent permission overrides. Keys are agent names or glob patterns. " +
+        "Values replace (not merge with) the parent policy for that agent.",
       examples: [
         {
-          review: { deny: ['Write', 'Edit', 'Bash'], allow: ['Read', 'Grep'] },
-          docs: { allow: ['Read', 'Write(./docs/**)', 'Bash(mdbook build:*)'] },
+          review: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
+          docs: { allow: ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"] },
         },
       ],
     }),
@@ -263,20 +269,22 @@ export const Delegation = z
  *
  * Maps to Codex's `sandbox_mode` field.
  */
-export const SandboxMode = z.enum(['readonly', 'workspace-write', 'full-access']).meta({
-  description:
-    'OS-level sandbox isolation mode. ' +
-    'readonly: filesystem is read-only. ' +
-    'workspace-write: writes confined to project directory + writableRoots. ' +
-    'full-access: no OS-level restrictions.',
-  default: 'workspace-write',
-});
+export const SandboxMode = z
+  .enum(["readonly", "workspace-write", "full-access"])
+  .meta({
+    description:
+      "OS-level sandbox isolation mode. " +
+      "readonly: filesystem is read-only. " +
+      "workspace-write: writes confined to project directory + writableRoots. " +
+      "full-access: no OS-level restrictions.",
+    default: "workspace-write",
+  });
 
 export const Sandbox = z
   .object({
     /** Sandbox isolation mode. */
     mode: SandboxMode.meta({
-      description: 'Sandbox isolation mode.',
+      description: "Sandbox isolation mode.",
     }),
 
     /**
@@ -285,9 +293,9 @@ export const Sandbox = z
      */
     writableRoots: z.array(z.string()).meta({
       description:
-        'Additional paths the agent may write to (beyond project root). ' +
-        'Only meaningful when mode is `workspace-write`.',
-      examples: ['/tmp/build-cache', '../shared-libs'],
+        "Additional paths the agent may write to (beyond project root). " +
+        "Only meaningful when mode is `workspace-write`.",
+      examples: ["/tmp/build-cache", "../shared-libs"],
     }),
 
     /**
@@ -296,8 +304,8 @@ export const Sandbox = z
      */
     networkAccess: z.boolean().meta({
       description:
-        'Whether the agent may make network requests from within the sandbox. ' +
-        'When false, network access is blocked at the OS level.',
+        "Whether the agent may make network requests from within the sandbox. " +
+        "When false, network access is blocked at the OS level.",
       default: true,
     }),
   })
@@ -305,8 +313,8 @@ export const Sandbox = z
   .strict()
   .meta({
     description:
-      'OS-level sandbox configuration. Controls filesystem and network ' +
-      'isolation for agent tool execution, enforced by the harness runtime.',
+      "OS-level sandbox configuration. Controls filesystem and network " +
+      "isolation for agent tool execution, enforced by the harness runtime.",
   });
 
 // ---------------------------------------------------------------------------
@@ -321,13 +329,13 @@ export const Sandbox = z
  */
 export const Profiles = z.record(z.string(), PermissionTiers).meta({
   description:
-    'Named permission profiles. Each profile is a complete set of permission tiers. ' +
-    'Select one at session start via `activeProfile`.',
+    "Named permission profiles. Each profile is a complete set of permission tiers. " +
+    "Select one at session start via `activeProfile`.",
   examples: [
     {
-      strict: { deny: ['Write', 'Edit', 'Bash'], allow: ['Read', 'Grep'] },
+      strict: { deny: ["Write", "Edit", "Bash"], allow: ["Read", "Grep"] },
       relaxed: {
-        allow: ['Read', 'Write', 'Edit', 'Bash(git:*)', 'Bash(npm:*)'],
+        allow: ["Read", "Write", "Edit", "Bash(git:*)", "Bash(npm:*)"],
       },
     },
   ],
@@ -345,8 +353,8 @@ export const Network = z
      */
     enabled: z.boolean().meta({
       description:
-        'Whether network access is permitted at all. When false, ' +
-        'WebFetch and WebSearch are denied regardless of allow rules.',
+        "Whether network access is permitted at all. When false, " +
+        "WebFetch and WebSearch are denied regardless of allow rules.",
       default: true,
     }),
 
@@ -354,17 +362,17 @@ export const Network = z
      * Domain-level allow/deny rules for HTTP(S) requests. Maps to both Codex's `network.domains`
      * and Claude Code's `WebFetch(domain:...)` rules.
      */
-    domains: z.record(z.string(), z.enum(['allow', 'deny'])).meta({
+    domains: z.record(z.string(), z.enum(["allow", "deny"])).meta({
       description:
-        'Domain-level allow/deny rules for HTTP(S) requests. ' +
-        'Supplements the WebFetch(domain:...) permission rules.',
-      examples: [{ 'api.example.com': 'allow', 'evil.com': 'deny' }],
+        "Domain-level allow/deny rules for HTTP(S) requests. " +
+        "Supplements the WebFetch(domain:...) permission rules.",
+      examples: [{ "api.example.com": "allow", "evil.com": "deny" }],
     }),
   })
   .partial()
   .strict()
   .meta({
-    description: 'Network access controls.',
+    description: "Network access controls.",
   });
 
 // ---------------------------------------------------------------------------
@@ -375,7 +383,7 @@ export const AgentPermissionPolicy = z
   .object({
     /** JSON Schema URI for editor validation and autocomplete. */
     $schema: z.string().meta({
-      description: 'JSON Schema URI for editor validation and autocomplete.',
+      description: "JSON Schema URI for editor validation and autocomplete.",
     }),
 
     /** Default permission mode when starting a session. */
@@ -384,76 +392,82 @@ export const AgentPermissionPolicy = z
     /** Name of the active profile from `profiles`. */
     activeProfile: z.string().meta({
       description:
-        'Name of the active profile from `profiles`. If unset, use the ' +
-        'top-level permission tiers directly.',
+        "Name of the active profile from `profiles`. If unset, use the " +
+        "top-level permission tiers directly.",
     }),
 
     /** Tool permission rules — evaluated in deny → ask → allow order. */
     permissions: PermissionTiers.meta({
-      description: 'Tool permission rules — evaluated in deny → ask → allow order.',
+      description:
+        "Tool permission rules — evaluated in deny → ask → allow order.",
     }),
 
     /** Permission rules — unified deny-first evaluation. */
     rules: z.array(Rule).meta({
       description:
-        'Permission rules. Evaluated deny-first: all deny rules checked, then ask, then allow. ' +
-        'Falls back to defaultMode when no rule matches.',
+        "Permission rules. Evaluated deny-first: all deny rules checked, then ask, then allow. " +
+        "Falls back to defaultMode when no rule matches.",
     }),
 
     /** Named permission profiles — selectable at session start. */
     profiles: Profiles.meta({
-      description: 'Named permission profiles.',
+      description: "Named permission profiles.",
     }),
 
     /** Agent delegation controls — what subagents may do. */
     delegation: Delegation.meta({
-      description: 'Agent delegation controls — what subagents may do.',
+      description: "Agent delegation controls — what subagents may do.",
     }),
 
     /** OS-level sandbox configuration. */
     sandbox: Sandbox.meta({
-      description: 'OS-level sandbox configuration.',
+      description: "OS-level sandbox configuration.",
     }),
 
     /** Network access controls. */
     network: Network.meta({
-      description: 'Network access controls.',
+      description: "Network access controls.",
     }),
 
     /** Environment variables injected into all agent sessions. */
     env: z.record(z.string(), z.string()).meta({
-      description: 'Environment variables injected into all agent sessions.',
-      examples: [{ NODE_ENV: 'development', DISABLE_TELEMETRY: '1' }],
+      description: "Environment variables injected into all agent sessions.",
+      examples: [{ NODE_ENV: "development", DISABLE_TELEMETRY: "1" }],
     }),
 
     /**
      * Agent configs to include when loading. When set, only these agent configs are read (plus
      * canonical). Mutually exclusive with `without`.
      */
-    with: z.array(z.enum(['claude-code', 'codex', 'kiro', 'opencode', 'crush'])).meta({
-      description:
-        'Agent configs to include when loading. Only these native configs ' +
-        'are read (plus canonical). Mutually exclusive with `without`.',
-      examples: [['claude-code', 'opencode']],
-    }),
+    with: z
+      .array(z.enum(["claude-code", "codex", "kiro", "opencode", "crush"]))
+      .meta({
+        description:
+          "Agent configs to include when loading. Only these native configs " +
+          "are read (plus canonical). Mutually exclusive with `without`.",
+        examples: [["claude-code", "opencode"]],
+      }),
 
     /** Agent configs to exclude when loading. Mutually exclusive with `with`. */
-    without: z.array(z.enum(['claude-code', 'codex', 'kiro', 'opencode', 'crush'])).meta({
-      description: 'Agent configs to exclude when loading. Mutually exclusive with `with`.',
-      examples: [['codex']],
-    }),
+    without: z
+      .array(z.enum(["claude-code", "codex", "kiro", "opencode", "crush"]))
+      .meta({
+        description:
+          "Agent configs to exclude when loading. Mutually exclusive with `with`.",
+        examples: [["codex"]],
+      }),
 
     /**
      * How far to walk up the directory tree when loading configs. `"all"` walks to the filesystem
      * root. A number limits parent directories (0 = cwd only). Controls both canonical and native
      * config discovery.
      */
-    up: z.union([z.enum(['all']), z.number().int().min(0)]).meta({
+    up: z.union([z.enum(["all"]), z.number().int().min(0)]).meta({
       description:
-        'How far to walk up the directory tree when loading configs. ' +
+        "How far to walk up the directory tree when loading configs. " +
         "'all' walks to the filesystem root. A number limits parent directories (0 = cwd only).",
-      default: 'all',
-      examples: ['all', 0, 3, 5],
+      default: "all",
+      examples: ["all", 0, 3, 5],
     }),
 
     /** Sync configuration for the MCP server and CLI sync command. */
@@ -466,7 +480,7 @@ export const AgentPermissionPolicy = z
          * - `"watch"`: Continuous sync via filesystem watching.
          * - `false`: No sync (MCP server is passive).
          */
-        mode: z.union([z.enum(['sync', 'watch']), z.literal(false)]).meta({
+        mode: z.union([z.enum(["sync", "watch"]), z.literal(false)]).meta({
           description:
             "Sync mode. 'sync' = one-shot at startup. 'watch' = continuous via fs.watch. false = disabled.",
           default: false,
@@ -474,13 +488,14 @@ export const AgentPermissionPolicy = z
 
         /** Write .bak files before overwriting. */
         backup: z.boolean().meta({
-          description: 'Write .bak files before overwriting.',
+          description: "Write .bak files before overwriting.",
           default: false,
         }),
       })
       .partial()
       .meta({
-        description: 'Sync configuration for the MCP server and CLI sync command.',
+        description:
+          "Sync configuration for the MCP server and CLI sync command.",
       }),
   })
   .partial()
@@ -488,20 +503,20 @@ export const AgentPermissionPolicy = z
   .check((ctx) => {
     if (ctx.value.with !== undefined && ctx.value.without !== undefined) {
       ctx.issues.push({
-        code: 'custom',
+        code: "custom",
         input: ctx.value,
         message: "'with' and 'without' are mutually exclusive.",
-        path: ['with'],
+        path: ["with"],
       });
     }
   })
   .meta({
-    title: 'Agent Permission Policy',
+    title: "Agent Permission Policy",
     description:
-      'Cross-agent permission policy for AI coding agents. Defines what tools agents may use, under what conditions, and how subagents are constrained. ' +
-      'The `with`/`without`/`up` fields control which native agent configs are ' +
-      'discovered and merged during walk-up loading. ' +
-      'Placed at .agents/permissions.json (team, committed) or .agents/permissions.local.json (personal, gitignored).',
+      "Cross-agent permission policy for AI coding agents. Defines what tools agents may use, under what conditions, and how subagents are constrained. " +
+      "The `with`/`without`/`up` fields control which native agent configs are " +
+      "discovered and merged during walk-up loading. " +
+      "Placed at .agents/permissions.json (team, committed) or .agents/permissions.local.json (personal, gitignored).",
   });
 
 // ---------------------------------------------------------------------------

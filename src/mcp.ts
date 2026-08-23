@@ -14,26 +14,28 @@
  * `process.cwd()`.
  */
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
-import { readFile } from 'node:fs/promises';
-import { existsSync, watch } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { AgentPermissionPolicy } from './schema.ts';
-import { parseJson, validatePolicy } from './agent-files.ts';
-import { sync } from './sync.ts';
+import { readFile } from "node:fs/promises";
+import { existsSync, watch } from "node:fs";
+import { join, resolve } from "node:path";
+import { AgentPermissionPolicy } from "./schema.ts";
+import { parseJson, validatePolicy } from "./agent-files.ts";
+import { sync } from "./sync.ts";
 
 // ---------------------------------------------------------------------------
 // Config resolution
 // ---------------------------------------------------------------------------
 
 interface SyncConfig {
-  mode: 'sync' | 'watch' | false;
+  mode: "sync" | "watch" | false;
   backup: boolean;
 }
 
-function resolveSyncConfig(policy: AgentPermissionPolicy | undefined): SyncConfig {
+function resolveSyncConfig(
+  policy: AgentPermissionPolicy | undefined,
+): SyncConfig {
   if (policy === undefined) return { mode: false, backup: false };
   const s = policy.sync;
   return {
@@ -42,10 +44,12 @@ function resolveSyncConfig(policy: AgentPermissionPolicy | undefined): SyncConfi
   };
 }
 
-async function loadRootPolicy(rootDir: string): Promise<AgentPermissionPolicy | undefined> {
-  const filePath = join(rootDir, '.agents', 'permissions.json');
+async function loadRootPolicy(
+  rootDir: string,
+): Promise<AgentPermissionPolicy | undefined> {
+  const filePath = join(rootDir, ".agents", "permissions.json");
   if (!existsSync(filePath)) return undefined;
-  const content = await readFile(filePath, 'utf-8').catch(() => undefined);
+  const content = await readFile(filePath, "utf-8").catch(() => undefined);
   if (content === undefined) return undefined;
   const parsed = parseJson(content, filePath);
   if (!parsed.ok) return undefined;
@@ -75,13 +79,13 @@ async function performSync(cwd: string, config: SyncConfig): Promise<void> {
 }
 
 function startWatcher(cwd: string, config: SyncConfig): void {
-  if (config.mode !== 'watch') return;
+  if (config.mode !== "watch") return;
 
   const watchedDirs = new Set<string>();
 
   // Watch .agents/ and native config locations
   const watchPaths = [
-    join(cwd, '.agents'),
+    join(cwd, ".agents"),
     cwd, // native configs live at project root
   ];
 
@@ -95,18 +99,18 @@ function startWatcher(cwd: string, config: SyncConfig): void {
         if (filename === null) return;
         // Only react to relevant config files
         if (
-          filename === 'permissions.json' ||
-          filename === 'permissions.local.json' ||
-          filename === 'settings.json' ||
-          filename === 'settings.local.json' ||
-          filename === 'opencode.json' ||
-          filename === '.crush.json' ||
-          filename === 'codex.toml'
+          filename === "permissions.json" ||
+          filename === "permissions.local.json" ||
+          filename === "settings.json" ||
+          filename === "settings.local.json" ||
+          filename === "opencode.json" ||
+          filename === ".crush.json" ||
+          filename === "codex.toml"
         ) {
           void performSync(cwd, config);
         }
       });
-      watcher.on('error', () => {
+      watcher.on("error", () => {
         // Silently ignore watch errors
       });
     } catch {
@@ -114,7 +118,9 @@ function startWatcher(cwd: string, config: SyncConfig): void {
     }
   }
 
-  process.stderr.write(`[agent-perms-mcp] Watching ${cwd} for config changes (mode: watch)\n`);
+  process.stderr.write(
+    `[agent-perms-mcp] Watching ${cwd} for config changes (mode: watch)\n`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -123,13 +129,13 @@ function startWatcher(cwd: string, config: SyncConfig): void {
 
 async function main(): Promise<void> {
   const server = new McpServer(
-    { name: 'agent-perms', version: '0.1.0' },
+    { name: "agent-perms", version: "0.1.0" },
     {
       instructions:
-        'agent-perms sync daemon. Keeps native agent config files ' +
-        'bidirectionally synced with .agents/permissions.json. ' +
-        'Configured via sync.mode in .agents/permissions.json.',
-    }
+        "agent-perms sync daemon. Keeps native agent config files " +
+        "bidirectionally synced with .agents/permissions.json. " +
+        "Configured via sync.mode in .agents/permissions.json.",
+    },
   );
 
   // Connect transport
@@ -146,15 +152,15 @@ async function main(): Promise<void> {
   const config = resolveSyncConfig(policy);
 
   process.stderr.write(
-    `[agent-perms-mcp] Config: mode=${String(config.mode)}, backup=${String(config.backup)}\n`
+    `[agent-perms-mcp] Config: mode=${String(config.mode)}, backup=${String(config.backup)}\n`,
   );
 
-  if (config.mode === 'sync' || config.mode === 'watch') {
+  if (config.mode === "sync" || config.mode === "watch") {
     await performSync(projectRoot, config);
-    process.stderr.write('[agent-perms-mcp] Initial sync complete\n');
+    process.stderr.write("[agent-perms-mcp] Initial sync complete\n");
   }
 
-  if (config.mode === 'watch') {
+  if (config.mode === "watch") {
     startWatcher(projectRoot, config);
   }
 
