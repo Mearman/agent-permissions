@@ -1,0 +1,53 @@
+name: Feature request
+description: A rule shape, schema field, agent codec, or CLI capability that should exist and does not.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The README's codec fidelity table and footnotes already document several gaps as deliberate rather than missing (Crush has no deny/patterns/modes, OpenCode's agent-specific tools have no canonical equivalent, and so on) -- worth checking there first, since some of what looks unsupported is a decision, not an oversight.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Where the work would land. Pick "not sure" territory by choosing the closest match and explaining below.
+      options:
+        - canonical schema / spec
+        - evaluator (deny-first rule matching)
+        - loader (.agents/permissions.json discovery/merge)
+        - claude-code codec
+        - opencode codec
+        - codex codec
+        - crush codec
+        - kiro codec
+        - new agent codec
+        - CLI (convert/validate/check/sync)
+        - MCP sync daemon
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you are trying to do
+      description: The actual policy you want to express or the workflow you want, not the API you think would solve it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: blocker
+    attributes:
+      label: Why the current spec/tooling cannot do it
+      description: What you tried and where it stopped -- a rule shape the schema cannot express, a codec that drops something on encode/decode, a CLI flag that does not exist.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: Optional. A schema field, a rule shape, a CLI flag, or a codec mapping -- whatever shape you were expecting.
+    validations:
+      required: false
