@@ -1,7 +1,7 @@
 import eslint from "@eslint/js";
 import json from "@eslint/json";
 import markdown from "@eslint/markdown";
-import { defineConfig } from "eslint/config";
+import { defineConfig, includeIgnoreFile } from "eslint/config";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 import eslintPluginPrettier from "eslint-plugin-prettier";
 import depend from "eslint-plugin-depend";
@@ -9,16 +9,15 @@ import { configs } from "typescript-eslint";
 import * as yamlEslintParser from "yaml-eslint-parser";
 
 export default defineConfig(
-  // The generated schema's formatting is owned by the tsdown plugin that writes it, the lockfile by pnpm, and .turbo holds local task-cache JSON no gate should ever read.
+  // Everything .gitignore already excludes, rather than a second hand-maintained copy of it.
+  includeIgnoreFile(new URL(".gitignore", import.meta.url).pathname),
+
+  // Tracked but not ours to format: the generated schema's formatting is owned by the tsdown plugin that writes it, the lockfile by pnpm, and CHANGELOG.md by semantic-release's exec plugin (jq) at release time. None of these are gitignored, so includeIgnoreFile above can't exclude them.
   {
     ignores: [
-      "dist/",
-      "node_modules/",
       "coverage/",
-      ".turbo/",
       "agent-permissions.schema.json",
       "pnpm-lock.yaml",
-      // Rewritten by semantic-release's exec plugin (jq) at release time; its formatting is the generator's
       "CHANGELOG.md",
       ".claude-plugin/plugin.json",
     ],
