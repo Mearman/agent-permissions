@@ -25,6 +25,13 @@ export default defineConfig(
   },
 
   {
+    // Inline disables are banned repo-wide: a rule that genuinely cannot hold gets a scoped block below with its reasoning, which is reviewable, instead of a line comment that rots invisibly. No `files` key, so this applies to every linted file type (TS, JS, JSON, Markdown, YAML), not just the typed TS program.
+    linterOptions: {
+      noInlineConfig: true,
+    },
+  },
+
+  {
     // Every TypeScript file that participates in the program: src, the CI helper scripts, and the root-level config files themselves, so a bad release or commitlint config is caught by the same gate as library code.
     files: ["src/**/*.ts", ".github/scripts/**/*.ts", "*.config.ts"],
     extends: [
@@ -38,10 +45,6 @@ export default defineConfig(
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
-    },
-    // Inline disables are banned: a rule that genuinely cannot hold gets a scoped block below with its reasoning, which is reviewable, instead of a line comment that rots invisibly.
-    linterOptions: {
-      noInlineConfig: true,
     },
     plugins: {
       prettier: eslintPluginPrettier,
