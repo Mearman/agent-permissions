@@ -1,0 +1,67 @@
+name: Bug report
+description: The schema, evaluator, a codec, the CLI, or the MCP sync daemon does something wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A deny rule that fails open, a codec round-trip that silently drops a rule, or a sync that writes the wrong file are all security-relevant even without a traditional exploit -- see [SECURITY.md](https://github.com/Mearman/agent-permissions/blob/main/SECURITY.md). If that is what you have found, please report it privately through a security advisory instead of here.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Where the bug actually is. If you are not sure, pick the one you called and say so below.
+      options:
+        - canonical schema / spec
+        - evaluator (deny-first rule matching)
+        - loader (.agents/permissions.json discovery/merge)
+        - claude-code codec
+        - opencode codec
+        - codex codec
+        - crush codec
+        - kiro codec
+        - CLI (convert/validate/check/sync)
+        - MCP sync daemon
+        - other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      description: The version you are actually running (`npm ls agent-perms` or `npx agent-perms --version`), not the range in your manifest.
+      placeholder: "6.1.3"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what decision or output you got, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: The smallest policy file and CLI invocation (or codec input) that shows the problem. Paste the actual JSON/TOML, not a paraphrase of it.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, package manager, OS, and which agent harness you're syncing to or converting for, if relevant.
+      placeholder: |
+        Node: 22.18.0
+        pnpm: 11.6.0
+        OS: macOS 15.1
+        Agent: Claude Code / Codex / OpenCode / Crush
+    validations:
+      required: false
