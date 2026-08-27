@@ -127,7 +127,11 @@ function resolveDiscoveryConfig(canonicalLayers: DecodedLayer[]): {
     agentFilter = new Set(["canonical"]);
   }
 
-  return { up, agentFilter, globalAgents: withAgents };
+  return {
+    up,
+    agentFilter,
+    globalAgents: new Set([...withAgents].filter(isAgentId)),
+  };
 }
 
 /**
