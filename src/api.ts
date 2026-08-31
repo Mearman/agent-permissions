@@ -46,6 +46,16 @@ export interface CheckResult {
   decision: "allow" | "deny" | "ask";
 }
 
+export class ConvertError extends Error {
+  readonly errors: ValidationError[];
+
+  constructor(message: string, errors: ValidationError[]) {
+    super(message);
+    this.name = "ConvertError";
+    this.errors = errors;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // detectFormat / detectFormatFromPath / resolveFormat
 // ---------------------------------------------------------------------------
@@ -78,6 +88,7 @@ export function detectFormatFromPath(filePath: string): Format | undefined {
   ) {
     return "canonical";
   }
+  if (dir.endsWith("/.omp/agent/config.yml")) return "omp";
   if (dir.endsWith("/.kiro/permissions.json")) return "kiro";
 
   // Check basenames
@@ -129,6 +140,26 @@ export function detectFormat(value: unknown): Format | undefined {
   // Kiro: allowedTools or toolsSettings
   if (Array.isArray(obj.allowedTools) || "toolsSettings" in obj) return "kiro";
 
+  if (Object.keys(obj).length === 1 && isRecord(obj.bash)) {
+    const bash = obj.bash;
+    const patterns = bash.patterns;
+    if (
+      Object.keys(bash).length === 1 &&
+      Array.isArray(patterns) &&
+      patterns.every((pattern) => {
+        if (!isRecord(pattern)) return false;
+        return (
+          Object.keys(pattern).length === 2 &&
+          typeof pattern.match === "string" &&
+          (pattern.approval === "allow" ||
+            pattern.approval === "prompt" ||
+            pattern.approval === "deny")
+        );
+      })
+    ) {
+      return "omp";
+    }
+  }
   // Codex: approval_policy, sandbox_mode, or permissions as record of named profiles
   if (
     "approval_policy" in obj ||
@@ -352,22 +383,6 @@ export function check(
   );
 
   return { decision };
-}
-
-// ---------------------------------------------------------------------------
-// Error class
-// ---------------------------------------------------------------------------
-
-/** Error thrown when conversion or validation fails. */
-export class ConvertError extends Error {
-  /** Validation errors that caused the failure. */
-  readonly errors: ValidationError[];
-
-  constructor(message: string, errors: ValidationError[]) {
-    super(message);
-    this.name = "ConvertError";
-    this.errors = errors;
-  }
 }
 
 // ---------------------------------------------------------------------------

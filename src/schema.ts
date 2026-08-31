@@ -440,7 +440,9 @@ export const AgentPermissionPolicy = z
      * canonical). Mutually exclusive with `without`.
      */
     with: z
-      .array(z.enum(["claude-code", "codex", "kiro", "opencode", "crush"]))
+      .array(
+        z.enum(["claude-code", "codex", "kiro", "opencode", "crush", "omp"]),
+      )
       .meta({
         description:
           "Agent configs to include when loading. Only these native configs " +
@@ -450,7 +452,9 @@ export const AgentPermissionPolicy = z
 
     /** Agent configs to exclude when loading. Mutually exclusive with `with`. */
     without: z
-      .array(z.enum(["claude-code", "codex", "kiro", "opencode", "crush"]))
+      .array(
+        z.enum(["claude-code", "codex", "kiro", "opencode", "crush", "omp"]),
+      )
       .meta({
         description:
           "Agent configs to exclude when loading. Mutually exclusive with `with`.",

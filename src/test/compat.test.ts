@@ -7,6 +7,7 @@ import {
   opencodeCodec,
   crushCodec,
   kiroCodec,
+  ompCodec,
 } from "../compat/codecs.ts";
 import type { CodexProfile } from "../compat/codecs.ts";
 import type { CodexFilesystemAccess } from "../compat/enums.ts";
@@ -1280,6 +1281,113 @@ void describe("kiroCodec", () => {
       assert.equal(findRules(reDecoded.rules, "Bash", "allow").length, 1);
       assert.equal(findRules(reDecoded.rules, "Write", "deny").length, 1);
       assert.equal(findRules(reDecoded.rules, "Write", "allow").length, 1);
+    });
+  });
+});
+
+void describe("ompCodec", () => {
+  void it("decodes all native approvals and ignores unsupported entries", () => {
+    assert.deepEqual(
+      ompCodec.decode({
+        bash: {
+          patterns: [
+            { match: "git status", approval: "allow" },
+            { match: "git push", approval: "prompt" },
+            { match: "rm *", approval: "deny" },
+            { match: "", approval: "allow" },
+            { match: 42, approval: "allow" },
+            { match: "git log", approval: "unknown" },
+          ],
+          enabled: true,
+        },
+        model: "x",
+      }),
+      {
+        rules: [
+          { tool: "Bash", pattern: "git status", tier: "allow" },
+          { tool: "Bash", pattern: "git push", tier: "ask" },
+          { tool: "Bash", pattern: "rm *", tier: "deny" },
+          { tool: "Bash", pattern: "", tier: "allow" },
+        ],
+      },
+    );
+    assert.deepEqual(ompCodec.decode({ bash: { patterns: {} } }), {});
+    assert.deepEqual(ompCodec.decode({ bash: {} }), {});
+    assert.deepEqual(ompCodec.decode({}), {});
+  });
+
+  void it("preserves all native approvals through a native round trip", () => {
+    const native = {
+      bash: {
+        patterns: [
+          { match: "git status", approval: "allow" as const },
+          { match: "git push", approval: "prompt" as const },
+          { match: "rm *", approval: "deny" as const },
+        ],
+      },
+    };
+    assert.deepEqual(ompCodec.encode(ompCodec.decode(native)), native);
+  });
+
+  void it("projects case-insensitive Bash rules", () => {
+    assert.deepEqual(
+      ompCodec.encode({
+        rules: [{ tool: "bash", pattern: "git status", tier: "allow" }],
+      }),
+      {
+        bash: {
+          patterns: [{ match: "git status", approval: "allow" }],
+        },
+      },
+    );
+  });
+
+  void it("projects canonical rules to representable OMP patterns", () => {
+    const canonical = {
+      permissions: {
+        deny: ["Bash(rm *)"],
+        ask: ["Bash(git push)"],
+        allow: ["Bash(git status)"],
+      },
+      rules: [
+        { tool: "Bash", pattern: "git fetch", tier: "allow" as const },
+        { tool: "Bash", pattern: "git pull", tier: "ask" as const },
+        { tool: "Bash", pattern: "git clean", tier: "deny" as const },
+        {
+          tool: "Bash",
+          pattern: "git log",
+          tier: "allow" as const,
+          when: { cwd: "/repo" },
+        },
+        { tool: "Read", pattern: "src/**", tier: "allow" as const },
+        { tool: "Bash", tier: "allow" as const },
+      ],
+    };
+    const native = {
+      bash: {
+        patterns: [
+          { match: "rm *", approval: "deny" as const },
+          { match: "git push", approval: "prompt" as const },
+          { match: "git status", approval: "allow" as const },
+          { match: "git fetch", approval: "allow" as const },
+          { match: "git pull", approval: "prompt" as const },
+          { match: "git clean", approval: "deny" as const },
+          { match: "git log", approval: "allow" as const },
+        ],
+      },
+    };
+
+    assert.deepEqual(ompCodec.encode(canonical), native);
+    assert.deepEqual(ompCodec.decode(native), {
+      rules: [
+        { tool: "Bash", pattern: "rm *", tier: "deny" },
+        { tool: "Bash", pattern: "git push", tier: "ask" },
+        { tool: "Bash", pattern: "git status", tier: "allow" },
+        { tool: "Bash", pattern: "git fetch", tier: "allow" },
+        { tool: "Bash", pattern: "git pull", tier: "ask" },
+        { tool: "Bash", pattern: "git clean", tier: "deny" },
+        { tool: "Bash", pattern: "git log", tier: "allow" },
+      ],
     });
   });
 });

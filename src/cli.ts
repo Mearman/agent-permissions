@@ -24,9 +24,11 @@ import { sync } from "./sync.ts";
 import {
   AGENT_FILES,
   findDefaultFile,
-  readInput,
+  parseAgentFile,
   parseJson,
-  writeJsonFile,
+  readInput,
+  stringifyAgentFile,
+  writeFileContent,
 } from "./agent-files.ts";
 
 const AGENTS = agentId.options;
@@ -56,6 +58,7 @@ function isAgent(value: string): value is Agent {
 function resolveInputSpec(spec: string | undefined): string | undefined {
   if (spec === undefined || spec === "-") return undefined;
   const format = resolveFormat(spec);
+  if (format === "omp" && spec !== "omp") return resolve(spec);
   if (format) return findDefaultFile(format, process.cwd());
   return resolve(spec);
 }
@@ -64,6 +67,7 @@ function resolveInputSpec(spec: string | undefined): string | undefined {
 function resolveOutputSpec(spec: string | undefined): string | undefined {
   if (spec === undefined || spec === "-") return undefined;
   const format = resolveFormat(spec);
+  if (format === "omp" && spec !== "omp") return resolve(spec);
   if (format) {
     const fileName = AGENT_FILES[format].name;
     return resolve(join(process.cwd(), fileName));
@@ -141,7 +145,7 @@ async function convertCommand(args: string[]): Promise<void> {
   const toFormat = resolveFormat(toSpec);
   if (!toFormat) {
     error(
-      `unknown --to format: ${toSpec}. Use an agent name (claude-code, codex, kiro, opencode, crush, canonical), a config file path, or "-" for stdout`,
+      `unknown --to format: ${toSpec}. Use an agent name (claude-code, codex, kiro, opencode, crush, omp, canonical), a config file path, or "-" for stdout`,
     );
   }
   const outputPath = outputSpec
@@ -152,20 +156,24 @@ async function convertCommand(args: string[]): Promise<void> {
 
   const source = inputPath ?? "stdin";
   const raw = await readInput(inputPath);
-  const parsed = parseJson(raw, source);
+  const parsed = fromFormat
+    ? parseAgentFile(fromFormat, raw, source)
+    : parseJson(raw, source);
   if (!parsed.ok) error(parsed.error);
   const json = parsed.value;
 
   try {
     const result = convert(fromFormat, toFormat, json);
-
-    const indent = values.compact ? undefined : 2;
-    const jsonStr = JSON.stringify(result.output, null, indent) + "\n";
+    const output = stringifyAgentFile(
+      toFormat,
+      result.output,
+      values.compact ?? false,
+    );
 
     if (outputPath) {
-      await writeJsonFile(outputPath, jsonStr);
+      await writeFileContent(outputPath, output);
     } else {
-      process.stdout.write(jsonStr);
+      process.stdout.write(output);
     }
 
     if (values.verbose) {
