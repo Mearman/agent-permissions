@@ -103,7 +103,7 @@
     "@eslint/js": "^10.0.1",
     "@eslint/json": "^2.0.1",
     "@eslint/markdown": "^8.0.3",
-    "@openai/codex-sdk": "^0.147.0",
+    "@openai/codex-sdk": "^0.149.1",
     "@opencode-ai/sdk": "^1.14.41",
     "@semantic-release/changelog": "^7.0.0",
     "@semantic-release/exec": "^7.1.0",
