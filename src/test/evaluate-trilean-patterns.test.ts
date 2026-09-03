@@ -152,5 +152,29 @@ void describe("trilean pattern-builder delegation", () => {
         "allow",
       );
     });
+
+    void it("a glob containing the previous compiler's own placeholder text matches literally", () => {
+      // The local implementation compiled the hierarchical glob by successive `String.replace` passes, parking `**` in a `⟪DOUBLESTAR⟫` placeholder and substituting it back at the end. A pattern that already contained that text was therefore rewritten by the restoring pass as though the author had written `**`, silently widening a rule far past the directory it names: `⟪DOUBLESTAR⟫/*` compiled to `^.*/[^/]*$` and matched `/etc/passwd`. trilean compiles in one left-to-right pass with no placeholder to collide with, so the text is escaped as the literal it is and matches only itself.
+      const pattern = "⟪DOUBLESTAR⟫/*";
+      const policy: PermissionPolicy = {
+        defaultMode: "standard",
+        rules: [{ tool: "Read", tier: "allow", when: { cwd: pattern } }],
+      };
+      assert.equal(
+        new RegExp(String.raw`^.*/[^/]*$`).test("/etc/passwd"),
+        true,
+        "the previous local compilation of this pattern matched any single-segment path",
+      );
+      assert.equal(
+        evaluate(policy, "read", "anything", { cwd: "/etc/passwd" }),
+        "ask",
+      );
+      assert.equal(
+        evaluate(policy, "read", "anything", {
+          cwd: "⟪DOUBLESTAR⟫/x",
+        }),
+        "allow",
+      );
+    });
   });
 });
