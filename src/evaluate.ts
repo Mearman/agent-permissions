@@ -28,6 +28,13 @@
  * - `when.cwd` / `when.branch` conditions (AND logic)
  */
 
+import {
+  hierarchicalGlobPattern,
+  prefixPattern,
+  wildcardPattern,
+} from "trilean/derived-patterns";
+import type { ExpressionNode, PredicateNode } from "trilean/tree";
+
 import type { Rule, RuleCondition } from "./schema.ts";
 
 // ---------------------------------------------------------------------------
@@ -95,11 +102,39 @@ type ParsedPattern =
   | { type: "prefix"; prefix: string }
   | { type: "wildcard"; pattern: string };
 
-// Null-byte sentinels for safe wildcard escaping (compiled once).
-const ESCAPED_STAR = "\x00STAR\x00";
-const ESCAPED_BACKSLASH = "\x00BACKSLASH\x00";
-const ESCAPED_STAR_RE = new RegExp(ESCAPED_STAR, "g");
-const ESCAPED_BACKSLASH_RE = new RegExp(ESCAPED_BACKSLASH, "g");
+// ---------------------------------------------------------------------------
+// Pattern compilation — delegated to trilean's pattern builders
+// ---------------------------------------------------------------------------
+
+/**
+ * The subject a compiled pattern is written against.
+ *
+ * trilean's builders are pure tree construction: `wildcardPattern(subject, pattern)` performs no I/O and evaluates nothing, it just returns a `textCompare` node whose right-hand `textLiteral` holds the compiled regular-expression string. Only trilean's own `evaluatePredicate`/`createEvaluator` are async, and this evaluator does not use them — it reads the compiled string back out of the node and runs it against the input itself, keeping evaluation fully synchronous. The reference key is therefore never resolved by anything; it exists because a `textCompare` node needs a left-hand expression, and naming the subject makes the node readable if one is ever logged or serialised.
+ */
+const SUBJECT: ExpressionNode = { kind: "reference", key: "subject" };
+
+/**
+ * Read the compiled regular-expression string back out of a pattern-builder node.
+ *
+ * Every builder returns the same shape — `textCompare`/`matches` over a `textLiteral` right-hand side — so anything else means trilean changed its node shape and the mismatch has to surface rather than silently degrade into a pattern that matches nothing.
+ */
+function compiledPattern(node: PredicateNode): string {
+  if (node.kind !== "textCompare" || node.right.kind !== "textLiteral") {
+    throw new TypeError(
+      `Expected a textCompare node over a textLiteral, got ${node.kind}`,
+    );
+  }
+  return node.right.value;
+}
+
+/**
+ * Compile a builder node to a `RegExp`.
+ *
+ * No flags: trilean compiles "any character" as `[\s\S]*` rather than `.*` precisely so the string behaves the same however a consumer compiles it, with or without the `s` flag.
+ */
+function compiledRegex(node: PredicateNode): RegExp {
+  return new RegExp(compiledPattern(node));
+}
 
 /**
  * Parse a pattern string as rule content (from `Rule.pattern`). Determines rule type from the
@@ -143,7 +178,7 @@ function matchPattern(parsed: ParsedPattern, input: string): boolean {
     case "exact":
       return parsed.content === input;
     case "prefix":
-      return input === parsed.prefix || input.startsWith(parsed.prefix + " ");
+      return compiledRegex(prefixPattern(SUBJECT, parsed.prefix)).test(input);
     case "wildcard":
       return matchWildcard(parsed.pattern, input);
   }
@@ -206,51 +241,12 @@ function toolNamesMatch(ruleTool: string, eventTool: string): boolean {
  * - `\\` matches a literal backslash
  * - Trailing ` *` (single wildcard) also matches bare command so "git *" matches both "git add file"
  *   and "git"
+ *
+ * The dialect above is trilean's `wildcardPattern`, which this repo's own implementation was the
+ * reference for; compiling it lives there now rather than being maintained as a second copy here.
  */
 function matchWildcard(pattern: string, command: string): boolean {
-  const trimmed = pattern.trim();
-
-  // Phase 1: Process escape sequences into sentinels
-  let processed = "";
-  let i = 0;
-  while (i < trimmed.length) {
-    if (trimmed[i] === "\\" && i + 1 < trimmed.length) {
-      const next = trimmed[i + 1];
-      if (next === "*") {
-        processed += ESCAPED_STAR;
-        i += 2;
-        continue;
-      }
-      if (next === "\\") {
-        processed += ESCAPED_BACKSLASH;
-        i += 2;
-        continue;
-      }
-    }
-    const char = trimmed.charAt(i);
-    processed += char;
-    i++;
-  }
-
-  // Phase 2: Escape regex special chars (except *)
-  const escaped = processed.replace(/[.+?^${}()|[\]\\'"]/g, "\\$&");
-
-  // Phase 3: Unescaped * → .*
-  let regexStr = escaped.replace(/\*/g, ".*");
-
-  // Phase 4: Restore sentinels as escaped literals
-  regexStr = regexStr
-    .replace(ESCAPED_STAR_RE, "\\*")
-    .replace(ESCAPED_BACKSLASH_RE, "\\\\");
-
-  // Phase 5: Trailing " *" (single wildcard) → match bare command too
-  const unescapedStarCount = (processed.match(/\*/g) ?? []).length;
-  if (regexStr.endsWith(" .*") && unescapedStarCount === 1) {
-    regexStr = regexStr.slice(0, -3) + "( .*)?";
-  }
-
-  const regex = new RegExp(`^${regexStr}$`, "s");
-  return regex.test(command);
+  return compiledRegex(wildcardPattern(SUBJECT, pattern)).test(command);
 }
 
 // ---------------------------------------------------------------------------
@@ -269,22 +265,14 @@ function matchConditions(when: RuleCondition, ctx: EvaluationContext): boolean {
 }
 
 /**
- * Simple glob matching for paths/branches. `*` matches any characters, `**` matches across path
- * separators.
+ * Simple glob matching for paths/branches. `*` matches any characters, `**` matches across path separators.
+ *
+ * The dialect is trilean's `hierarchicalGlobPattern`, which this repo's own implementation was the reference for. The two short-circuits below are pure fast paths over the compiled regex — a pattern carrying no wildcard compiles to a fully-escaped literal, so it matches exactly the text it equals and nothing else.
  */
 function globMatchPath(pattern: string, text: string): boolean {
   if (pattern === text) return true;
   if (!pattern.includes("*") && !pattern.includes("?")) return false;
-
-  // Normalise ** → matches anything including /
-  const regexStr = pattern
-    .replace(/[.+^${}()|[\]\\'"]/g, "\\$&")
-    .replace(/\*\*/g, "⟪DOUBLESTAR⟫")
-    .replace(/\*/g, "[^/]*")
-    .replace(/⟪DOUBLESTAR⟫/g, ".*")
-    .replace(/\?/g, "[^/]");
-
-  return new RegExp(`^${regexStr}$`).test(text);
+  return compiledRegex(hierarchicalGlobPattern(SUBJECT, pattern)).test(text);
 }
 
 // ---------------------------------------------------------------------------

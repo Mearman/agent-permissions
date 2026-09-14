@@ -248,6 +248,10 @@ Deny short-circuits: if any deny rule matches, the tool is blocked regardless of
 | `\*`   | Literal `*` (not a wildcard) |
 | `\\`   | Literal `\`                  |
 
+### Where the pattern dialects live
+
+Deciding which of the dialects above a pattern string is written in — trailing `:*` means prefix, a bare `*` means wildcard, a `domain:` prefix means substring — is this project's own authoring convention, and stays here. Compiling each dialect to a regular expression is [trilean](https://github.com/ExaDev/trilean)'s `prefixPattern`/`wildcardPattern`/`hierarchicalGlobPattern`, which this project's implementation was the reference for; the evaluator reads the compiled expression back out of the builder's node and runs it itself, so evaluation stays synchronous and trilean's own async tree-walking evaluator is not involved.
+
 ## Evaluator
 
 ```typescript
