@@ -7,7 +7,11 @@
 
 import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
 import { evaluate, collectRules, mapMode } from "./evaluate.ts";
-import { validatePolicy, type ValidationError } from "./agent-files.ts";
+import {
+  AGENT_FILES,
+  validatePolicy,
+  type ValidationError,
+} from "./agent-files.ts";
 import { isAgentId, isRecord } from "./guards.ts";
 import { AgentPermissionPolicy } from "./schema.ts";
 export type { ValidationError } from "./agent-files.ts";
@@ -140,11 +144,10 @@ export function detectFormat(value: unknown): Format | undefined {
   // Kiro: allowedTools or toolsSettings
   if (Array.isArray(obj.allowedTools) || "toolsSettings" in obj) return "kiro";
 
-  if (Object.keys(obj).length === 1 && isRecord(obj.bash)) {
+  if (isRecord(obj.bash)) {
     const bash = obj.bash;
     const patterns = bash.patterns;
     if (
-      Object.keys(bash).length === 1 &&
       Array.isArray(patterns) &&
       patterns.every((pattern) => {
         if (!isRecord(pattern)) return false;
@@ -300,9 +303,11 @@ export function convert(
     canonical = result.value;
   } else {
     const codec = CODECS[fromAgent];
+    const extract = AGENT_FILES[fromAgent].extract;
+    const payload = extract ? (extract(json) ?? json) : json;
     // The decoded agent config is unknown-shaped here while the zod codec's decode is typed for its own native input — a config of the wrong shape throws inside decode.
     // @ts-expect-error unknown JSON passed to a native-typed decode; invalid shapes throw and surface as conversion errors
-    canonical = codec.decode(json);
+    canonical = codec.decode(payload);
     const validated = validatePolicy(canonical);
     if (!validated.ok)
       throw new ConvertError(validated.error, validated.errors);

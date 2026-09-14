@@ -283,6 +283,7 @@ function computeWriteTargets(
   sources: DecodedSource[],
   agentFilter: Set<string> | undefined,
   create: boolean,
+  globalAgents: Set<AgentId>,
 ): WriteTarget[] {
   const targets: WriteTarget[] = [];
 
@@ -308,6 +309,7 @@ function computeWriteTargets(
     if (agent === "codex" || agent === "crush") continue; // TOML / no file
 
     const def = AGENT_FILES[agent];
+    if (def.global && !globalAgents.has(agent)) continue;
     const filePath = defaultFilePath(agent, cwd);
     const fileExists = existsSync(filePath);
 
@@ -458,6 +460,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     sources,
     agentFilter,
     create,
+    new Set(withList),
   );
 
   if (targets.length === 0) {

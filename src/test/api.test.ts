@@ -80,6 +80,19 @@ void describe("detectFormat", () => {
       "opencode",
     );
   });
+  void it("detects OMP configs with sibling fields", () => {
+    assert.equal(
+      detectFormat({
+        enabled: true,
+        model: "default",
+        bash: {
+          enabled: true,
+          patterns: [{ match: "git status", approval: "allow" }],
+        },
+      }),
+      "omp",
+    );
+  });
 
   void it("detects canonical from rules[] with {tool, tier} objects", () => {
     assert.equal(
