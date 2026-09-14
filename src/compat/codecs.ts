@@ -26,6 +26,7 @@ import {
   ruleToString,
   collectRules,
 } from "../evaluate.ts";
+import { isRecord } from "../guards.ts";
 import {
   ClaudeCodePermissionMode,
   CodexApprovalMode,
@@ -45,6 +46,7 @@ export const agentId = z.enum([
   "kiro",
   "opencode",
   "crush",
+  "omp",
 ]);
 
 export type AgentId = z.infer<typeof agentId>;
@@ -1213,6 +1215,74 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
   },
 });
 
+interface OmpNative {
+  bash: {
+    patterns: {
+      match: string;
+      approval: "allow" | "prompt" | "deny";
+    }[];
+  };
+}
+
+const ompApprovalToTier = {
+  allow: "allow",
+  prompt: "ask",
+  deny: "deny",
+} as const;
+
+const tierToOmpApproval = {
+  allow: "allow",
+  ask: "prompt",
+  deny: "deny",
+} as const;
+
+function decodeOmp(native: unknown): AgentPermissionPolicy {
+  if (!isRecord(native)) return {};
+
+  const bash = native.bash;
+  if (!isRecord(bash)) return {};
+
+  const patterns = bash.patterns;
+  if (!Array.isArray(patterns)) return {};
+
+  const rules: Rule[] = [];
+  for (const pattern of patterns) {
+    if (!isRecord(pattern)) continue;
+
+    const approval = pattern.approval;
+    const tier =
+      approval === "allow" || approval === "prompt" || approval === "deny"
+        ? ompApprovalToTier[approval]
+        : undefined;
+    if (typeof pattern.match === "string" && tier !== undefined) {
+      rules.push({ tool: "Bash", pattern: pattern.match, tier });
+    }
+  }
+
+  return rules.length === 0 ? {} : { rules };
+}
+
+function encodeOmp(canonical: AgentPermissionPolicy): OmpNative {
+  const patterns = collectRules(canonical).flatMap((rule) => {
+    if (rule.tool.toLowerCase() !== "bash" || typeof rule.pattern !== "string")
+      return [];
+
+    return [
+      {
+        match: rule.pattern,
+        approval: tierToOmpApproval[rule.tier],
+      },
+    ];
+  });
+
+  return { bash: { patterns } };
+}
+
+export const ompCodec = z.codec(z.unknown(), AgentPermissionPolicy, {
+  decode: decodeOmp,
+  encode: encodeOmp,
+});
+
 // ---------------------------------------------------------------------------
 // Codec registry
 // ---------------------------------------------------------------------------
@@ -1223,6 +1293,7 @@ export const CODECS = {
   kiro: kiroCodec,
   opencode: opencodeCodec,
   crush: crushCodec,
+  omp: ompCodec,
 } as const;
 
 export type Codecs = typeof CODECS;

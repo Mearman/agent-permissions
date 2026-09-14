@@ -14,6 +14,9 @@ importers:
       trilean:
         specifier: ^1.3.0
         version: 1.3.0
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
       zod:
         specifier: ^4.4.3
         version: 4.5.4
@@ -123,9 +126,6 @@ importers:
       undici-types:
         specifier: ^8.2.0
         version: 8.10.2
-      yaml:
-        specifier: ^2.9.0
-        version: 2.9.0
       yaml-eslint-parser:
         specifier: ^2.1.0
         version: 2.1.0
