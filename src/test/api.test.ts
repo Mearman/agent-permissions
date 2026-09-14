@@ -274,6 +274,16 @@ void describe("convert", () => {
       native,
     );
   });
+  void it("unwraps wrapped native input before decoding", () => {
+    const result = convert("claude-code", "canonical", {
+      permissions: { allow: ["Read"] },
+    });
+    const output = result.output;
+    assert.ok(
+      typeof output === "object" && output !== null && "rules" in output,
+    );
+    assert.deepEqual(output.rules, [{ tool: "Read", tier: "allow" }]);
+  });
 });
 
 // ---------------------------------------------------------------------------

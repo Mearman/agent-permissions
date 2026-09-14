@@ -386,6 +386,35 @@ void describe("sync", () => {
     assert.ok(isRecord(parsed));
     assert.ok(isRecord(parsed.permissions));
   });
+  void it("does not create global files without explicit selection", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
+    dirs.push(cwd);
+    await mkdir(join(cwd, ".agents"), { recursive: true });
+    await writeFile(
+      join(cwd, ".agents", "permissions.json"),
+      JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+    );
+
+    const result = await sync({
+      cwd,
+      up: 0,
+      with: [],
+      without: [],
+      yes: false,
+      dryRun: true,
+      create: true,
+      verbose: false,
+      backup: false,
+    });
+
+    assert.equal(result.applied, false);
+    assert.equal(
+      result.changes.some((change) =>
+        change.path.endsWith(join(".omp", "agent", "config.yml")),
+      ),
+      false,
+    );
+  });
 
   void it("reports no changes when already in sync", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));

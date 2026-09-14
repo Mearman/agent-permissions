@@ -23,13 +23,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function run(
   args: string[],
   stdin?: string,
+  env?: Record<string, string | undefined>,
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     // A throwaway cwd per invocation: the CLI resolves and writes config files relative to cwd, and running it from the repo root made the suite overwrite the repo's own dogfooded .agents/permissions.json.
     const child = execFile(
       "node",
       ["--experimental-strip-types", CLI, ...args],
-      { cwd: mkdtempSync(join(tmpdir(), "agent-perms-cli-")) },
+      {
+        cwd: mkdtempSync(join(tmpdir(), "agent-perms-cli-")),
+        env: { ...process.env, ...env },
+      },
       (err, stdout, stderr) => {
         const exitCode =
           err !== null && typeof err.code === "number" ? err.code : 0;
@@ -443,6 +447,34 @@ void describe("CLI", () => {
         },
       });
     });
+    void it("uses the configured default output path", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      const home = await mkdtemp(join(tmpdir(), "cli-home-"));
+      dirs.push(cwd, home);
+      const policyPath = join(cwd, "policy.json");
+      await writeFile(
+        policyPath,
+        JSON.stringify({
+          rules: [{ tool: "Bash", pattern: "git status", tier: "allow" }],
+        }),
+      );
+      const result = await run(
+        ["convert", "--from", policyPath, "--to", "omp"],
+        undefined,
+        { HOME: home },
+      );
+      assert.equal(result.exitCode, 0);
+      assert.deepEqual(
+        parseYaml(
+          await readFile(join(home, ".omp", "agent", "config.yml"), "utf-8"),
+        ),
+        {
+          bash: {
+            patterns: [{ match: "git status", approval: "allow" }],
+          },
+        },
+      );
+    });
   });
 
   // =========================================================================
@@ -459,6 +491,16 @@ void describe("CLI", () => {
         "--input",
         join(cwd, "policy.json"),
       ]);
+      assert.equal(result.exitCode, 0);
+      assert.match(result.stdout, /valid/);
+    });
+    void it("parses YAML input for validation", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      const path = join(cwd, ".omp", "agent", "config.yml");
+      await mkdir(join(cwd, ".omp", "agent"), { recursive: true });
+      await writeFile(path, "rules:\n  - tool: Read\n    tier: allow\n");
+      const result = await run(["validate", "--input", path]);
       assert.equal(result.exitCode, 0);
       assert.match(result.stdout, /valid/);
     });
@@ -539,6 +581,27 @@ void describe("CLI", () => {
         "git status",
         "--policy-file",
         join(cwd, "policy.json"),
+      ]);
+      assert.equal(result.exitCode, 0);
+      assert.match(result.stdout, /allow/);
+    });
+    void it("parses YAML input for checks", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      const path = join(cwd, ".omp", "agent", "config.yml");
+      await mkdir(join(cwd, ".omp", "agent"), { recursive: true });
+      await writeFile(
+        path,
+        "rules:\n  - tool: Bash\n    pattern: git status\n    tier: allow\n",
+      );
+      const result = await run([
+        "check",
+        "--tool",
+        "Bash",
+        "--input",
+        "git status",
+        "--policy-file",
+        path,
       ]);
       assert.equal(result.exitCode, 0);
       assert.match(result.stdout, /allow/);
