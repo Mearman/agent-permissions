@@ -13,7 +13,7 @@ importers:
         version: 1.30.0(supports-color@7.2.0)(zod@4.5.4)
       trilean:
         specifier: ^1.3.0
-        version: 1.3.0
+        version: 1.4.1
       zod:
         specifier: ^4.4.3
         version: 4.5.4
@@ -3078,8 +3078,8 @@ packages:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
 
-  trilean@1.3.0:
-    resolution: {integrity: sha512-MPvJYgoVfQBVr7fbPde/pfwgenTfsYb+gOGCzeQVb4OyHsDuM1XIDfztBAs+FVvZs0G2GJBfHClSk8QfAgCbbA==}
+  trilean@1.4.1:
+    resolution: {integrity: sha512-yiN3xd1CDt/00g+EG5S/T21cjaXTlkXwlBt7CdDt07f+/KNGvZaf5coo0Pi7jM5itd2vYpDONB1WplV5Agr8Mg==}
     engines: {node: '>=20'}
 
   ts-algebra@2.0.0:
@@ -3370,6 +3370,9 @@ packages:
 
   zod@4.5.4:
     resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
+
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -6408,9 +6411,9 @@ snapshots:
 
   tree-kill@1.2.2: {}
 
-  trilean@1.3.0:
+  trilean@1.4.1:
     dependencies:
-      zod: 4.5.4
+      zod: 4.6.5
 
   ts-algebra@2.0.0: {}
 
@@ -6686,5 +6689,7 @@ snapshots:
       zod: 4.5.4
 
   zod@4.5.4: {}
+
+  zod@4.6.5: {}
 
   zwitch@2.0.4: {}
