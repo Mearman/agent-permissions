@@ -7,7 +7,11 @@
 
 import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
 import { evaluate, collectRules, mapMode } from "./evaluate.ts";
-import { validatePolicy, type ValidationError } from "./agent-files.ts";
+import {
+  AGENT_FILES,
+  validatePolicy,
+  type ValidationError,
+} from "./agent-files.ts";
 import { isAgentId, isRecord } from "./guards.ts";
 import { AgentPermissionPolicy } from "./schema.ts";
 export type { ValidationError } from "./agent-files.ts";
@@ -46,6 +50,16 @@ export interface CheckResult {
   decision: "allow" | "deny" | "ask";
 }
 
+export class ConvertError extends Error {
+  readonly errors: ValidationError[];
+
+  constructor(message: string, errors: ValidationError[]) {
+    super(message);
+    this.name = "ConvertError";
+    this.errors = errors;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // detectFormat / detectFormatFromPath / resolveFormat
 // ---------------------------------------------------------------------------
@@ -78,6 +92,7 @@ export function detectFormatFromPath(filePath: string): Format | undefined {
   ) {
     return "canonical";
   }
+  if (dir.endsWith("/.omp/agent/config.yml")) return "omp";
   if (dir.endsWith("/.kiro/permissions.json")) return "kiro";
 
   // Check basenames
@@ -129,6 +144,25 @@ export function detectFormat(value: unknown): Format | undefined {
   // Kiro: allowedTools or toolsSettings
   if (Array.isArray(obj.allowedTools) || "toolsSettings" in obj) return "kiro";
 
+  if (isRecord(obj.bash)) {
+    const bash = obj.bash;
+    const patterns = bash.patterns;
+    if (
+      Array.isArray(patterns) &&
+      patterns.every((pattern) => {
+        if (!isRecord(pattern)) return false;
+        return (
+          Object.keys(pattern).length === 2 &&
+          typeof pattern.match === "string" &&
+          (pattern.approval === "allow" ||
+            pattern.approval === "prompt" ||
+            pattern.approval === "deny")
+        );
+      })
+    ) {
+      return "omp";
+    }
+  }
   // Codex: approval_policy, sandbox_mode, or permissions as record of named profiles
   if (
     "approval_policy" in obj ||
@@ -269,9 +303,11 @@ export function convert(
     canonical = result.value;
   } else {
     const codec = CODECS[fromAgent];
+    const extract = AGENT_FILES[fromAgent].extract;
+    const payload = extract ? (extract(json) ?? json) : json;
     // The decoded agent config is unknown-shaped here while the zod codec's decode is typed for its own native input — a config of the wrong shape throws inside decode.
     // @ts-expect-error unknown JSON passed to a native-typed decode; invalid shapes throw and surface as conversion errors
-    canonical = codec.decode(json);
+    canonical = codec.decode(payload);
     const validated = validatePolicy(canonical);
     if (!validated.ok)
       throw new ConvertError(validated.error, validated.errors);
@@ -352,22 +388,6 @@ export function check(
   );
 
   return { decision };
-}
-
-// ---------------------------------------------------------------------------
-// Error class
-// ---------------------------------------------------------------------------
-
-/** Error thrown when conversion or validation fails. */
-export class ConvertError extends Error {
-  /** Validation errors that caused the failure. */
-  readonly errors: ValidationError[];
-
-  constructor(message: string, errors: ValidationError[]) {
-    super(message);
-    this.name = "ConvertError";
-    this.errors = errors;
-  }
 }
 
 // ---------------------------------------------------------------------------

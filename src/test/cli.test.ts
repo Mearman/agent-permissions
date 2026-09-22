@@ -11,6 +11,7 @@ import { mkdtemp, rm, writeFile, mkdir, readFile } from "node:fs/promises";
 import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { parse as parseYaml } from "yaml";
 
 const CLI = join(import.meta.dirname, "..", "cli.ts");
 
@@ -22,13 +23,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function run(
   args: string[],
   stdin?: string,
+  env?: Record<string, string | undefined>,
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     // A throwaway cwd per invocation: the CLI resolves and writes config files relative to cwd, and running it from the repo root made the suite overwrite the repo's own dogfooded .agents/permissions.json.
     const child = execFile(
       "node",
       ["--experimental-strip-types", CLI, ...args],
-      { cwd: mkdtempSync(join(tmpdir(), "agent-perms-cli-")) },
+      {
+        cwd: mkdtempSync(join(tmpdir(), "agent-perms-cli-")),
+        env: { ...process.env, ...env },
+      },
       (err, stdout, stderr) => {
         const exitCode =
           err !== null && typeof err.code === "number" ? err.code : 0;
@@ -342,6 +347,134 @@ void describe("CLI", () => {
       );
       assert.equal(result.exitCode, 0);
     });
+
+    void it("converts YAML through an OMP config.yml path", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      const ompDir = join(cwd, ".omp", "agent");
+      const ompPath = join(ompDir, "config.yml");
+      await mkdir(ompDir, { recursive: true });
+      await writeFile(
+        ompPath,
+        "bash:\n  patterns:\n    - match: git status\n      approval: allow\n    - match: git push\n      approval: prompt\n    - match: rm *\n      approval: deny\n",
+      );
+      const decoded = await run([
+        "convert",
+        "--from",
+        ompPath,
+        "--to",
+        "canonical",
+        "--output",
+        "-",
+      ]);
+      assert.equal(decoded.exitCode, 0);
+      const decodedOutput = JSON.parse(decoded.stdout) as { rules: unknown };
+      assert.deepEqual(decodedOutput.rules, [
+        { tool: "Bash", pattern: "git status", tier: "allow" },
+        { tool: "Bash", pattern: "git push", tier: "ask" },
+        { tool: "Bash", pattern: "rm *", tier: "deny" },
+      ]);
+
+      const canonicalPath = join(cwd, "policy.json");
+      await writeFile(
+        canonicalPath,
+        JSON.stringify({
+          rules: [
+            { tool: "Bash", pattern: "git status", tier: "allow" },
+            { tool: "Bash", pattern: "git push", tier: "ask" },
+            { tool: "Bash", pattern: "rm *", tier: "deny" },
+          ],
+        }),
+      );
+      const encoded = await run([
+        "convert",
+        "--from",
+        canonicalPath,
+        "--to",
+        "omp",
+        "--output",
+        "-",
+      ]);
+      assert.equal(encoded.exitCode, 0);
+      assert.deepEqual(parseYaml(encoded.stdout), {
+        bash: {
+          patterns: [
+            { match: "git status", approval: "allow" },
+            { match: "git push", approval: "prompt" },
+            { match: "rm *", approval: "deny" },
+          ],
+        },
+      });
+    });
+
+    void it("writes lossy OMP output for compatible Bash policies", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      const policyPath = join(cwd, "policy.json");
+      const outputPath = join(cwd, "config.yml");
+      await writeFile(
+        policyPath,
+        JSON.stringify({
+          defaultMode: "restricted",
+          rules: [
+            { tool: "Bash", pattern: "rm *", tier: "deny" },
+            {
+              tool: "Bash",
+              pattern: "git log",
+              tier: "allow",
+              when: { cwd: "/repo" },
+            },
+            { tool: "Read", pattern: "src/**", tier: "allow" },
+          ],
+        }),
+      );
+      const result = await run([
+        "convert",
+        "--from",
+        policyPath,
+        "--to",
+        "omp",
+        "--output",
+        outputPath,
+      ]);
+      assert.equal(result.exitCode, 0);
+      assert.deepEqual(parseYaml(await readFile(outputPath, "utf-8")), {
+        bash: {
+          patterns: [
+            { match: "rm *", approval: "deny" },
+            { match: "git log", approval: "allow" },
+          ],
+        },
+      });
+    });
+    void it("uses the configured default output path", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      const home = await mkdtemp(join(tmpdir(), "cli-home-"));
+      dirs.push(cwd, home);
+      const policyPath = join(cwd, "policy.json");
+      await writeFile(
+        policyPath,
+        JSON.stringify({
+          rules: [{ tool: "Bash", pattern: "git status", tier: "allow" }],
+        }),
+      );
+      const result = await run(
+        ["convert", "--from", policyPath, "--to", "omp"],
+        undefined,
+        { HOME: home },
+      );
+      assert.equal(result.exitCode, 0);
+      assert.deepEqual(
+        parseYaml(
+          await readFile(join(home, ".omp", "agent", "config.yml"), "utf-8"),
+        ),
+        {
+          bash: {
+            patterns: [{ match: "git status", approval: "allow" }],
+          },
+        },
+      );
+    });
   });
 
   // =========================================================================
@@ -358,6 +491,16 @@ void describe("CLI", () => {
         "--input",
         join(cwd, "policy.json"),
       ]);
+      assert.equal(result.exitCode, 0);
+      assert.match(result.stdout, /valid/);
+    });
+    void it("parses YAML input for validation", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      const path = join(cwd, ".omp", "agent", "config.yml");
+      await mkdir(join(cwd, ".omp", "agent"), { recursive: true });
+      await writeFile(path, "rules:\n  - tool: Read\n    tier: allow\n");
+      const result = await run(["validate", "--input", path]);
       assert.equal(result.exitCode, 0);
       assert.match(result.stdout, /valid/);
     });
@@ -438,6 +581,27 @@ void describe("CLI", () => {
         "git status",
         "--policy-file",
         join(cwd, "policy.json"),
+      ]);
+      assert.equal(result.exitCode, 0);
+      assert.match(result.stdout, /allow/);
+    });
+    void it("parses YAML input for checks", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      const path = join(cwd, ".omp", "agent", "config.yml");
+      await mkdir(join(cwd, ".omp", "agent"), { recursive: true });
+      await writeFile(
+        path,
+        "rules:\n  - tool: Bash\n    pattern: git status\n    tier: allow\n",
+      );
+      const result = await run([
+        "check",
+        "--tool",
+        "Bash",
+        "--input",
+        "git status",
+        "--policy-file",
+        path,
       ]);
       assert.equal(result.exitCode, 0);
       assert.match(result.stdout, /allow/);
