@@ -20,7 +20,7 @@ import {
   type Format,
 } from "./api.ts";
 import { agentId } from "./compat/codecs.ts";
-import { ruleToString, type DecisionStep } from "./evaluate.ts";
+import { stepSource, type DecisionStep } from "./evaluate.ts";
 import { confine, type OutsideBehaviour } from "./confine.ts";
 import { sync } from "./sync.ts";
 import {
@@ -231,10 +231,7 @@ async function validateCommand(args: string[]): Promise<void> {
 
 /** One line describing how a command was judged, for `check --explain`. */
 function formatStep(step: DecisionStep): string {
-  const by =
-    step.rule === undefined
-      ? "the default mode"
-      : `${ruleToString(step.rule)} [${step.rule.tier}]${step.layer === undefined ? "" : ` from ${step.layer}`}`;
+  const by = stepSource(step);
   const note =
     step.reason === "unsplittable" ? " (line not fully parsed, so asks)" : "";
   return `${step.decision}\t${step.command}\t${by}${note}`;
@@ -448,6 +445,7 @@ Commands:
   check     Evaluate a tool call against a policy
   confine   Generate rules that confine Read, Edit and Write to directories
   sync      Detect, merge, and write agent configs (bidirectional)
+  mcp       Serve the MCP sync daemon on stdio
 
 Convert flags:
   -f, --from, --input, --in <spec>   Source (format, file, or "-" for stdin)
@@ -485,6 +483,9 @@ Sync flags:
   -v, --verbose                      Show rule provenance
   -b, --backup                       Write .bak files before overwriting
 
+Mcp flags:
+  --permission-prompt                Expose the permission_prompt tool
+
 Examples:
   agent-perms convert --from claude-code --to canonical
   agent-perms convert --from .claude/settings.json --to crush
@@ -500,14 +501,32 @@ Examples:
   agent-perms sync -w claude-code -w opencode
   agent-perms sync -x codex
   agent-perms sync -w claude-code --create
+  agent-perms mcp --permission-prompt
 `);
+}
+
+// ---------------------------------------------------------------------------
+// mcp
+// ---------------------------------------------------------------------------
+
+async function mcpCommand(args: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args,
+    options: { "permission-prompt": { type: "boolean" } },
+    strict: true,
+  });
+  // Loaded on demand so the other commands never pull in the MCP SDK.
+  const { startMcpServer } = await import("./mcp.ts");
+  await startMcpServer(
+    values["permission-prompt"] === true ? { permissionPrompt: {} } : {},
+  );
 }
 
 async function main(): Promise<void> {
   // If invoked as agent-perms-mcp, route directly to MCP server
   const binName = process.argv[1]?.split("/").pop() ?? "";
   if (binName === "agent-perms-mcp") {
-    await import("./mcp.ts");
+    await mcpCommand(process.argv.slice(2));
     return;
   }
 
@@ -531,7 +550,7 @@ async function main(): Promise<void> {
       await syncCommand(args.slice(1));
       break;
     case "mcp":
-      await import("./mcp.ts");
+      await mcpCommand(args.slice(1));
       break;
     case "--help":
     case "-h":

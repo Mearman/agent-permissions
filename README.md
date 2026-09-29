@@ -104,7 +104,7 @@ For harnesses that use config files, add the following to the `mcpServers` secti
 | Cline       | `.cline/mcp.json`                               | `mcpServers`                |
 | Cursor      | `.cursor/mcp.json`                              | `mcpServers`                |
 
-The MCP server is a background sync daemon. It exposes no tools, reads config from `.agents/permissions.json`, and keeps native agent config files in sync.
+The MCP server is a background sync daemon. It reads config from `.agents/permissions.json` and keeps native agent config files in sync. By default it exposes no tools; with `--permission-prompt` it also exposes a tool that answers permission prompts from the policy (see [Permission-prompt tool](#permission-prompt-tool)).
 
 ### As a library
 
@@ -163,6 +163,9 @@ import { sync } from "agent-perms/sync";
 
 // Generate a policy confining the file tools to directories
 import { confine } from "agent-perms/confine";
+
+// Answer a host's permission prompts from the policy
+import { createPermissionPrompt } from "agent-perms/prompt-tool";
 ```
 
 ## Schema overview
@@ -387,10 +390,10 @@ This works because the canonical spec accepts Claude Code's rule syntax, mode va
 ### MCP sync server
 
 ```typescript
-import { startMcpServer } from "agent-perms/mcp";
+import { createMcpServer, startMcpServer } from "agent-perms/mcp";
 ```
 
-A background sync daemon that keeps native agent config files bidirectionally synced with `.agents/permissions.json`. Exposes no tools; purely filesystem sync. Configured via the `sync` field in the policy file:
+A background sync daemon that keeps native agent config files bidirectionally synced with `.agents/permissions.json`. It exposes no tools unless the permission-prompt mode is on. `startMcpServer(options)` serves on stdio from the current directory and runs the sync; `createMcpServer(root, options)` builds the server without connecting it or syncing, for a host that supplies its own transport. Sync is configured via the `sync` field in the policy file:
 
 ```json
 {
@@ -406,6 +409,53 @@ A background sync daemon that keeps native agent config files bidirectionally sy
 - `mode: false`: disabled
 
 Also available as the `agent-perms-mcp` binary.
+
+### Permission-prompt tool
+
+`agent-perms mcp --permission-prompt` adds one tool, `permission_prompt`, which answers Claude Code's permission prompts from the policy. Claude Code sends prompts to an MCP tool only in print mode (`claude -p`) with `--permission-prompt-tool`; an interactive session asks the person at the terminal and never calls the tool. The tool is consulted only for calls Claude Code would otherwise prompt for: a call its own settings already allow or deny never reaches it.
+
+```bash
+claude -p \
+  --mcp-config '{"mcpServers":{"agent-perms":{"command":"npx","args":["-y","agent-perms","mcp","--permission-prompt"]}}}' \
+  --permission-prompt-tool mcp__agent-perms__permission_prompt \
+  "run the tests"
+```
+
+Claude Code calls the tool with `{ tool_name, input, tool_use_id }` and reads back one text block holding `{"behavior":"allow","updatedInput":{...}}` or `{"behavior":"deny","message":"..."}`. The tool loads the policy for the server's working directory on every prompt, so edits apply to the next call, and judges the call by one field of its input:
+
+| Tool                                 | Judged by                                                      |
+| ------------------------------------ | -------------------------------------------------------------- |
+| `Bash`                               | `command`, split into its commands as in `check`               |
+| `Read`, `Write`, `Edit`, `MultiEdit` | `file_path`, as `./relative/path` inside the working directory |
+| `NotebookEdit`                       | `notebook_path`, relativised the same way                      |
+| `WebFetch`                           | `url`                                                          |
+| `WebSearch`                          | `query`                                                        |
+| Any other tool                       | its name alone, so only rules without a pattern match it       |
+
+A call missing the field its tool is judged by is denied. An `allow` decision returns the input unchanged, and a `deny` returns a message naming the rule and the file it came from. The prompt has no third answer, so an `ask` decision is denied with a message naming the rule that asked, unless an approval handler settles it (below). A prompt carries no cwd or branch, so `when` conditions are unknown: they never allow a call, and may still deny it.
+
+As a library, `createPermissionPrompt` answers prompts directly and takes the approval handler. The handler is where a host puts its own approval flow: showing the request to a person, holding it until someone approves it elsewhere, or consulting another policy. It receives the request, the matched subject and the full explanation, plus an abort signal that fires when the agent abandons the call.
+
+```typescript
+import { createPermissionPrompt } from "agent-perms/prompt-tool";
+import { loadPolicy } from "agent-perms/loader";
+
+const answer = createPermissionPrompt({
+  loadPolicy: () => loadPolicy({ cwd: root }),
+  root,
+  context: { branch: "main" },
+  onAsk: ({ request, subject, explanation }, signal) =>
+    approvals.waitFor(request.tool_use_id, subject, explanation, signal),
+});
+
+const result = await answer(
+  { tool_name: "Bash", input: { command: "git push" } },
+  signal,
+);
+// { behavior: "allow", updatedInput: {...} } or { behavior: "deny", message: "..." }
+```
+
+To serve the tool with a handler, pass it to the server: `createMcpServer(root, { permissionPrompt: { onAsk } })`.
 
 ## CLI
 
@@ -537,7 +587,11 @@ If an agent's codec refuses a rule in the merged policy (see the compatibility t
 agent-perms mcp
 ```
 
-Starts the MCP sync daemon on stdio. No flags; all config comes from `.agents/permissions.json` via the `sync` field. Typically invoked by agent harnesses via `npx agent-perms-mcp`, not run directly.
+Starts the MCP sync daemon on stdio. Sync config comes from `.agents/permissions.json` via the `sync` field. Typically invoked by agent harnesses via `npx agent-perms-mcp`, not run directly.
+
+| Flag                  | Description                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `--permission-prompt` | Expose the `permission_prompt` tool (see [Permission-prompt tool](#permission-prompt-tool)) |
 
 ## JSON Schema for IDE support
 
