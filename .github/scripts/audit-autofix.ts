@@ -319,7 +319,7 @@ export function resolvedVersionsFromLockfileText(
 // `pnpm install` defaults to --frozen-lockfile when CI is set, and changing an override makes the committed lockfile outdated, so an install that has to re-resolve must say so explicitly. Without it the install fails in CI (never locally, where CI is unset) and whatever depends on it is abandoned.
 export const RESOLVING_INSTALL_ARGS = ["install", "--no-frozen-lockfile"];
 
-export interface FileSnapshot {
+interface FileSnapshot {
   workspace: string;
   lockfile: string;
 }
