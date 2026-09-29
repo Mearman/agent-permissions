@@ -36,6 +36,7 @@ import {
 import { definite, indeterminate, type Evaluation } from "trilean/evaluation";
 import type { ExpressionNode, PredicateNode } from "trilean/tree";
 
+import { evaluatePredicateCondition, parsePredicate } from "./predicate.ts";
 import { normaliseRemote } from "./remote.ts";
 import { splitShellCommand } from "./shell.ts";
 import type { Rule, RuleCondition } from "./schema.ts";
@@ -340,6 +341,10 @@ function compileConditions(
   }
   if (when.role !== undefined) {
     checks.push(roleCondition(when.role));
+  }
+  if (when.predicate !== undefined) {
+    const predicate = parsePredicate(when.predicate);
+    checks.push((ctx) => evaluatePredicateCondition(predicate, ctx));
   }
   return (ctx) => {
     const results = checks.map((check) => check(ctx));

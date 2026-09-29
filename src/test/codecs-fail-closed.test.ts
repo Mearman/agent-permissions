@@ -95,6 +95,32 @@ void describe("claude-code encode", () => {
     assert.deepEqual(encoded.ask, ["Bash(git push:*)"]);
   });
 
+  void it("leaves out an allow limited by a predicate and writes a deny or ask without it", () => {
+    const predicate = {
+      kind: "not",
+      operand: {
+        kind: "textCompare",
+        op: "equals",
+        left: { kind: "reference", key: "env:STAGE" },
+        right: { kind: "textLiteral", value: "prod" },
+      },
+    };
+    const encoded = claudeCodeCodec.encode({
+      defaultMode: "standard",
+      rules: [
+        {
+          tool: "Bash",
+          pattern: "deploy:*",
+          tier: "allow",
+          when: { predicate },
+        },
+        { tool: "Bash", pattern: "rm:*", tier: "deny", when: { predicate } },
+      ],
+    });
+    assert.deepEqual(encoded.allow, []);
+    assert.deepEqual(encoded.deny, ["Bash(rm:*)"]);
+  });
+
   void it("writes a mode Claude Code has no name for as the closest one that is not looser", () => {
     assert.equal(
       claudeCodeCodec.encode({ defaultMode: "readonly" }).defaultMode,

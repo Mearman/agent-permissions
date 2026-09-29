@@ -205,6 +205,289 @@
               "remote": {
                 "type": "string",
                 "description": "Git remote pattern (glob), matched against the origin as host/path in lower case, so git@github.com:Org/Repo.git and https://github.com/org/repo both match github.com/org/*."
+              },
+              "predicate": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/__schema0"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "and"
+                      },
+                      "left": {
+                        "$ref": "#/definitions/__schema1"
+                      },
+                      "right": {
+                        "$ref": "#/definitions/__schema1"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "left",
+                      "right"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "or"
+                      },
+                      "left": {
+                        "$ref": "#/definitions/__schema1"
+                      },
+                      "right": {
+                        "$ref": "#/definitions/__schema1"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "left",
+                      "right"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "allOf"
+                      },
+                      "operands": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/definitions/__schema1"
+                        }
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "operands"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "anyOf"
+                      },
+                      "operands": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/definitions/__schema1"
+                        }
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "operands"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "compare"
+                      },
+                      "op": {
+                        "type": "string",
+                        "enum": [
+                          "gt",
+                          "gte",
+                          "lt",
+                          "lte",
+                          "eq",
+                          "neq"
+                        ]
+                      },
+                      "left": {
+                        "$ref": "#/definitions/__schema2"
+                      },
+                      "right": {
+                        "$ref": "#/definitions/__schema2"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "op",
+                      "left",
+                      "right"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "textCompare"
+                      },
+                      "op": {
+                        "type": "string",
+                        "enum": [
+                          "equals",
+                          "notEquals",
+                          "matches",
+                          "notMatches",
+                          "portableMatches",
+                          "portableNotMatches"
+                        ]
+                      },
+                      "left": {
+                        "$ref": "#/definitions/__schema2"
+                      },
+                      "right": {
+                        "$ref": "#/definitions/__schema2"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "op",
+                      "left",
+                      "right"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "memberOf"
+                      },
+                      "op": {
+                        "type": "string",
+                        "enum": [
+                          "in",
+                          "notIn"
+                        ]
+                      },
+                      "operand": {
+                        "$ref": "#/definitions/__schema2"
+                      },
+                      "candidates": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/definitions/__schema2"
+                        }
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "op",
+                      "operand",
+                      "candidates"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "exists"
+                      },
+                      "operand": {
+                        "$ref": "#/definitions/__schema2"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "operand"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "some"
+                      },
+                      "collection": {
+                        "$ref": "#/definitions/__schema3"
+                      },
+                      "item": {
+                        "$ref": "#/definitions/__schema1"
+                      },
+                      "filter": {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/__schema1"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "collection",
+                      "item"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "every"
+                      },
+                      "collection": {
+                        "$ref": "#/definitions/__schema3"
+                      },
+                      "item": {
+                        "$ref": "#/definitions/__schema1"
+                      },
+                      "filter": {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/__schema1"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "collection",
+                      "item"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "treeReference"
+                      },
+                      "key": {
+                        "$ref": "#/definitions/__schema3"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "key"
+                    ],
+                    "additionalProperties": false
+                  }
+                ],
+                "description": "A trilean predicate tree over the context. Reference keys name context fields: cwd, branch, actor, remote, env:NAME and role:NAME. An unknown field makes the result unknown, which restricts and never grants. Nodes that would read an unknown field as absent or empty (exists, some, every, fold) are not allowed.",
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/__schema1"
+                  }
+                ]
               }
             },
             "additionalProperties": false
@@ -700,5 +983,812 @@
   },
   "additionalProperties": false,
   "title": "Agent Permission Policy",
-  "description": "Cross-agent permission policy for AI coding agents. Defines what tools agents may use, under what conditions, and how subagents are constrained. The `with`/`without`/`up` fields control which native agent configs are discovered and merged during walk-up loading. Placed at .agents/permissions.json (team, committed) or .agents/permissions.local.json (personal, gitignored)."
+  "description": "Cross-agent permission policy for AI coding agents. Defines what tools agents may use, under what conditions, and how subagents are constrained. The `with`/`without`/`up` fields control which native agent configs are discovered and merged during walk-up loading. Placed at .agents/permissions.json (team, committed) or .agents/permissions.local.json (personal, gitignored).",
+  "definitions": {
+    "__schema0": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "not"
+        },
+        "operand": {
+          "$ref": "#/definitions/__schema1"
+        }
+      },
+      "required": [
+        "kind",
+        "operand"
+      ],
+      "additionalProperties": false
+    },
+    "__schema1": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/__schema0"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "and"
+            },
+            "left": {
+              "$ref": "#/definitions/__schema1"
+            },
+            "right": {
+              "$ref": "#/definitions/__schema1"
+            }
+          },
+          "required": [
+            "kind",
+            "left",
+            "right"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "or"
+            },
+            "left": {
+              "$ref": "#/definitions/__schema1"
+            },
+            "right": {
+              "$ref": "#/definitions/__schema1"
+            }
+          },
+          "required": [
+            "kind",
+            "left",
+            "right"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "allOf"
+            },
+            "operands": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/__schema1"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "operands"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "anyOf"
+            },
+            "operands": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/__schema1"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "operands"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "compare"
+            },
+            "op": {
+              "type": "string",
+              "enum": [
+                "gt",
+                "gte",
+                "lt",
+                "lte",
+                "eq",
+                "neq"
+              ]
+            },
+            "left": {
+              "$ref": "#/definitions/__schema2"
+            },
+            "right": {
+              "$ref": "#/definitions/__schema2"
+            }
+          },
+          "required": [
+            "kind",
+            "op",
+            "left",
+            "right"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "textCompare"
+            },
+            "op": {
+              "type": "string",
+              "enum": [
+                "equals",
+                "notEquals",
+                "matches",
+                "notMatches",
+                "portableMatches",
+                "portableNotMatches"
+              ]
+            },
+            "left": {
+              "$ref": "#/definitions/__schema2"
+            },
+            "right": {
+              "$ref": "#/definitions/__schema2"
+            }
+          },
+          "required": [
+            "kind",
+            "op",
+            "left",
+            "right"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "memberOf"
+            },
+            "op": {
+              "type": "string",
+              "enum": [
+                "in",
+                "notIn"
+              ]
+            },
+            "operand": {
+              "$ref": "#/definitions/__schema2"
+            },
+            "candidates": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/__schema2"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "op",
+            "operand",
+            "candidates"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "exists"
+            },
+            "operand": {
+              "$ref": "#/definitions/__schema2"
+            }
+          },
+          "required": [
+            "kind",
+            "operand"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "some"
+            },
+            "collection": {
+              "$ref": "#/definitions/__schema3"
+            },
+            "item": {
+              "$ref": "#/definitions/__schema1"
+            },
+            "filter": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/__schema1"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "collection",
+            "item"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "every"
+            },
+            "collection": {
+              "$ref": "#/definitions/__schema3"
+            },
+            "item": {
+              "$ref": "#/definitions/__schema1"
+            },
+            "filter": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/__schema1"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "collection",
+            "item"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "treeReference"
+            },
+            "key": {
+              "$ref": "#/definitions/__schema3"
+            }
+          },
+          "required": [
+            "kind",
+            "key"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "__schema2": {
+      "anyOf": [
+        {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "numberLiteral"
+                },
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "textLiteral"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "booleanLiteral"
+                },
+                "value": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "instantLiteral"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "durationLiteral"
+                },
+                "value": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "ms",
+                    "s",
+                    "min",
+                    "h",
+                    "d"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "value",
+                "unit"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "reference"
+                },
+                "key": {
+                  "$ref": "#/definitions/__schema3"
+                },
+                "unit": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "key"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "arithmetic"
+                },
+                "op": {
+                  "type": "string",
+                  "enum": [
+                    "add",
+                    "subtract",
+                    "multiply",
+                    "divide",
+                    "power",
+                    "modulo"
+                  ]
+                },
+                "left": {
+                  "$ref": "#/definitions/__schema2"
+                },
+                "right": {
+                  "$ref": "#/definitions/__schema2"
+                }
+              },
+              "required": [
+                "kind",
+                "op",
+                "left",
+                "right"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "negate"
+                },
+                "operand": {
+                  "$ref": "#/definitions/__schema2"
+                }
+              },
+              "required": [
+                "kind",
+                "operand"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "call"
+                },
+                "fn": {
+                  "type": "string"
+                },
+                "args": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/__schema2"
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "fn",
+                "args"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "lookup"
+                },
+                "table": {
+                  "$ref": "#/definitions/__schema3"
+                },
+                "keys": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/__schema2"
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "table",
+                "keys"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "conditional"
+                },
+                "hitPolicy": {
+                  "type": "string",
+                  "enum": [
+                    "first",
+                    "unique"
+                  ]
+                },
+                "cases": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "when": {
+                        "$ref": "#/definitions/__schema1"
+                      },
+                      "then": {
+                        "$ref": "#/definitions/__schema2"
+                      }
+                    },
+                    "required": [
+                      "when",
+                      "then"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "fallback": {
+                  "$ref": "#/definitions/__schema2"
+                }
+              },
+              "required": [
+                "kind",
+                "cases",
+                "fallback"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "fold"
+                },
+                "collection": {
+                  "$ref": "#/definitions/__schema3"
+                },
+                "filter": {
+                  "allOf": [
+                    {
+                      "$ref": "#/definitions/__schema1"
+                    }
+                  ]
+                },
+                "combiner": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "mode": {
+                          "type": "string",
+                          "const": "max"
+                        },
+                        "item": {
+                          "$ref": "#/definitions/__schema2"
+                        }
+                      },
+                      "required": [
+                        "mode",
+                        "item"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "mode": {
+                          "type": "string",
+                          "const": "min"
+                        },
+                        "item": {
+                          "$ref": "#/definitions/__schema2"
+                        }
+                      },
+                      "required": [
+                        "mode",
+                        "item"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "mode": {
+                          "type": "string",
+                          "const": "reduce"
+                        },
+                        "initial": {
+                          "$ref": "#/definitions/__schema2"
+                        },
+                        "combine": {
+                          "$ref": "#/definitions/__schema2"
+                        }
+                      },
+                      "required": [
+                        "mode",
+                        "initial",
+                        "combine"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "collection",
+                "combiner"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "accumulator"
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "delegate"
+                },
+                "system": {
+                  "type": "string"
+                },
+                "payload": {
+                  "$ref": "#/definitions/__schema3"
+                }
+              },
+              "required": [
+                "kind",
+                "system",
+                "payload"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "treeReference"
+                },
+                "key": {
+                  "$ref": "#/definitions/__schema3"
+                }
+              },
+              "required": [
+                "kind",
+                "key"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "complexLiteral"
+                },
+                "re": {
+                  "type": "number"
+                },
+                "im": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "re",
+                "im"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "complexLiteral"
+                },
+                "magnitude": {
+                  "type": "number"
+                },
+                "phase": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "magnitude",
+                "phase"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      ]
+    },
+    "__schema3": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/__schema3"
+          }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/definitions/__schema3"
+          }
+        }
+      ]
+    }
+  }
 }

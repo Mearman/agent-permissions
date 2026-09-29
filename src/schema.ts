@@ -9,7 +9,9 @@
  */
 
 import * as z from "zod";
+import { PredicateNodeSchema } from "trilean/tree";
 
+import { unsupportedPredicateKinds } from "./predicate.ts";
 import { profileProblems } from "./profiles.ts";
 
 // ---------------------------------------------------------------------------
@@ -143,6 +145,21 @@ export const PermissionTiers = z
 // Conditional rules
 // ---------------------------------------------------------------------------
 
+/**
+ * A trilean predicate tree plus the check that it holds no node reading an unknown field as absent or empty. Typed as `unknown` on both sides: trilean's recursive `PredicateNode` type is rebuilt structurally at every use, and the compiler cannot compare those copies across the types derived from a rule. The tree is parsed with trilean's own schema when the rule is compiled, which is also what catches a policy built in code without going through this schema.
+ */
+const RulePredicate: z.ZodType = PredicateNodeSchema.superRefine(
+  (tree, ctx) => {
+    const unsupported = unsupportedPredicateKinds(tree);
+    if (unsupported.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: `A predicate cannot contain ${[...new Set(unsupported)].join(", ")} nodes: they would read a field the host did not report as absent or empty, and so could grant on unknown.`,
+      });
+    }
+  },
+);
+
 export const RuleCondition = z
   .object({
     /** Working directory pattern (glob). */
@@ -173,6 +190,12 @@ export const RuleCondition = z
     remote: z.string().meta({
       description:
         "Git remote pattern (glob), matched against the origin as host/path in lower case, so git@github.com:Org/Repo.git and https://github.com/org/repo both match github.com/org/*.",
+    }),
+
+    /** A trilean predicate tree over the context, for conditions the fields above cannot say: an OR of remotes, or "unless this variable has this value". */
+    predicate: RulePredicate.meta({
+      description:
+        "A trilean predicate tree over the context. Reference keys name context fields: cwd, branch, actor, remote, env:NAME and role:NAME. An unknown field makes the result unknown, which restricts and never grants. Nodes that would read an unknown field as absent or empty (exists, some, every, fold) are not allowed.",
     }),
   })
   .partial()
