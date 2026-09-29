@@ -86,6 +86,7 @@ export interface CheckResult {
  * - `opencode.json` → opencode
  * - `.kiro/permissions.json` → kiro
  * - `codex.toml` → codex
+ * - `.omp/config.yml` (a project's) or `.omp/agent/config.yml` (the global one) → omp
  * - `.agents/permissions.json` or `.agents/permissions.local.json` → canonical
  */
 export function detectFormatFromPath(filePath: string): Format | undefined {
@@ -111,7 +112,11 @@ export function detectFormatFromPath(filePath: string): Format | undefined {
   if (base === "opencode.json") return "opencode";
   if (base === "codex.toml") return "codex";
   if (base === ".crush.json") return "crush";
-  if (dir.endsWith("/.omp/agent/config.yml")) return "omp";
+  if (
+    dir.endsWith("/.omp/config.yml") ||
+    dir.endsWith("/.omp/agent/config.yml")
+  )
+    return "omp";
 
   return undefined;
 }

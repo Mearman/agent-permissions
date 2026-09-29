@@ -8,7 +8,7 @@ import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { mkdtemp, rm, writeFile, mkdir, readFile } from "node:fs/promises";
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -24,13 +24,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function run(
   args: string[],
   stdin?: string,
+  ompAgentDir: string = mkdtempSync(join(tmpdir(), "agent-perms-omp-")),
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    // A throwaway cwd per invocation: the CLI resolves and writes config files relative to cwd, and running it from the repo root made the suite overwrite the repo's own dogfooded .agents/permissions.json.
+    // A throwaway cwd per invocation: the CLI resolves and writes config files relative to cwd, and running it from the repo root made the suite overwrite the repo's own dogfooded .agents/permissions.json. Oh My Pi's agent directory is a throwaway too, so sync never reads or writes the real global config.
     const child = execFile(
       "node",
       ["--experimental-strip-types", CLI, ...args],
-      { cwd: mkdtempSync(join(tmpdir(), "agent-perms-cli-")) },
+      {
+        cwd: mkdtempSync(join(tmpdir(), "agent-perms-cli-")),
+        env: { ...process.env, PI_CODING_AGENT_DIR: ompAgentDir },
+      },
       (err, stdout, stderr) => {
         const exitCode =
           err !== null && typeof err.code === "number" ? err.code : 0;
@@ -1301,5 +1305,76 @@ void describe("CLI", () => {
       assert.equal(result.exitCode, 1);
       assert.match(result.stderr, /agent-perms/);
     });
+  });
+});
+
+void describe("CLI and Oh My Pi's config", () => {
+  const dirs: string[] = [];
+  after(async () => {
+    await Promise.all(dirs.map((d) => rm(d, { recursive: true })));
+  });
+
+  const deny =
+    "bash:\n  patterns:\n    - match: sudo *\n      approval: deny\n";
+
+  async function project(): Promise<{ cwd: string; agentDir: string }> {
+    const root = await mkdtemp(join(tmpdir(), "cli-omp-"));
+    dirs.push(root);
+    const cwd = join(root, "project");
+    const agentDir = join(root, "agent");
+    await mkdir(join(cwd, ".agents"), { recursive: true });
+    await mkdir(agentDir);
+    await writeFile(
+      join(cwd, ".agents", "permissions.json"),
+      JSON.stringify({
+        rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+      }),
+    );
+    await writeFile(join(agentDir, "config.yml"), `model: x\n${deny}`);
+    return { cwd, agentDir };
+  }
+
+  void it("sync writes the global config only with --omp-global", async () => {
+    const { cwd, agentDir } = await project();
+    const args = ["sync", "--working-dir", cwd, "--up", "0", "--yes"];
+
+    const plain = await run(args, undefined, agentDir);
+    assert.equal(plain.exitCode, 0, plain.stderr);
+    assert.equal(
+      await readFile(join(agentDir, "config.yml"), "utf-8"),
+      `model: x\n${deny}`,
+    );
+    assert.match(
+      await readFile(join(cwd, ".agents", "permissions.json"), "utf-8"),
+      /sudo/,
+    );
+
+    const global = await run([...args, "--omp-global"], undefined, agentDir);
+    assert.equal(global.exitCode, 0, global.stderr);
+    const written = await readFile(join(agentDir, "config.yml"), "utf-8");
+    assert.match(written, /^model: x$/mu);
+    assert.match(written, /match: rm \*/u);
+    assert.equal(existsSync(join(agentDir, "config.yml.bak")), true);
+  });
+
+  void it("convert edits an existing config in place", async () => {
+    const { cwd } = await project();
+    const target = join(cwd, ".omp", "config.yml");
+    await mkdir(join(cwd, ".omp"));
+    await writeFile(target, "# keep me\nmodel: y\n");
+
+    const result = await run([
+      "convert",
+      "--from",
+      join(cwd, ".agents", "permissions.json"),
+      "--to",
+      target,
+    ]);
+
+    assert.equal(result.exitCode, 0, result.stderr);
+    const written = await readFile(target, "utf-8");
+    assert.match(written, /# keep me/u);
+    assert.match(written, /^model: y$/mu);
+    assert.match(written, /match: rm \*/u);
   });
 });
