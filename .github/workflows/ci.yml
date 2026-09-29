@@ -64,8 +64,7 @@ jobs:
       - name: Open a PR with the auto-fixed overrides
         if: steps.audit-setup.outputs.fixed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          # RELEASE_TOKEN, not GITHUB_TOKEN: the repository does not let the workflow token create pull requests, and this token belongs to a repository admin, who can merge the fix PR past the branch ruleset. See CONTRIBUTING.md.
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH="audit-autofix/$(date -u +%Y%m%d%H%M%S)"
           git config user.name "github-actions[bot]"
@@ -186,10 +185,11 @@ jobs:
       released: ${{ steps.detect-release.outputs.released }}
       tag: ${{ steps.detect-release.outputs.tag }}
     steps:
+      # Checked out over SSH with a write deploy key, which the main ruleset lets bypass: semantic-release pushes the changelog and version commit and the tag straight to main, and the workflow token cannot. The GitHub release itself is made through the API with the workflow token. See CONTRIBUTING.md.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          persist-credentials: false
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
 
       - uses: ./.github/actions/setup
         with:
@@ -199,8 +199,7 @@ jobs:
       - name: Release
         id: detect-release
         env:
-          # RELEASE_TOKEN, not GITHUB_TOKEN: semantic-release pushes the changelog and version commit straight to main, which the branch ruleset rejects for the workflow token. The token belongs to a repository admin, whom the ruleset lets bypass. See CONTRIBUTING.md.
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HUSKY: "0"
         run: |
           pnpm exec semantic-release 2>&1 | tee release-output.txt
