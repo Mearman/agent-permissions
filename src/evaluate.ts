@@ -33,6 +33,7 @@ import {
   prefixPattern,
   wildcardPattern,
 } from "trilean/derived-patterns";
+import { definite, indeterminate, type Evaluation } from "trilean/evaluation";
 import type { ExpressionNode, PredicateNode } from "trilean/tree";
 
 import type { Rule, RuleCondition } from "./schema.ts";
@@ -253,15 +254,38 @@ function matchWildcard(pattern: string, command: string): boolean {
 // Condition matching
 // ---------------------------------------------------------------------------
 
-/** Check all `when` conditions — AND logic, all must match. */
-function matchConditions(when: RuleCondition, ctx: EvaluationContext): boolean {
-  if (when.cwd !== undefined && ctx.cwd !== undefined) {
-    if (!globMatchPath(when.cwd, ctx.cwd)) return false;
+/**
+ * Evaluate all `when` conditions with AND logic over three values. A condition on a field the context does not carry is indeterminate rather than satisfied, and a definite mismatch settles the conjunction even when another condition is indeterminate.
+ */
+function evaluateConditions(
+  when: RuleCondition,
+  ctx: EvaluationContext,
+): Evaluation<boolean> {
+  const results: Evaluation<boolean>[] = [];
+  if (when.cwd !== undefined) {
+    results.push(conditionOn("cwd", when.cwd, ctx.cwd));
   }
-  if (when.branch !== undefined && ctx.branch !== undefined) {
-    if (!globMatchPath(when.branch, ctx.branch)) return false;
+  if (when.branch !== undefined) {
+    results.push(conditionOn("branch", when.branch, ctx.branch));
   }
-  return true;
+  for (const result of results) {
+    if (result.status === "definite" && !result.value) return result;
+  }
+  for (const result of results) {
+    if (result.status === "indeterminate") return result;
+  }
+  return definite(true);
+}
+
+function conditionOn(
+  field: "cwd" | "branch",
+  pattern: string,
+  actual: string | undefined,
+): Evaluation<boolean> {
+  if (actual === undefined) {
+    return indeterminate("not-found", `the context has no ${field}`);
+  }
+  return definite(globMatchPath(pattern, actual));
 }
 
 /**
@@ -298,7 +322,14 @@ export function evaluate(
       for (const rule of rules) {
         if (rule.tier !== tier) continue;
         if (!toolNamesMatch(rule.tool, toolName)) continue;
-        if (rule.when && !matchConditions(rule.when, ctx)) continue;
+        if (rule.when) {
+          const conditions = evaluateConditions(rule.when, ctx);
+          if (conditions.status === "definite" && !conditions.value) continue;
+          // An unknown condition may hold, so it still restricts, but it never grants.
+          if (conditions.status === "indeterminate" && tier === "allow") {
+            continue;
+          }
+        }
         if (rule.pattern !== undefined) {
           const parsed = parsePattern(rule.pattern);
           if (!matchPattern(parsed, input)) continue;
