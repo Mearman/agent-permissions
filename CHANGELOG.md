@@ -1,3 +1,85 @@
+## [6.2.0](https://github.com/Mearman/agent-permissions/compare/v6.1.4...v6.2.0) (2026-09-29)
+
+### Features
+
+* **api:** replay a policy over a session transcript and suggest allow rules ([ea7e27b](https://github.com/Mearman/agent-permissions/commit/ea7e27ba779646caa850bbb8f19dbb668450a551))
+* **cli:** add replay and suggest commands over session transcripts ([8894b4f](https://github.com/Mearman/agent-permissions/commit/8894b4f54435b4ab7beae221553192166df7c137))
+* **cli:** generate read and edit confinement rules with confine ([d528a02](https://github.com/Mearman/agent-permissions/commit/d528a027affe30fe0c49edf9c3fcacdd4f02b70d))
+* **codec:** add a codec for Oh My Pi that refuses what it cannot enforce ([98b69e8](https://github.com/Mearman/agent-permissions/commit/98b69e854c376f3c969116bdce55a9e4fff85fa5))
+* **evaluate:** compile a policy once for repeated evaluation ([6ddb8a5](https://github.com/Mearman/agent-permissions/commit/6ddb8a5a4a770f8d591c706999f6ca96cf9cec62))
+* **evaluate:** compile permission patterns with trilean's pattern builders ([2de2e9f](https://github.com/Mearman/agent-permissions/commit/2de2e9fc7efa478fb3c7f6d72bca7c8d736913fd))
+* **evaluate:** condition rules on actors and roles, and name who may approve an ask ([61108af](https://github.com/Mearman/agent-permissions/commit/61108af2275262537af4c904aa726ce1dd5d6317))
+* **evaluate:** condition rules on environment variables and the git remote ([b1c9dc8](https://github.com/Mearman/agent-permissions/commit/b1c9dc8e78f22e572dece28e2854c6a5510c5c65))
+* **evaluate:** enforce delegation.maxDepth and delegation.nonDelegable ([2edebe0](https://github.com/Mearman/agent-permissions/commit/2edebe0c879f0bd8cdfa8674fed1098286252c6e))
+* **evaluate:** explain which rule and layer decided a tool call ([d9d176e](https://github.com/Mearman/agent-permissions/commit/d9d176ebff81418ce0fad58fb628f2627e644f72))
+* **evaluate:** hide the tool of a deny rule marked hidden ([9592e22](https://github.com/Mearman/agent-permissions/commit/9592e226ec96f003fed453909c18892c19614b94))
+* **loader:** let a layer bound what deeper layers can allow ([c80dd17](https://github.com/Mearman/agent-permissions/commit/c80dd179d131591f3d8354f8556ed489e7b347d2))
+* **loader:** watch the layer files and report the policy when it changes ([5cc3221](https://github.com/Mearman/agent-permissions/commit/5cc32214b3c8f06aa2ac60d38388e6a3eb0fc520))
+* **mcp:** answer permission prompts from the policy as an MCP tool ([8b7d816](https://github.com/Mearman/agent-permissions/commit/8b7d816c9005337e5d58cbe05eaf87b2dc84f4f3))
+* **schema:** let a profile extend other profiles ([b8705b5](https://github.com/Mearman/agent-permissions/commit/b8705b5ae75d1a53eb8e5c16c3d6941922f36d5c))
+
+### Bug Fixes
+
+* **ci:** ban inline eslint-disable comments repo-wide, not just in the typed TS program ([88ddbbf](https://github.com/Mearman/agent-permissions/commit/88ddbbfc2f0936347726a9c1c75817fd67335fcd))
+* **ci:** guard against Claude-Session trailers and non-linear merges ([89540af](https://github.com/Mearman/agent-permissions/commit/89540afa6eb7f38bf3ad1f0a9de2622751bdda57))
+* **ci:** keep the audit fixes when the override prune install fails ([db63fff](https://github.com/Mearman/agent-permissions/commit/db63fff7d579b61656c6c12b5cee077db769728f))
+* **ci:** make .husky/pre-commit executable ([177b153](https://github.com/Mearman/agent-permissions/commit/177b153b3e1387c222c38a0d6ee815e56301f7c4))
+* **ci:** push the release over SSH with a deploy key the ruleset lets bypass ([eff616d](https://github.com/Mearman/agent-permissions/commit/eff616d79de24fdae556cc1953ec47ca9d089f4c))
+* **ci:** reject non-conventional commit subject casing and length ([6b5b7dc](https://github.com/Mearman/agent-permissions/commit/6b5b7dc2e953df807ec3b3f92450e1439fb29981))
+* **ci:** release and open the audit fix PR with a token that can bypass the ruleset ([864e47d](https://github.com/Mearman/agent-permissions/commit/864e47d841282633ab8d6459b7ffe2265c540a20))
+* **ci:** stop exporting the file snapshot type used only by the prune interface ([4a99961](https://github.com/Mearman/agent-permissions/commit/4a999615db651cb9e57f86eb8e6e4ac0c523e813))
+* **codec:** refuse an ask that names approvers instead of letting anyone approve it ([c115f47](https://github.com/Mearman/agent-permissions/commit/c115f47f2db007babbc0b52055e820351b06860e))
+* **codec:** refuse Codex deny and ask rules it cannot enforce ([96c2e32](https://github.com/Mearman/agent-permissions/commit/96c2e322dc5f6fcb7ed418bd185318e7bee1d353))
+* **deps:** apply aged security overrides ([6456fed](https://github.com/Mearman/agent-permissions/commit/6456fedde9b91eb0a998c83d87afe1ae494565c8))
+* **deps:** remove the duplicated zod entries from the lockfile ([dcbb26d](https://github.com/Mearman/agent-permissions/commit/dcbb26da41e5a379e0293ba06b5c61e7f5b399be))
+* **evaluate:** judge each command in a shell line separately ([7cfe323](https://github.com/Mearman/agent-permissions/commit/7cfe323037cdf9a0120686abd01e725fd586f25a))
+* **evaluate:** treat a condition on a missing context field as unknown ([3e7e326](https://github.com/Mearman/agent-permissions/commit/3e7e3264ae8da4c83596113d66527c9a26b57902))
+* **loader:** keep rules that differ only in their condition when deduplicating ([8ef8d6c](https://github.com/Mearman/agent-permissions/commit/8ef8d6c265326c88e882d38b37dc16b891bbe2a6))
+* **mcp:** judge a prompted file path in both absolute and relative form ([3e6076f](https://github.com/Mearman/agent-permissions/commit/3e6076fa9add86c0e4c57814d234e77e9c2a6ca4))
+* **release:** pin the changelog preset to the major the notes writer supports ([a67c305](https://github.com/Mearman/agent-permissions/commit/a67c305e941a096f02f4adc804f07427d60705ed))
+* **release:** push over SSH so the deploy key is used ([e106d85](https://github.com/Mearman/agent-permissions/commit/e106d85056c34d20c82dc8a1db02d07d3a58d7f1))
+* **sync:** keep roles and only tighten delegation when merging layers ([8c91242](https://github.com/Mearman/agent-permissions/commit/8c91242cdd55b5c46c2c4d4c9f010652a1e7f041))
+* **sync:** report agents whose codec refuses the policy instead of skipping them ([c64924b](https://github.com/Mearman/agent-permissions/commit/c64924b925a2fcd5a32fc8d7305accb98aaf0bb0))
+
+### Refactoring
+
+* **evaluate:** describe what decided a step in one shared helper ([1451fb7](https://github.com/Mearman/agent-permissions/commit/1451fb7de5132394ba672a6be9c0c0515259a8c5))
+
+### Documentation
+
+* add issue templates and a pull request template ([315b7ab](https://github.com/Mearman/agent-permissions/commit/315b7abc33ca52471edb80169eff6d7375ef2298))
+
+### Styles
+
+* adopt markmv's prettier config with jsdoc formatting ([3ed589c](https://github.com/Mearman/agent-permissions/commit/3ed589cac6eb865e06e3919c801a3c4ef01a2d1f))
+* simplify prettier config to double-quotes-only ([d4f51ad](https://github.com/Mearman/agent-permissions/commit/d4f51ad584799c3f0b8c6fa7e4dcb49e6709c98f))
+
+### Tests
+
+* **evaluate:** check the shell splitter against commands bash runs ([1bbb63a](https://github.com/Mearman/agent-permissions/commit/1bbb63a5b188bef2fd1a14d0005a23f20970afb4))
+* **evaluate:** pin literal matching of a glob holding the placeholder text ([dbddc75](https://github.com/Mearman/agent-permissions/commit/dbddc75e00aaaaf76f20e28c0ef74f9ea8bb61a5))
+
+### Build
+
+* **deps:** bump @modelcontextprotocol/sdk from 1.29.0 to 1.30.0 ([6e3b7d4](https://github.com/Mearman/agent-permissions/commit/6e3b7d440fe4fd03cffd175b0b9fc7720963f1ae))
+* **deps:** bump @semantic-release/git from 10.0.1 to 11.0.1 ([3282108](https://github.com/Mearman/agent-permissions/commit/328210815f2f7f0eb3d417cdd9edf5eb700eadb9))
+* **deps:** bump the dev-dependencies group across 1 directory with 11 updates ([50ba2e4](https://github.com/Mearman/agent-permissions/commit/50ba2e4b87c2e20c044a8f1b4ca60c7f2239a44f))
+* **deps:** bump the dev-dependencies group with 11 updates ([0bf2b86](https://github.com/Mearman/agent-permissions/commit/0bf2b86a695745ebce9a5a56fb68e1123ff4758c))
+* **deps:** bump the dev-dependencies group with 8 updates ([bdc19c4](https://github.com/Mearman/agent-permissions/commit/bdc19c4b284d1c517124538388d440b9dbe2a574))
+* **deps:** bump trilean from 1.3.0 to 1.4.1 ([606c614](https://github.com/Mearman/agent-permissions/commit/606c614841ae57f55f917b5a43d4cc647418e102))
+* **deps:** bump zod from 4.4.3 to 4.5.4 ([9eb8cd4](https://github.com/Mearman/agent-permissions/commit/9eb8cd4b5f3e63285a5934feeb5a90cf46d3c733))
+* **deps:** bump zod from 4.5.4 to 4.6.5 ([862cce2](https://github.com/Mearman/agent-permissions/commit/862cce21a7b0afa0a1a2f61c49875d0f8a792f1f))
+
+### CI
+
+* **deps:** bump pnpm/action-setup from 6.0.10 to 6.1.0 ([c052d97](https://github.com/Mearman/agent-permissions/commit/c052d97955650f992e7904831f3f5b0810cc41a1))
+* **deps:** bump pnpm/action-setup in /.github/actions/setup ([b2eb6f8](https://github.com/Mearman/agent-permissions/commit/b2eb6f80dfdd439677859aae6030da4eb73c51c9))
+* **deps:** route dependabot PRs to Mearman for review ([ccf701f](https://github.com/Mearman/agent-permissions/commit/ccf701fac44162ac153075dcb956b0e8cb74b9f9))
+
+### Chores
+
+* **build:** derive eslint ignores from .gitignore via includeIgnoreFile ([3e7aa96](https://github.com/Mearman/agent-permissions/commit/3e7aa968b0d76e7c16fe624c3e39eda94e510e12))
+
 ## [6.1.4](https://github.com/Mearman/agent-permissions/compare/v6.1.3...v6.1.4) (2026-08-23)
 
 ## [6.1.3](https://github.com/Mearman/agent-permissions/compare/v6.1.2...v6.1.3) (2026-08-23)
