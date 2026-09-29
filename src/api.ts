@@ -106,6 +106,7 @@ export function detectFormatFromPath(filePath: string): Format | undefined {
   if (base === "opencode.json") return "opencode";
   if (base === "codex.toml") return "codex";
   if (base === ".crush.json") return "crush";
+  if (dir.endsWith("/.omp/agent/config.yml")) return "omp";
 
   return undefined;
 }
@@ -150,6 +151,18 @@ export function detectFormat(value: unknown): Format | undefined {
 
   // Kiro: allowedTools or toolsSettings
   if (Array.isArray(obj.allowedTools) || "toolsSettings" in obj) return "kiro";
+
+  // OMP: bash.patterns, an array of { match, approval } entries. Checked before OpenCode, whose
+  // bash key is a string or an object of patterns.
+  if (
+    isRecord(obj.bash) &&
+    Array.isArray(obj.bash.patterns) &&
+    obj.bash.patterns.every(
+      (entry) => isRecord(entry) && "match" in entry && "approval" in entry,
+    )
+  ) {
+    return "omp";
+  }
 
   // Codex: approval_policy, sandbox_mode, or permissions as record of named profiles
   if (

@@ -901,7 +901,7 @@ void describe("sync of roles and delegation across layers", () => {
 });
 
 void describe("computeWriteTargets", () => {
-  type Agent = "claude-code" | "codex" | "kiro" | "opencode" | "crush";
+  type Agent = "claude-code" | "codex" | "kiro" | "opencode" | "crush" | "omp";
   const rule = { tool: "Bash", pattern: "rm:*", tier: "deny" } as const;
 
   /** An encoder table where each agent encodes to an empty config unless told to throw. */
@@ -920,6 +920,7 @@ void describe("computeWriteTargets", () => {
       kiro: encoderFor("kiro"),
       opencode: encoderFor("opencode"),
       crush: encoderFor("crush"),
+      omp: encoderFor("omp"),
     };
   }
 

@@ -6,6 +6,7 @@
  */
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { type AgentId } from "./compat/codecs.ts";
@@ -58,6 +59,9 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
     wrap: (encoded) => ({ permission: encoded }),
   },
   crush: { name: ".crush.json" }, // Crush has no standard config file
+  // OMP's config is YAML and its global copy lives under the home directory, so like codex.toml the
+  // entry is a name only: nothing walks up looking for it and sync does not write it.
+  omp: { name: ".omp/agent/config.yml" },
   kiro: {
     name: ".kiro/permissions.json",
     extract: (raw) => raw,
@@ -139,6 +143,36 @@ export function parseJson(raw: string, source: string): Result<unknown> {
   } catch {
     return fail(`${source}: invalid JSON`);
   }
+}
+
+/**
+ * Parse an agent's native config. OMP's is YAML; every other agent's is JSON. YAML is a superset of
+ * JSON, so an OMP config written as JSON parses too.
+ */
+export function parseAgentFile(
+  format: Format | undefined,
+  raw: string,
+  source: string,
+): Result<unknown> {
+  if (format !== "omp" && !/\.ya?ml$/u.test(source)) {
+    return parseJson(raw, source);
+  }
+  try {
+    const value: unknown = parseYaml(raw);
+    return ok(value);
+  } catch {
+    return fail(`${source}: invalid YAML`);
+  }
+}
+
+/** A native config as file content: YAML for OMP, JSON for everything else. */
+export function stringifyAgentFile(
+  format: Format,
+  value: unknown,
+  compact: boolean,
+): string {
+  if (format === "omp") return stringifyYaml(value);
+  return JSON.stringify(value, null, compact ? undefined : 2) + "\n";
 }
 
 /** Write JSON to a file, creating parent directories as needed. */

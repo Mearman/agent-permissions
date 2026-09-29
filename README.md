@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-Apache--2.0-lightgrey.svg)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/Mearman/agent-permissions/ci.yml?branch=main)](https://github.com/Mearman/agent-permissions/actions)
 
-A vendor-neutral permission policy format for AI coding agents. One file works across Claude Code, OpenAI Codex, OpenCode, Crush, and any agent that adopts the spec.
+A vendor-neutral permission policy format for AI coding agents. One file works across Claude Code, OpenAI Codex, OpenCode, Crush, Oh My Pi, and any agent that adopts the spec.
 
 ## Quick start
 
@@ -457,6 +457,7 @@ const codexConfig = codexCodec.encode(canonicalPolicy);
 | **OpenCode**    | Per-tool `ask/allow/deny` objects in `config.json`      | `opencodeCodec`   | Near-lossless¹    |
 | **Codex**       | Named profiles + sandbox in TOML config                 | `codexCodec`      | Exact or refused² |
 | **Crush**       | Tool allowlist in `config.json`                         | `crushCodec`      | Lossy³            |
+| **Oh My Pi**    | Ordered `bash.patterns` in `config.yml`                 | `ompCodec`        | Exact or refused⁴ |
 
 ¹ OpenCode's agent-specific tools have no canonical equivalent. Per-agent markdown overrides must be handled by the caller.
 
@@ -465,6 +466,8 @@ const codexConfig = codexCodec.encode(canonicalPolicy);
 Encoding never weakens a restrictive rule. Codex can enforce a `deny` on a path (read-only or no access) and a `deny` on a network domain, plus a `deny` on writes when the policy has a read-only sandbox. Any other `deny` or `ask` rule, and any `deny` or `ask` rule carrying a `when` condition, makes the encode throw `UnsupportedCapabilityError`, which lists every refused rule and why. Command rules such as `Bash(git push:*)` belong in Codex's execpolicy rules files, which the codec does not write. An `allow` rule with no Codex equivalent is left out, which can only make the result stricter. Restrictions from the top-level rules are carried into every named profile.
 
 ³ Crush has no deny, no patterns, no modes, only a bare tool allowlist. Pattern rules and deny rules are lost on encode.
+
+⁴ Oh My Pi enforces `bash.patterns`: an ordered list of `match` globs (only `*` is special, whitespace is collapsed, the first matching entry wins) with approval `allow`, `prompt` or `deny`. Its `deny` and `prompt` entries also catch a matching command inside a compound line, and an `allow` entry never approves a compound line, which agrees with how a canonical policy judges a shell line. Encoding writes deny entries first, then prompt, then allow, because OMP takes the first match and a canonical policy takes the strictest. A canonical prefix rule (`git push:*`) and a trailing wildcard (`git *`) are each written twice, as the bare command and the command with arguments, since OMP's `git *` does not match `git`. `ask` becomes `prompt`. A `deny` or `ask` for any tool but Bash, one that carries a condition, one on a literal asterisk (OMP cannot write one), an actor or role limit, or an ask that names approvers makes the encode fail with an `UnsupportedCapabilityError`; an `allow` OMP cannot express is left out, which is stricter. OMP's default approval mode and its other settings are not converted, so a canonical default mode stricter than OMP's own does not carry over. Decoding reads the entries in order and fails on one it cannot read faithfully (a bad approval, an empty match, a match ending in `:*`) rather than skipping it. `agent-perms convert` reads and writes OMP's config as YAML; `sync` does not touch it.
 
 ### Zero-translation migration from Claude Code
 

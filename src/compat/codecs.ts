@@ -23,6 +23,7 @@ import {
 } from "../schema.ts";
 import {
   normaliseStringRule,
+  parseRulePattern,
   ruleToString,
   collectRules,
 } from "../evaluate.ts";
@@ -90,6 +91,7 @@ export const agentId = z.enum([
   "kiro",
   "opencode",
   "crush",
+  "omp",
 ]);
 
 export type AgentId = z.infer<typeof agentId>;
@@ -1348,6 +1350,188 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
 });
 
 // ---------------------------------------------------------------------------
+// Oh My Pi (OMP) codec
+// ---------------------------------------------------------------------------
+// OMP keeps an ordered list of `bash.patterns` in its config.yml (global at ~/.omp/agent, and per
+// project). Each entry is `{ match, approval }` with approval allow, prompt or deny.
+//
+// How OMP evaluates it (its bash tool, checked against its source):
+//   - `match` is a glob where only `*` is special (it matches any run of characters); everything
+//     else is literal, and there is no way to write a literal asterisk. Whitespace is collapsed in
+//     the pattern and the command, and the match is anchored to the whole command.
+//   - The first matching entry wins, in list order.
+//   - deny and prompt entries apply to the whole command or to any one segment of a compound
+//     command; an allow entry applies to a simple command only.
+//
+// Canonical rules use the strictest matching tier whatever their order, so the codec writes deny
+// entries first, then prompt, then allow. OMP's default approval mode, its other tools and its
+// settings are not converted: only rules for the bash tool are.
+
+const OMP_APPROVALS = ["allow", "prompt", "deny"] as const;
+const OmpPatternEntry = z.object({
+  match: z.string(),
+  approval: z.enum(OMP_APPROVALS),
+});
+
+const ompNative = z.looseObject({
+  bash: z.looseObject({ patterns: z.array(z.unknown()).optional() }).optional(),
+});
+
+const ompApprovalToTier = {
+  allow: "allow",
+  prompt: "ask",
+  deny: "deny",
+} as const;
+
+const tierToOmpApproval = {
+  allow: "allow",
+  ask: "prompt",
+  deny: "deny",
+} as const;
+
+/** OMP collapses whitespace in patterns and commands before matching. */
+function normaliseOmpText(text: string): string {
+  return text.trim().replace(/\s+/gu, " ");
+}
+
+/**
+ * The OMP `match` globs that together match what a canonical pattern matches, or the reason OMP
+ * cannot express it. A canonical prefix or trailing-wildcard pattern also matches the bare command,
+ * so it is written twice: OMP's `git *` does not match `git`.
+ */
+function ompMatches(
+  pattern: string | undefined,
+): { matches: string[] } | { reason: string } {
+  if (pattern === undefined) return { matches: ["*"] };
+
+  const parsed = parseRulePattern(pattern);
+  const literalStar = {
+    reason: "OMP has no way to match a literal asterisk",
+  };
+  switch (parsed.type) {
+    case "exact":
+      return parsed.content.includes("*")
+        ? literalStar
+        : { matches: [parsed.content] };
+    case "prefix":
+      return parsed.prefix.includes("*")
+        ? literalStar
+        : { matches: [parsed.prefix, `${parsed.prefix} *`] };
+    case "wildcard": {
+      let glob = "";
+      let stars = 0;
+      const text = parsed.pattern;
+      for (let i = 0; i < text.length; i++) {
+        const c = text.charAt(i);
+        const next = text.charAt(i + 1);
+        if (c === "\\" && next === "*") return literalStar;
+        if (c === "\\" && (next === "\\" || next === "(" || next === ")")) {
+          glob += next;
+          i += 1;
+        } else {
+          if (c === "*") stars += 1;
+          glob += c;
+        }
+      }
+      return glob.endsWith(" *") && stars === 1
+        ? { matches: [glob.slice(0, -2), glob] }
+        : { matches: [glob] };
+    }
+  }
+}
+
+/**
+ * Canonical policy to OMP `bash.patterns`. A deny or ask that OMP cannot enforce as written is
+ * refused; an allow it cannot express is left out, which is stricter.
+ *
+ * @throws UnsupportedCapabilityError listing the rules OMP cannot enforce.
+ */
+function encodeOmp(canonical: AgentPermissionPolicy): {
+  bash?: {
+    patterns: { match: string; approval: "allow" | "prompt" | "deny" }[];
+  };
+} {
+  const unsupported: UnsupportedRule[] = [];
+  const byApproval: Record<"deny" | "prompt" | "allow", string[]> = {
+    deny: [],
+    prompt: [],
+    allow: [],
+  };
+
+  for (const rule of agentRules(canonical, "omp")) {
+    const approval = tierToOmpApproval[rule.tier];
+    let reason: string | undefined;
+    let matches: string[] = [];
+
+    if (rule.tool.toLowerCase() !== "bash") {
+      reason = "OMP applies bash.patterns to the bash tool only";
+    } else if (rule.when !== undefined) {
+      reason = "OMP cannot limit a rule with a condition";
+    } else {
+      const converted = ompMatches(rule.pattern);
+      if ("reason" in converted) reason = converted.reason;
+      else matches = converted.matches.map(normaliseOmpText);
+      if (matches.some((match) => match === "")) {
+        reason = "OMP ignores an empty pattern";
+      }
+    }
+
+    if (reason !== undefined) {
+      if (rule.tier !== "allow") unsupported.push({ rule, reason });
+      continue;
+    }
+    for (const match of matches) {
+      if (!byApproval[approval].includes(match)) {
+        byApproval[approval].push(match);
+      }
+    }
+  }
+
+  if (unsupported.length > 0) {
+    throw new UnsupportedCapabilityError("omp", unsupported);
+  }
+
+  // OMP takes the first matching entry, so the strictest tier goes first.
+  const patterns = (["deny", "prompt", "allow"] as const).flatMap((approval) =>
+    byApproval[approval].map((match) => ({ match, approval })),
+  );
+  return patterns.length === 0 ? {} : { bash: { patterns } };
+}
+
+/**
+ * OMP `bash.patterns` to canonical rules, in the order written. OMP takes the first match while a
+ * canonical policy takes the strictest, so a broad allow written before a narrow deny is read as
+ * the deny winning: never looser than OMP. An entry that cannot be read faithfully is an error, not
+ * skipped, since skipping a deny would loosen the policy.
+ */
+function decodeOmp(native: z.infer<typeof ompNative>): AgentPermissionPolicy {
+  const rules: Rule[] = [];
+  for (const [index, raw] of (native.bash?.patterns ?? []).entries()) {
+    const entry = OmpPatternEntry.parse(raw);
+    const match = normaliseOmpText(entry.match);
+    if (match === "") {
+      throw new Error(`bash.patterns[${String(index)}] has an empty match`);
+    }
+    if (match.endsWith(":*")) {
+      throw new Error(
+        `bash.patterns[${String(index)}] ends in ":*", which the canonical pattern dialect reads as a prefix rule and OMP as a literal colon`,
+      );
+    }
+    rules.push({
+      tool: "Bash",
+      pattern: match.replace(/\\/gu, "\\\\"),
+      tier: ompApprovalToTier[entry.approval],
+    });
+  }
+  return rules.length === 0 ? {} : { rules };
+}
+
+export const ompCodec = z.codec(ompNative, AgentPermissionPolicy, {
+  decode: decodeOmp,
+  encode: encodeOmp,
+});
+
+// ---------------------------------------------------------------------------
 // Codec registry
 // ---------------------------------------------------------------------------
 
@@ -1357,6 +1541,7 @@ export const CODECS = {
   kiro: kiroCodec,
   opencode: opencodeCodec,
   crush: crushCodec,
+  omp: ompCodec,
 } as const;
 
 export type Codecs = typeof CODECS;
