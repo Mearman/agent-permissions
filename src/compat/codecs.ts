@@ -26,6 +26,7 @@ import {
   parseRulePattern,
   ruleToString,
   collectRules,
+  mapMode,
 } from "../evaluate.ts";
 import { resolveProfiles } from "../profiles.ts";
 import {
@@ -45,8 +46,10 @@ import {
  * The canonical rules as a codec for `agent` can hold them. No agent format can limit a rule to an
  * actor or a role, so a rule carrying either is not written as if it were unconditional: an allow is
  * left out, which is stricter, and a deny or ask is refused, since writing it would either widen the
- * rule or restrict everyone. An ask that names approvers is refused too: written plain, anyone the
- * agent's user is could approve it. All refused rules are reported together.
+ * rule or restrict everyone. Any other condition (a directory, a branch, an environment variable, a
+ * remote) is dropped the same way an allow is, but a deny or ask keeps applying everywhere, which
+ * is stricter. An ask that names approvers is refused too: written plain, anyone the agent's user
+ * is could approve it. All refused rules are reported together.
  *
  * @throws UnsupportedCapabilityError if a deny or ask rule is limited to an actor or a role, or an
  *   ask names approvers.
@@ -65,7 +68,9 @@ function agentRules(
       return false;
     }
     if (rule.when?.actor === undefined && rule.when?.role === undefined) {
-      return true;
+      // No agent format holds any other condition either. Written without it, a deny or ask only
+      // becomes stricter; an allow would apply everywhere, so it is left out.
+      return rule.when === undefined || rule.tier !== "allow";
     }
     if (rule.tier !== "allow") {
       unsupported.push({
@@ -103,6 +108,17 @@ export type AgentId = z.infer<typeof agentId>;
 // Our spec is a compatible superset — same rule syntax, same tiers.
 // Conversion is mostly structural: our top-level defaultMode maps to/from
 // their permissions.defaultMode (which we also accept inside permissions).
+
+/**
+ * The Claude Code mode for a canonical mode it has no name for, never looser than the original.
+ * `readonly` refuses what no rule allows, which is what dontAsk does. `restricted` and `standard`
+ * ask, which is default. `autonomous` writes none: Claude Code's own default asks, which is stricter.
+ */
+const claudeModeForCanonical: Partial<Record<string, "default" | "dontAsk">> = {
+  readonly: "dontAsk",
+  restricted: "default",
+  standard: "default",
+};
 
 const claudeCodeNative = z
   .object({
@@ -178,7 +194,9 @@ export const claudeCodeCodec = z.codec(
           "dontAsk",
           "plan",
         ] as const;
-        const match = claudeCodeModes.find((m) => m === ccDefaultMode);
+        const match =
+          claudeCodeModes.find((m) => m === ccDefaultMode) ??
+          claudeModeForCanonical[ccDefaultMode];
         if (match) {
           result.defaultMode = match;
         }
@@ -241,6 +259,8 @@ const ocToCanonical: Record<string, string> = {
  * Map canonical tool names back to OpenCode tool names. Each canonical tool maps to the primary
  * OpenCode equivalent.
  */
+const OC_STRICTNESS = { allow: 0, ask: 1, deny: 2 } as const;
+
 const canonicalToOc: Record<string, string> = {
   Bash: "bash",
   Read: "read",
@@ -326,10 +346,19 @@ export const opencodeCodec = z.codec(opencodeNative, AgentPermissionPolicy, {
     if (allRules.length === 0) return { bash: "ask" };
 
     const result: Record<string, Record<string, "allow" | "deny" | "ask">> = {};
+    const unsupported: UnsupportedRule[] = [];
 
     for (const rule of allRules) {
       const ocTool = canonicalToOc[rule.tool];
-      if (!ocTool) continue;
+      if (!ocTool) {
+        if (rule.tier !== "allow") {
+          unsupported.push({
+            rule,
+            reason: `OpenCode has no permission setting for ${rule.tool}`,
+          });
+        }
+        continue;
+      }
 
       const pattern = rule.pattern ? rule.pattern.replace(/:\*$/, " *") : "*";
 
@@ -338,7 +367,16 @@ export const opencodeCodec = z.codec(opencodeNative, AgentPermissionPolicy, {
         toolRules = {};
         result[ocTool] = toolRules;
       }
-      toolRules[pattern] = rule.tier;
+      // Two rules on one pattern collapse to the stricter, whatever order they came in.
+      const existing = toolRules[pattern];
+      toolRules[pattern] =
+        existing === undefined ||
+        OC_STRICTNESS[rule.tier] > OC_STRICTNESS[existing]
+          ? rule.tier
+          : existing;
+    }
+    if (unsupported.length > 0) {
+      throw new UnsupportedCapabilityError("opencode", unsupported);
     }
 
     // Map sandbox.writableRoots → external_directory
@@ -418,12 +456,23 @@ export const crushCodec = z.codec(crushNative, AgentPermissionPolicy, {
   encode(canonical) {
     const allRules = agentRules(canonical, "crush");
     const allowed: string[] = [];
+    const unsupported: UnsupportedRule[] = [];
     for (const rule of allRules) {
-      // Only bare allow rules — Crush has no deny, no patterns
-      if (rule.tier !== "allow") continue;
+      // Crush has an allowlist of tools and nothing else: no deny, no ask, no patterns. A deny or
+      // ask is refused, and an allow it cannot express is left out, which is stricter.
+      if (rule.tier !== "allow") {
+        unsupported.push({
+          rule,
+          reason: "Crush has only an allowlist of tools: no deny, no ask",
+        });
+        continue;
+      }
       if (rule.pattern !== undefined) continue;
       const crushTool = canonicalToCrush[rule.tool];
       if (crushTool) allowed.push(crushTool);
+    }
+    if (unsupported.length > 0) {
+      throw new UnsupportedCapabilityError("crush", unsupported);
     }
     return { allowed_tools: allowed };
   },
@@ -685,6 +734,7 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
     const result: Partial<KiroNative> = {};
 
     const allowedTools: string[] = [];
+    const unsupported: UnsupportedRule[] = [];
     const shellSettings: NonNullable<KiroNative["toolsSettings"]>["shell"] = {};
     const readSettings: NonNullable<KiroNative["toolsSettings"]>["read"] = {};
     const writeSettings: NonNullable<KiroNative["toolsSettings"]>["write"] = {};
@@ -695,6 +745,7 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
 
     for (const rule of allRules) {
       const kiroTool = canonicalToKiro[rule.tool];
+      let written = false;
 
       // Bare allow rules (no pattern) → allowedTools
       if (rule.tier === "allow" && rule.pattern === undefined) {
@@ -711,45 +762,66 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
         if (rule.tier === "deny") {
           shellSettings.deniedCommands ??= [];
           shellSettings.deniedCommands.push(addKiroAnchors(rule.pattern));
+          written = true;
         } else if (rule.tier === "allow") {
           shellSettings.allowedCommands ??= [];
           shellSettings.allowedCommands.push(addKiroAnchors(rule.pattern));
+          written = true;
         }
       } else if (rule.tool === "Read" && rule.pattern !== undefined) {
         if (rule.tier === "deny") {
           readSettings.deniedPaths ??= [];
           readSettings.deniedPaths.push(rule.pattern);
+          written = true;
         } else if (rule.tier === "allow") {
           readSettings.allowedPaths ??= [];
           readSettings.allowedPaths.push(rule.pattern);
+          written = true;
         }
       } else if (rule.tool === "Write" && rule.pattern !== undefined) {
         if (rule.tier === "deny") {
           writeSettings.deniedPaths ??= [];
           writeSettings.deniedPaths.push(rule.pattern);
+          written = true;
         } else if (rule.tier === "allow") {
           writeSettings.allowedPaths ??= [];
           writeSettings.allowedPaths.push(rule.pattern);
+          written = true;
         }
       } else if (rule.tool === "Aws" && rule.pattern?.startsWith("service:")) {
         const svc = rule.pattern.slice("service:".length);
         if (rule.tier === "deny") {
           awsSettings.deniedServices ??= [];
           awsSettings.deniedServices.push(svc);
+          written = true;
         } else if (rule.tier === "allow") {
           awsSettings.allowedServices ??= [];
           awsSettings.allowedServices.push(svc);
+          written = true;
         }
       } else if (rule.tool === "WebFetch" && rule.pattern?.startsWith("url:")) {
         const urlPattern = rule.pattern.slice("url:".length);
         if (rule.tier === "deny") {
           webFetchSettings.blocked ??= [];
           webFetchSettings.blocked.push(addKiroAnchors(urlPattern));
+          written = true;
         } else if (rule.tier === "allow") {
           webFetchSettings.trusted ??= [];
           webFetchSettings.trusted.push(addKiroAnchors(urlPattern));
+          written = true;
         }
       }
+      // A deny or ask with nowhere to go in Kiro's settings is refused, not dropped.
+      if (!written && rule.tier !== "allow") {
+        unsupported.push({
+          rule,
+          reason: `Kiro has no setting for a ${rule.tier} on ${rule.tool}${rule.pattern === undefined ? "" : ` matching ${rule.pattern}`}`,
+        });
+      }
+    }
+
+    if (unsupported.length > 0) {
+      throw new UnsupportedCapabilityError("kiro", unsupported);
     }
 
     if (canonical.defaultMode === "restricted") {
@@ -893,17 +965,10 @@ function codexApprovalToMode(
 function modeToCodexApproval(
   mode: AgentPermissionPolicy["defaultMode"],
 ): CodexApprovalPolicy {
-  if (
-    mode === "autonomous" ||
-    mode === "bypassPermissions" ||
-    mode === "dontAsk"
-  ) {
-    return "never";
-  }
-  if (mode === "restricted" || mode === "plan" || mode === "readonly") {
-    return "untrusted";
-  }
-  // standard, acceptEdits, default
+  // mapMode names what each mode does to a call no rule covers; dontAsk refuses it, so it is never "never"
+  const mapped = mapMode(mode ?? "standard");
+  if (mapped === "autonomous") return "never";
+  if (mapped === "restricted" || mapped === "readonly") return "untrusted";
   return "on-request";
 }
 
@@ -1261,7 +1326,7 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
       }
     } else if (canonical.defaultMode) {
       // Derive sandbox_mode from defaultMode if no explicit sandbox
-      if (canonical.defaultMode === "readonly") {
+      if (mapMode(canonical.defaultMode) === "readonly") {
         result.sandbox_mode = "read-only";
       } else if (
         canonical.defaultMode === "autonomous" ||
