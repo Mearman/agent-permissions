@@ -51,12 +51,5 @@ runs:
           turbo-${{ runner.os }}-node-${{ inputs.node-version == '' && 'file' || inputs.node-version }}-
 
     - name: Run ${{ inputs.task }}
-      id: run
       run: ${{ inputs.command }}
       shell: bash
-
-# A run step's GITHUB_OUTPUT surfaces through the composite's own outputs, so callers can read steps.<this-action's-id>.outputs.fixed directly.
-outputs:
-  fixed:
-    description: The "fixed" output of the task that ran (audit-autofix), when it sets one.
-    value: ${{ steps.run.outputs.fixed }}

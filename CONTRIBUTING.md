@@ -22,14 +22,14 @@ Make the change, run `pnpm check` and `pnpm test`, commit. The pre-push hook run
 
 ## Where things are
 
-| Path                       | Purpose                                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------- |
-| `src/schema.ts`            | The Zod schema — single source of truth for the policy format                         |
-| `src/compat/`              | Bidirectional codecs for each supported agent                                         |
-| `.github/scripts/`         | CI helper scripts (audit auto-fix, dependency age gate), unit-tested from `src/test/` |
-| `.github/workflows/ci.yml` | The whole pipeline: audit (self-fixing), check, test matrix, release, publishes       |
-| `spec/examples/`           | Example policies validated against the schema in tests                                |
+| Path                       | Purpose                                                               |
+| -------------------------- | --------------------------------------------------------------------- |
+| `src/schema.ts`            | The Zod schema — single source of truth for the policy format         |
+| `src/compat/`              | Bidirectional codecs for each supported agent                         |
+| `.github/scripts/`         | CI helper scripts (dependency age gate), unit-tested from `src/test/` |
+| `.github/workflows/ci.yml` | The whole pipeline: audit, check, test matrix, release, publishes     |
+| `spec/examples/`           | Example policies validated against the schema in tests                |
 
 ## Pull requests
 
-CI must be green. The audit job will attempt to auto-fix any high-severity dependency advisory by opening its own PR; if your PR fails only on deferred audit findings (warnings, not errors), it is not blocked by them.
+CI must be green. The audit job runs `pnpm audit --audit-level high` and fails on any high-severity advisory. It never opens a pull request: clearing an advisory is a change a person or Dependabot proposes, for example an `overrides` entry in `pnpm-workspace.yaml` or a version bump.
