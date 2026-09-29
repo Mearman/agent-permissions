@@ -423,16 +423,16 @@ claude -p \
 
 Claude Code calls the tool with `{ tool_name, input, tool_use_id }` and reads back one text block holding `{"behavior":"allow","updatedInput":{...}}` or `{"behavior":"deny","message":"..."}`. The tool loads the policy for the server's working directory on every prompt, so edits apply to the next call, and judges the call by one field of its input:
 
-| Tool                                 | Judged by                                                      |
-| ------------------------------------ | -------------------------------------------------------------- |
-| `Bash`                               | `command`, split into its commands as in `check`               |
-| `Read`, `Write`, `Edit`, `MultiEdit` | `file_path`, as `./relative/path` inside the working directory |
-| `NotebookEdit`                       | `notebook_path`, relativised the same way                      |
-| `WebFetch`                           | `url`                                                          |
-| `WebSearch`                          | `query`                                                        |
-| Any other tool                       | its name alone, so only rules without a pattern match it       |
+| Tool                                 | Judged by                                                |
+| ------------------------------------ | -------------------------------------------------------- |
+| `Bash`                               | `command`, split into its commands as in `check`         |
+| `Read`, `Write`, `Edit`, `MultiEdit` | `file_path` (see below)                                  |
+| `NotebookEdit`                       | `notebook_path` (see below)                              |
+| `WebFetch`                           | `url`                                                    |
+| `WebSearch`                          | `query`                                                  |
+| Any other tool                       | its name alone, so only rules without a pattern match it |
 
-A call missing the field its tool is judged by is denied. An `allow` decision returns the input unchanged, and a `deny` returns a message naming the rule and the file it came from. The prompt has no third answer, so an `ask` decision is denied with a message naming the rule that asked, unless an approval handler settles it (below). A prompt carries no cwd or branch, so `when` conditions are unknown: they never allow a call, and may still deny it.
+A file path is resolved against the working directory and judged in both forms a policy may write it, absolute (as `confine` writes it) and `./`-relative (as in `./.env`) when it lies inside that directory. The strictest decision any rule reaches in either form wins, and the default mode decides only when neither form matches a rule. A call missing the field its tool is judged by is denied. An `allow` decision returns the input unchanged, and a `deny` returns a message naming the rule and the file it came from. The prompt has no third answer, so an `ask` decision is denied with a message naming the rule that asked, unless an approval handler settles it (below). A prompt carries no cwd or branch, so `when` conditions are unknown: they never allow a call, and may still deny it.
 
 As a library, `createPermissionPrompt` answers prompts directly and takes the approval handler. The handler is where a host puts its own approval flow: showing the request to a person, holding it until someone approves it elsewhere, or consulting another policy. It receives the request, the matched subject and the full explanation, plus an abort signal that fires when the agent abandons the call.
 
