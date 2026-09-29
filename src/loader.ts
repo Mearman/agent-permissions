@@ -28,6 +28,7 @@ import {
 } from "./agent-files.ts";
 import {
   collectRules,
+  delegationLimits,
   mapMode,
   deduplicateRules,
   type PermissionPolicy,
@@ -249,9 +250,14 @@ function mergeLayers(layers: DecodedLayer[]): PermissionPolicy {
 
   const rules = deduplicateRules(allRules);
 
+  const delegation = delegationLimits(
+    ...layers.map((layer) => layer.policy.delegation),
+  );
+
   return {
     defaultMode: mode,
     ...(rules.length > 0 ? { rules, provenance } : {}),
+    ...(delegation === undefined ? {} : { delegation }),
   };
 }
 

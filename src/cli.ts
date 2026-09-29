@@ -241,6 +241,15 @@ function parseEnvFlags(flags: readonly string[]): Record<string, string> {
   return env;
 }
 
+/** Read `--depth`, the number of agents between the call and the top-level agent. */
+function parseDepthFlag(flag: string): number {
+  const depth = Number(flag);
+  if (!Number.isInteger(depth) || depth < 0) {
+    error(`--depth expects a whole number of 0 or more, got "${flag}"`);
+  }
+  return depth;
+}
+
 /** One line describing how a command was judged, for `check --explain`. */
 function formatStep(step: DecisionStep): string {
   const by = stepSource(step);
@@ -260,6 +269,7 @@ async function checkCommand(args: string[]): Promise<void> {
       branch: { type: "string" },
       remote: { type: "string" },
       env: { type: "string", multiple: true },
+      depth: { type: "string" },
       explain: { type: "boolean" },
     },
     strict: true,
@@ -282,6 +292,7 @@ async function checkCommand(args: string[]): Promise<void> {
     if (values.branch !== undefined) ctx.branch = values.branch;
     if (values.remote !== undefined) ctx.remote = values.remote;
     if (values.env !== undefined) ctx.env = parseEnvFlags(values.env);
+    if (values.depth !== undefined) ctx.depth = parseDepthFlag(values.depth);
     const result = checkApi(values.tool, values.input, json, ctx);
     process.stdout.write(`${result.decision}\n`);
     if (values.explain) {
@@ -478,6 +489,7 @@ Check flags:
   --policy-file <spec>               Policy file (format, file, or "-" for stdin)
   --cwd, --branch, --remote          Evaluation context
   --env NAME=VALUE                   Environment variable in the context (repeatable)
+  --depth <n>                        Agents between the call and the top-level agent
   --explain                          Print how each command was judged, to stderr
 
 Confine flags:

@@ -245,6 +245,12 @@ deny rules → ask rules → allow rules → defaultMode
 
 Deny short-circuits: if any deny rule matches, the tool is blocked regardless of allow rules from any source.
 
+### Delegation limits
+
+`delegation.maxDepth` and `delegation.nonDelegable` are enforced for a call that carries a `depth`: the number of agents between it and the top-level agent, 0 for the top-level agent and 1 for its subagent. A subagent's call to a tool matching a `nonDelegable` rule is denied whatever the rules would decide, and every call from an agent nested deeper than `maxDepth` is denied. `checkSpawn(policy, depth)` answers whether an agent at that depth may start a subagent. Across layers the shallowest `maxDepth` wins and the `nonDelegable` lists are joined.
+
+`depth` defaults to 0, so a host that runs subagents has to pass it. `delegation.bubbleUp` and `delegation.agents` are not enforced by the evaluator.
+
 ### Evaluating many calls
 
 `evaluate` reads a policy afresh on every call. A caller that checks many calls against one policy, such as a server, can prepare it once:
