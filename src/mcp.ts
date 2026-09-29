@@ -22,7 +22,11 @@ import { readFile } from "node:fs/promises";
 import { existsSync, watch } from "node:fs";
 import { join, resolve } from "node:path";
 import { AgentPermissionPolicy } from "./schema.ts";
-import { parseJson, validatePolicy } from "./agent-files.ts";
+import {
+  defaultOmpAgentDir,
+  parseJson,
+  validatePolicy,
+} from "./agent-files.ts";
 import { loadPolicy } from "./loader.ts";
 import {
   createPermissionPrompt,
@@ -83,6 +87,8 @@ async function performSync(cwd: string, config: SyncConfig): Promise<void> {
     create: true,
     verbose: false,
     backup: config.backup,
+    ompAgentDir: defaultOmpAgentDir(),
+    ompGlobal: false,
   });
 }
 

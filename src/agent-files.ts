@@ -6,10 +6,17 @@
  */
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import {
+  Document,
+  isMap,
+  parse as parseYaml,
+  parseDocument,
+  stringify as stringifyYaml,
+} from "yaml";
 import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
-import { type AgentId } from "./compat/codecs.ts";
+import { homedir } from "node:os";
+import { type AgentId, type OmpEncoded } from "./compat/codecs.ts";
 import { isRecord } from "./guards.ts";
 import { type Format } from "./api.ts";
 
@@ -59,9 +66,12 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
     wrap: (encoded) => ({ permission: encoded }),
   },
   crush: { name: ".crush.json" }, // Crush has no standard config file
-  // OMP's config is YAML and its global copy lives under the home directory, so like codex.toml the
-  // entry is a name only: nothing walks up looking for it and sync does not write it.
-  omp: { name: ".omp/agent/config.yml" },
+  // OMP's project config. Its global copy lives in the agent directory (see ompGlobalConfigPath),
+  // and sync writes either one only through editOmpConfig, so `wrap` is not used.
+  omp: {
+    name: ".omp/config.yml",
+    extract: (raw) => (isRecord(raw) ? raw : undefined),
+  },
   kiro: {
     name: ".kiro/permissions.json",
     extract: (raw) => raw,
@@ -173,6 +183,65 @@ export function stringifyAgentFile(
 ): string {
   if (format === "omp") return stringifyYaml(value);
   return JSON.stringify(value, null, compact ? undefined : 2) + "\n";
+}
+
+/**
+ * OMP's agent directory, which holds its global config: `PI_CODING_AGENT_DIR` when set, as OMP
+ * reads it, else `~/.omp/agent`.
+ */
+export function ompAgentDir(
+  env: Readonly<Record<string, string | undefined>>,
+  home: string,
+): string {
+  return env.PI_CODING_AGENT_DIR ?? join(home, ".omp", "agent");
+}
+
+/** OMP's agent directory for this process. */
+export function defaultOmpAgentDir(): string {
+  return ompAgentDir(process.env, homedir());
+}
+
+/**
+ * OMP's global config in an agent directory, chosen as OMP chooses it: the first of `config.yml`
+ * and `config.yaml` that exists, else `config.yml`.
+ */
+export function ompGlobalConfigPath(agentDir: string): string {
+  const yaml = join(agentDir, "config.yaml");
+  const yml = join(agentDir, "config.yml");
+  return !existsSync(yml) && existsSync(yaml) ? yaml : yml;
+}
+
+/**
+ * An OMP config with `bash.patterns` and `tools.approvalMode` set from an encoded policy and
+ * everything else, comments included, left as it was. `bash.patterns` is replaced by the encoded
+ * list, or removed when there is none; `tools.approvalMode` is set only when the encoding has one,
+ * so a mode the policy leaves to OMP stays as the user wrote it.
+ *
+ * @param current The file's content, or `null` for a new file.
+ * @throws Error when `current` is not valid YAML or its top level is not a mapping, rather than
+ *   replacing a file it could not read.
+ */
+export function editOmpConfig(
+  current: string | null,
+  encoded: OmpEncoded,
+): string {
+  const doc = current === null ? new Document({}) : parseDocument(current);
+  const [error] = doc.errors;
+  if (error !== undefined) {
+    throw new Error(`invalid YAML: ${error.message}`);
+  }
+  if (doc.contents !== null && !isMap(doc.contents)) {
+    throw new Error("an OMP config must be a mapping at the top level");
+  }
+  if (encoded.bash === undefined) {
+    if (doc.hasIn(["bash", "patterns"])) doc.deleteIn(["bash", "patterns"]);
+  } else {
+    doc.setIn(["bash", "patterns"], doc.createNode(encoded.bash.patterns));
+  }
+  if (encoded.tools !== undefined) {
+    doc.setIn(["tools", "approvalMode"], encoded.tools.approvalMode);
+  }
+  return doc.toString();
 }
 
 /** Write JSON to a file, creating parent directories as needed. */

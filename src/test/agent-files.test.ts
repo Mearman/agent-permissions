@@ -16,6 +16,10 @@ import {
   writeJsonFile,
   findDefaultFile,
   defaultFileName,
+  editOmpConfig,
+  ompAgentDir,
+  ompGlobalConfigPath,
+  parseAgentFile,
   ok,
   fail,
   type Result,
@@ -347,5 +351,107 @@ void describe("agent-files", () => {
       const { readFileSync } = await import("node:fs");
       assert.strictEqual(readFileSync(filePath, "utf-8"), "new content");
     });
+  });
+});
+
+void describe("Oh My Pi config files", () => {
+  const config = [
+    "# my settings",
+    "model: fast # the quick one",
+    "tools:",
+    "  approval:",
+    "    bash: prompt",
+    "bash:",
+    "  allowCompoundCommands: true",
+    "  patterns:",
+    "    - match: old",
+    "      approval: allow",
+    "",
+  ].join("\n");
+
+  void it("is found as the project's .omp/config.yml", () => {
+    assert.strictEqual(defaultFileName("omp"), ".omp/config.yml");
+  });
+
+  void it("decodes a project config", () => {
+    const decoded = unwrap(
+      decodeNative("omp", {
+        tools: { approvalMode: "always-ask" },
+        bash: { patterns: [{ match: "rm *", approval: "deny" }] },
+      }),
+    );
+    assert.strictEqual(decoded.defaultMode, "standard");
+    assert.deepStrictEqual(decoded.rules, [
+      { tool: "Bash", pattern: "rm *", tier: "deny" },
+    ]);
+  });
+
+  void it("changes only bash.patterns and tools.approvalMode, keeping comments and other keys", () => {
+    const edited = editOmpConfig(config, {
+      bash: { patterns: [{ match: "rm *", approval: "deny" }] },
+      tools: { approvalMode: "always-ask" },
+    });
+    assert.match(edited, /# my settings/);
+    assert.match(edited, /model: fast # the quick one/);
+    assert.deepStrictEqual(unwrap(parseAgentFile("omp", edited, "x.yml")), {
+      model: "fast",
+      tools: { approval: { bash: "prompt" }, approvalMode: "always-ask" },
+      bash: {
+        allowCompoundCommands: true,
+        patterns: [{ match: "rm *", approval: "deny" }],
+      },
+    });
+  });
+
+  void it("leaves an approval mode in place when the policy sets none", () => {
+    const edited = editOmpConfig("tools:\n  approvalMode: always-ask\n", {});
+    assert.deepStrictEqual(unwrap(parseAgentFile("omp", edited, "x.yml")), {
+      tools: { approvalMode: "always-ask" },
+    });
+  });
+
+  void it("removes bash.patterns when the policy has no Bash rule", () => {
+    const edited = editOmpConfig(config, {});
+    const parsed = unwrap(parseAgentFile("omp", edited, "x.yml"));
+    assert.deepStrictEqual(parsed, {
+      model: "fast",
+      tools: { approval: { bash: "prompt" } },
+      bash: { allowCompoundCommands: true },
+    });
+  });
+
+  void it("starts a new file when there is none", () => {
+    const edited = editOmpConfig(null, {
+      bash: { patterns: [{ match: "rm *", approval: "deny" }] },
+    });
+    assert.deepStrictEqual(unwrap(parseAgentFile("omp", edited, "x.yml")), {
+      bash: { patterns: [{ match: "rm *", approval: "deny" }] },
+    });
+  });
+
+  void it("refuses a file that is not a YAML mapping instead of replacing it", () => {
+    assert.throws(() => editOmpConfig("model: [unclosed\n", {}), /YAML/);
+    assert.throws(() => editOmpConfig("- a list\n", {}), /mapping/);
+  });
+
+  void it("takes the global config from the agent directory, preferring config.yml", () => {
+    const dir = mkdtempSync(join(tmpdir(), "omp-agent-"));
+    try {
+      assert.strictEqual(ompGlobalConfigPath(dir), join(dir, "config.yml"));
+      writeFileSync(join(dir, "config.yaml"), "model: x\n");
+      assert.strictEqual(ompGlobalConfigPath(dir), join(dir, "config.yaml"));
+      writeFileSync(join(dir, "config.yml"), "model: y\n");
+      assert.strictEqual(ompGlobalConfigPath(dir), join(dir, "config.yml"));
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
+  void it("takes the agent directory from PI_CODING_AGENT_DIR, else under the home directory", () => {
+    assert.strictEqual(
+      ompAgentDir({ PI_CODING_AGENT_DIR: "/somewhere/agent" }, "/home/me"),
+      "/somewhere/agent",
+    );
+    assert.strictEqual(ompAgentDir({}, "/home/me"), "/home/me/.omp/agent");
   });
 });

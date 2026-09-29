@@ -16,13 +16,19 @@
  * - Native agent configs get their encoded form from the canonical merge
  * - `.agents/permissions.local.json` is read but never written
  * - Codex skipped (TOML), Crush skipped (no file)
+ * - Oh My Pi: the project's `.omp/config.yml` is read and written like any native config, and the
+ *   global config in its agent directory is read too, since OMP replaces the global
+ *   `bash.patterns` with the project's rather than joining them; the global file is written only
+ *   with `ompGlobal`. Only `bash.patterns` and `tools.approvalMode` change, the rest of the YAML
+ *   is kept, and the old file is always backed up first.
  */
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { parse as parseYaml } from "yaml";
 import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { AgentPermissionPolicy, type Rule } from "./schema.ts";
-import { CODECS, type AgentId } from "./compat/codecs.ts";
+import { CODECS, OmpEncoded, type AgentId } from "./compat/codecs.ts";
 import { UnsupportedCapabilityError } from "./compat/unsupported.ts";
 import { isAgentId, isPermissionMode } from "./guards.ts";
 import {
@@ -32,9 +38,12 @@ import {
 } from "./evaluate.ts";
 import {
   AGENT_FILES,
+  decodeNative,
+  editOmpConfig,
+  ompGlobalConfigPath,
+  parseAgentFile,
   parseJson,
   validatePolicy,
-  decodeNative,
 } from "./agent-files.ts";
 
 // ---------------------------------------------------------------------------
@@ -58,8 +67,12 @@ export interface SyncOptions {
   create: boolean;
   /** Show verbose output (rule provenance). */
   verbose: boolean;
-  /** Write .bak files before overwriting. */
+  /** Write .bak files before overwriting. Oh My Pi's config is always backed up. */
   backup: boolean;
+  /** Oh My Pi's agent directory, which holds its global config (see `defaultOmpAgentDir`). */
+  ompAgentDir: string;
+  /** Also write Oh My Pi's global config, which every OMP session on the machine reads. */
+  ompGlobal: boolean;
 }
 
 export interface SyncResult {
@@ -167,6 +180,20 @@ async function readAndDecode(
 
   // Skip agents without extract/wrap (crush, codex) or without a file def
   if (def.extract === undefined) return undefined;
+
+  // OMP's config is written by editing it in place, so one that cannot be read is an error: skipping
+  // it would let the write replace entries nobody read.
+  if (file.agent === "omp") {
+    const parsed = parseAgentFile(
+      "omp",
+      await readFile(file.path, "utf-8"),
+      file.path,
+    );
+    if (!parsed.ok) throw new Error(parsed.error);
+    const result = decodeNative("omp", parsed.value);
+    if (!result.ok) throw new Error(`${file.path}: ${result.error}`);
+    return { file, policy: result.value };
+  }
 
   // Read and parse
   let content: string;
@@ -296,7 +323,8 @@ function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
 interface WriteTarget {
   agent: AgentId | "canonical";
   path: string;
-  content: string;
+  /** The file's new content, given its current content (`null` for a new file). */
+  render: (current: string | null) => string;
   exists: boolean;
 }
 
@@ -308,6 +336,8 @@ interface Encoder {
 /**
  * Work out the files to write. An agent whose codec refuses the merged policy is reported in
  * `refused` and never skipped silently.
+ *
+ * @param ompGlobalPath Oh My Pi's global config, written as well when given.
  */
 export function computeWriteTargets(
   cwd: string,
@@ -316,6 +346,7 @@ export function computeWriteTargets(
   agentFilter: Set<string> | undefined,
   create: boolean,
   codecs: Readonly<Record<AgentId, Encoder>> = CODECS,
+  ompGlobalPath?: string,
 ): { targets: WriteTarget[]; refused: UnsupportedCapabilityError[] } {
   const targets: WriteTarget[] = [];
   const refused: UnsupportedCapabilityError[] = [];
@@ -326,10 +357,11 @@ export function computeWriteTargets(
     "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
   const canonicalWithSchema = { $schema: schemaUrl, ...merged };
   if (!agentFilter || agentFilter.has("canonical")) {
+    const content = JSON.stringify(canonicalWithSchema, null, 2) + "\n";
     targets.push({
       agent: "canonical",
       path: canonicalPath,
-      content: JSON.stringify(canonicalWithSchema, null, 2) + "\n",
+      render: () => content,
       exists: existsSync(canonicalPath),
     });
   }
@@ -339,7 +371,7 @@ export function computeWriteTargets(
     if (!isAgentId(key)) continue;
     const agent: AgentId = key;
     if (agentFilter && !agentFilter.has(agent)) continue;
-    if (agent === "codex" || agent === "crush" || agent === "omp") continue; // TOML / YAML / no file
+    if (agent === "codex" || agent === "crush") continue; // TOML / no file
 
     const def = AGENT_FILES[agent];
     const filePath = join(cwd, def.name);
@@ -362,18 +394,71 @@ export function computeWriteTargets(
       throw e;
     }
 
+    if (agent === "omp") {
+      targets.push(ompTarget(filePath, OmpEncoded.parse(encoded)));
+      continue;
+    }
+
     // Wrap in native config structure (e.g. { permissions: ... })
     if (def.wrap) encoded = def.wrap(encoded);
+    const content = JSON.stringify(encoded, null, 2) + "\n";
 
     targets.push({
       agent,
       path: filePath,
-      content: JSON.stringify(encoded, null, 2) + "\n",
+      render: () => content,
       exists: fileExists,
     });
   }
 
+  // OMP's global config, when asked for, unless the project file's encoding was already refused
+  if (
+    ompGlobalPath !== undefined &&
+    (!agentFilter || agentFilter.has("omp")) &&
+    (existsSync(ompGlobalPath) || create) &&
+    !refused.some((r) => r.agent === "omp")
+  ) {
+    try {
+      targets.push(
+        ompTarget(ompGlobalPath, OmpEncoded.parse(codecs.omp.encode(merged))),
+      );
+    } catch (e) {
+      if (!(e instanceof UnsupportedCapabilityError)) throw e;
+      refused.push(e);
+    }
+  }
+
   return { targets, refused };
+}
+
+/** An OMP config target, edited in place so only the keys the codec writes change. */
+function ompTarget(path: string, encoded: OmpEncoded): WriteTarget {
+  return {
+    agent: "omp",
+    path,
+    render: (current) => editOmpConfig(current, encoded),
+    exists: existsSync(path),
+  };
+}
+
+/** Whether a file's current and proposed content hold the same data, whatever the formatting. */
+function sameData(
+  agent: AgentId | "canonical",
+  current: string,
+  proposed: string,
+): boolean {
+  if (agent === "omp") {
+    return (
+      JSON.stringify(parseYaml(current)) === JSON.stringify(parseYaml(proposed))
+    );
+  }
+  try {
+    const currentParsed: unknown = JSON.parse(current);
+    const proposedParsed: unknown = JSON.parse(proposed);
+    return JSON.stringify(currentParsed) === JSON.stringify(proposedParsed);
+  } catch {
+    return current === proposed;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -434,13 +519,23 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     create,
     verbose,
     backup,
+    ompAgentDir,
+    ompGlobal,
   } = options;
 
   // Build agent filter from --with/--without
   const agentFilter = buildAgentFilter(withList, withoutList);
 
-  // 1. Collect files by walking up
+  // 1. Collect files by walking up, plus OMP's global config, which OMP reads beneath every project
   const files = collectFiles(cwd, up);
+  const ompGlobalPath = ompGlobalConfigPath(ompAgentDir);
+  if (
+    (!agentFilter || agentFilter.has("omp")) &&
+    existsSync(ompGlobalPath) &&
+    !files.some((f) => f.path === ompGlobalPath)
+  ) {
+    files.push({ agent: "omp", path: ompGlobalPath, local: false });
+  }
 
   if (files.length === 0) {
     process.stderr.write(
@@ -496,6 +591,8 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     sources,
     agentFilter,
     create,
+    CODECS,
+    ompGlobal ? ompGlobalPath : undefined,
   );
 
   if (refused.length > 0) {
@@ -524,19 +621,12 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
       }
     }
 
-    // Skip if content is semantically identical (compare parsed JSON)
+    const proposed = target.render(current);
+
+    // Skip if content is semantically identical
     if (current !== null) {
-      try {
-        const currentParsed: unknown = JSON.parse(current);
-        const proposedParsed: unknown = JSON.parse(target.content);
-        if (JSON.stringify(currentParsed) === JSON.stringify(proposedParsed)) {
-          continue;
-        }
-      } catch {
-        // Fall through to string comparison if parse fails
-        if (current === target.content) continue;
-      }
-    } else if (target.content === "") {
+      if (sameData(target.agent, current, proposed)) continue;
+    } else if (proposed === "") {
       continue;
     }
 
@@ -545,7 +635,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
       agent: target.agent,
       kind: target.exists ? "update" : "create",
       current,
-      proposed: target.content,
+      proposed,
     });
   }
 
@@ -578,8 +668,9 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
 
   // 8. Write files
   for (const change of changes) {
-    // Backup if requested and file exists
-    if (backup && change.current !== null) {
+    // Backup if requested and file exists. OMP's config is hand-written and holds much more than
+    // permissions, so it is always backed up.
+    if ((backup || change.agent === "omp") && change.current !== null) {
       await writeFile(change.path + ".bak", change.current);
     }
 

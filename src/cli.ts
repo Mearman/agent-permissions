@@ -12,6 +12,7 @@
 import { parseArgs } from "node:util";
 import { dirname, resolve, join } from "node:path";
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import {
   convert,
   validate as validateApi,
@@ -23,13 +24,15 @@ import {
   type CheckContext,
   type Format,
 } from "./api.ts";
-import { agentId } from "./compat/codecs.ts";
+import { OmpEncoded, agentId } from "./compat/codecs.ts";
 import { isAgentId } from "./guards.ts";
 import { ruleToString, stepSource, type DecisionStep } from "./evaluate.ts";
 import { confine, type OutsideBehaviour } from "./confine.ts";
 import { sync } from "./sync.ts";
 import {
   AGENT_FILES,
+  defaultOmpAgentDir,
+  editOmpConfig,
   findDefaultFile,
   readInput,
   parseAgentFile,
@@ -177,7 +180,16 @@ async function convertCommand(args: string[]): Promise<void> {
     );
 
     if (outputPath) {
-      await writeJsonFile(outputPath, jsonStr);
+      // An existing OMP config holds much more than permissions, so it is edited in place
+      await writeJsonFile(
+        outputPath,
+        toFormat === "omp" && existsSync(outputPath)
+          ? editOmpConfig(
+              await readFile(outputPath, "utf-8"),
+              OmpEncoded.parse(result.output),
+            )
+          : jsonStr,
+      );
       for (const companion of result.companions) {
         await writeJsonFile(
           join(dirname(outputPath), companion.path),
@@ -468,6 +480,7 @@ async function syncCommand(args: string[]): Promise<void> {
       create: { type: "boolean", short: "c" },
       verbose: { type: "boolean", short: "v" },
       backup: { type: "boolean", short: "b" },
+      "omp-global": { type: "boolean" },
     },
     strict: true,
   });
@@ -527,6 +540,8 @@ async function syncCommand(args: string[]): Promise<void> {
     create: values.create ?? false,
     verbose: values.verbose ?? false,
     backup: values.backup ?? false,
+    ompAgentDir: defaultOmpAgentDir(),
+    ompGlobal: values["omp-global"] ?? false,
   });
   if (result.refused.length > 0) process.exit(1);
 }
@@ -659,6 +674,7 @@ Sync flags:
   -c, --create                       Create config files that don't exist
   -v, --verbose                      Show rule provenance
   -b, --backup                       Write .bak files before overwriting
+  --omp-global                       Also write Oh My Pi's global config (every OMP session reads it)
 
 Mcp flags:
   --permission-prompt                Expose the permission_prompt tool

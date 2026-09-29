@@ -1,9 +1,11 @@
 import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, mkdir, writeFile, readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { computeWriteTargets, sync } from "../sync.ts";
+import { parse as parseYaml } from "yaml";
+import { computeWriteTargets, sync, type SyncOptions } from "../sync.ts";
 import { UnsupportedCapabilityError } from "../compat/unsupported.ts";
 
 /** Narrow unknown to a record for JSON.parse result access — unavoidable object→Record boundary. */
@@ -45,6 +47,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     assert.equal(result.applied, true);
@@ -90,6 +94,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     assert.equal(result.applied, true);
@@ -138,6 +144,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     assert.equal(result.applied, true);
@@ -193,6 +201,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     assert.equal(result.applied, true);
@@ -234,6 +244,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     assert.equal(result.applied, false);
@@ -286,6 +298,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     assert.equal(result.applied, true);
@@ -332,6 +346,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     assert.equal(result.applied, true);
@@ -377,6 +393,8 @@ void describe("sync", () => {
       create: true,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     assert.equal(result.applied, true);
@@ -415,6 +433,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     assert.equal(result.applied, true);
@@ -438,6 +458,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     // Should still work, just skip codex
@@ -479,6 +501,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     const canonical = await readFile(
@@ -537,6 +561,8 @@ void describe("sync", () => {
       create: false,
       verbose: true,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     assert.equal(result.applied, true);
@@ -579,6 +605,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     const canonical = await readFile(
@@ -621,6 +649,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     const canonical = await readFile(
@@ -663,6 +693,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     // Should still succeed — invalid file is skipped
@@ -700,6 +732,8 @@ void describe("sync", () => {
         create: false,
         verbose: true,
         backup: false,
+        ompAgentDir: join(tmpdir(), "no-omp-agent"),
+        ompGlobal: false,
       });
     } finally {
       process.stderr.write = originalWrite;
@@ -735,6 +769,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     const canonical = await readFile(
@@ -778,6 +814,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     const canonical = await readFile(
@@ -814,6 +852,8 @@ void describe("sync", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
 
     const canonical = await readFile(
@@ -860,6 +900,8 @@ void describe("sync of roles and delegation across layers", () => {
       create: false,
       verbose: false,
       backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
     });
     return JSON.parse(
       await readFile(join(cwd, ".agents", "permissions.json"), "utf-8"),
@@ -964,5 +1006,291 @@ void describe("computeWriteTargets", () => {
         ),
       TypeError,
     );
+  });
+});
+
+void describe("sync of Oh My Pi's config", () => {
+  const dirs: string[] = [];
+  after(async () => {
+    await Promise.all(dirs.map((d) => rm(d, { recursive: true })));
+  });
+
+  const projectConfig = [
+    "# project settings",
+    "model: fast # the quick one",
+    "bash:",
+    "  patterns:",
+    "    - match: git *",
+    "      approval: allow",
+    "",
+  ].join("\n");
+
+  /** A project directory and an agent directory standing in for the home directory's, both temporary. */
+  async function fixture(): Promise<{ cwd: string; agentDir: string }> {
+    const root = await mkdtemp(join(tmpdir(), "sync-omp-"));
+    dirs.push(root);
+    const cwd = join(root, "project");
+    const agentDir = join(root, "home", ".omp", "agent");
+    await mkdir(join(cwd, ".agents"), { recursive: true });
+    await mkdir(agentDir, { recursive: true });
+    return { cwd, agentDir };
+  }
+
+  function options(
+    cwd: string,
+    agentDir: string,
+    overrides: Partial<SyncOptions> = {},
+  ): SyncOptions {
+    return {
+      cwd,
+      up: 0,
+      with: [],
+      without: [],
+      yes: true,
+      dryRun: false,
+      create: false,
+      verbose: false,
+      backup: false,
+      ompAgentDir: agentDir,
+      ompGlobal: false,
+      ...overrides,
+    };
+  }
+
+  async function writeCanonical(
+    cwd: string,
+    policy: Record<string, unknown>,
+  ): Promise<void> {
+    await writeFile(
+      join(cwd, ".agents", "permissions.json"),
+      JSON.stringify(policy),
+    );
+  }
+
+  async function readYaml(path: string): Promise<unknown> {
+    return parseYaml(await readFile(path, "utf-8"));
+  }
+
+  void it("writes the merged bash.patterns and approval mode into the project file, keeping everything else", async () => {
+    const { cwd, agentDir } = await fixture();
+    await writeCanonical(cwd, {
+      defaultMode: "standard",
+      rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+    });
+    await mkdir(join(cwd, ".omp"));
+    await writeFile(join(cwd, ".omp", "config.yml"), projectConfig);
+
+    const result = await sync(options(cwd, agentDir));
+
+    assert.equal(result.applied, true);
+    const written = await readFile(join(cwd, ".omp", "config.yml"), "utf-8");
+    assert.match(written, /# project settings/);
+    assert.match(written, /model: fast # the quick one/);
+    assert.deepEqual(parseYaml(written), {
+      model: "fast",
+      bash: {
+        patterns: [
+          { match: "rm", approval: "deny" },
+          { match: "rm *", approval: "deny" },
+          { match: "git", approval: "allow" },
+          { match: "git *", approval: "allow" },
+        ],
+      },
+      tools: { approvalMode: "always-ask" },
+    });
+  });
+
+  void it("backs the file up before writing it", async () => {
+    const { cwd, agentDir } = await fixture();
+    await writeCanonical(cwd, {
+      rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+    });
+    await mkdir(join(cwd, ".omp"));
+    await writeFile(join(cwd, ".omp", "config.yml"), projectConfig);
+
+    await sync(options(cwd, agentDir));
+
+    assert.equal(
+      await readFile(join(cwd, ".omp", "config.yml.bak"), "utf-8"),
+      projectConfig,
+    );
+  });
+
+  void it("leaves a stricter approval mode in place for an autonomous policy", async () => {
+    const { cwd, agentDir } = await fixture();
+    await writeCanonical(cwd, { defaultMode: "autonomous" });
+    await mkdir(join(cwd, ".omp"));
+    await writeFile(
+      join(cwd, ".omp", "config.yml"),
+      "tools:\n  approvalMode: always-ask\n",
+    );
+
+    await sync(options(cwd, agentDir));
+
+    assert.deepEqual(await readYaml(join(cwd, ".omp", "config.yml")), {
+      tools: { approvalMode: "always-ask" },
+    });
+  });
+
+  void it("does not create the project file unless asked", async () => {
+    const { cwd, agentDir } = await fixture();
+    await writeCanonical(cwd, {
+      rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+    });
+
+    await sync(options(cwd, agentDir));
+    assert.equal(existsSync(join(cwd, ".omp", "config.yml")), false);
+
+    await sync(options(cwd, agentDir, { create: true }));
+    assert.deepEqual(await readYaml(join(cwd, ".omp", "config.yml")), {
+      bash: {
+        patterns: [
+          { match: "rm", approval: "deny" },
+          { match: "rm *", approval: "deny" },
+        ],
+      },
+    });
+  });
+
+  void it("reads the global file into the merge but writes it only when asked", async () => {
+    const { cwd, agentDir } = await fixture();
+    await writeCanonical(cwd, {});
+    const globalConfig =
+      "# global\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n";
+    await writeFile(join(agentDir, "config.yml"), globalConfig);
+    await mkdir(join(cwd, ".omp"));
+    await writeFile(join(cwd, ".omp", "config.yml"), projectConfig);
+
+    await sync(options(cwd, agentDir));
+
+    // The project list replaces the global one in Oh My Pi, so it carries the global deny
+    const project = await readYaml(join(cwd, ".omp", "config.yml"));
+    assert.ok(isRecord(project) && isRecord(project.bash));
+    assert.deepEqual(project.bash.patterns, [
+      { match: "sudo", approval: "deny" },
+      { match: "sudo *", approval: "deny" },
+      { match: "git", approval: "allow" },
+      { match: "git *", approval: "allow" },
+    ]);
+    assert.equal(
+      await readFile(join(agentDir, "config.yml"), "utf-8"),
+      globalConfig,
+    );
+
+    await sync(options(cwd, agentDir, { ompGlobal: true }));
+
+    const global = await readFile(join(agentDir, "config.yml"), "utf-8");
+    assert.match(global, /# global/);
+    assert.deepEqual(parseYaml(global), { bash: project.bash });
+    assert.equal(
+      await readFile(join(agentDir, "config.yml.bak"), "utf-8"),
+      globalConfig,
+    );
+  });
+
+  void it("writes nothing when the Oh My Pi codec refuses the policy", async () => {
+    const { cwd, agentDir } = await fixture();
+    const canonical = {
+      rules: [{ tool: "Write", pattern: "./secrets", tier: "deny" }],
+    };
+    await writeCanonical(cwd, canonical);
+    await mkdir(join(cwd, ".omp"));
+    await writeFile(join(cwd, ".omp", "config.yml"), projectConfig);
+
+    const result = await sync(options(cwd, agentDir));
+
+    assert.equal(result.applied, false);
+    assert.deepEqual(
+      result.refused.map((e) => e.agent),
+      ["omp"],
+    );
+    assert.equal(
+      await readFile(join(cwd, ".omp", "config.yml"), "utf-8"),
+      projectConfig,
+    );
+    assert.equal(
+      await readFile(join(cwd, ".agents", "permissions.json"), "utf-8"),
+      JSON.stringify(canonical),
+    );
+  });
+
+  void it("fails on an Oh My Pi file it cannot read instead of overwriting it", async () => {
+    const { cwd, agentDir } = await fixture();
+    await writeCanonical(cwd, {});
+    await mkdir(join(cwd, ".omp"));
+    const unreadable =
+      "bash:\n  patterns:\n    - match: rm *\n      approval: forbid\n";
+    await writeFile(join(cwd, ".omp", "config.yml"), unreadable);
+
+    await assert.rejects(sync(options(cwd, agentDir)), /config\.yml/);
+    assert.equal(
+      await readFile(join(cwd, ".omp", "config.yml"), "utf-8"),
+      unreadable,
+    );
+  });
+
+  void it("leaves Oh My Pi alone when it is left out", async () => {
+    const { cwd, agentDir } = await fixture();
+    await writeCanonical(cwd, {
+      rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+    });
+    await writeFile(
+      join(agentDir, "config.yml"),
+      "bash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+    );
+    await mkdir(join(cwd, ".omp"));
+    await writeFile(join(cwd, ".omp", "config.yml"), projectConfig);
+
+    await sync(options(cwd, agentDir, { without: ["omp"] }));
+
+    assert.equal(
+      await readFile(join(cwd, ".omp", "config.yml"), "utf-8"),
+      projectConfig,
+    );
+    const canonical = await readFile(
+      join(cwd, ".agents", "permissions.json"),
+      "utf-8",
+    );
+    assert.doesNotMatch(canonical, /sudo/);
+  });
+
+  void it("writes nothing on a dry run", async () => {
+    const { cwd, agentDir } = await fixture();
+    await writeCanonical(cwd, {
+      rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+    });
+    await mkdir(join(cwd, ".omp"));
+    await writeFile(join(cwd, ".omp", "config.yml"), projectConfig);
+
+    const result = await sync(options(cwd, agentDir, { dryRun: true }));
+
+    assert.ok(result.changes.some((c) => c.agent === "omp"));
+    assert.equal(
+      await readFile(join(cwd, ".omp", "config.yml"), "utf-8"),
+      projectConfig,
+    );
+  });
+
+  void it("leaves the file alone once it is in step", async () => {
+    const { cwd, agentDir } = await fixture();
+    await writeCanonical(cwd, {
+      rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+    });
+    await mkdir(join(cwd, ".omp"));
+    await writeFile(join(cwd, ".omp", "config.yml"), projectConfig);
+
+    await sync(options(cwd, agentDir));
+    const written = await readFile(join(cwd, ".omp", "config.yml"), "utf-8");
+    const second = await sync(options(cwd, agentDir));
+
+    assert.equal(
+      second.changes.some((c) => c.agent === "omp"),
+      false,
+    );
+    assert.equal(
+      await readFile(join(cwd, ".omp", "config.yml"), "utf-8"),
+      written,
+    );
+    assert.equal(existsSync(join(cwd, ".omp", "config.yml.bak")), true);
   });
 });
