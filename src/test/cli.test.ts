@@ -929,6 +929,120 @@ void describe("CLI", () => {
   });
 
   // =========================================================================
+  void describe("confine", () => {
+    void it("prints a canonical policy that confines to the roots", async () => {
+      const result = await run([
+        "confine",
+        "--root",
+        "/work/app",
+        "--root",
+        "/work/shared",
+      ]);
+      assert.equal(result.exitCode, 0);
+      const parsed: unknown = JSON.parse(result.stdout);
+      assert.ok(isRecord(parsed));
+      assert.equal(parsed.defaultMode, "restricted");
+      const checked = await run(
+        [
+          "check",
+          "--tool",
+          "Read",
+          "--input",
+          "/work/shared/a.ts",
+          "--policy-file",
+          "-",
+        ],
+        result.stdout,
+      );
+      assert.equal(checked.stdout.trim(), "allow");
+      const outside = await run(
+        [
+          "check",
+          "--tool",
+          "Read",
+          "--input",
+          "/work/app-secrets/a",
+          "--policy-file",
+          "-",
+        ],
+        result.stdout,
+      );
+      assert.equal(outside.stdout.trim(), "ask");
+    });
+
+    void it("lists roots other than the working directory as additional directories", async () => {
+      const result = await run([
+        "confine",
+        "--root",
+        ".",
+        "--root",
+        "/work/shared",
+      ]);
+      const parsed: unknown = JSON.parse(result.stdout);
+      assert.ok(isRecord(parsed));
+      assert.ok(isRecord(parsed.permissions));
+      assert.deepEqual(parsed.permissions.additionalDirectories, [
+        "/work/shared",
+      ]);
+    });
+
+    void it("denies outside paths with --outside deny", async () => {
+      const result = await run([
+        "confine",
+        "--root",
+        "/work/app",
+        "--outside",
+        "deny",
+      ]);
+      const parsed: unknown = JSON.parse(result.stdout);
+      assert.ok(isRecord(parsed));
+      assert.equal(parsed.defaultMode, "readonly");
+    });
+
+    void it("writes to --output instead of stdout", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      const file = join(cwd, "confine.json");
+      const result = await run([
+        "confine",
+        "--root",
+        "/work/app",
+        "--output",
+        file,
+      ]);
+      assert.equal(result.exitCode, 0);
+      assert.equal(result.stdout, "");
+      const written: unknown = JSON.parse(await readFile(file, "utf8"));
+      assert.ok(isRecord(written));
+      assert.ok(Array.isArray(written.rules));
+    });
+
+    void it("fails without a root", async () => {
+      const result = await run(["confine"]);
+      assert.equal(result.exitCode, 1);
+      assert.match(result.stderr, /--root is required/);
+    });
+
+    void it("rejects an unknown --outside value", async () => {
+      const result = await run([
+        "confine",
+        "--root",
+        "/w",
+        "--outside",
+        "allow",
+      ]);
+      assert.equal(result.exitCode, 1);
+      assert.match(result.stderr, /--outside/);
+    });
+
+    void it("is described in the usage text", async () => {
+      const result = await run(["--help"]);
+      assert.match(result.stdout, /confine/);
+      assert.match(result.stdout, /not a sandbox/);
+    });
+  });
+
+  // =========================================================================
   void describe("usage and routing", () => {
     void it("shows usage with --help", async () => {
       // An explicit help request is a successful invocation: exit 0, usage on stdout.

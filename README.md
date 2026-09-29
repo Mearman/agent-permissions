@@ -178,6 +178,9 @@ import { claudeCodeModes } from "agent-perms/compat/enums";
 
 // Sync filesystem configs
 import { sync } from "agent-perms/sync";
+
+// Generate a policy confining the file tools to directories
+import { confine } from "agent-perms/confine";
 ```
 
 ## Schema overview
@@ -256,6 +259,20 @@ deny rules → ask rules → allow rules → defaultMode
 ```
 
 Deny short-circuits: if any deny rule matches, the tool is blocked regardless of allow rules from any source.
+
+### Evaluating many calls
+
+`evaluate` reads a policy afresh on every call. A caller that checks many calls against one policy, such as a server, can prepare it once:
+
+```typescript
+import { compile } from "agent-perms/evaluate";
+
+const policy = compile(loadedPolicy);
+policy.evaluate("Bash", "git status"); // "allow" | "ask" | "deny"
+policy.explain("Bash", "git status"); // the decision with the rule behind it
+```
+
+Each rule's pattern, tool name and conditions are parsed the first time the rule is tried and reused after that. A compiled policy reads the rules it was given, so compile again after changing them.
 
 ### Shell command lines
 
@@ -410,7 +427,7 @@ Also available as the `agent-perms-mcp` binary.
 
 ## CLI
 
-The `agent-perms` binary converts, validates, syncs, and serves permission configs.
+The `agent-perms` binary converts, validates, confines, syncs, and serves permission configs.
 
 **All flags, no positionals.** Format names resolve to default config file locations.
 Use `-` for stdin/stdout.
@@ -509,6 +526,33 @@ Prints a canonical policy of proposed `allow` rules on stdout, and each rule wit
 ### Transcript format
 
 Both commands read Claude Code session logs (the `.jsonl` files under `~/.claude/projects/`). The parser reads `tool_use` blocks (`id`, `name`, `input`) and `tool_result` blocks (`tool_use_id`, `is_error`, `content`) from each entry's `message.content`, plus the entry's `cwd` and `gitBranch` as the call's context. The input rules match against is `command` for `Bash`, `file_path` for `Read`, `Write`, `Edit` and `MultiEdit`, `notebook_path` for `NotebookEdit` and `url` for `WebFetch`. A log does not say which rule decided a call, or whether a call that ran was allowed outright or approved when asked; it records only the outcome, which is read from the result text: an error starting `Permission to use` and containing `has been denied` is a denial, an error starting `The user doesn't want to proceed with this tool use.` is a declined request, and anything else means the call ran.
+
+### confine
+
+```bash
+agent-perms confine --root .
+agent-perms confine --root . --root ../shared --output .agents/permissions.json
+agent-perms confine --root ~/projects/app --outside deny
+```
+
+| Flag              | Description                                                        |
+| ----------------- | ------------------------------------------------------------------ |
+| `-r`, `--root`    | Directory the file tools may reach (required, repeatable)          |
+| `--outside`       | `ask` (default) or `deny`: what happens to paths outside the roots |
+| `-o`, `--output`  | Write to a file (or format name) instead of stdout                 |
+| `-c`, `--compact` | Output compact JSON                                                |
+
+Prints a canonical policy that allows `Read`, `Edit` and `Write` on each root and everything below it, and lists the roots other than the working directory under `permissions.additionalDirectories`. Relative roots resolve against the working directory; paths are made absolute, `.` and `..` segments are collapsed, trailing separators are dropped and duplicates are removed.
+
+**What it can and cannot express.** Evaluation is deny-first and patterns are exact, `prefix:*` or `*` wildcards, none of which can negate. "Deny everything outside the roots" therefore cannot be written: a blanket deny would also beat the allow rules for the roots. Instead the policy:
+
+- allows the file tools on `<root>` and `<root>/*`, so a sibling sharing the root as a string prefix (`/work/app-secrets` for `/work/app`) is not matched;
+- denies any path containing a `..` segment, because the wildcard `/work/app/*` would otherwise match the text `/work/app/../secret`;
+- sets `defaultMode` to `restricted` (outside paths ask) or, with `--outside deny`, `readonly` (outside paths are refused). That mode is global: it also applies to every other tool that has no rule of its own, so `readonly` refuses `Bash` calls that no rule allows.
+
+Tool inputs are matched as literal text. A path given relative to the working directory matches no root rule and falls to the default mode.
+
+**This is not a sandbox.** Only the file tools are constrained. A `Bash` command can still read or write anywhere, and other tools are untouched. To restrict what shell commands can reach, use the policy's `sandbox` field.
 
 ### sync
 
