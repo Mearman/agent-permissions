@@ -185,6 +185,30 @@ void describe("convert", () => {
 // validate
 // ---------------------------------------------------------------------------
 
+void describe("check explanation", () => {
+  void it("returns the steps behind the decision", () => {
+    const result = check(
+      "Bash",
+      "git status && rm x",
+      {
+        rules: [
+          { tool: "Bash", pattern: "git:*", tier: "allow" },
+          { tool: "Bash", pattern: "rm:*", tier: "ask" },
+        ],
+      },
+      {},
+    );
+    assert.equal(result.decision, "ask");
+    assert.deepEqual(
+      result.steps.map((s) => [s.command, s.decision, s.rule?.pattern]),
+      [
+        ["git status", "allow", "git:*"],
+        ["rm x", "ask", "rm:*"],
+      ],
+    );
+  });
+});
+
 void describe("convert to Codex", () => {
   void it("fails instead of dropping a command rule it cannot enforce", () => {
     assert.throws(

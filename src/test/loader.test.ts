@@ -6,6 +6,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
+import { explain } from "../evaluate.ts";
 import { loadPolicy } from "../loader.ts";
 
 /** Create an isolated temp directory for a test. */
@@ -18,6 +19,37 @@ void describe("loadPolicy", () => {
 
   after(async () => {
     await Promise.all(dirs.map((d) => rm(d, { recursive: true })));
+  });
+
+  void describe("provenance", () => {
+    void it("records the file each rule came from", async () => {
+      const cwd = await isolate();
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      await writeFile(
+        join(cwd, ".agents", "permissions.json"),
+        JSON.stringify({
+          rules: [{ tool: "Bash", pattern: "git:*", tier: "allow" }],
+        }),
+      );
+      await writeFile(
+        join(cwd, ".agents", "permissions.local.json"),
+        JSON.stringify({
+          rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+        }),
+      );
+      const policy = await loadPolicy({ cwd });
+      const explanation = explain(policy, "Bash", "rm -rf x");
+      assert.equal(explanation.decision, "deny");
+      assert.equal(
+        explanation.steps[0]?.layer,
+        join(cwd, ".agents", "permissions.local.json"),
+      );
+      assert.equal(
+        explain(policy, "Bash", "git status").steps[0]?.layer,
+        join(cwd, ".agents", "permissions.json"),
+      );
+    });
   });
 
   void describe("canonical loading", () => {

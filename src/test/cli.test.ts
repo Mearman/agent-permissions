@@ -443,6 +443,34 @@ void describe("CLI", () => {
       assert.match(result.stdout, /allow/);
     });
 
+    void it("explains which rule decided with --explain", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({
+          rules: [
+            { tool: "Bash", pattern: "git:*", tier: "allow" },
+            { tool: "Bash", pattern: "curl:*", tier: "deny" },
+          ],
+        }),
+      );
+      const result = await run([
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "git status && curl x",
+        "--explain",
+        "--policy-file",
+        join(cwd, "policy.json"),
+      ]);
+      assert.equal(result.exitCode, 1);
+      assert.equal(result.stdout, "deny\n");
+      assert.match(result.stderr, /allow\s+git status\s+Bash\(git:\*\)/);
+      assert.match(result.stderr, /deny\s+curl x\s+Bash\(curl:\*\)/);
+    });
+
     void it("denies a matching deny rule", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);

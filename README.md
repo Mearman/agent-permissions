@@ -457,6 +457,7 @@ agent-perms check --tool Bash --input "git status" --policy-file .agents/permiss
 | `--input`           | Tool input string (required)                 |
 | `--policy-file`     | Policy file (format, file, or `-` for stdin) |
 | `--cwd`, `--branch` | Evaluation context                           |
+| `--explain`         | Print the rule and layer behind each step    |
 
 Exits 0 with `allow` or 1 with `deny`.
 
