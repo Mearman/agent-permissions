@@ -24,6 +24,7 @@ import {
   type Format,
 } from "./api.ts";
 import { agentId } from "./compat/codecs.ts";
+import { isAgentId } from "./guards.ts";
 import { ruleToString, stepSource, type DecisionStep } from "./evaluate.ts";
 import { confine, type OutsideBehaviour } from "./confine.ts";
 import { sync } from "./sync.ts";
@@ -60,21 +61,23 @@ function isAgent(value: string): value is Agent {
 // Resolution helpers
 // ---------------------------------------------------------------------------
 
+/** Whether a spec names a format rather than a file (a file path's format is detected separately). */
+function isFormatName(spec: string): spec is Format {
+  return spec === "canonical" || isAgentId(spec);
+}
+
 /** Resolve a spec to an input file path. Format name → walk up, file path → direct, "-" → stdin. */
 function resolveInputSpec(spec: string | undefined): string | undefined {
   if (spec === undefined || spec === "-") return undefined;
-  const format = resolveFormat(spec);
-  if (format) return findDefaultFile(format, process.cwd());
+  if (isFormatName(spec)) return findDefaultFile(spec, process.cwd());
   return resolve(spec);
 }
 
 /** Resolve a spec to an output file path. Format name → cwd, file path → direct, "-" → stdout. */
 function resolveOutputSpec(spec: string | undefined): string | undefined {
   if (spec === undefined || spec === "-") return undefined;
-  const format = resolveFormat(spec);
-  if (format) {
-    const fileName = AGENT_FILES[format].name;
-    return resolve(join(process.cwd(), fileName));
+  if (isFormatName(spec)) {
+    return resolve(join(process.cwd(), AGENT_FILES[spec].name));
   }
   return resolve(spec);
 }

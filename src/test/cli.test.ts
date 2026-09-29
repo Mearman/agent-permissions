@@ -106,6 +106,25 @@ void describe("CLI", () => {
       assert.deepEqual(parsed.allowed_tools, ["view", "bash", "grep"]);
     });
 
+    void it("writes to a known config path where it is, not in the working directory", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+      );
+      const target = join(cwd, ".claude", "settings.json");
+      const result = await run([
+        "convert",
+        "--from",
+        join(cwd, "policy.json"),
+        "--to",
+        target,
+      ]);
+      assert.equal(result.exitCode, 0, result.stderr);
+      assert.match(await readFile(target, "utf-8"), /"Read"/u);
+    });
+
     void it("converts with --compact flag", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
