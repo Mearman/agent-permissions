@@ -26,6 +26,7 @@ import {
   ruleToString,
   collectRules,
 } from "../evaluate.ts";
+import { resolveProfiles } from "../profiles.ts";
 import {
   UnsupportedCapabilityError,
   type UnsupportedRule,
@@ -1260,7 +1261,7 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
     // --- profiles → named Codex profiles, each carrying the top-level restrictions ---
     const profiles: Record<string, CodexProfile> = {};
     for (const [name, profileTiers] of Object.entries(
-      canonical.profiles ?? {},
+      resolveProfiles(canonical.profiles),
     )) {
       const own = codexRestrictions(
         collectRules({ permissions: profileTiers }),
