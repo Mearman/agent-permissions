@@ -1015,6 +1015,8 @@ interface CodexRestrictions {
   /** Subpaths of `:workspace_roots`, with `.` for the roots themselves. */
   workspace: Record<string, CodexRestriction>;
   domains: Record<string, "allow" | "deny">;
+  /** Execpolicy prefix rules, keyed by their space-joined words. */
+  commands: Record<string, CodexCommandRule>;
 }
 
 /** The two filesystem access values a restrictive rule becomes: `read` blocks writes, `deny` blocks everything. */
@@ -1089,6 +1091,7 @@ const DOMAIN_PREFIX = "domain:";
 function codexRefusal(
   rule: Rule,
   writesBlockedBySandbox: boolean,
+  commandScope: CommandRuleScope,
 ): string | undefined {
   if (rule.when !== undefined) {
     return "Codex cannot limit a rule with a condition";
@@ -1118,7 +1121,88 @@ function codexRefusal(
       ? "Codex filesystem access is read, write or deny, never asked"
       : undefined;
   }
-  return `Codex has no equivalent of a ${rule.tier} rule for ${rule.tool}${rule.tool === "Bash" ? "; command rules belong in its execpolicy rules files, which this codec does not write" : ""}`;
+  if (rule.tool === "Bash") {
+    if (commandScope === "config-only") {
+      return "Codex enforces command rules through execpolicy rules files, which only encodeCodex writes";
+    }
+    if (commandScope === "profile") {
+      return "Codex execpolicy rules apply to every profile, not to one named profile";
+    }
+    // Whether Codex can match the command exactly is codexCommandPrefix's to decide
+    return rule.pattern === undefined
+      ? "Codex prefix rules match a command, not the whole tool"
+      : undefined;
+  }
+  return `Codex has no equivalent of a ${rule.tier} rule for ${rule.tool}`;
+}
+
+/**
+ * Where a command rule can go. `config-only` is the config codec on its own, which cannot hold one; `rules-file` is the top level under `encodeCodex`, which writes an execpolicy rules file; `profile` is a named profile under `encodeCodex`, whose command rules a rules file would apply to every profile.
+ */
+type CommandRuleScope = "config-only" | "rules-file" | "profile";
+
+/** The execpolicy decision a restrictive command rule becomes. */
+type CodexCommandDecision = "forbidden" | "prompt";
+
+/** One execpolicy prefix rule: the leading words a command must start with, and the decision. */
+interface CodexCommandRule {
+  words: string[];
+  decision: CodexCommandDecision;
+}
+
+/**
+ * A word Codex tokenises exactly as the policy spells it: no quoting, escapes, globbing, expansion or shell operators, so the shell word and the literal text agree.
+ */
+const PLAIN_WORD = /^[\w@%+=:,./-]+$/;
+
+/**
+ * The words of an execpolicy prefix rule matching exactly the commands a canonical command pattern matches, or why there is none. A `prefix:*` pattern and a pattern whose only wildcard is a trailing ` *` both match the words alone or followed by a space and anything, which is what a prefix rule matches once Codex has split the command into words.
+ */
+function codexCommandPrefix(
+  pattern: string,
+): { words: string[] } | { reason: string } {
+  const parsed = parseRulePattern(pattern);
+  let prefix: string;
+  if (parsed.type === "prefix") {
+    prefix = parsed.prefix;
+  } else if (parsed.type === "wildcard") {
+    const base = /^(.*) \*$/.exec(parsed.pattern)?.[1];
+    const baseParsed = base === undefined ? undefined : parseRulePattern(base);
+    if (baseParsed?.type !== "exact") {
+      return {
+        reason:
+          "Codex prefix rules match leading words, not a wildcard elsewhere in the command",
+      };
+    }
+    prefix = baseParsed.content;
+  } else {
+    return {
+      reason:
+        "Codex prefix rules match a command with any arguments, not one exact command",
+    };
+  }
+  const words = prefix.split(" ");
+  if (!words.every((word) => PLAIN_WORD.test(word))) {
+    return {
+      reason:
+        "Codex splits a command into shell words, so the prefix must be plain words separated by single spaces, with no quoting or shell syntax",
+    };
+  }
+  if (words[0]?.includes("=")) {
+    return {
+      reason:
+        "Codex does not split a command that starts with a variable assignment into words",
+    };
+  }
+  return { words };
+}
+
+/** The tighter of two command decisions: forbidden over prompt. */
+function strictestDecision(
+  a: CodexCommandDecision | undefined,
+  b: CodexCommandDecision,
+): CodexCommandDecision {
+  return a === "forbidden" || b === "forbidden" ? "forbidden" : "prompt";
 }
 
 /**
@@ -1128,12 +1212,14 @@ function codexRestrictions(
   rules: readonly Rule[],
   profile: string | undefined,
   writesBlockedBySandbox: boolean,
+  commandScope: CommandRuleScope,
   unsupported: UnsupportedRule[],
 ): CodexRestrictions {
   const restrictions: CodexRestrictions = {
     absolute: {},
     workspace: {},
     domains: {},
+    commands: {},
   };
   for (const rule of rules) {
     if (rule.tier === "allow") {
@@ -1159,12 +1245,26 @@ function codexRestrictions(
             : `${reason} (in profile "${profile}")`,
       });
     };
-    const reason = codexRefusal(rule, writesBlockedBySandbox);
+    const reason = codexRefusal(rule, writesBlockedBySandbox, commandScope);
     if (reason !== undefined) {
       refuse(reason);
       continue;
     }
-    if (rule.tool === "WebFetch" && rule.pattern !== undefined) {
+    if (rule.tool === "Bash" && rule.pattern !== undefined) {
+      const prefix = codexCommandPrefix(rule.pattern);
+      if ("reason" in prefix) {
+        refuse(prefix.reason);
+        continue;
+      }
+      const key = prefix.words.join(" ");
+      restrictions.commands[key] = {
+        words: prefix.words,
+        decision: strictestDecision(
+          restrictions.commands[key]?.decision,
+          rule.tier === "deny" ? "forbidden" : "prompt",
+        ),
+      };
+    } else if (rule.tool === "WebFetch" && rule.pattern !== undefined) {
       const domain = rule.pattern.slice(DOMAIN_PREFIX.length);
       restrictions.domains[domain] = "deny";
     } else if (rule.pattern === undefined) {
@@ -1271,6 +1371,131 @@ function codexProfileOf(restrictions: CodexRestrictions): CodexProfile {
   return profile;
 }
 
+/**
+ * Encode a canonical policy for Codex: the config object and the execpolicy prefix rules for its command rules, which only the `rules-file` scope collects.
+ *
+ * @throws UnsupportedCapabilityError listing every restrictive rule Codex cannot enforce exactly.
+ */
+function codexEncoding(
+  canonical: AgentPermissionPolicy,
+  commandScope: "config-only" | "rules-file",
+): { config: Partial<CodexNative>; commands: CodexCommandRule[] } {
+  const result: Partial<CodexNative> = {};
+
+  // --- defaultMode → approval_policy ---
+  if (canonical.defaultMode) {
+    result.approval_policy = modeToCodexApproval(canonical.defaultMode);
+  }
+
+  // --- sandbox → sandbox_mode + sandbox_workspace_write ---
+  if (canonical.sandbox) {
+    if (canonical.sandbox.mode) {
+      result.sandbox_mode = canonicalSandboxToCodex(canonical.sandbox.mode);
+    }
+    if (
+      canonical.sandbox.writableRoots?.length ||
+      canonical.sandbox.networkAccess !== undefined
+    ) {
+      const sw: Partial<CodexSandboxWorkspaceWrite> = {};
+      if (canonical.sandbox.writableRoots?.length) {
+        sw.writable_roots = canonical.sandbox.writableRoots;
+      }
+      if (canonical.sandbox.networkAccess !== undefined) {
+        sw.network_access = canonical.sandbox.networkAccess;
+      }
+      result.sandbox_workspace_write = sw;
+    }
+  } else if (canonical.defaultMode) {
+    // Derive sandbox_mode from defaultMode if no explicit sandbox
+    if (canonical.defaultMode === "readonly") {
+      result.sandbox_mode = "read-only";
+    } else if (
+      canonical.defaultMode === "autonomous" ||
+      canonical.defaultMode === "bypassPermissions"
+    ) {
+      result.sandbox_mode = "danger-full-access";
+    } else {
+      result.sandbox_mode = "workspace-write";
+    }
+  }
+
+  // --- additionalDirectories → writable_roots ---
+  if (
+    canonical.permissions?.additionalDirectories?.length &&
+    !result.sandbox_workspace_write
+  ) {
+    result.sandbox_workspace_write = {
+      writable_roots: canonical.permissions.additionalDirectories,
+    };
+  }
+
+  // --- Rules: represent every restrictive rule exactly, or refuse the conversion ---
+  const unsupported: UnsupportedRule[] = [];
+  const writesBlockedBySandbox = result.sandbox_mode === "read-only";
+  const topLevel = codexRestrictions(
+    collectRules(canonical),
+    undefined,
+    writesBlockedBySandbox,
+    commandScope,
+    unsupported,
+  );
+  if (canonical.network?.domains) {
+    for (const [domain, action] of Object.entries(canonical.network.domains)) {
+      topLevel.domains[domain] = strictestDomain(
+        topLevel.domains[domain],
+        action,
+      );
+    }
+  }
+
+  // --- profiles → named Codex profiles, each carrying the top-level restrictions ---
+  const profiles: Record<string, CodexProfile> = {};
+  for (const [name, profileTiers] of Object.entries(
+    resolveProfiles(canonical.profiles),
+  )) {
+    const own = codexRestrictions(
+      collectRules({ permissions: profileTiers }),
+      name,
+      writesBlockedBySandbox,
+      commandScope === "config-only" ? "config-only" : "profile",
+      unsupported,
+    );
+    profiles[name] = codexProfileOf({
+      absolute: mergeAccess(topLevel.absolute, own.absolute),
+      workspace: mergeAccess(topLevel.workspace, own.workspace),
+      domains: mergeDomains(topLevel.domains, own.domains),
+      commands: {},
+    });
+  }
+
+  if (unsupported.length > 0) {
+    throw new UnsupportedCapabilityError("codex", unsupported);
+  }
+
+  if (Object.keys(profiles).length > 0) {
+    const named = Object.fromEntries(
+      Object.entries(profiles).filter(
+        ([, profile]) => Object.keys(profile).length > 0,
+      ),
+    );
+    if (Object.keys(named).length > 0) {
+      result.permissions = named;
+      if (canonical.activeProfile) {
+        result.default_permissions = canonical.activeProfile;
+      }
+    }
+  } else {
+    // No named profiles: one "default" profile holds the top-level restrictions
+    const profile = codexProfileOf(topLevel);
+    if (Object.keys(profile).length > 0) {
+      result.permissions = { default: profile };
+      result.default_permissions = "default";
+    }
+  }
+
+  return { config: result, commands: Object.values(topLevel.commands) };
+}
+
 export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
   decode(native) {
     const rules: Rule[] = [];
@@ -1372,121 +1597,41 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
     return result;
   },
   encode(canonical) {
-    const result: Partial<CodexNative> = {};
-
-    // --- defaultMode → approval_policy ---
-    if (canonical.defaultMode) {
-      result.approval_policy = modeToCodexApproval(canonical.defaultMode);
-    }
-
-    // --- sandbox → sandbox_mode + sandbox_workspace_write ---
-    if (canonical.sandbox) {
-      if (canonical.sandbox.mode) {
-        result.sandbox_mode = canonicalSandboxToCodex(canonical.sandbox.mode);
-      }
-      if (
-        canonical.sandbox.writableRoots?.length ||
-        canonical.sandbox.networkAccess !== undefined
-      ) {
-        const sw: Partial<CodexSandboxWorkspaceWrite> = {};
-        if (canonical.sandbox.writableRoots?.length) {
-          sw.writable_roots = canonical.sandbox.writableRoots;
-        }
-        if (canonical.sandbox.networkAccess !== undefined) {
-          sw.network_access = canonical.sandbox.networkAccess;
-        }
-        result.sandbox_workspace_write = sw;
-      }
-    } else if (canonical.defaultMode) {
-      // Derive sandbox_mode from defaultMode if no explicit sandbox
-      if (canonical.defaultMode === "readonly") {
-        result.sandbox_mode = "read-only";
-      } else if (
-        canonical.defaultMode === "autonomous" ||
-        canonical.defaultMode === "bypassPermissions"
-      ) {
-        result.sandbox_mode = "danger-full-access";
-      } else {
-        result.sandbox_mode = "workspace-write";
-      }
-    }
-
-    // --- additionalDirectories → writable_roots ---
-    if (
-      canonical.permissions?.additionalDirectories?.length &&
-      !result.sandbox_workspace_write
-    ) {
-      result.sandbox_workspace_write = {
-        writable_roots: canonical.permissions.additionalDirectories,
-      };
-    }
-
-    // --- Rules: represent every restrictive rule exactly, or refuse the conversion ---
-    const unsupported: UnsupportedRule[] = [];
-    const writesBlockedBySandbox = result.sandbox_mode === "read-only";
-    const topLevel = codexRestrictions(
-      collectRules(canonical),
-      undefined,
-      writesBlockedBySandbox,
-      unsupported,
-    );
-    if (canonical.network?.domains) {
-      for (const [domain, action] of Object.entries(
-        canonical.network.domains,
-      )) {
-        topLevel.domains[domain] = strictestDomain(
-          topLevel.domains[domain],
-          action,
-        );
-      }
-    }
-
-    // --- profiles → named Codex profiles, each carrying the top-level restrictions ---
-    const profiles: Record<string, CodexProfile> = {};
-    for (const [name, profileTiers] of Object.entries(
-      resolveProfiles(canonical.profiles),
-    )) {
-      const own = codexRestrictions(
-        collectRules({ permissions: profileTiers }),
-        name,
-        writesBlockedBySandbox,
-        unsupported,
-      );
-      profiles[name] = codexProfileOf({
-        absolute: mergeAccess(topLevel.absolute, own.absolute),
-        workspace: mergeAccess(topLevel.workspace, own.workspace),
-        domains: mergeDomains(topLevel.domains, own.domains),
-      });
-    }
-
-    if (unsupported.length > 0) {
-      throw new UnsupportedCapabilityError("codex", unsupported);
-    }
-
-    if (Object.keys(profiles).length > 0) {
-      const named = Object.fromEntries(
-        Object.entries(profiles).filter(
-          ([, profile]) => Object.keys(profile).length > 0,
-        ),
-      );
-      if (Object.keys(named).length > 0) {
-        result.permissions = named;
-        if (canonical.activeProfile) {
-          result.default_permissions = canonical.activeProfile;
-        }
-      }
-    } else {
-      // No named profiles: one "default" profile holds the top-level restrictions
-      const profile = codexProfileOf(topLevel);
-      if (Object.keys(profile).length > 0) {
-        result.permissions = { default: profile };
-        result.default_permissions = "default";
-      }
-    }
-
-    return result;
+    return codexEncoding(canonical, "config-only").config;
   },
 });
+
+/**
+ * Where the execpolicy rules file goes, relative to the directory holding Codex's config. Codex loads every `*.rules` file in the `rules` directory of each config layer (`~/.codex/rules`, a project's `.codex/rules`).
+ */
+export const CODEX_EXECPOLICY_RULES_PATH = "rules/agent-perms.rules";
+
+/**
+ * A canonical policy encoded for Codex: the config object, and the content of an execpolicy rules file when the policy has command rules.
+ */
+export interface CodexEncoding {
+  config: z.input<typeof codexNative>;
+  /** Starlark `prefix_rule` calls for {@link CODEX_EXECPOLICY_RULES_PATH}, or `undefined` when there are none. */
+  rules: string | undefined;
+}
+
+/**
+ * Encode a canonical policy for Codex, writing its top-level command `deny` and `ask` rules as execpolicy prefix rules (`forbidden` and `prompt`) instead of refusing them. Only a `prefix:*` pattern, or one whose sole wildcard is a trailing ` *`, made of plain words, is written; a command `allow` is left out, which is stricter.
+ *
+ * @throws UnsupportedCapabilityError listing every restrictive rule Codex cannot enforce exactly, including a command rule in a named profile, since a rules file applies to every profile.
+ */
+export function encodeCodex(canonical: AgentPermissionPolicy): CodexEncoding {
+  const { config, commands } = codexEncoding(canonical, "rules-file");
+  if (commands.length === 0) return { config, rules: undefined };
+  const lines = commands.map(
+    ({ words, decision }) =>
+      `prefix_rule(pattern = [${words.map((word) => JSON.stringify(word)).join(", ")}], decision = "${decision}")\n`,
+  );
+  return {
+    config,
+    rules: `# Generated by agent-perms from a canonical permission policy.\n${lines.join("")}`,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Oh My Pi (OMP) codec
