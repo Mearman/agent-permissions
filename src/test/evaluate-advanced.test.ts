@@ -89,37 +89,40 @@ void describe("Claude Code rule syntax", () => {
   });
 
   void describe("escape sequences", () => {
+    // The input is matched as one raw string, so these use a tool that is not split as a shell line.
     void it("escaped parens in pattern become exact matches", () => {
       // Pattern contains escaped parens: git log \(main\)
       // Should match: git log (main)
       const policy: PermissionPolicy = {
         defaultMode: "standard",
-        rules: [{ tool: "Bash", pattern: "git log \\(main\\)", tier: "allow" }],
+        rules: [
+          { tool: "Custom", pattern: "git log \\(main\\)", tier: "allow" },
+        ],
       };
-      assert.equal(evaluate(policy, "bash", "git log (main)"), "allow");
+      assert.equal(evaluate(policy, "custom", "git log (main)"), "allow");
       // Without parens, should not match
-      assert.equal(evaluate(policy, "bash", "git log main"), "ask");
+      assert.equal(evaluate(policy, "custom", "git log main"), "ask");
     });
 
     void it("escaped asterisk is literal, not wildcard", () => {
       // Pattern: echo \* → literal asterisk
       const policy: PermissionPolicy = {
         defaultMode: "standard",
-        rules: [{ tool: "Bash", pattern: "echo \\*", tier: "allow" }],
+        rules: [{ tool: "Custom", pattern: "echo \\*", tier: "allow" }],
       };
-      assert.equal(evaluate(policy, "bash", "echo *"), "allow");
+      assert.equal(evaluate(policy, "custom", "echo *"), "allow");
       // Unescaped wildcard would match anything after "echo "
       // But escaped * only matches literal *
-      assert.equal(evaluate(policy, "bash", "echo hello"), "ask");
+      assert.equal(evaluate(policy, "custom", "echo hello"), "ask");
     });
 
     void it("escaped backslash is literal", () => {
       // Pattern: echo \\ → unescaped: echo \
       const policy: PermissionPolicy = {
         defaultMode: "standard",
-        rules: [{ tool: "Bash", pattern: "echo \\\\", tier: "allow" }],
+        rules: [{ tool: "Custom", pattern: "echo \\\\", tier: "allow" }],
       };
-      assert.equal(evaluate(policy, "bash", "echo \\"), "allow");
+      assert.equal(evaluate(policy, "custom", "echo \\"), "allow");
     });
   });
 
