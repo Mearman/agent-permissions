@@ -1,3 +1,15 @@
+## [6.6.0](https://github.com/Mearman/agent-permissions/compare/v6.5.0...v6.6.0) (2026-09-29)
+
+### Features
+
+* **evaluate:** accept a trilean predicate tree in when ([2c7b941](https://github.com/Mearman/agent-permissions/commit/2c7b9417915ac1ffbfbe3816d57f2b58cf8bb072))
+
+### Build
+
+* **deps:** bump the dev-dependencies group across 1 directory with 17 updates ([88fc798](https://github.com/Mearman/agent-permissions/commit/88fc798bdd46df9869b26166b6bbc7e6714e9ce6))
+* **deps:** bump trilean from 1.4.1 to 1.6.3 ([ce095d8](https://github.com/Mearman/agent-permissions/commit/ce095d86e85b906f3751d97a91b6be2bbdcb4616))
+* **deps:** bump trilean to the release with a synchronous evaluator ([4c9f700](https://github.com/Mearman/agent-permissions/commit/4c9f700ebdcd9aa6b84d2fe6a5ebf58a23549b47))
+
 ## [6.5.0](https://github.com/Mearman/agent-permissions/compare/v6.4.0...v6.5.0) (2026-09-29)
 
 ### Features
