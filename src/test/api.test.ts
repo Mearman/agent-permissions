@@ -209,6 +209,25 @@ void describe("check explanation", () => {
   });
 });
 
+void describe("check with delegation", () => {
+  const policy = {
+    delegation: { maxDepth: 1, nonDelegable: ["Bash(sudo:*)"] },
+    defaultMode: "autonomous",
+  };
+
+  void it("applies the delegation limits to a call that carries a depth", () => {
+    assert.equal(
+      check("Bash", "sudo ls", policy, { depth: 1 }).decision,
+      "deny",
+    );
+    assert.equal(
+      check("Bash", "sudo ls", policy, { depth: 0 }).decision,
+      "allow",
+    );
+    assert.equal(check("Read", "./a", policy, { depth: 2 }).decision, "deny");
+  });
+});
+
 void describe("convert to Codex", () => {
   void it("fails instead of dropping a command rule it cannot enforce", () => {
     assert.throws(
