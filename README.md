@@ -121,7 +121,14 @@ The package uses [wildcard exports](https://nodejs.org/api/packages.html#subpath
 Side-effect-free functions for use as a library:
 
 ```typescript
-import { convert, validate, check, detectFormat } from "agent-perms/api";
+import {
+  convert,
+  validate,
+  check,
+  replay,
+  suggest,
+  detectFormat,
+} from "agent-perms/api";
 
 // Convert between formats (auto-detects source)
 const result = convert(undefined, "canonical", claudeCodeJson);
@@ -136,6 +143,14 @@ const { valid, errors } = validate(json);
 const { decision } = check("Bash", "sudo rm -rf /", policy, { branch: "main" });
 // decision: "allow" | "deny" | "ask"
 
+// Replay a policy over a session transcript (JSON Lines text)
+const { counts, differing } = replay(policy, transcriptText);
+// counts: { allow, ask, deny }; differing: calls the transcript recorded differently
+
+// Propose allow rules for calls approved at least twice
+const suggestions = suggest(transcriptText, { minCount: 2, policy });
+// [{ rule: { tool: "Bash", pattern: "npm run:*", tier: "allow" }, count: 3 }]
+
 // Detect format from structure
 const format = detectFormat(json); // "claude-code" | "crush" | "kiro" | ...
 ```
@@ -148,6 +163,9 @@ import { AgentPermissionPolicy } from "agent-perms/schema";
 
 // Deny-first evaluator
 import { evaluate } from "agent-perms/evaluate";
+
+// Transcript parsing, replay and rule suggestion over plain evaluator policies
+import { parseTranscript, replayCalls, suggestRules } from "agent-perms/replay";
 
 // Multi-layer policy loader
 import { loadPolicy } from "agent-perms/loader";
@@ -460,6 +478,37 @@ agent-perms check --tool Bash --input "git status" --policy-file .agents/permiss
 | `--explain`         | Print the rule and layer behind each step    |
 
 Exits 0 with `allow` or 1 with `deny`.
+
+### replay
+
+```bash
+agent-perms replay --transcript session.jsonl --policy-file canonical
+```
+
+| Flag            | Description                                  |
+| --------------- | -------------------------------------------- |
+| `--transcript`  | Session transcript (file, or `-` for stdin)  |
+| `--policy-file` | Policy file (format, file, or `-` for stdin) |
+
+Judges every tool call in the transcript against the policy and prints how many it would allow, ask about and deny, one `decision<TAB>count` line each. It then lists the calls whose recorded outcome the policy could not have produced, as `decision<TAB>outcome<TAB>tool<TAB>input`. A call that ran is consistent with `allow` or `ask`, a call a rule denied with `deny`, and a call the user declined with `ask`; a call with no recorded result is counted but never listed. Each call is judged in the working directory and branch recorded with it, so `when` conditions apply as they did at the time.
+
+### suggest
+
+```bash
+agent-perms suggest --transcript session.jsonl --policy-file canonical > proposed.json
+```
+
+| Flag              | Description                                                      |
+| ----------------- | ---------------------------------------------------------------- |
+| `--transcript`    | Session transcript (file, or `-` for stdin)                      |
+| `--policy-file`   | Policy whose deny rules exclude calls and allow rules cover them |
+| `--min-count <n>` | Approved calls a rule must cover (default: 2)                    |
+
+Prints a canonical policy of proposed `allow` rules on stdout, and each rule with how many approved calls it covers on stderr. Only calls that ran count as approved, and a `Bash` line counts command by command. A command is never proposed when it appeared in a line a policy rule denies or that the transcript records as denied or declined, and commands the policy already allows, or a rule asks about, are left out. Commands sharing a first word become one prefix rule on the words they all start with (`npm run build` and `npm run lint` give `npm run:*`), unless that prefix would also match an excluded command, in which case each repeated command gets an exact rule. Other tools get an exact rule on their path or URL, or a bare rule when the tool has no such input. Review the proposal before adopting it: a prefix rule allows arguments that were never observed.
+
+### Transcript format
+
+Both commands read Claude Code session logs (the `.jsonl` files under `~/.claude/projects/`). The parser reads `tool_use` blocks (`id`, `name`, `input`) and `tool_result` blocks (`tool_use_id`, `is_error`, `content`) from each entry's `message.content`, plus the entry's `cwd` and `gitBranch` as the call's context. The input rules match against is `command` for `Bash`, `file_path` for `Read`, `Write`, `Edit` and `MultiEdit`, `notebook_path` for `NotebookEdit` and `url` for `WebFetch`. A log does not say which rule decided a call, or whether a call that ran was allowed outright or approved when asked; it records only the outcome, which is read from the result text: an error starting `Permission to use` and containing `has been denied` is a denial, an error starting `The user doesn't want to proceed with this tool use.` is a declined request, and anything else means the call ran.
 
 ### sync
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Agent-perms CLI — convert, validate, check, and sync cross-agent permission policies.
+ * Agent-perms CLI: convert, validate, check, and sync cross-agent permission policies, and replay
+ * them over recorded sessions.
  *
  * All flags, no positionals. Format names resolve to default config file locations. Use "-" for
  * stdin/stdout.
@@ -15,6 +16,8 @@ import {
   convert,
   validate as validateApi,
   check as checkApi,
+  replay as replayApi,
+  suggest as suggestApi,
   resolveFormat,
   ConvertError,
   type Format,
@@ -290,6 +293,115 @@ async function checkCommand(args: string[]): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// replay / suggest
+// ---------------------------------------------------------------------------
+
+/** Report a policy or transcript the command cannot read, and exit. */
+function inputError(e: unknown): never {
+  if (e instanceof ConvertError) {
+    process.stderr.write(`error: ${e.message}\n`);
+    for (const err of e.errors) {
+      process.stderr.write(`  ${err.path}: ${err.message}\n`);
+    }
+    process.exit(2);
+  }
+  error(e instanceof Error ? e.message : String(e));
+}
+
+/** Read a policy spec as parsed JSON, exiting on unreadable input. */
+async function readPolicy(spec: string | undefined): Promise<unknown> {
+  const inputPath = resolveInputSpec(spec);
+  const parsed = parseJson(await readInput(inputPath), inputPath ?? "stdin");
+  if (!parsed.ok) error(parsed.error);
+  return parsed.value;
+}
+
+/** Read a transcript file, or stdin for "-". */
+function readTranscript(spec: string): Promise<string> {
+  return readInput(spec === "-" ? undefined : resolve(spec));
+}
+
+async function replayCommand(args: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args,
+    options: {
+      "policy-file": { type: "string" },
+      transcript: { type: "string" },
+    },
+    strict: true,
+  });
+
+  if (values.transcript === undefined) error("--transcript is required");
+  // An omitted --policy-file reads stdin, as it does for check.
+  if (
+    values.transcript === "-" &&
+    (values["policy-file"] === undefined || values["policy-file"] === "-")
+  ) {
+    error("--transcript and --policy-file cannot both be read from stdin");
+  }
+
+  const policy = await readPolicy(values["policy-file"]);
+  const transcript = await readTranscript(values.transcript);
+  try {
+    const report = replayApi(policy, transcript);
+    let out = "";
+    for (const [decision, count] of Object.entries(report.counts)) {
+      out += `${decision}\t${String(count)}\n`;
+    }
+    if (report.differing.length > 0) {
+      out += "\ndiffers from the transcript:\n";
+      for (const { call, decision } of report.differing) {
+        out += `${decision}\t${call.outcome ?? ""}\t${call.tool}\t${call.subject ?? ""}\n`;
+      }
+    }
+    process.stdout.write(out);
+  } catch (e) {
+    inputError(e);
+  }
+}
+
+async function suggestCommand(args: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args,
+    options: {
+      transcript: { type: "string" },
+      "policy-file": { type: "string" },
+      // Approved more than once is what makes a call repeated.
+      "min-count": { type: "string", default: "2" },
+    },
+    strict: true,
+  });
+
+  if (values.transcript === undefined) error("--transcript is required");
+  const minCount = Number(values["min-count"]);
+  if (!Number.isInteger(minCount) || minCount < 1) {
+    error("--min-count must be a positive integer");
+  }
+  if (values.transcript === "-" && values["policy-file"] === "-") {
+    error("--transcript and --policy-file cannot both be read from stdin");
+  }
+
+  const policy =
+    values["policy-file"] === undefined
+      ? undefined
+      : await readPolicy(values["policy-file"]);
+  const transcript = await readTranscript(values.transcript);
+  try {
+    const suggestions = suggestApi(transcript, {
+      minCount,
+      ...(policy === undefined ? {} : { policy }),
+    });
+    const rules = suggestions.map((s) => s.rule);
+    process.stdout.write(JSON.stringify({ rules }, null, 2) + "\n");
+    for (const { rule, count } of suggestions) {
+      process.stderr.write(`${String(count)}\t${ruleToString(rule)}\n`);
+    }
+  } catch (e) {
+    inputError(e);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // sync
 // ---------------------------------------------------------------------------
 
@@ -383,6 +495,8 @@ Usage:
   agent-perms convert [--from <spec>] --to <spec>
   agent-perms validate [--input <spec>]
   agent-perms check --tool <name> --input <cmd> [--policy-file <spec>]
+  agent-perms replay --transcript <file> [--policy-file <spec>]
+  agent-perms suggest --transcript <file> [--policy-file <spec>] [--min-count <n>]
   agent-perms sync
 
 Specs: agent name, config file path, or "-" for stdin/stdout.
@@ -399,6 +513,8 @@ Commands:
   convert   Convert between agent formats
   validate  Validate a policy file
   check     Evaluate a tool call against a policy
+  replay    Count what a policy decides for each call in a session transcript
+  suggest   Propose allow rules for calls a session transcript approved repeatedly
   sync      Detect, merge, and write agent configs (bidirectional)
 
 Convert flags:
@@ -416,6 +532,15 @@ Check flags:
   --policy-file <spec>               Policy file (format, file, or "-" for stdin)
   --cwd, --branch                    Evaluation context
   --explain                          Print how each command was judged, to stderr
+
+Replay flags:
+  --transcript <file>                Session transcript, JSON Lines (or "-" for stdin)
+  --policy-file <spec>               Policy file (format, file, or "-" for stdin)
+
+Suggest flags:
+  --transcript <file>                Session transcript, JSON Lines (or "-" for stdin)
+  --policy-file <spec>               Policy whose rules exclude or already cover calls
+  --min-count <n>                    Approvals a rule must cover (default: 2)
 
 Sync flags:
   -d, --working-dir <path>           Starting directory (default: cwd)
@@ -436,6 +561,8 @@ Examples:
   agent-perms validate --input canonical
   agent-perms validate --input .agents/permissions.json
   agent-perms check --tool Bash --input "git status" --policy-file canonical
+  agent-perms replay --transcript session.jsonl --policy-file canonical
+  agent-perms suggest --transcript session.jsonl --policy-file canonical
   agent-perms sync
   agent-perms sync -y
   agent-perms sync --dry-run
@@ -465,6 +592,12 @@ async function main(): Promise<void> {
       break;
     case "check":
       await checkCommand(args.slice(1));
+      break;
+    case "replay":
+      await replayCommand(args.slice(1));
+      break;
+    case "suggest":
+      await suggestCommand(args.slice(1));
       break;
     case "sync":
       await syncCommand(args.slice(1));
