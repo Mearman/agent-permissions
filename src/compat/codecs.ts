@@ -44,9 +44,11 @@ import {
  * The canonical rules as a codec for `agent` can hold them. No agent format can limit a rule to an
  * actor or a role, so a rule carrying either is not written as if it were unconditional: an allow is
  * left out, which is stricter, and a deny or ask is refused, since writing it would either widen the
- * rule or restrict everyone. All refused rules are reported together.
+ * rule or restrict everyone. An ask that names approvers is refused too: written plain, anyone the
+ * agent's user is could approve it. All refused rules are reported together.
  *
- * @throws UnsupportedCapabilityError if a deny or ask rule is limited to an actor or a role.
+ * @throws UnsupportedCapabilityError if a deny or ask rule is limited to an actor or a role, or an
+ *   ask names approvers.
  */
 function agentRules(
   policy: Parameters<typeof collectRules>[0],
@@ -54,6 +56,13 @@ function agentRules(
 ): Rule[] {
   const unsupported: UnsupportedRule[] = [];
   const kept = collectRules(policy).filter((rule) => {
+    if (rule.approvers !== undefined) {
+      unsupported.push({
+        rule,
+        reason: `${agent} cannot restrict who may approve a request`,
+      });
+      return false;
+    }
     if (rule.when?.actor === undefined && rule.when?.role === undefined) {
       return true;
     }
@@ -981,6 +990,9 @@ function codexRefusal(
 ): string | undefined {
   if (rule.when !== undefined) {
     return "Codex cannot limit a rule with a condition";
+  }
+  if (rule.approvers !== undefined) {
+    return "Codex cannot restrict who may approve a request";
   }
   if (rule.tool === "WebFetch" && rule.pattern?.startsWith(DOMAIN_PREFIX)) {
     return rule.tier === "ask"

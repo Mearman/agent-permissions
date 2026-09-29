@@ -298,7 +298,7 @@ A role's rules apply as if each carried `when: { role }`. `when.actor` and `when
 
 `approvers` on an ask rule says who may resolve the request; `explain` reports it on the step, without the requester. Holding a permission does not make an actor an approver: only being named does. An unresolved request expires as a deny, after `timeoutSeconds` if given. The pending-request store and any approval interface belong to the host.
 
-No agent format can limit a rule to an actor or a role, so a codec never writes one as unconditional: an allow limited that way is left out, which is stricter, and a deny or ask limited that way makes the conversion fail with an `UnsupportedCapabilityError` listing the rule.
+No agent format can limit a rule to an actor or a role, so a codec never writes one as unconditional: an allow limited that way is left out, which is stricter, and a deny or ask limited that way, or an ask that names `approvers`, makes the conversion fail with an `UnsupportedCapabilityError` listing the rule.
 
 ### Hidden tools
 

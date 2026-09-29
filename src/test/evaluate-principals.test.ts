@@ -277,6 +277,22 @@ void describe("principals in codecs", () => {
     }
   });
 
+  void it("refuse an ask that names approvers rather than let anyone approve it", () => {
+    const rule: Rule = {
+      tool: "Bash",
+      pattern: "npm publish:*",
+      tier: "ask",
+      approvers: { roles: ["maintainer"] },
+    };
+    for (const [name, codec] of codecs) {
+      assert.throws(
+        () => codec.encode({ rules: [rule] }),
+        UnsupportedCapabilityError,
+        name,
+      );
+    }
+  });
+
   void it("leave out an allow limited to a role, which is stricter", () => {
     const withRole: AgentPermissionPolicy = {
       rules: [
