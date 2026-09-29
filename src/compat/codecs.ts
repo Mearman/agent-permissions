@@ -1724,6 +1724,16 @@ const OmpPatternEntry = z.object({
   approval: z.enum(OMP_APPROVALS),
 });
 
+/**
+ * What encoding writes into an OMP config: its only keys a conversion or a sync changes, so
+ * everything else in the file can be left as it is.
+ */
+export const OmpEncoded = z.object({
+  bash: z.object({ patterns: z.array(OmpPatternEntry) }).optional(),
+  tools: z.object({ approvalMode: z.literal("always-ask") }).optional(),
+});
+export type OmpEncoded = z.infer<typeof OmpEncoded>;
+
 /** OMP's approval modes, from the least to the most permissive. */
 export const OMP_APPROVAL_MODES = ["always-ask", "write", "yolo"] as const;
 
@@ -1836,12 +1846,7 @@ function ompMatches(
  *
  * @throws UnsupportedCapabilityError listing the rules OMP cannot enforce.
  */
-function encodeOmp(canonical: AgentPermissionPolicy): {
-  bash?: {
-    patterns: { match: string; approval: "allow" | "prompt" | "deny" }[];
-  };
-  tools?: { approvalMode: "always-ask" };
-} {
+function encodeOmp(canonical: AgentPermissionPolicy): OmpEncoded {
   const unsupported: UnsupportedRule[] = [];
   const settings: UnsupportedSetting[] = [];
   const defaultMode =
