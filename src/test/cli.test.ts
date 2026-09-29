@@ -12,6 +12,8 @@ import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
+import { bash, jsonl } from "./transcript-fixture.ts";
+
 const CLI = join(import.meta.dirname, "..", "cli.ts");
 
 /** Narrow unknown to a record for JSON.parse result access. */
@@ -683,6 +685,116 @@ void describe("CLI", () => {
       ]);
       assert.equal(result.exitCode, 1);
       assert.match(result.stderr, /invalid JSON/);
+    });
+  });
+
+  // =========================================================================
+  void describe("replay", () => {
+    void it("counts decisions and lists the calls recorded differently", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({
+          rules: [
+            { tool: "Bash", pattern: "git:*", tier: "allow" },
+            { tool: "Bash", pattern: "sudo:*", tier: "deny" },
+          ],
+        }),
+      );
+      await writeFile(
+        join(cwd, "session.jsonl"),
+        jsonl([
+          ...bash("t1", "git status", "ran"),
+          ...bash("t2", "sudo reboot", "ran"),
+          ...bash("t3", "ls", "rejected"),
+        ]),
+      );
+      const result = await run([
+        "replay",
+        "--policy-file",
+        join(cwd, "policy.json"),
+        "--transcript",
+        join(cwd, "session.jsonl"),
+      ]);
+      assert.equal(result.exitCode, 0);
+      assert.equal(
+        result.stdout,
+        "allow\t1\nask\t1\ndeny\t1\n\ndiffers from the transcript:\ndeny\tran\tBash\tsudo reboot\n",
+      );
+    });
+
+    void it("requires --transcript", async () => {
+      const result = await run(["replay", "--policy-file", "canonical"]);
+      assert.equal(result.exitCode, 1);
+      assert.match(result.stderr, /--transcript is required/);
+    });
+  });
+
+  // =========================================================================
+  void describe("suggest", () => {
+    void it("prints a policy of allow rules for calls approved repeatedly", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "session.jsonl"),
+        jsonl([
+          ...bash("t1", "npm run build", "ran"),
+          ...bash("t2", "npm run lint", "ran"),
+          ...bash("t3", "make", "ran"),
+        ]),
+      );
+      const result = await run([
+        "suggest",
+        "--transcript",
+        join(cwd, "session.jsonl"),
+      ]);
+      assert.equal(result.exitCode, 0);
+      assert.deepEqual(JSON.parse(result.stdout), {
+        rules: [{ tool: "Bash", pattern: "npm run:*", tier: "allow" }],
+      });
+      assert.equal(result.stderr, "2\tBash(npm run:*)\n");
+    });
+
+    void it("honours --min-count and leaves out what the policy allows", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({ permissions: { allow: ["Bash(git:*)"] } }),
+      );
+      await writeFile(
+        join(cwd, "session.jsonl"),
+        jsonl([
+          ...bash("t1", "git status", "ran"),
+          ...bash("t2", "make", "ran"),
+        ]),
+      );
+      const result = await run([
+        "suggest",
+        "--transcript",
+        join(cwd, "session.jsonl"),
+        "--policy-file",
+        join(cwd, "policy.json"),
+        "--min-count",
+        "1",
+      ]);
+      assert.equal(result.exitCode, 0);
+      assert.deepEqual(JSON.parse(result.stdout), {
+        rules: [{ tool: "Bash", pattern: "make", tier: "allow" }],
+      });
+    });
+
+    void it("rejects a --min-count that is not a positive integer", async () => {
+      const result = await run([
+        "suggest",
+        "--transcript",
+        "-",
+        "--min-count",
+        "0",
+      ]);
+      assert.equal(result.exitCode, 1);
+      assert.match(result.stderr, /--min-count must be a positive integer/);
     });
   });
 
