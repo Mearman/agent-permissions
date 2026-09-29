@@ -34,7 +34,7 @@ export type PermissionPromptResult =
 /** A call the policy neither allows nor denies, handed to the host to settle. */
 export interface AskRequest {
   request: PermissionPromptRequest;
-  /** The string the policy's patterns were matched against (see {@link toolSubject}). */
+  /** The string whose explanation decided the call (see {@link toolSubjects}). */
   subject: string;
   /** How the policy reached `ask`, rule by rule. */
   explanation: Explanation;
@@ -51,7 +51,7 @@ export type AskHandler = (
 export interface PermissionPromptOptions {
   /** Reads the policy for each prompt, so edits to the policy files apply to the next call. */
   loadPolicy: () => Promise<PermissionPolicy>;
-  /** The project root: file paths inside it are judged as `./`-relative paths. */
+  /** The project root: a file inside it is judged by its `./`-relative path as well as its absolute one. */
   root: string;
   /** Conditions on a field left out here are unknown: they never allow a call, and may still deny or ask. */
   context?: EvaluationContext;
@@ -80,30 +80,57 @@ const SUBJECT_FIELDS: Readonly<
 };
 
 /**
- * The string a tool call's rule patterns are matched against: the command for `Bash`, the file for the file tools (`./`-relative when inside `root`, absolute otherwise), the URL for `WebFetch`, the query for `WebSearch`. Any other tool is judged by its name alone, so its subject is empty. `undefined` when the field a tool is judged by is missing or not a string.
+ * The strings a tool call's rule patterns are matched against: the command for `Bash`, the URL for `WebFetch`, the query for `WebSearch`. A file tool's path is resolved against `root` and judged in both forms a policy may write it: absolute, and `./`-relative when it lies inside `root`. Any other tool is judged by its name alone, so its one subject is empty. `undefined` when the field a tool is judged by is missing or not a string.
  */
-export function toolSubject(
+export function toolSubjects(
   toolName: string,
   input: Readonly<Record<string, unknown>>,
   root: string,
-): string | undefined {
+): readonly string[] | undefined {
   const spec = SUBJECT_FIELDS[toolName.toLowerCase()];
-  if (spec === undefined) return "";
+  if (spec === undefined) return [""];
   const value = input[spec.field];
   if (typeof value !== "string") return undefined;
-  return spec.path ? rootRelative(value, root) : value;
-}
-
-/** A path as a policy writes it: `./a/b` inside the root, `.` for the root itself, and the resolved absolute path outside it. */
-function rootRelative(path: string, root: string): string {
-  const absolute = resolve(root, path);
+  if (!spec.path) return [value];
+  const absolute = resolve(root, value);
   const rel = relative(root, absolute);
-  if (rel === "") return ".";
+  if (rel === "") return [absolute, "."];
   if (isAbsolute(rel) || rel === ".." || rel.startsWith(`..${sep}`)) {
-    return absolute;
+    return [absolute];
   }
   // Policies write paths with forward slashes on every platform.
-  return `./${rel.split(sep).join("/")}`;
+  return [absolute, `./${rel.split(sep).join("/")}`];
+}
+
+const STRICTNESS: Readonly<Record<PermissionDecision, number>> = {
+  deny: 2,
+  ask: 1,
+  allow: 0,
+};
+
+/**
+ * Judge every subject and keep the strictest decision among those a rule reached, so a rule written in either path form applies. Only when no subject matched any rule does the default mode decide.
+ */
+function judge(
+  policy: PermissionPolicy,
+  toolName: string,
+  subjects: readonly string[],
+  context: EvaluationContext,
+): { subject: string; explanation: Explanation } {
+  const judged = subjects.map((subject) => ({
+    subject,
+    explanation: explain(policy, toolName, subject, context),
+  }));
+  const ruled = judged.filter(({ explanation }) =>
+    explanation.steps.some((step) => step.reason !== "default"),
+  );
+  const candidates = ruled.length > 0 ? ruled : judged;
+  return candidates.reduce((strictest, next) =>
+    STRICTNESS[next.explanation.decision] >
+    STRICTNESS[strictest.explanation.decision]
+      ? next
+      : strictest,
+  );
 }
 
 /** Builds a {@link PermissionPrompt} that judges each call against the policy. */
@@ -113,8 +140,8 @@ export function createPermissionPrompt(
   const { loadPolicy, root, context = {}, onAsk } = options;
   return async (request, signal) => {
     const { tool_name: toolName, input } = request;
-    const subject = toolSubject(toolName, input, root);
-    if (subject === undefined) {
+    const subjects = toolSubjects(toolName, input, root);
+    if (subjects === undefined) {
       const field = SUBJECT_FIELDS[toolName.toLowerCase()]?.field;
       return {
         behavior: "deny",
@@ -122,7 +149,12 @@ export function createPermissionPrompt(
       };
     }
 
-    const explanation = explain(await loadPolicy(), toolName, subject, context);
+    const { subject, explanation } = judge(
+      await loadPolicy(),
+      toolName,
+      subjects,
+      context,
+    );
     switch (explanation.decision) {
       case "allow":
         return { behavior: "allow", updatedInput: input };

@@ -7,7 +7,7 @@ import type { PermissionPolicy } from "../evaluate.ts";
 import {
   createPermissionPrompt,
   promptToolContent,
-  toolSubject,
+  toolSubjects,
   type AskHandler,
   type PermissionPromptResult,
 } from "../prompt-tool.ts";
@@ -40,44 +40,53 @@ const prompt = (onAsk?: AskHandler) =>
 
 const signal = new AbortController().signal;
 
-void describe("toolSubject", () => {
+void describe("toolSubjects", () => {
   void it("judges a shell call by its command", () => {
-    assert.equal(
-      toolSubject("Bash", { command: "git status" }, root),
+    assert.deepEqual(toolSubjects("Bash", { command: "git status" }, root), [
       "git status",
+    ]);
+  });
+
+  void it("judges a file inside the root by its absolute and root-relative paths", () => {
+    assert.deepEqual(
+      toolSubjects("Read", { file_path: "/work/project/src/a.ts" }, root),
+      ["/work/project/src/a.ts", "./src/a.ts"],
     );
   });
 
-  void it("judges a file inside the root by its root-relative path", () => {
-    assert.equal(
-      toolSubject("Read", { file_path: "/work/project/src/a.ts" }, root),
-      "./src/a.ts",
+  void it("resolves a file path before judging it", () => {
+    assert.deepEqual(
+      toolSubjects(
+        "Read",
+        { file_path: "/work/project/src/../../secret" },
+        root,
+      ),
+      ["/work/secret"],
     );
   });
 
-  void it("keeps a file outside the root absolute", () => {
-    assert.equal(
-      toolSubject("Read", { file_path: "/etc/hosts" }, root),
+  void it("judges a file outside the root by its absolute path alone", () => {
+    assert.deepEqual(toolSubjects("Read", { file_path: "/etc/hosts" }, root), [
       "/etc/hosts",
-    );
+    ]);
   });
 
   void it("judges a fetch by its URL", () => {
-    assert.equal(
-      toolSubject("WebFetch", { url: "https://example.com/a" }, root),
-      "https://example.com/a",
+    assert.deepEqual(
+      toolSubjects("WebFetch", { url: "https://example.com/a" }, root),
+      ["https://example.com/a"],
     );
   });
 
   void it("judges a tool with no subject field by its name alone", () => {
-    assert.equal(
-      toolSubject("mcp__github__list_prs", { owner: "o" }, root),
-      "",
+    assert.deepEqual(
+      toolSubjects("mcp__github__list_prs", { owner: "o" }, root),
+      [""],
     );
   });
 
   void it("has no subject when the field the tool is judged by is missing", () => {
-    assert.equal(toolSubject("Bash", { description: "x" }, root), undefined);
+    assert.equal(toolSubjects("Bash", { description: "x" }, root), undefined);
   });
 });
 
@@ -103,6 +112,45 @@ void describe("createPermissionPrompt", () => {
       signal,
     );
     assert.equal(result.behavior, "deny");
+  });
+
+  void it("applies a file rule written as an absolute path", async () => {
+    const absolute = createPermissionPrompt({
+      loadPolicy: () =>
+        Promise.resolve({
+          defaultMode: "restricted",
+          rules: [{ tool: "Edit", pattern: "/work/project/*", tier: "allow" }],
+        }),
+      root,
+    });
+    const result = await absolute(
+      { tool_name: "Edit", input: { file_path: "/work/project/src/a.ts" } },
+      signal,
+    );
+    assert.equal(result.behavior, "allow");
+  });
+
+  void it("lets a rule on either path form deny what the other allows", async () => {
+    const mixed = createPermissionPrompt({
+      loadPolicy: () =>
+        Promise.resolve({
+          defaultMode: "standard",
+          rules: [
+            { tool: "Read", pattern: "/work/project/*", tier: "allow" },
+            { tool: "Read", pattern: "./secrets/*", tier: "deny" },
+          ],
+        }),
+      root,
+    });
+    const result = await mixed(
+      { tool_name: "Read", input: { file_path: "/work/project/secrets/key" } },
+      signal,
+    );
+    assert.equal(result.behavior, "deny");
+    assert.match(
+      result.message,
+      /\.\/secrets\/key \(Read\(\.\/secrets\/\*\) \[deny\]\)/,
+    );
   });
 
   void it("denies a call whose subject field is missing", async () => {
