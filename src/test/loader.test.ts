@@ -21,6 +21,43 @@ void describe("loadPolicy", () => {
     await Promise.all(dirs.map((d) => rm(d, { recursive: true })));
   });
 
+  void describe("delegation limits", () => {
+    void it("keeps the shallowest maxDepth and every nonDelegable rule across layers", async () => {
+      const cwd = await isolate();
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      await writeFile(
+        join(cwd, ".agents", "permissions.json"),
+        JSON.stringify({
+          delegation: { maxDepth: 3, nonDelegable: ["Bash(sudo:*)"] },
+        }),
+      );
+      await writeFile(
+        join(cwd, ".agents", "permissions.local.json"),
+        JSON.stringify({
+          delegation: { maxDepth: 1, nonDelegable: ["Write(./.agents/**)"] },
+        }),
+      );
+      const policy = await loadPolicy({ cwd });
+      assert.equal(policy.delegation?.maxDepth, 1);
+      assert.deepEqual(
+        policy.delegation.nonDelegable?.map((r) => r.tool),
+        ["Bash", "Write"],
+      );
+    });
+
+    void it("is absent when no layer sets a limit", async () => {
+      const cwd = await isolate();
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      await writeFile(
+        join(cwd, ".agents", "permissions.json"),
+        JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+      );
+      assert.equal((await loadPolicy({ cwd })).delegation, undefined);
+    });
+  });
+
   void describe("provenance", () => {
     void it("records the file each rule came from", async () => {
       const cwd = await isolate();

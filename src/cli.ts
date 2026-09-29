@@ -24,7 +24,7 @@ import {
   type Format,
 } from "./api.ts";
 import { agentId } from "./compat/codecs.ts";
-import { ruleToString, type DecisionStep } from "./evaluate.ts";
+import { ruleToString, stepSource, type DecisionStep } from "./evaluate.ts";
 import { confine, type OutsideBehaviour } from "./confine.ts";
 import { sync } from "./sync.ts";
 import {
@@ -244,12 +244,18 @@ function parseEnvFlags(flags: readonly string[]): Record<string, string> {
   return env;
 }
 
+/** Read `--depth`, the number of agents between the call and the top-level agent. */
+function parseDepthFlag(flag: string): number {
+  const depth = Number(flag);
+  if (!Number.isInteger(depth) || depth < 0) {
+    error(`--depth expects a whole number of 0 or more, got "${flag}"`);
+  }
+  return depth;
+}
+
 /** One line describing how a command was judged, for `check --explain`. */
 function formatStep(step: DecisionStep): string {
-  const by =
-    step.rule === undefined
-      ? "the default mode"
-      : `${ruleToString(step.rule)} [${step.rule.tier}]${step.layer === undefined ? "" : ` from ${step.layer}`}`;
+  const by = stepSource(step);
   const note =
     step.reason === "unsplittable" ? " (line not fully parsed, so asks)" : "";
   return `${step.decision}\t${step.command}\t${by}${note}`;
@@ -266,6 +272,7 @@ async function checkCommand(args: string[]): Promise<void> {
       branch: { type: "string" },
       remote: { type: "string" },
       env: { type: "string", multiple: true },
+      depth: { type: "string" },
       explain: { type: "boolean" },
     },
     strict: true,
@@ -288,6 +295,7 @@ async function checkCommand(args: string[]): Promise<void> {
     if (values.branch !== undefined) ctx.branch = values.branch;
     if (values.remote !== undefined) ctx.remote = values.remote;
     if (values.env !== undefined) ctx.env = parseEnvFlags(values.env);
+    if (values.depth !== undefined) ctx.depth = parseDepthFlag(values.depth);
     const result = checkApi(values.tool, values.input, json, ctx);
     process.stdout.write(`${result.decision}\n`);
     if (values.explain) {
@@ -580,6 +588,7 @@ Commands:
   suggest   Propose allow rules for calls a session transcript approved repeatedly
   confine   Generate rules that confine Read, Edit and Write to directories
   sync      Detect, merge, and write agent configs (bidirectional)
+  mcp       Serve the MCP sync daemon on stdio
 
 Convert flags:
   -f, --from, --input, --in <spec>   Source (format, file, or "-" for stdin)
@@ -596,6 +605,7 @@ Check flags:
   --policy-file <spec>               Policy file (format, file, or "-" for stdin)
   --cwd, --branch, --remote          Evaluation context
   --env NAME=VALUE                   Environment variable in the context (repeatable)
+  --depth <n>                        Agents between the call and the top-level agent
   --explain                          Print how each command was judged, to stderr
 
 Replay flags:
@@ -626,6 +636,9 @@ Sync flags:
   -v, --verbose                      Show rule provenance
   -b, --backup                       Write .bak files before overwriting
 
+Mcp flags:
+  --permission-prompt                Expose the permission_prompt tool
+
 Examples:
   agent-perms convert --from claude-code --to canonical
   agent-perms convert --from .claude/settings.json --to crush
@@ -643,14 +656,32 @@ Examples:
   agent-perms sync -w claude-code -w opencode
   agent-perms sync -x codex
   agent-perms sync -w claude-code --create
+  agent-perms mcp --permission-prompt
 `);
+}
+
+// ---------------------------------------------------------------------------
+// mcp
+// ---------------------------------------------------------------------------
+
+async function mcpCommand(args: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args,
+    options: { "permission-prompt": { type: "boolean" } },
+    strict: true,
+  });
+  // Loaded on demand so the other commands never pull in the MCP SDK.
+  const { startMcpServer } = await import("./mcp.ts");
+  await startMcpServer(
+    values["permission-prompt"] === true ? { permissionPrompt: {} } : {},
+  );
 }
 
 async function main(): Promise<void> {
   // If invoked as agent-perms-mcp, route directly to MCP server
   const binName = process.argv[1]?.split("/").pop() ?? "";
   if (binName === "agent-perms-mcp") {
-    await import("./mcp.ts");
+    await mcpCommand(process.argv.slice(2));
     return;
   }
 
@@ -680,7 +711,7 @@ async function main(): Promise<void> {
       await syncCommand(args.slice(1));
       break;
     case "mcp":
-      await import("./mcp.ts");
+      await mcpCommand(args.slice(1));
       break;
     case "--help":
     case "-h":

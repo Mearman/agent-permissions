@@ -53,6 +53,13 @@ export interface PermissionPolicy {
   rules?: Rule[];
   /** Where each rule came from (a file path, for the loader), keyed by the rule object itself. */
   provenance?: ReadonlyMap<Rule, string>;
+  /** Limits on agents that start other agents; they apply to calls that carry a `depth`. */
+  delegation?: {
+    /** The deepest an agent may be nested; 0 allows no subagents. Unset means no limit. */
+    maxDepth?: number;
+    /** Calls a subagent may not make, however the rules above would decide them. */
+    nonDelegable?: readonly Rule[];
+  };
 }
 
 /** How one command was judged. */
@@ -63,8 +70,9 @@ export interface DecisionStep {
   /**
    * `rule`: a rule decided. `default`: no rule matched and the default mode decided. `unsplittable`:
    * a shell line the splitter does not model, so a matching allow rule was raised to `ask`.
+   * `delegation`: a delegation limit denied the call.
    */
-  reason: "rule" | "default" | "unsplittable";
+  reason: "rule" | "default" | "unsplittable" | "delegation";
   /** The rule that matched, when one did. */
   rule?: Rule;
   /** Where that rule came from, when the policy records provenance. */
@@ -85,6 +93,12 @@ export interface EvaluationContext {
   env?: Readonly<Record<string, string | undefined>>;
   /** The git remote in any common URL form; it is normalised before comparing. */
   remote?: string;
+  /**
+   * How many agents sit between this call and the top-level agent: 0 for the top-level agent, 1 for
+   * its subagent. Left out, the call is the top-level agent's, so a host that runs subagents must
+   * pass it for the delegation limits to apply.
+   */
+  depth?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -402,6 +416,47 @@ export function explain(
   return compile(policy).explain(toolName, input, ctx);
 }
 
+/**
+ * The evaluator's delegation limits for a canonical `delegation` block: `nonDelegable` rule strings
+ * become rules, and `undefined` comes back when neither limit is set. When several blocks apply,
+ * the shallowest `maxDepth` wins and the `nonDelegable` lists are joined, so each layer can only
+ * tighten the limits.
+ */
+export function delegationLimits(
+  ...blocks: readonly (
+    | { maxDepth?: number | undefined; nonDelegable?: string[] | undefined }
+    | undefined
+  )[]
+): PermissionPolicy["delegation"] {
+  let maxDepth: number | undefined;
+  const nonDelegable: Rule[] = [];
+  for (const block of blocks) {
+    if (block?.maxDepth !== undefined) {
+      maxDepth = Math.min(maxDepth ?? block.maxDepth, block.maxDepth);
+    }
+    for (const rule of block?.nonDelegable ?? []) {
+      nonDelegable.push(normaliseStringRule(rule, "deny"));
+    }
+  }
+  if (maxDepth === undefined && nonDelegable.length === 0) return undefined;
+  return {
+    ...(maxDepth === undefined ? {} : { maxDepth }),
+    ...(nonDelegable.length === 0 ? {} : { nonDelegable }),
+  };
+}
+
+/**
+ * Whether an agent at `depth` may start a subagent: denied when the subagent would sit deeper than
+ * `delegation.maxDepth`, allowed otherwise, and always allowed when no limit is set.
+ */
+export function checkSpawn(
+  policy: PermissionPolicy,
+  depth: number,
+): "allow" | "deny" {
+  const maxDepth = policy.delegation?.maxDepth;
+  return maxDepth !== undefined && depth + 1 > maxDepth ? "deny" : "allow";
+}
+
 /** A policy prepared for repeated evaluation. */
 export interface CompiledPolicy {
   evaluate(
@@ -431,12 +486,30 @@ export function compile(policy: PermissionPolicy): CompiledPolicy {
       .map((rule) => new CompiledRule(rule)),
   );
   const fallback = defaultDecision(policy.defaultMode);
+  const maxDepth = policy.delegation?.maxDepth;
+  const nonDelegable = (policy.delegation?.nonDelegable ?? []).map(
+    (rule) => new CompiledRule(rule),
+  );
 
   const judge = (
     toolName: string,
     command: string,
     ctx: EvaluationContext,
   ): DecisionStep => {
+    if ((ctx.depth ?? 0) > 0) {
+      const barred = nonDelegable.find(
+        (compiled) =>
+          compiled.matchesTool(toolName) && compiled.matchesInput(command),
+      );
+      if (barred !== undefined) {
+        return {
+          command,
+          decision: "deny",
+          reason: "delegation",
+          rule: barred.rule,
+        };
+      }
+    }
     const match = matchRules(tiers, toolName, command, ctx);
     if (match === undefined) {
       return { command, decision: fallback, reason: "default" };
@@ -456,6 +529,12 @@ export function compile(policy: PermissionPolicy): CompiledPolicy {
     input: string,
     ctx: EvaluationContext,
   ): Explanation => {
+    if (maxDepth !== undefined && (ctx.depth ?? 0) > maxDepth) {
+      return {
+        decision: "deny",
+        steps: [{ command: input, decision: "deny", reason: "delegation" }],
+      };
+    }
     const whole = judge(toolName, input, ctx);
     if (!isShellTool(toolName)) {
       return { decision: whole.decision, steps: [whole] };
@@ -646,6 +725,15 @@ function unescapeContent(content: string): string {
 export function ruleToString(rule: Rule): string {
   if (rule.pattern === undefined) return rule.tool;
   return `${rule.tool}(${rule.pattern})`;
+}
+
+/**
+ * What decided a step: the matching rule with its tier and, when recorded, the layer it came from (`Bash(git:*) [allow] from /repo/.agents/permissions.json`), or `the default mode`.
+ */
+export function stepSource(step: DecisionStep): string {
+  if (step.rule === undefined) return "the default mode";
+  const layer = step.layer === undefined ? "" : ` from ${step.layer}`;
+  return `${ruleToString(step.rule)} [${step.rule.tier}]${layer}`;
 }
 
 /**

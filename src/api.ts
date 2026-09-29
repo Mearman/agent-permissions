@@ -9,6 +9,7 @@ import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
 import {
   explain,
   collectRules,
+  delegationLimits,
   mapMode,
   type DecisionStep,
   type EvaluationContext,
@@ -342,7 +343,7 @@ export function validate(json: unknown): ValidateResult {
  * @param tool - Tool name (e.g. "Bash", "Read").
  * @param input - Tool input string to match against patterns.
  * @param json - Parsed canonical policy JSON.
- * @param context - Optional evaluation context (cwd, branch, remote, env).
+ * @param context - Optional evaluation context (cwd, branch, remote, env, depth).
  *
  * @returns Check result with the evaluation decision.
  *
@@ -441,9 +442,11 @@ function permissionPolicy(json: unknown): PermissionPolicy {
   const result = validatePolicy(json);
   if (!result.ok) throw new ConvertError(result.error, result.errors);
   const policy = result.value;
+  const delegation = delegationLimits(policy.delegation);
   return {
     defaultMode: mapMode(policy.defaultMode ?? "standard"),
     rules: collectRules(policy),
+    ...(delegation === undefined ? {} : { delegation }),
   };
 }
 

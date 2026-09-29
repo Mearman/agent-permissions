@@ -508,6 +508,32 @@ void describe("CLI", () => {
       assert.equal(missing.stdout, "ask\n");
     });
 
+    void it("applies delegation limits for the depth given with --depth", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({
+          defaultMode: "autonomous",
+          delegation: { nonDelegable: ["Bash(sudo:*)"] },
+        }),
+      );
+      const args = (depth: string): string[] => [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "sudo ls",
+        "--depth",
+        depth,
+        "--policy-file",
+        join(cwd, "policy.json"),
+      ];
+      assert.equal((await run(args("1"))).stdout, "deny\n");
+      assert.equal((await run(args("0"))).stdout, "allow\n");
+      assert.notEqual((await run(args("-1"))).exitCode, 0);
+    });
+
     void it("denies a matching deny rule", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
