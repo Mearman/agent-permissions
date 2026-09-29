@@ -17,6 +17,7 @@
 import * as z from "zod";
 import {
   AgentPermissionPolicy,
+  type PermissionMode,
   type PermissionTiers,
   type Rule,
   type Sandbox,
@@ -32,6 +33,7 @@ import { resolveProfiles } from "../profiles.ts";
 import {
   UnsupportedCapabilityError,
   type UnsupportedRule,
+  type UnsupportedSetting,
 } from "./unsupported.ts";
 import {
   ClaudeCodePermissionMode,
@@ -1712,9 +1714,9 @@ export function encodeCodex(canonical: AgentPermissionPolicy): CodexEncoding {
 //   - deny and prompt entries apply to the whole command or to any one segment of a compound
 //     command; an allow entry applies to a simple command only.
 //
-// Canonical rules use the strictest matching tier whatever their order, so the codec writes deny
-// entries first, then prompt, then allow. OMP's default approval mode, its other tools and its
-// settings are not converted: only rules for the bash tool are.
+// Canonical rules use the strictest matching tier whatever their order, so the codec writes deny entries first, then prompt, then allow. Only rules for the bash tool are converted.
+//
+// OMP's `tools.approvalMode` decides calls no rule covers, by the tier each tool declares (read, write or exec): `always-ask` approves read and prompts for write and exec, `write` prompts for exec only, and `yolo`, its default, approves every tier. No mode prompts for a read and none denies, so a canonical mode that asks is written as `always-ask`, which leaves reads approved (the one gap), and `readonly` has no equivalent and is refused. A `bash.patterns` allow still wins under `always-ask`, as it does under a canonical mode that asks.
 
 const OMP_APPROVALS = ["allow", "prompt", "deny"] as const;
 const OmpPatternEntry = z.object({
@@ -1722,9 +1724,48 @@ const OmpPatternEntry = z.object({
   approval: z.enum(OMP_APPROVALS),
 });
 
+/** OMP's approval modes, from the least to the most permissive. */
+export const OMP_APPROVAL_MODES = ["always-ask", "write", "yolo"] as const;
+
 const ompNative = z.looseObject({
   bash: z.looseObject({ patterns: z.array(z.unknown()).optional() }).optional(),
+  tools: z
+    .looseObject({ approvalMode: z.enum(OMP_APPROVAL_MODES).optional() })
+    .optional(),
 });
+
+/**
+ * OMP approval mode to canonical mode, never looser than OMP: `write` approves writes without asking, which no canonical mode short of `autonomous` does, so it is read as `standard` like `always-ask`.
+ */
+const ompModeToCanonical = {
+  "always-ask": "standard",
+  write: "standard",
+  yolo: "autonomous",
+} as const;
+
+/**
+ * The OMP approval mode for a canonical mode, none when OMP's own mode is left alone, or the
+ * refusal when OMP cannot enforce it. Aliases are read as the evaluator reads them.
+ */
+function ompApprovalMode(
+  mode: PermissionMode,
+): { mode?: "always-ask" } | { refused: UnsupportedSetting } {
+  switch (mapMode(mode)) {
+    case "autonomous":
+      return {};
+    case "readonly":
+      return {
+        refused: {
+          setting: "defaultMode",
+          value: mode,
+          reason:
+            "OMP has no mode that denies calls no rule covers, and none that prompts for a read",
+        },
+      };
+    default:
+      return { mode: "always-ask" };
+  }
+}
 
 const ompApprovalToTier = {
   allow: "allow",
@@ -1799,8 +1840,15 @@ function encodeOmp(canonical: AgentPermissionPolicy): {
   bash?: {
     patterns: { match: string; approval: "allow" | "prompt" | "deny" }[];
   };
+  tools?: { approvalMode: "always-ask" };
 } {
   const unsupported: UnsupportedRule[] = [];
+  const settings: UnsupportedSetting[] = [];
+  const defaultMode =
+    canonical.defaultMode ?? canonical.permissions?.defaultMode;
+  const approvalMode =
+    defaultMode === undefined ? {} : ompApprovalMode(defaultMode);
+  if ("refused" in approvalMode) settings.push(approvalMode.refused);
   const byApproval: Record<"deny" | "prompt" | "allow", string[]> = {
     deny: [],
     prompt: [],
@@ -1836,15 +1884,20 @@ function encodeOmp(canonical: AgentPermissionPolicy): {
     }
   }
 
-  if (unsupported.length > 0) {
-    throw new UnsupportedCapabilityError("omp", unsupported);
+  if (unsupported.length > 0 || settings.length > 0) {
+    throw new UnsupportedCapabilityError("omp", unsupported, settings);
   }
 
   // OMP takes the first matching entry, so the strictest tier goes first.
   const patterns = (["deny", "prompt", "allow"] as const).flatMap((approval) =>
     byApproval[approval].map((match) => ({ match, approval })),
   );
-  return patterns.length === 0 ? {} : { bash: { patterns } };
+  return {
+    ...(patterns.length > 0 && { bash: { patterns } }),
+    ...("mode" in approvalMode && {
+      tools: { approvalMode: approvalMode.mode },
+    }),
+  };
 }
 
 /**
@@ -1872,7 +1925,13 @@ function decodeOmp(native: z.infer<typeof ompNative>): AgentPermissionPolicy {
       tier: ompApprovalToTier[entry.approval],
     });
   }
-  return rules.length === 0 ? {} : { rules };
+  const approvalMode = native.tools?.approvalMode;
+  return {
+    ...(approvalMode !== undefined && {
+      defaultMode: ompModeToCanonical[approvalMode],
+    }),
+    ...(rules.length > 0 && { rules }),
+  };
 }
 
 export const ompCodec = z.codec(ompNative, AgentPermissionPolicy, {

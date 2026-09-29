@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { convert, detectFormat } from "../api.ts";
 import { CODECS, ompCodec } from "../compat/codecs.ts";
 import { UnsupportedCapabilityError } from "../compat/unsupported.ts";
-import { evaluate, type PermissionDecision } from "../evaluate.ts";
+import { evaluate, mapMode, type PermissionDecision } from "../evaluate.ts";
 import { splitShellCommand } from "../shell.ts";
 import type { AgentPermissionPolicy, Rule } from "../schema.ts";
 
@@ -322,7 +322,156 @@ void describe("ompCodec keeps every deny and ask at least as restrictive", () =>
   }
 });
 
+/** The tiers each OMP approval mode approves without asking, from its approval resolver. */
+const OMP_MODE_APPROVES = {
+  "always-ask": ["read"],
+  write: ["read", "write"],
+  yolo: ["read", "write", "exec"],
+} as const;
+
+type OmpMode = keyof typeof OMP_MODE_APPROVES;
+
+function approvalModeOf(policy: AgentPermissionPolicy): OmpMode | undefined {
+  const native = ompCodec.encode(policy) as {
+    tools?: { approvalMode: OmpMode };
+  };
+  return native.tools?.approvalMode;
+}
+
+function refusal(policy: AgentPermissionPolicy): UnsupportedCapabilityError {
+  try {
+    ompCodec.encode(policy);
+  } catch (e) {
+    assert.ok(e instanceof UnsupportedCapabilityError, String(e));
+    return e;
+  }
+  throw new assert.AssertionError({ message: "expected a refusal" });
+}
+
+void describe("ompCodec default mode", () => {
+  void it("writes always-ask for a mode that asks for calls no rule covers", () => {
+    for (const defaultMode of [
+      "standard",
+      "restricted",
+      "plan",
+      "default",
+      "acceptEdits",
+      "auto",
+    ] as const) {
+      assert.equal(approvalModeOf({ defaultMode }), "always-ask", defaultMode);
+    }
+  });
+
+  void it("reads the mode from permissions as well", () => {
+    assert.equal(
+      approvalModeOf({ permissions: { defaultMode: "restricted" } }),
+      "always-ask",
+    );
+  });
+
+  void it("leaves OMP's own mode alone for an autonomous mode or none", () => {
+    for (const defaultMode of [
+      "autonomous",
+      "dontAsk",
+      "bypassPermissions",
+    ] as const) {
+      assert.deepEqual(ompCodec.encode({ defaultMode }), {}, defaultMode);
+    }
+    assert.deepEqual(ompCodec.encode({}), {});
+  });
+
+  void it("writes the mode beside bash.patterns", () => {
+    assert.deepEqual(
+      ompCodec.encode({
+        defaultMode: "standard",
+        rules: [{ tool: "Bash", pattern: "rm x", tier: "deny" }],
+      }),
+      {
+        bash: { patterns: [{ match: "rm x", approval: "deny" }] },
+        tools: { approvalMode: "always-ask" },
+      },
+    );
+  });
+
+  void it("never approves a write or exec call that the canonical mode asks for", () => {
+    for (const defaultMode of [
+      "standard",
+      "restricted",
+      "plan",
+      "default",
+      "acceptEdits",
+      "auto",
+      "autonomous",
+      "dontAsk",
+      "bypassPermissions",
+    ] as const) {
+      const mode = approvalModeOf({ defaultMode }) ?? "yolo";
+      const approves: readonly string[] = OMP_MODE_APPROVES[mode];
+      for (const [tier, tool] of [
+        ["write", "Write"],
+        ["exec", "Bash"],
+      ] as const) {
+        const decided = evaluate(
+          { defaultMode: mapMode(defaultMode) },
+          tool,
+          "anything",
+        );
+        if (decided === "allow") continue;
+        assert.ok(
+          !approves.includes(tier),
+          `${defaultMode}: canonical ${decided} for ${tool}, OMP ${mode} approves ${tier}`,
+        );
+      }
+    }
+  });
+
+  void it("refuses readonly, which OMP has no mode for", () => {
+    const error = refusal({ defaultMode: "readonly" });
+    assert.equal(error.agent, "omp");
+    assert.deepEqual(error.unsupported, []);
+    assert.equal(error.settings.length, 1);
+    const [refused] = error.settings;
+    assert.ok(refused !== undefined);
+    assert.equal(refused.setting, "defaultMode");
+    assert.equal(refused.value, "readonly");
+    assert.match(refused.reason, /read/);
+    assert.match(error.message, /defaultMode: readonly/);
+  });
+
+  void it("lists a refused mode together with refused rules", () => {
+    const error = refusal({
+      permissions: { defaultMode: "readonly" },
+      rules: [{ tool: "Write", tier: "deny" }],
+    });
+    assert.equal(error.unsupported.length, 1);
+    assert.equal(error.settings.length, 1);
+    assert.match(error.message, /1 rule\(s\) and 1 setting\(s\)/);
+  });
+});
+
 void describe("ompCodec decode", () => {
+  void it("reads tools.approvalMode as the default mode, never looser than OMP", () => {
+    assert.equal(
+      ompCodec.decode({ tools: { approvalMode: "always-ask" } }).defaultMode,
+      "standard",
+    );
+    assert.equal(
+      ompCodec.decode({ tools: { approvalMode: "write" } }).defaultMode,
+      "standard",
+    );
+    assert.equal(
+      ompCodec.decode({ tools: { approvalMode: "yolo" } }).defaultMode,
+      "autonomous",
+    );
+    assert.equal(ompCodec.decode({ tools: {} }).defaultMode, undefined);
+  });
+
+  void it("refuses an approval mode OMP does not define instead of guessing", () => {
+    assert.throws(() =>
+      ompCodec.parse({ tools: { approvalMode: "sometimes" } }),
+    );
+  });
+
   void it("reads bash.patterns in order, ignoring the rest of the config", () => {
     const decoded = ompCodec.decode({
       model: "x",
@@ -400,6 +549,24 @@ void describe("omp as a format", () => {
       "omp",
     );
     assert.equal(detectFormat({ bash: { "rm *": "deny" } }), "opencode");
+  });
+
+  void it("is detected from tools.approvalMode alone", () => {
+    assert.equal(
+      detectFormat({ tools: { approvalMode: "always-ask" } }),
+      "omp",
+    );
+    assert.equal(detectFormat({ tools: { approvalMode: "never" } }), undefined);
+  });
+
+  void it("converts a mode from canonical and back", () => {
+    const written = convert("canonical", "omp", { defaultMode: "restricted" });
+    assert.deepEqual(written.output, { tools: { approvalMode: "always-ask" } });
+    const back = convert("omp", "canonical", written.output);
+    assert.equal(
+      (back.output as AgentPermissionPolicy).defaultMode,
+      "standard",
+    );
   });
 
   void it("converts from canonical and back", () => {
