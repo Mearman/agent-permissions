@@ -560,6 +560,41 @@ void describe("CLI", () => {
       assert.match(result.stderr, /\(hidden\)/);
     });
 
+    void it("takes the actor and roles from flags", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({
+          defaultMode: "restricted",
+          roles: { maintainer: { allow: ["Bash(git push:*)"] } },
+        }),
+      );
+      const args = (extra: string[]): string[] => [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "git push origin",
+        "--policy-file",
+        join(cwd, "policy.json"),
+        ...extra,
+      ];
+      assert.equal(
+        (
+          await run(
+            args(["--actor", "ada", "--role", "maintainer", "--role", "dev"]),
+          )
+        ).stdout,
+        "allow\n",
+      );
+      assert.equal(
+        (await run(args(["--actor", "bob", "--role", "dev"]))).stdout,
+        "ask\n",
+      );
+      assert.equal((await run(args(["--actor", "ada"]))).stdout, "ask\n");
+    });
+
     void it("denies a matching deny rule", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);

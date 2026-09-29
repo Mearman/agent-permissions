@@ -140,6 +140,33 @@
             ],
             "description": "Permission tier to apply when this rule matches."
           },
+          "approvers": {
+            "description": "On an ask rule: the roles and actors who may approve the request, and how long it may wait. An unresolved request expires as a deny.",
+            "type": "object",
+            "properties": {
+              "roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Roles whose holders may approve the request."
+              },
+              "actors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Actors who may approve the request. The requester is never one of them."
+              },
+              "timeoutSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991,
+                "description": "How long the request may stay unresolved. An unresolved request expires as a deny."
+              }
+            },
+            "additionalProperties": false
+          },
           "hidden": {
             "description": "On a deny rule: also leave the tool out of the agent's tool list. The call is refused as a plain deny is. Only a rule with no pattern hides the whole tool.",
             "type": "boolean",
@@ -167,6 +194,14 @@
                 },
                 "description": "Environment variables that must each equal the given value (AND logic)."
               },
+              "actor": {
+                "type": "string",
+                "description": "Actor pattern (glob): who is making the call, as the host reports it. Unknown when the host reports none."
+              },
+              "role": {
+                "type": "string",
+                "description": "Role pattern (glob): holds when the actor has a matching role, as the host reports the roles. Unknown when the host reports none."
+              },
               "remote": {
                 "type": "string",
                 "description": "Git remote pattern (glob), matched against the origin as host/path in lower case, so git@github.com:Org/Repo.git and https://github.com/org/repo both match github.com/org/*."
@@ -183,6 +218,70 @@
         "description": "Permission rule. Evaluated deny-first: all deny rules, then ask, then allow."
       },
       "description": "Permission rules. Evaluated deny-first: all deny rules checked, then ask, then allow. Falls back to defaultMode when no rule matches."
+    },
+    "roles": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_.-]+$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "allow": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tools auto-approved without prompting. Evaluated after deny rules.",
+            "examples": [
+              "Bash(git status)",
+              "Bash(npm run test:*)",
+              "Read",
+              "Grep"
+            ]
+          },
+          "deny": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tools always denied — short-circuits before allow and ask. A deny cannot be overridden by an allow in any other source.",
+            "examples": [
+              "Bash(sudo:*)",
+              "Bash(rm -rf /)",
+              "Read(./.env)"
+            ]
+          },
+          "ask": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tools that always prompt, even in autonomous mode. Evaluated after deny but before allow.",
+            "examples": [
+              "Bash(git push:*)",
+              "Bash(npm publish:*)"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Permission tiers by role. Each rule applies to actors holding the role, as if it carried `when: { role }`.",
+      "examples": [
+        {
+          "maintainer": {
+            "allow": [
+              "Bash(git push:*)"
+            ]
+          },
+          "contractor": {
+            "deny": [
+              "Bash(git push:*)"
+            ]
+          }
+        }
+      ]
     },
     "profiles": {
       "type": "object",

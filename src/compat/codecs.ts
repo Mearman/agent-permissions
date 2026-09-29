@@ -40,6 +40,37 @@ import {
   PermissionBehavior,
 } from "./enums.ts";
 
+/**
+ * The canonical rules as a codec for `agent` can hold them. No agent format can limit a rule to an
+ * actor or a role, so a rule carrying either is not written as if it were unconditional: an allow is
+ * left out, which is stricter, and a deny or ask is refused, since writing it would either widen the
+ * rule or restrict everyone. All refused rules are reported together.
+ *
+ * @throws UnsupportedCapabilityError if a deny or ask rule is limited to an actor or a role.
+ */
+function agentRules(
+  policy: Parameters<typeof collectRules>[0],
+  agent: string,
+): Rule[] {
+  const unsupported: UnsupportedRule[] = [];
+  const kept = collectRules(policy).filter((rule) => {
+    if (rule.when?.actor === undefined && rule.when?.role === undefined) {
+      return true;
+    }
+    if (rule.tier !== "allow") {
+      unsupported.push({
+        rule,
+        reason: `${agent} cannot limit a rule to an actor or a role`,
+      });
+    }
+    return false;
+  });
+  if (unsupported.length > 0) {
+    throw new UnsupportedCapabilityError(agent, unsupported);
+  }
+  return kept;
+}
+
 // ---------------------------------------------------------------------------
 // Canonical agent identifiers
 // ---------------------------------------------------------------------------
@@ -108,7 +139,7 @@ export const claudeCodeCodec = z.codec(
     encode(canonical) {
       const result: Partial<ClaudeCodeNative> = {};
 
-      const allRules = collectRules(canonical);
+      const allRules = agentRules(canonical, "claude-code");
       if (allRules.length > 0) {
         result.deny = allRules
           .filter((r) => r.tier === "deny")
@@ -280,7 +311,7 @@ export const opencodeCodec = z.codec(opencodeNative, AgentPermissionPolicy, {
     return result;
   },
   encode(canonical) {
-    const allRules = collectRules(canonical);
+    const allRules = agentRules(canonical, "opencode");
     if (allRules.length === 0) return { bash: "ask" };
 
     const result: Record<string, Record<string, "allow" | "deny" | "ask">> = {};
@@ -374,7 +405,7 @@ export const crushCodec = z.codec(crushNative, AgentPermissionPolicy, {
     return { rules };
   },
   encode(canonical) {
-    const allRules = collectRules(canonical);
+    const allRules = agentRules(canonical, "crush");
     const allowed: string[] = [];
     for (const rule of allRules) {
       // Only bare allow rules — Crush has no deny, no patterns
@@ -639,7 +670,7 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
   },
 
   encode(canonical) {
-    const allRules = collectRules(canonical);
+    const allRules = agentRules(canonical, "kiro");
     const result: Partial<KiroNative> = {};
 
     const allowedTools: string[] = [];
@@ -949,7 +980,7 @@ function codexRefusal(
   writesBlockedBySandbox: boolean,
 ): string | undefined {
   if (rule.when !== undefined) {
-    return "Codex cannot limit a rule to a working directory or branch";
+    return "Codex cannot limit a rule with a condition";
   }
   if (rule.tool === "WebFetch" && rule.pattern?.startsWith(DOMAIN_PREFIX)) {
     return rule.tier === "ask"
