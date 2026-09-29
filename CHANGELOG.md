@@ -1,3 +1,9 @@
+## [6.2.1](https://github.com/Mearman/agent-permissions/compare/v6.2.0...v6.2.1) (2026-09-29)
+
+### CI
+
+* audit with plain pnpm audit and stop opening fix pull requests ([5ce193c](https://github.com/Mearman/agent-permissions/commit/5ce193c277079de72f3ff38f87e5b70eb0f77106))
+
 ## [6.2.0](https://github.com/Mearman/agent-permissions/compare/v6.1.4...v6.2.0) (2026-09-29)
 
 ### Features
