@@ -339,7 +339,7 @@ export function computeWriteTargets(
     if (!isAgentId(key)) continue;
     const agent: AgentId = key;
     if (agentFilter && !agentFilter.has(agent)) continue;
-    if (agent === "codex" || agent === "crush") continue; // TOML / no file
+    if (agent === "codex" || agent === "crush" || agent === "omp") continue; // TOML / YAML / no file
 
     const def = AGENT_FILES[agent];
     const filePath = join(cwd, def.name);

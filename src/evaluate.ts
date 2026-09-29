@@ -164,7 +164,7 @@ export function normaliseStringRule(rule: string, tier: PermissionTier): Rule {
 // ---------------------------------------------------------------------------
 
 /** Parsed pattern — determines how a rule's pattern matches input. */
-type ParsedPattern =
+export type ParsedPattern =
   | { type: "exact"; content: string }
   | { type: "prefix"; prefix: string }
   | { type: "wildcard"; pattern: string };
@@ -207,7 +207,7 @@ function compiledRegex(node: PredicateNode): RegExp {
  * Parse a pattern string as rule content (from `Rule.pattern`). Determines rule type from the
  * content.
  */
-function parsePattern(pattern: string): ParsedPattern {
+export function parseRulePattern(pattern: string): ParsedPattern {
   // Domain pattern: "domain:example.com" — substring match on input
   if (pattern.startsWith("domain:")) {
     return {
@@ -239,7 +239,7 @@ function parsePattern(pattern: string): ParsedPattern {
 
 /** Compile a rule's pattern to a predicate over the input, building any regular expression once. */
 function compilePattern(pattern: string): (input: string) => boolean {
-  const parsed = parsePattern(pattern);
+  const parsed = parseRulePattern(pattern);
   switch (parsed.type) {
     case "exact":
       return (input) => parsed.content === input;

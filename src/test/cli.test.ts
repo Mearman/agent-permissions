@@ -422,6 +422,94 @@ void describe("CLI", () => {
   });
 
   // =========================================================================
+  void describe("convert to and from OMP", () => {
+    void it("writes an OMP config as YAML", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({
+          rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+        }),
+      );
+      const result = await run([
+        "convert",
+        "--from",
+        join(cwd, "policy.json"),
+        "--to",
+        "omp",
+        "--output",
+        "-",
+      ]);
+      assert.equal(result.exitCode, 0);
+      assert.equal(
+        result.stdout,
+        [
+          "bash:",
+          "  patterns:",
+          "    - match: rm",
+          "      approval: deny",
+          "    - match: rm *",
+          "      approval: deny",
+          "",
+        ].join("\n"),
+      );
+    });
+
+    void it("reads an OMP config in YAML and ignores the rest of it", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "omp-config.yml"),
+        [
+          "model: anything",
+          "tools:",
+          "  approvalMode: yolo",
+          "bash:",
+          "  patterns:",
+          '    - match: "curl *"',
+          "      approval: prompt",
+          "",
+        ].join("\n"),
+      );
+      const result = await run([
+        "convert",
+        "--from",
+        join(cwd, "omp-config.yml"),
+        "--to",
+        "canonical",
+        "--output",
+        "-",
+      ]);
+      assert.equal(result.exitCode, 0, result.stderr);
+      assert.match(result.stdout, /"tier": "ask"/);
+      assert.match(result.stdout, /"pattern": "curl \*"/);
+    });
+
+    void it("fails, naming the rule, when OMP cannot enforce it", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({
+          rules: [{ tool: "Write", pattern: "./secrets", tier: "deny" }],
+        }),
+      );
+      const result = await run([
+        "convert",
+        "--from",
+        join(cwd, "policy.json"),
+        "--to",
+        "omp",
+        "--output",
+        "-",
+      ]);
+      assert.notEqual(result.exitCode, 0);
+      assert.match(result.stderr, /Write\(\.\/secrets\) \[deny\]/);
+      assert.equal(result.stdout, "");
+    });
+  });
+
   void describe("check", () => {
     void it("allows a matching rule", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));

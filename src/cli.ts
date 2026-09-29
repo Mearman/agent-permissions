@@ -31,7 +31,9 @@ import {
   AGENT_FILES,
   findDefaultFile,
   readInput,
+  parseAgentFile,
   parseJson,
+  stringifyAgentFile,
   writeJsonFile,
 } from "./agent-files.ts";
 
@@ -147,7 +149,7 @@ async function convertCommand(args: string[]): Promise<void> {
   const toFormat = resolveFormat(toSpec);
   if (!toFormat) {
     error(
-      `unknown --to format: ${toSpec}. Use an agent name (claude-code, codex, kiro, opencode, crush, canonical), a config file path, or "-" for stdout`,
+      `unknown --to format: ${toSpec}. Use an agent name (claude-code, codex, kiro, opencode, crush, omp, canonical), a config file path, or "-" for stdout`,
     );
   }
   const outputPath = outputSpec
@@ -158,15 +160,18 @@ async function convertCommand(args: string[]): Promise<void> {
 
   const source = inputPath ?? "stdin";
   const raw = await readInput(inputPath);
-  const parsed = parseJson(raw, source);
+  const parsed = parseAgentFile(fromFormat, raw, source);
   if (!parsed.ok) error(parsed.error);
   const json = parsed.value;
 
   try {
     const result = convert(fromFormat, toFormat, json);
 
-    const indent = values.compact ? undefined : 2;
-    const jsonStr = JSON.stringify(result.output, null, indent) + "\n";
+    const jsonStr = stringifyAgentFile(
+      toFormat,
+      result.output,
+      values.compact === true,
+    );
 
     if (outputPath) {
       await writeJsonFile(outputPath, jsonStr);
