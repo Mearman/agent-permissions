@@ -339,7 +339,7 @@ async function syncCommand(args: string[]): Promise<void> {
     ? resolve(values["working-dir"])
     : process.cwd();
 
-  await sync({
+  const result = await sync({
     cwd,
     up,
     with: withAgents,
@@ -350,6 +350,7 @@ async function syncCommand(args: string[]): Promise<void> {
     verbose: values.verbose ?? false,
     backup: values.backup ?? false,
   });
+  if (result.refused.length > 0) process.exit(1);
 }
 
 // ---------------------------------------------------------------------------
