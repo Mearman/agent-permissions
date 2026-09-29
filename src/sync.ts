@@ -23,6 +23,7 @@ import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { AgentPermissionPolicy, type Rule } from "./schema.ts";
 import { CODECS, type AgentId } from "./compat/codecs.ts";
+import { UnsupportedCapabilityError } from "./compat/unsupported.ts";
 import { isAgentId, isPermissionMode } from "./guards.ts";
 import {
   collectRules,
@@ -66,6 +67,11 @@ export interface SyncResult {
   changes: FileChange[];
   /** Whether changes were applied. */
   applied: boolean;
+  /**
+   * Agents whose native format cannot enforce a rule in the merged policy. When any are listed
+   * nothing is written, since a partial sync would leave the refused agents on a looser policy.
+   */
+  refused: UnsupportedCapabilityError[];
 }
 
 export interface FileChange {
@@ -139,7 +145,7 @@ function collectFiles(cwd: string, up: number): AgentFile[] {
 // Reading and decoding
 // ---------------------------------------------------------------------------
 
-interface DecodedSource {
+export interface DecodedSource {
   file: AgentFile;
   policy: AgentPermissionPolicy;
 }
@@ -264,14 +270,25 @@ interface WriteTarget {
   exists: boolean;
 }
 
-function computeWriteTargets(
+/** What sync needs from a codec, so the encoding step can be tested without real agent formats. */
+interface Encoder {
+  encode(canonical: AgentPermissionPolicy): unknown;
+}
+
+/**
+ * Work out the files to write. An agent whose codec refuses the merged policy is reported in
+ * `refused` and never skipped silently.
+ */
+export function computeWriteTargets(
   cwd: string,
   merged: AgentPermissionPolicy,
   sources: DecodedSource[],
   agentFilter: Set<string> | undefined,
   create: boolean,
-): WriteTarget[] {
+  codecs: Readonly<Record<AgentId, Encoder>> = CODECS,
+): { targets: WriteTarget[]; refused: UnsupportedCapabilityError[] } {
   const targets: WriteTarget[] = [];
+  const refused: UnsupportedCapabilityError[] = [];
 
   // Always write canonical at cwd (unless excluded)
   const canonicalPath = join(cwd, ".agents", "permissions.json");
@@ -288,7 +305,7 @@ function computeWriteTargets(
   }
 
   // Write native configs at cwd
-  for (const key of Object.keys(CODECS)) {
+  for (const key of Object.keys(codecs)) {
     if (!isAgentId(key)) continue;
     const agent: AgentId = key;
     if (agentFilter && !agentFilter.has(agent)) continue;
@@ -304,12 +321,15 @@ function computeWriteTargets(
     const hasSource = sources.some((s) => s.file.agent === agent);
     if (!hasSource && !create) continue;
 
-    const codec = CODECS[agent];
     let encoded: unknown;
     try {
-      encoded = codec.encode(merged);
-    } catch {
-      continue;
+      encoded = codecs[agent].encode(merged);
+    } catch (e) {
+      if (e instanceof UnsupportedCapabilityError) {
+        refused.push(e);
+        continue;
+      }
+      throw e;
     }
 
     // Wrap in native config structure (e.g. { permissions: ... })
@@ -323,7 +343,7 @@ function computeWriteTargets(
     });
   }
 
-  return targets;
+  return { targets, refused };
 }
 
 // ---------------------------------------------------------------------------
@@ -396,7 +416,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     process.stderr.write(
       "No permission configs found. Create .agents/permissions.json to get started.\n",
     );
-    return { changes: [], applied: false };
+    return { changes: [], applied: false, refused: [] };
   }
 
   if (verbose) {
@@ -426,7 +446,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
 
   if (sources.length === 0) {
     process.stderr.write("No readable permission configs found.\n");
-    return { changes: [], applied: false };
+    return { changes: [], applied: false, refused: [] };
   }
 
   // 3. Merge all sources
@@ -440,7 +460,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   }
 
   // 4. Compute write targets
-  const targets = computeWriteTargets(
+  const { targets, refused } = computeWriteTargets(
     cwd,
     merged,
     sources,
@@ -448,9 +468,18 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     create,
   );
 
+  if (refused.length > 0) {
+    for (const error of refused)
+      process.stderr.write(`error: ${error.message}\n`);
+    process.stderr.write(
+      "Nothing was written. Fix the rules above, or leave the agent out with --without.\n",
+    );
+    return { changes: [], applied: false, refused };
+  }
+
   if (targets.length === 0) {
     process.stderr.write("No write targets.\n");
-    return { changes: [], applied: false };
+    return { changes: [], applied: false, refused: [] };
   }
 
   // 5. Build changes
@@ -492,7 +521,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
 
   if (changes.length === 0) {
     process.stderr.write("Already in sync — no changes needed.\n");
-    return { changes: [], applied: true };
+    return { changes: [], applied: true, refused: [] };
   }
 
   // 6. Display changes
@@ -505,7 +534,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   // 7. Apply or prompt
   if (dryRun) {
     process.stderr.write("(dry run — no changes written)\n");
-    return { changes, applied: false };
+    return { changes, applied: false, refused: [] };
   }
 
   if (!yes) {
@@ -513,7 +542,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     const answer = await readLine();
     if (answer.toLowerCase() !== "y" && answer.toLowerCase() !== "yes") {
       process.stderr.write("Aborted.\n");
-      return { changes, applied: false };
+      return { changes, applied: false, refused: [] };
     }
   }
 
@@ -532,7 +561,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   }
 
   process.stderr.write(`Applied ${String(changes.length)} change(s).\n`);
-  return { changes, applied: true };
+  return { changes, applied: true, refused: [] };
 }
 
 // ---------------------------------------------------------------------------
