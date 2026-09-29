@@ -1,8 +1,8 @@
 /**
  * Programmatic API for agent-perms — side-effect-free functions for converting, validating, and
- * checking permission policies.
+ * checking permission policies, and for replaying them over recorded sessions.
  *
- * Import: import { convert, validate, check, detectFormat } from "agent-perms/api";
+ * Import: import { convert, validate, check, replay, suggest, detectFormat } from "agent-perms/api";
  */
 
 import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
@@ -11,7 +11,15 @@ import {
   collectRules,
   mapMode,
   type DecisionStep,
+  type PermissionPolicy,
 } from "./evaluate.ts";
+import {
+  parseTranscript,
+  replayCalls,
+  suggestRules,
+  type ReplayReport,
+  type Suggestion,
+} from "./replay.ts";
 import { validatePolicy, type ValidationError } from "./agent-files.ts";
 import { isAgentId, isRecord } from "./guards.ts";
 import { AgentPermissionPolicy } from "./schema.ts";
@@ -342,23 +350,62 @@ export function check(
   json: unknown,
   context?: { cwd?: string; branch?: string },
 ): CheckResult {
-  const result = validatePolicy(json);
-  if (!result.ok) throw new ConvertError(result.error, result.errors);
-
-  const policy = result.value;
-
-  const rules = collectRules(policy);
-  const mode = policy.defaultMode ?? "standard";
-  const mappedMode = mapMode(mode);
-
   const { decision, steps } = explain(
-    { defaultMode: mappedMode, rules },
+    permissionPolicy(json),
     tool,
     input,
     context,
   );
 
   return { decision, steps };
+}
+
+// ---------------------------------------------------------------------------
+// replay / suggest
+// ---------------------------------------------------------------------------
+
+/**
+ * Replay a policy over a recorded session transcript.
+ *
+ * @param json - Parsed canonical policy JSON.
+ * @param transcript - The transcript's JSON Lines text (see `agent-perms/replay` for the fields read).
+ *
+ * @returns How many calls the policy would allow, ask about and deny, and the calls whose recorded outcome it could not have produced.
+ *
+ * @throws {ConvertError} If the policy is invalid.
+ * @throws {SyntaxError} If a transcript line is not JSON.
+ */
+export function replay(json: unknown, transcript: string): ReplayReport {
+  return replayCalls(permissionPolicy(json), parseTranscript(transcript));
+}
+
+/** Options for {@link suggest}. */
+export interface SuggestOptions {
+  /** How many approved calls a rule must cover to be proposed. */
+  minCount: number;
+  /** Parsed canonical policy JSON whose deny rules exclude commands and whose allow rules make a proposal unnecessary. */
+  policy?: unknown;
+}
+
+/**
+ * Propose allow rules for calls a recorded session shows were approved repeatedly.
+ *
+ * @param transcript - The transcript's JSON Lines text (see `agent-perms/replay` for the fields read).
+ *
+ * @returns The proposed rules, each with how many approved calls it covers.
+ *
+ * @throws {ConvertError} If the policy is invalid.
+ * @throws {SyntaxError} If a transcript line is not JSON.
+ */
+export function suggest(
+  transcript: string,
+  options: SuggestOptions,
+): Suggestion[] {
+  return suggestRules(
+    parseTranscript(transcript),
+    permissionPolicy(options.policy ?? {}),
+    options.minCount,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -380,6 +427,21 @@ export class ConvertError extends Error {
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Validate a canonical policy and flatten it into the form the evaluator takes.
+ *
+ * @throws {ConvertError} If the policy is invalid.
+ */
+function permissionPolicy(json: unknown): PermissionPolicy {
+  const result = validatePolicy(json);
+  if (!result.ok) throw new ConvertError(result.error, result.errors);
+  const policy = result.value;
+  return {
+    defaultMode: mapMode(policy.defaultMode ?? "standard"),
+    rules: collectRules(policy),
+  };
+}
 
 function countRules(canonical: unknown): number {
   if (isRecord(canonical) && Array.isArray(canonical.rules)) {
