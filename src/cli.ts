@@ -274,6 +274,8 @@ async function checkCommand(args: string[]): Promise<void> {
       remote: { type: "string" },
       env: { type: "string", multiple: true },
       depth: { type: "string" },
+      actor: { type: "string" },
+      role: { type: "string", multiple: true },
       explain: { type: "boolean" },
     },
     strict: true,
@@ -297,6 +299,8 @@ async function checkCommand(args: string[]): Promise<void> {
     if (values.remote !== undefined) ctx.remote = values.remote;
     if (values.env !== undefined) ctx.env = parseEnvFlags(values.env);
     if (values.depth !== undefined) ctx.depth = parseDepthFlag(values.depth);
+    if (values.actor !== undefined) ctx.actor = values.actor;
+    if (values.role !== undefined) ctx.roles = values.role;
     const result = checkApi(values.tool, values.input, json, ctx);
     process.stdout.write(`${result.decision}\n`);
     if (values.explain) {
@@ -607,6 +611,7 @@ Check flags:
   --cwd, --branch, --remote          Evaluation context
   --env NAME=VALUE                   Environment variable in the context (repeatable)
   --depth <n>                        Agents between the call and the top-level agent
+  --actor <name>, --role <name>      Who is making the call and the roles they hold (--role repeats)
   --explain                          Print how each command was judged, to stderr
 
 Replay flags:

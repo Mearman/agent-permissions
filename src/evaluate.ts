@@ -85,6 +85,15 @@ export interface DecisionStep {
   layer?: string;
   /** Set when a `hidden` deny rule matched: the call is refused, and the tool should not be shown. */
   hidden?: true;
+  /** Who may resolve an `ask`, from the matching rule's `approvers`, without the requester. */
+  approvers?: Approvers;
+}
+
+/** The principals who may resolve an ask, and how long it may wait before it expires as a deny. */
+export interface Approvers {
+  roles: string[];
+  actors: string[];
+  timeoutSeconds?: number;
 }
 
 /** A decision with the steps behind it. */
@@ -103,6 +112,10 @@ export interface EvaluationContext {
   env?: Readonly<Record<string, string | undefined>>;
   /** The git remote in any common URL form; it is normalised before comparing. */
   remote?: string;
+  /** Who is making the call, as the host reports it; an unreported actor is unknown, not anonymous. */
+  actor?: string;
+  /** The roles the host says the actor holds; the policy does not say who holds a role. */
+  roles?: readonly string[];
   /**
    * How many agents sit between this call and the top-level agent: 0 for the top-level agent, 1 for
    * its subagent. Left out, the call is the top-level agent's, so a host that runs subagents must
@@ -322,6 +335,12 @@ function compileConditions(
   if (when.remote !== undefined) {
     checks.push(remoteCondition(when.remote));
   }
+  if (when.actor !== undefined) {
+    checks.push(actorCondition(when.actor));
+  }
+  if (when.role !== undefined) {
+    checks.push(roleCondition(when.role));
+  }
   return (ctx) => {
     const results = checks.map((check) => check(ctx));
     for (const result of results) {
@@ -344,6 +363,30 @@ function envCondition(
       return indeterminate("not-found", `the context has no env ${name}`);
     }
     return definite(actual === expected);
+  };
+}
+
+function actorCondition(
+  pattern: string,
+): (ctx: EvaluationContext) => Evaluation<boolean> {
+  const matches = compileGlobPath(pattern);
+  return (ctx) => {
+    if (ctx.actor === undefined) {
+      return indeterminate("not-found", "the context has no actor");
+    }
+    return definite(matches(ctx.actor));
+  };
+}
+
+function roleCondition(
+  pattern: string,
+): (ctx: EvaluationContext) => Evaluation<boolean> {
+  const matches = compileGlobPath(pattern);
+  return (ctx) => {
+    if (ctx.roles === undefined) {
+      return indeterminate("not-found", "the context has no roles");
+    }
+    return definite(ctx.roles.some(matches));
   };
 }
 
@@ -588,6 +631,7 @@ export function compile(policy: PermissionPolicy): CompiledPolicy {
       rule: match.rule,
       ...(layer === undefined ? {} : { layer }),
       ...(match.rule.hidden === true ? { hidden: true } : {}),
+      ...approversFor(match, ctx),
     };
   };
 
@@ -658,6 +702,24 @@ export function compile(policy: PermissionPolicy): CompiledPolicy {
       explainCall(toolName, input, ctx).decision,
     explain: (toolName, input, ctx = {}) => explainCall(toolName, input, ctx),
     isVisible: (toolName, ctx = {}) => isVisible(toolName, ctx),
+  };
+}
+
+/** The approvers of an ask that names some, without the requester. */
+function approversFor(
+  match: { tier: PermissionTier; rule: Rule },
+  ctx: EvaluationContext,
+): { approvers?: Approvers } {
+  const named = match.rule.approvers;
+  if (match.tier !== "ask" || named === undefined) return {};
+  return {
+    approvers: {
+      roles: [...(named.roles ?? [])],
+      actors: (named.actors ?? []).filter((actor) => actor !== ctx.actor),
+      ...(named.timeoutSeconds === undefined
+        ? {}
+        : { timeoutSeconds: named.timeoutSeconds }),
+    },
   };
 }
 
@@ -856,6 +918,16 @@ export function stepSource(step: DecisionStep): string {
  */
 export function collectRules(policy: {
   rules?: Rule[] | undefined;
+  roles?:
+    | Record<
+        string,
+        {
+          allow?: string[] | undefined;
+          deny?: string[] | undefined;
+          ask?: string[] | undefined;
+        }
+      >
+    | undefined;
   permissions?:
     | {
         allow?: string[] | undefined;
@@ -886,6 +958,15 @@ export function collectRules(policy: {
 
   if (policy.rules) {
     result.push(...policy.rules);
+  }
+
+  // A role's rules apply to the actors holding it, as if each carried `when: { role }`.
+  for (const [role, tiers] of Object.entries(policy.roles ?? {})) {
+    for (const tier of ["deny", "ask", "allow"] as const) {
+      for (const rule of tiers[tier] ?? []) {
+        result.push({ ...normaliseStringRule(rule, tier), when: { role } });
+      }
+    }
   }
 
   return result;

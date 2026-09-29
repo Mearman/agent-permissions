@@ -263,6 +263,43 @@ deny rules → ask rules → allow rules → defaultMode
 
 Deny short-circuits: if any deny rule matches, the tool is blocked regardless of allow rules from any source.
 
+### Actors, roles and approvers
+
+For hosts that know who is acting, a rule can depend on the actor and the roles they hold. The policy never says who holds a role; the host does, and passes `actor` and `roles` with each call.
+
+```json
+{
+  "roles": {
+    "maintainer": { "allow": ["Bash(git push:*)"] },
+    "contractor": { "deny": ["Bash(git push:*)"] }
+  },
+  "rules": [
+    {
+      "tool": "Bash",
+      "pattern": "npm publish:*",
+      "tier": "ask",
+      "approvers": {
+        "roles": ["maintainer"],
+        "actors": ["ada"],
+        "timeoutSeconds": 300
+      }
+    },
+    {
+      "tool": "Bash",
+      "pattern": "deploy:*",
+      "tier": "deny",
+      "when": { "actor": "contractor-*" }
+    }
+  ]
+}
+```
+
+A role's rules apply as if each carried `when: { role }`. `when.actor` and `when.role` are globs, and a call whose actor or roles the host did not report is unknown, not anonymous: an unknown condition never lets an allow apply and still lets a deny or ask apply. An empty role list is known, and means the actor holds nothing.
+
+`approvers` on an ask rule says who may resolve the request; `explain` reports it on the step, without the requester. Holding a permission does not make an actor an approver: only being named does. An unresolved request expires as a deny, after `timeoutSeconds` if given. The pending-request store and any approval interface belong to the host.
+
+No agent format can limit a rule to an actor or a role, so a codec never writes one as unconditional: an allow limited that way is left out, which is stricter, and a deny or ask limited that way makes the conversion fail with an `UnsupportedCapabilityError` listing the rule.
+
 ### Hidden tools
 
 A deny rule with `hidden: true` refuses the call exactly as a plain deny does, and also marks the tool as one to leave out of the agent's tool list. `explain` and `check` report `hidden`, and a host that builds a tool list asks which tools to show:

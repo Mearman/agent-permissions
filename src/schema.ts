@@ -157,6 +157,18 @@ export const RuleCondition = z
         "Environment variables that must each equal the given value (AND logic).",
     }),
 
+    /** Actor pattern (glob): who is making the call, as the host says. */
+    actor: z.string().meta({
+      description:
+        "Actor pattern (glob): who is making the call, as the host reports it. Unknown when the host reports none.",
+    }),
+
+    /** Role pattern (glob): true when the actor holds a matching role. */
+    role: z.string().meta({
+      description:
+        "Role pattern (glob): holds when the actor has a matching role, as the host reports the roles. Unknown when the host reports none.",
+    }),
+
     /** Git remote pattern (glob), matched against the remote as `host/path`, lower case. */
     remote: z.string().meta({
       description:
@@ -203,6 +215,32 @@ export const Rule = z
     }),
 
     /**
+     * On an ask rule: who may resolve the request. Holding the permission does not make an actor an
+     * approver; only being named here does.
+     */
+    approvers: z
+      .object({
+        roles: z.array(z.string()).meta({
+          description: "Roles whose holders may approve the request.",
+        }),
+        actors: z.array(z.string()).meta({
+          description:
+            "Actors who may approve the request. The requester is never one of them.",
+        }),
+        timeoutSeconds: z.number().int().positive().meta({
+          description:
+            "How long the request may stay unresolved. An unresolved request expires as a deny.",
+        }),
+      })
+      .partial()
+      .strict()
+      .optional()
+      .meta({
+        description:
+          "On an ask rule: the roles and actors who may approve the request, and how long it may wait. An unresolved request expires as a deny.",
+      }),
+
+    /**
      * A deny rule that also asks the host to leave the tool out of the agent's tool list. The call
      * is refused exactly as a plain deny is.
      */
@@ -223,6 +261,21 @@ export const Rule = z
     message: "`hidden` is only valid on a deny rule",
     path: ["hidden"],
   })
+  .refine((rule) => rule.approvers === undefined || rule.tier === "ask", {
+    message: "`approvers` is only valid on an ask rule",
+    path: ["approvers"],
+  })
+  .refine(
+    (rule) =>
+      rule.approvers === undefined ||
+      (rule.approvers.roles?.length ?? 0) +
+        (rule.approvers.actors?.length ?? 0) >
+        0,
+    {
+      message: "`approvers` must name at least one role or actor",
+      path: ["approvers"],
+    },
+  )
   .meta({
     description:
       "Permission rule. Evaluated deny-first: all deny rules, then ask, then allow.",
@@ -358,6 +411,13 @@ export const Sandbox = z
  * Maps to Codex's `permissions.<name>` + `default_permissions` fields. Agents that don't support
  * named profiles should use the profile specified by `activeProfile` (or `"default"` if unset).
  */
+/** What a role may do: the permission tiers that apply to actors holding it. */
+export const RoleTiers = PermissionTiers.pick({
+  allow: true,
+  deny: true,
+  ask: true,
+});
+
 /** A profile: permission tiers, optionally extending other profiles by name. */
 export const ProfileTiers = PermissionTiers.extend({
   /** Profiles this one builds on; their rules come first, then this profile's own. */
@@ -458,6 +518,29 @@ export const AgentPermissionPolicy = z
         "Permission rules. Evaluated deny-first: all deny rules checked, then ask, then allow. " +
         "Falls back to defaultMode when no rule matches.",
     }),
+
+    /**
+     * Rules by role. Each rule applies to actors holding the role, as if it carried
+     * `when: { role }`. Who holds a role is not in the policy; the host says.
+     */
+    roles: z
+      .record(
+        z.string().regex(/^[A-Za-z0-9_.-]+$/, {
+          message:
+            "a role name uses letters, digits, dots, dashes and underscores",
+        }),
+        RoleTiers,
+      )
+      .meta({
+        description:
+          "Permission tiers by role. Each rule applies to actors holding the role, as if it carried `when: { role }`.",
+        examples: [
+          {
+            maintainer: { allow: ["Bash(git push:*)"] },
+            contractor: { deny: ["Bash(git push:*)"] },
+          },
+        ],
+      }),
 
     /** Named permission profiles — selectable at session start. */
     profiles: Profiles.meta({
