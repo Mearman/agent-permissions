@@ -559,6 +559,8 @@ Rules with `when` only match when all conditions are met (AND logic):
 }
 ```
 
+A condition on a field the evaluation context does not carry (no `cwd` or no `branch` supplied) is unknown, not satisfied. An unknown condition never lets an allow rule apply, and still lets a deny or ask rule apply, since the condition may hold. A definite mismatch on one condition settles the rule even if another condition is unknown.
+
 ### Full policy with profiles, sandbox, per-agent overrides
 
 See [`spec/examples/full.json`](spec/examples/full.json).
