@@ -827,6 +827,79 @@ void describe("sync", () => {
   });
 });
 
+void describe("sync of roles and delegation across layers", () => {
+  const dirs: string[] = [];
+  after(async () => {
+    await Promise.all(dirs.map((d) => rm(d, { recursive: true })));
+  });
+
+  async function syncedFromInner(
+    outer: object,
+    inner: object,
+  ): Promise<unknown> {
+    const root = await mkdtemp(join(tmpdir(), "sync-test-"));
+    dirs.push(root);
+    const cwd = join(root, "project");
+    await mkdir(join(root, ".agents"), { recursive: true });
+    await mkdir(join(cwd, ".agents"), { recursive: true });
+    await writeFile(
+      join(root, ".agents", "permissions.json"),
+      JSON.stringify(outer),
+    );
+    await writeFile(
+      join(cwd, ".agents", "permissions.json"),
+      JSON.stringify(inner),
+    );
+    await sync({
+      cwd,
+      up: 1,
+      with: [],
+      without: [],
+      yes: true,
+      dryRun: false,
+      create: false,
+      verbose: false,
+      backup: false,
+    });
+    return JSON.parse(
+      await readFile(join(cwd, ".agents", "permissions.json"), "utf-8"),
+    ) as unknown;
+  }
+
+  void it("keeps the shallowest maxDepth and every nonDelegable rule", async () => {
+    const written = await syncedFromInner(
+      { delegation: { maxDepth: 1, nonDelegable: ["Bash(sudo:*)"] } },
+      { delegation: { maxDepth: 3, nonDelegable: ["Write(./.agents/**)"] } },
+    );
+    assert.ok(isRecord(written) && isRecord(written.delegation));
+    assert.equal(written.delegation.maxDepth, 1);
+    const barred: unknown = written.delegation.nonDelegable;
+    assert.ok(Array.isArray(barred));
+    assert.deepEqual(barred.map(String).sort(), [
+      "Bash(sudo:*)",
+      "Write(./.agents/**)",
+    ]);
+  });
+
+  void it("keeps roles as roles, joined across layers, rather than expanding them", async () => {
+    const written = await syncedFromInner(
+      { roles: { maintainer: { allow: ["Bash(git push:*)"] } } },
+      {
+        roles: {
+          maintainer: { ask: ["Bash(npm publish:*)"] },
+          contractor: { deny: ["Bash(git push:*)"] },
+        },
+      },
+    );
+    assert.ok(isRecord(written) && isRecord(written.roles));
+    assert.deepEqual(written.roles, {
+      maintainer: { allow: ["Bash(git push:*)"], ask: ["Bash(npm publish:*)"] },
+      contractor: { deny: ["Bash(git push:*)"] },
+    });
+    assert.equal(written.rules, undefined);
+  });
+});
+
 void describe("computeWriteTargets", () => {
   type Agent = "claude-code" | "codex" | "kiro" | "opencode" | "crush";
   const rule = { tool: "Bash", pattern: "rm:*", tier: "deny" } as const;
