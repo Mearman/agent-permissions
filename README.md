@@ -442,13 +442,20 @@ A project under that file can allow `git status`, which the ceiling already allo
 Bidirectional codecs convert between the canonical format and each agent's native config:
 
 ```typescript
-import { claudeCodeCodec, codexCodec } from "agent-perms/compat/codecs";
+import {
+  claudeCodeCodec,
+  codexCodec,
+  encodeCodex,
+} from "agent-perms/compat/codecs";
 
 // Decode agent-native → canonical
 const policy = claudeCodeCodec.decode(claudeSettings.permissions);
 
 // Encode canonical → agent-native
 const codexConfig = codexCodec.encode(canonicalPolicy);
+
+// Codex config plus the execpolicy rules file for command rules
+const { config, rules } = encodeCodex(canonicalPolicy);
 ```
 
 | Agent           | Native format                                           | Codec             | Fidelity          |
@@ -463,9 +470,11 @@ const codexConfig = codexCodec.encode(canonicalPolicy);
 
 ² Codex's `on-failure` approval policy and granular approval config have no canonical equivalent. TOML serialisation is the caller's responsibility; the codec works on parsed JS objects.
 
-Encoding never weakens a restrictive rule. Codex can enforce a `deny` on a path (read-only or no access) and a `deny` on a network domain, plus a `deny` on writes when the policy has a read-only sandbox. Any other `deny` or `ask` rule, and any `deny` or `ask` rule carrying a `when` condition, makes the encode throw `UnsupportedCapabilityError`, which lists every refused rule and why. Command rules such as `Bash(git push:*)` belong in Codex's execpolicy rules files, which the codec does not write. An `allow` rule with no Codex equivalent is left out, which can only make the result stricter. Restrictions from the top-level rules are carried into every named profile.
+Encoding never weakens a restrictive rule. Codex can enforce a `deny` on a path (read-only or no access) and a `deny` on a network domain, plus a `deny` on writes when the policy has a read-only sandbox. Any other `deny` or `ask` rule, and any `deny` or `ask` rule carrying a `when` condition, makes the encode throw `UnsupportedCapabilityError`, which lists every refused rule and why. An `allow` rule with no Codex equivalent is left out, which can only make the result stricter. Restrictions from the top-level rules are carried into every named profile.
 
 A path deny becomes a Codex filesystem entry: `deny` for `Read`, `read` for `Write` or `Edit`. A `./` path is written as a subpath of `:workspace_roots` (`./secrets` becomes `secrets` in that table) and an absolute path stays an absolute key. Codex applies an entry to the path and everything under it, and the workspace roots include any Codex adds beyond the working directory, so the written entry is never narrower than the rule; a trailing `/*` or `/**` is written as that same subtree. A nested entry is written at least as strict as a denied ancestor, since Codex lets the more specific entry win. Any other path pattern is refused: a wildcard anywhere but the end, a string prefix (`:*`), `~`, a bare relative path, a `.` or `..` segment, or `*`, `?`, `[` or `]` in the path, which Codex would read as glob syntax. Decoding reads an absolute key or a `:workspace_roots` subpath back as the path plus its `/**` subtree, reads Codex's legacy `none` as `deny`, and fails on a `read` or `deny` entry it cannot place (another special root, a `~` path or a glob) rather than dropping it.
+
+Codex enforces command rules through execpolicy rules files, not its config, so `codexCodec` on its own refuses a command `deny` or `ask`. `encodeCodex(policy)` returns `{ config, rules }`, where `rules` is the content of a Starlark rules file (or `undefined` when there are none) that belongs at `CODEX_EXECPOLICY_RULES_PATH` (`rules/agent-perms.rules`) beside the config, since Codex loads every `*.rules` file in the `rules` directory of each config layer (`~/.codex/rules`, a project's `.codex/rules`). A command `deny` becomes `prefix_rule(pattern = [...], decision = "forbidden")` and an `ask` becomes `decision = "prompt"`, keeping the stricter decision when both name one prefix. Only patterns a prefix rule matches exactly are written: `git push:*`, and `git push *` whose only wildcard is the trailing one, both match the words alone or followed by arguments, which is what Codex matches once it has split the command into words. An exact command (a prefix rule would widen it), a wildcard anywhere else, a word with quoting, escapes or shell syntax, an empty word, a leading variable assignment, a tool-wide `Bash` rule and a command rule in a named profile (a rules file applies to every profile) are refused. A command `allow` is left out. Codex applies prefix rules to each command of a script it can split into plain commands (joined by `&&`, `||`, `;` or `|`); a script it cannot split, such as one with a redirection or a command substitution, is matched as a whole and so is not caught by a rule on a command inside it. `agent-perms convert --to codex --output <file>` writes the rules file beside the output, and refuses to print to stdout when there is one; `sync` does not write Codex files.
 
 ³ Crush has only an allowlist of tools: no deny, no ask, no patterns. A `deny` or `ask` makes the encode fail with an `UnsupportedCapabilityError`; an `allow` with a pattern is left out, which is stricter.
 

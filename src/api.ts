@@ -5,7 +5,13 @@
  * Import: import { convert, validate, check, replay, suggest, detectFormat } from "agent-perms/api";
  */
 
-import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
+import {
+  CODECS,
+  CODEX_EXECPOLICY_RULES_PATH,
+  agentId,
+  encodeCodex,
+  type AgentId,
+} from "./compat/codecs.ts";
 import {
   explain,
   collectRules,
@@ -45,6 +51,15 @@ export interface ConvertResult {
   from: Format;
   /** Number of rules in the intermediate canonical representation. */
   ruleCount: number;
+  /** Further files the target needs beside its config, such as Codex's execpolicy rules file. */
+  companions: CompanionFile[];
+}
+
+/** A file written beside a converted config. */
+export interface CompanionFile {
+  /** Path relative to the directory holding the converted config. */
+  path: string;
+  content: string;
 }
 
 /** Result of validating a policy. */
@@ -318,17 +333,24 @@ export function convert(
 
   // Encode: canonical → agent-native
   let output: unknown;
+  const companions: CompanionFile[] = [];
   if (to === "canonical") {
     // Inject $schema so generated files get IDE support
     const schemaUrl =
       "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
     output = { $schema: schemaUrl, ...canonical };
+  } else if (to === "codex") {
+    const { config, rules } = encodeCodex(canonical);
+    output = config;
+    if (rules !== undefined) {
+      companions.push({ path: CODEX_EXECPOLICY_RULES_PATH, content: rules });
+    }
   } else {
     const codec = CODECS[to];
     output = codec.encode(canonical);
   }
 
-  return { output, from: fromAgent, ruleCount };
+  return { output, from: fromAgent, ruleCount, companions };
 }
 
 // ---------------------------------------------------------------------------
