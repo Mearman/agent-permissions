@@ -502,14 +502,20 @@ export function mostRestrictiveMode(
   return rankB > rankA ? b : a;
 }
 
-/** Rule identity key for deduplication (tool + pattern, excluding tier). */
+/**
+ * Rule identity key for deduplication: tool, pattern and condition, excluding tier. Two rules that
+ * differ only in `when` apply in different places, so they are different rules.
+ */
 export function ruleKey(rule: Rule): string {
-  return `${rule.tool}:${rule.pattern ?? ""}`;
+  const when = Object.entries(rule.when ?? {}).sort(([a], [b]) =>
+    a < b ? -1 : a > b ? 1 : 0,
+  );
+  return JSON.stringify([rule.tool, rule.pattern ?? "", when]);
 }
 
 /**
- * Deduplicate rules by tool+pattern, keeping the highest-priority tier. Deny beats ask beats allow
- * for the same tool+pattern combination.
+ * Deduplicate rules by tool, pattern and condition, keeping the highest-priority tier. Deny beats
+ * ask beats allow for the same rule identity.
  */
 export function deduplicateRules(rules: Rule[]): Rule[] {
   const map = new Map<string, Rule>();
