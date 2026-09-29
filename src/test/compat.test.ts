@@ -10,6 +10,7 @@ import {
 } from "../compat/codecs.ts";
 import type { CodexProfile } from "../compat/codecs.ts";
 import type { CodexFilesystemAccess } from "../compat/enums.ts";
+import { UnsupportedCapabilityError } from "../compat/unsupported.ts";
 import type { Rule } from "../schema.ts";
 
 // ---------------------------------------------------------------------------
@@ -774,18 +775,28 @@ void describe("codexCodec", () => {
       assert.strictEqual(domains["evil.com"], "deny");
     });
 
-    void it("round-trip is lossy for Bash rules", () => {
+    void it("encodes the mode of a policy whose only Bash rules are allow rules", () => {
       const encoded = z.encode(codexCodec, {
         rules: [
           { tool: "Bash", pattern: "git status", tier: "allow" },
           { tool: "Read", tier: "allow" },
-          { tool: "Bash", pattern: "sudo:*", tier: "deny" },
         ],
         defaultMode: "standard" as const,
       });
-      // Bash rules don't map to Codex filesystem/network — only the non-Bash rules survive
+      // Allow rules have no Codex equivalent here; dropping them can only be stricter
       assert.strictEqual(encoded.approval_policy, "on-request");
       assert.strictEqual(encoded.sandbox_mode, "workspace-write");
+    });
+
+    void it("refuses a Bash deny rule rather than dropping it", () => {
+      assert.throws(
+        () =>
+          z.encode(codexCodec, {
+            rules: [{ tool: "Bash", pattern: "sudo:*", tier: "deny" }],
+            defaultMode: "standard" as const,
+          }),
+        UnsupportedCapabilityError,
+      );
     });
 
     void it("round-trip is lossy for sandbox_mode read-only", () => {

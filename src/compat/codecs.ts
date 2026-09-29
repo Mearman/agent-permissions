@@ -27,6 +27,10 @@ import {
   collectRules,
 } from "../evaluate.ts";
 import {
+  UnsupportedCapabilityError,
+  type UnsupportedRule,
+} from "./unsupported.ts";
+import {
   ClaudeCodePermissionMode,
   CodexApprovalMode,
   CodexDomainAccess,
@@ -929,6 +933,160 @@ function codexFilesystemToRules(
   }
 }
 
+/** The file and network restrictions a set of rules puts on a Codex profile. */
+interface CodexRestrictions {
+  filesystem: Record<string, CodexFilesystemAccess>;
+  domains: Record<string, "allow" | "deny">;
+}
+
+const FILE_TOOLS: ReadonlySet<string> = new Set(["Read", "Write", "Edit"]);
+const DOMAIN_PREFIX = "domain:";
+
+/** Why Codex cannot enforce a restrictive rule as written, or `undefined` when it can. */
+function codexRefusal(
+  rule: Rule,
+  writesBlockedBySandbox: boolean,
+): string | undefined {
+  if (rule.when !== undefined) {
+    return "Codex cannot limit a rule to a working directory or branch";
+  }
+  if (rule.tool === "WebFetch" && rule.pattern?.startsWith(DOMAIN_PREFIX)) {
+    return rule.tier === "ask"
+      ? "Codex network domains are allowed or denied, never asked"
+      : undefined;
+  }
+  if (FILE_TOOLS.has(rule.tool)) {
+    if (rule.pattern === undefined) {
+      // A read-only sandbox already blocks every write, which is at least as strict as denying the tool.
+      if (
+        rule.tier === "deny" &&
+        rule.tool !== "Read" &&
+        writesBlockedBySandbox
+      ) {
+        return undefined;
+      }
+      return "Codex takes filesystem access per path, not for a whole tool";
+    }
+    return rule.tier === "ask"
+      ? "Codex filesystem access is read, write or deny, never asked"
+      : undefined;
+  }
+  return `Codex has no equivalent of a ${rule.tier} rule for ${rule.tool}${rule.tool === "Bash" ? "; command rules belong in its execpolicy rules files, which this codec does not write" : ""}`;
+}
+
+/**
+ * Turn rules into Codex restrictions. A `deny` or `ask` rule Codex cannot enforce is recorded in
+ * `unsupported` rather than dropped. An `allow` rule that cannot be represented is left out, which
+ * can only make the result stricter; one carrying a condition is left out too, since applying it
+ * unconditionally would widen it. `writesBlockedBySandbox` says the output already carries a
+ * read-only sandbox, which covers a tool-wide write or edit deny.
+ */
+function codexRestrictions(
+  rules: readonly Rule[],
+  profile: string | undefined,
+  writesBlockedBySandbox: boolean,
+  unsupported: UnsupportedRule[],
+): CodexRestrictions {
+  const restrictions: CodexRestrictions = { filesystem: {}, domains: {} };
+  for (const rule of rules) {
+    if (rule.tier === "allow") {
+      if (
+        rule.when === undefined &&
+        rule.tool === "WebFetch" &&
+        rule.pattern?.startsWith(DOMAIN_PREFIX)
+      ) {
+        const domain = rule.pattern.slice(DOMAIN_PREFIX.length);
+        restrictions.domains[domain] = strictestDomain(
+          restrictions.domains[domain],
+          "allow",
+        );
+      }
+      continue;
+    }
+    const reason = codexRefusal(rule, writesBlockedBySandbox);
+    if (reason !== undefined) {
+      unsupported.push({
+        rule,
+        reason:
+          profile === undefined
+            ? reason
+            : `${reason} (in profile "${profile}")`,
+      });
+      continue;
+    }
+    if (rule.tool === "WebFetch" && rule.pattern !== undefined) {
+      const domain = rule.pattern.slice(DOMAIN_PREFIX.length);
+      restrictions.domains[domain] = "deny";
+    } else if (rule.pattern === undefined) {
+      // A tool-wide write or edit deny, already carried by the read-only sandbox
+    } else {
+      restrictions.filesystem[rule.pattern] = strictestAccess(
+        restrictions.filesystem[rule.pattern],
+        rule.tool === "Read" ? "none" : "read",
+      );
+    }
+  }
+  return restrictions;
+}
+
+/** The tighter of two access modes for one path: none over read over write. */
+function strictestAccess(
+  a: CodexFilesystemAccess | undefined,
+  b: CodexFilesystemAccess,
+): CodexFilesystemAccess {
+  if (a === "none" || b === "none") return "none";
+  if (a === "read" || b === "read") return "read";
+  return b;
+}
+
+/** The tighter of two domain actions: deny over allow. */
+function strictestDomain(
+  a: "allow" | "deny" | undefined,
+  b: "allow" | "deny",
+): "allow" | "deny" {
+  return a === "deny" || b === "deny" ? "deny" : "allow";
+}
+
+function mergeFilesystem(
+  a: Record<string, CodexFilesystemAccess>,
+  b: Record<string, CodexFilesystemAccess>,
+): Record<string, CodexFilesystemAccess> {
+  const merged = { ...a };
+  for (const [path, access] of Object.entries(b)) {
+    merged[path] = strictestAccess(merged[path], access);
+  }
+  return merged;
+}
+
+function mergeDomains(
+  a: Record<string, "allow" | "deny">,
+  b: Record<string, "allow" | "deny">,
+): Record<string, "allow" | "deny"> {
+  const merged = { ...a };
+  for (const [domain, action] of Object.entries(b)) {
+    merged[domain] = strictestDomain(merged[domain], action);
+  }
+  return merged;
+}
+
+/** A Codex profile for the restrictions, with Codex's absolute paths and no empty sections. */
+function codexProfileOf(restrictions: CodexRestrictions): CodexProfile {
+  const profile: CodexProfile = {};
+  const paths = Object.entries(restrictions.filesystem);
+  if (paths.length > 0) {
+    profile.filesystem = Object.fromEntries(
+      paths.map(([path, access]) => [
+        path.startsWith(".") ? path.slice(1) : path,
+        access,
+      ]),
+    );
+  }
+  if (Object.keys(restrictions.domains).length > 0) {
+    profile.network = { domains: restrictions.domains };
+  }
+  return profile;
+}
+
 export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
   decode(native) {
     const rules: Rule[] = [];
@@ -1079,130 +1237,62 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
       };
     }
 
-    // --- Collect all rules and extract Codex-relevant info ---
-    const allRules = collectRules(canonical);
-    const domains: Record<string, "allow" | "deny"> = {};
-    const filesystemDenyTools: Record<string, Set<string>> = {};
-
-    // Extract network domains from canonical network config
+    // --- Rules: represent every restrictive rule exactly, or refuse the conversion ---
+    const unsupported: UnsupportedRule[] = [];
+    const writesBlockedBySandbox = result.sandbox_mode === "read-only";
+    const topLevel = codexRestrictions(
+      collectRules(canonical),
+      undefined,
+      writesBlockedBySandbox,
+      unsupported,
+    );
     if (canonical.network?.domains) {
       for (const [domain, action] of Object.entries(
         canonical.network.domains,
       )) {
-        domains[domain] = action;
+        topLevel.domains[domain] = strictestDomain(
+          topLevel.domains[domain],
+          action,
+        );
       }
     }
 
-    for (const rule of allRules) {
-      // Extract WebFetch domain rules
-      if (rule.tool === "WebFetch" && rule.pattern?.startsWith("domain:")) {
-        const domain = rule.pattern.slice(7);
-        domains[domain] = rule.tier === "deny" ? "deny" : "allow";
-        continue;
-      }
-
-      // Extract path-based deny rules for filesystem mapping
-      if (
-        rule.tier === "deny" &&
-        (rule.tool === "Read" ||
-          rule.tool === "Write" ||
-          rule.tool === "Edit") &&
-        rule.pattern !== undefined
-      ) {
-        let tools = filesystemDenyTools[rule.pattern];
-        if (!tools) {
-          tools = new Set();
-          filesystemDenyTools[rule.pattern] = tools;
-        }
-        tools.add(rule.tool);
-      }
+    // --- profiles → named Codex profiles, each carrying the top-level restrictions ---
+    const profiles: Record<string, CodexProfile> = {};
+    for (const [name, profileTiers] of Object.entries(
+      canonical.profiles ?? {},
+    )) {
+      const own = codexRestrictions(
+        collectRules({ permissions: profileTiers }),
+        name,
+        writesBlockedBySandbox,
+        unsupported,
+      );
+      profiles[name] = codexProfileOf({
+        filesystem: mergeFilesystem(topLevel.filesystem, own.filesystem),
+        domains: mergeDomains(topLevel.domains, own.domains),
+      });
     }
 
-    // Convert collected path denies to Codex filesystem modes
-    const filesystem: Record<string, CodexFilesystemAccess> = {};
-    for (const [path, tools] of Object.entries(filesystemDenyTools)) {
-      if (tools.has("Read")) {
-        filesystem[path] = "none";
-      } else if (tools.has("Write") || tools.has("Edit")) {
-        filesystem[path] = "read";
-      }
+    if (unsupported.length > 0) {
+      throw new UnsupportedCapabilityError("codex", unsupported);
     }
 
-    // --- profiles → named Codex profiles ---
-    if (canonical.profiles && Object.keys(canonical.profiles).length > 0) {
-      const codexProfiles: Record<string, CodexProfile> = {};
-      for (const [name, profileTiers] of Object.entries(canonical.profiles)) {
-        const profile: CodexProfile = {};
-        const profDenyTools: Record<string, Set<string>> = {};
-        const profDomains: Record<string, "allow" | "deny"> = {};
-
-        const profileRules = collectRules({ permissions: profileTiers });
-        for (const rule of profileRules) {
-          if (rule.tool === "WebFetch" && rule.pattern?.startsWith("domain:")) {
-            const domain = rule.pattern.slice(7);
-            profDomains[domain] = rule.tier === "deny" ? "deny" : "allow";
-          }
-          if (
-            rule.tier === "deny" &&
-            (rule.tool === "Read" ||
-              rule.tool === "Write" ||
-              rule.tool === "Edit") &&
-            rule.pattern !== undefined
-          ) {
-            let tools = profDenyTools[rule.pattern];
-            if (!tools) {
-              tools = new Set();
-              profDenyTools[rule.pattern] = tools;
-            }
-            tools.add(rule.tool);
-          }
-        }
-
-        const profFs: Record<string, CodexFilesystemAccess> = {};
-        for (const [path, tools] of Object.entries(profDenyTools)) {
-          if (tools.has("Read")) profFs[path] = "none";
-          else if (tools.has("Write") || tools.has("Edit"))
-            profFs[path] = "read";
-        }
-
-        if (Object.keys(profFs).length > 0) {
-          const absoluteFs: Record<string, CodexFilesystemAccess> = {};
-          for (const [p, m] of Object.entries(profFs)) {
-            absoluteFs[p.startsWith(".") ? p.slice(1) : p] = m;
-          }
-          profile.filesystem = absoluteFs;
-        }
-        if (Object.keys(profDomains).length > 0) {
-          profile.network = { domains: profDomains };
-        }
-
-        if (Object.keys(profile).length > 0) {
-          codexProfiles[name] = profile;
-        }
-      }
-
-      if (Object.keys(codexProfiles).length > 0) {
-        result.permissions = codexProfiles;
+    if (Object.keys(profiles).length > 0) {
+      const named = Object.fromEntries(
+        Object.entries(profiles).filter(
+          ([, profile]) => Object.keys(profile).length > 0,
+        ),
+      );
+      if (Object.keys(named).length > 0) {
+        result.permissions = named;
         if (canonical.activeProfile) {
           result.default_permissions = canonical.activeProfile;
         }
       }
-    } else if (
-      Object.keys(filesystem).length > 0 ||
-      Object.keys(domains).length > 0
-    ) {
-      // No named profiles — create a single "default" profile from rules
-      const profile: CodexProfile = {};
-      if (Object.keys(filesystem).length > 0) {
-        const absoluteFs: Record<string, CodexFilesystemAccess> = {};
-        for (const [p, m] of Object.entries(filesystem)) {
-          absoluteFs[p.startsWith(".") ? p.slice(1) : p] = m;
-        }
-        profile.filesystem = absoluteFs;
-      }
-      if (Object.keys(domains).length > 0) {
-        profile.network = { domains };
-      }
+    } else {
+      // No named profiles: one "default" profile holds the top-level restrictions
+      const profile = codexProfileOf(topLevel);
       if (Object.keys(profile).length > 0) {
         result.permissions = { default: profile };
         result.default_permissions = "default";

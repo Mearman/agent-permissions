@@ -7,6 +7,7 @@ import {
   detectFormat,
   ConvertError,
 } from "../api.ts";
+import { UnsupportedCapabilityError } from "../compat/unsupported.ts";
 import type { Format } from "../api.ts";
 
 // ---------------------------------------------------------------------------
@@ -183,6 +184,18 @@ void describe("convert", () => {
 // ---------------------------------------------------------------------------
 // validate
 // ---------------------------------------------------------------------------
+
+void describe("convert to Codex", () => {
+  void it("fails instead of dropping a command rule it cannot enforce", () => {
+    assert.throws(
+      () =>
+        convert("canonical", "codex", {
+          rules: [{ tool: "Bash", pattern: "git push:*", tier: "ask" }],
+        }),
+      UnsupportedCapabilityError,
+    );
+  });
+});
 
 void describe("validate", () => {
   void it("returns valid for a correct policy", () => {
