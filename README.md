@@ -764,6 +764,29 @@ A key that is not one of these is a validation error, so a misspelled condition 
 
 A condition on a field the evaluation context does not carry (no `cwd` or no `branch` supplied) is unknown, not satisfied. An unknown condition never lets an allow rule apply, and still lets a deny or ask rule apply, since the condition may hold. A definite mismatch on one condition settles the rule even if another condition is unknown.
 
+### Watching for changes
+
+A long-running host can follow the layer files instead of polling:
+
+```typescript
+import { watchPolicy } from "agent-perms/loader";
+import type { PermissionPolicy } from "agent-perms/evaluate";
+
+let policy: PermissionPolicy | undefined;
+const watcher = watchPolicy(
+  { cwd },
+  (next) => {
+    policy = next;
+  },
+  (error) => {
+    console.error(error.message);
+  },
+);
+// watcher.close() when done
+```
+
+`onChange` runs with the policy as it first loads, then again whenever a reload gives a different one, including when a layer file appears or disappears; a rewrite that leaves the policy unchanged reports nothing. Use the first report rather than a separate `loadPolicy`, which could miss a change made while the watch was starting. A layer file that exists but cannot be read, parsed or validated, an editor mid-write for instance, goes to `onError` as a `PolicyLoadError` and no policy is reported until every file loads again, because a policy missing that layer would be looser than the one in force.
+
 ### Profiles that extend profiles
 
 A profile can build on others with `extends` and state only what differs:

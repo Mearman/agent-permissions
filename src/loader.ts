@@ -17,7 +17,7 @@
 
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, watch, type FSWatcher } from "node:fs";
 
 import { type AgentPermissionPolicy, type Rule } from "./schema.ts";
 import {
@@ -210,19 +210,59 @@ function decodeFile(
   return result.ok ? result.value : undefined;
 }
 
-async function readAndDecode(
-  file: DiscoveredFile,
-): Promise<DecodedLayer | undefined> {
+/** What reading one discovered file gave: its layer, nothing because it is gone, or why it failed. */
+type ReadResult =
+  { layer: DecodedLayer } | { absent: true } | { failure: string };
+
+async function readLayer(file: DiscoveredFile): Promise<ReadResult> {
   const content = await readFileContent(file.path);
-  if (content === undefined) return undefined;
+  if (content === undefined) {
+    // A file deleted since discovery is a change, not a failure.
+    return existsSync(file.path)
+      ? { failure: `${file.path} could not be read` }
+      : { absent: true };
+  }
 
   const parsed = parseJson(content, file.path);
-  if (!parsed.ok) return undefined;
+  if (!parsed.ok) return { failure: `${file.path}: ${parsed.error}` };
 
   const policy = decodeFile(file, parsed.value);
-  if (policy === undefined) return undefined;
+  if (policy === undefined) {
+    return { failure: `${file.path} is not a valid ${file.agent} policy` };
+  }
 
-  return { file, policy };
+  return { layer: { file, policy } };
+}
+
+/** The layers found from `cwd`, and the files that were there but could not be used. */
+async function loadLayers(
+  cwd: string,
+): Promise<{ layers: DecodedLayer[]; failures: string[] }> {
+  const failures = new Set<string>();
+  const read = async (files: DiscoveredFile[]): Promise<DecodedLayer[]> => {
+    const layers: DecodedLayer[] = [];
+    for (const file of files) {
+      const result = await readLayer(file);
+      if ("layer" in result) layers.push(result.layer);
+      else if ("failure" in result) failures.add(result.failure);
+    }
+    return layers;
+  };
+
+  // Pass 1: discover canonical files with max walk-up to find all of them
+  const canonicalLayers = await read(
+    discoverFiles(cwd, Infinity, new Set(["canonical"])),
+  );
+  if (canonicalLayers.length === 0) {
+    return { layers: [], failures: [...failures] };
+  }
+
+  // Resolve discovery config from canonical files
+  const { up, agentFilter } = resolveDiscoveryConfig(canonicalLayers);
+
+  // Pass 2: discover all files using resolved config
+  const layers = await read(discoverFiles(cwd, up, agentFilter));
+  return { layers, failures: [...failures] };
 }
 
 // ---------------------------------------------------------------------------
@@ -319,31 +359,184 @@ function mergeLayers(layers: DecodedLayer[]): PermissionPolicy {
 export async function loadPolicy(
   options: PolicyLoadOptions,
 ): Promise<PermissionPolicy> {
+  const { layers } = await loadLayers(options.cwd);
+  return mergeLayers(layers);
+}
+
+/** Thrown to `watchPolicy`'s error callback when a layer file is there but cannot be used. */
+export class PolicyLoadError extends Error {
+  /** One line per file that could not be read, parsed or validated. */
+  readonly failures: readonly string[];
+
+  constructor(failures: readonly string[]) {
+    super(`policy files could not be used:\n  ${failures.join("\n  ")}`);
+    this.name = "PolicyLoadError";
+    this.failures = failures;
+  }
+}
+
+/** A running watch. */
+export interface PolicyWatcher {
+  /** Stop watching; no callback runs after this returns. */
+  close(): void;
+}
+
+/** How long changes are collected before the policy is reloaded once. */
+const RELOAD_DEBOUNCE_MS = 50;
+
+/**
+ * How long after the watch starts, and after a directory starts being watched, the layers are read
+ * once more. The operating system can establish a watch after `fs.watch` returns, and a change made
+ * in that window is never delivered, which would leave the reported policy stale until the next
+ * change.
+ */
+const SETTLE_RECHECK_MS = 250;
+
+/** The file and directory names that can hold a layer, so other changes are ignored. */
+const RELEVANT_NAMES: ReadonlySet<string> = new Set(
+  Object.values(AGENT_FILES).flatMap((def) =>
+    [def.name, "localName" in def ? def.localName : undefined].flatMap(
+      (path) => (path === undefined ? [] : path.split("/")),
+    ),
+  ),
+);
+
+/** The directories that hold, or could come to hold, a layer file for a walk up from `cwd`. */
+function directoriesToWatch(cwd: string): string[] {
+  const directories = new Set<string>();
+  let current = resolve(cwd);
+  for (;;) {
+    directories.add(current);
+    for (const def of Object.values(AGENT_FILES)) {
+      for (const name of [
+        def.name,
+        "localName" in def ? def.localName : undefined,
+      ]) {
+        if (name !== undefined) directories.add(dirname(join(current, name)));
+      }
+    }
+    const parent = dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return [...directories].filter((directory) => existsSync(directory));
+}
+
+/** What identifies a policy for change detection: its decisions and where each rule came from. */
+function policyKey(policy: PermissionPolicy): string {
+  return JSON.stringify({
+    defaultMode: policy.defaultMode,
+    rules: policy.rules?.map((rule) => [rule, policy.provenance?.get(rule)]),
+    layers: policy.layers,
+    delegation: policy.delegation,
+  });
+}
+
+/**
+ * Watch the layer files of a walk up from `options.cwd`. `onChange` is called with the policy as it
+ * first loads, and again each time a reload gives a different one, so a host needs no separate
+ * {@link loadPolicy} call: one that loaded the policy first could miss a change made while the
+ * watch was starting.
+ *
+ * A layer file that is there but cannot be read, parsed or validated (an editor mid-write, say) is
+ * reported to `onError` as a {@link PolicyLoadError}, and no policy is reported until every file
+ * loads again: a policy missing that layer would be looser than the one in force.
+ */
+export function watchPolicy(
+  options: PolicyLoadOptions,
+  onChange: (policy: PermissionPolicy) => void,
+  onError: (error: Error) => void,
+): PolicyWatcher {
   const { cwd } = options;
+  const watchers = new Map<string, FSWatcher>();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let closed = false;
+  let lastKey: string | undefined;
 
-  // Pass 1: discover canonical files with max walk-up to find all of them
-  const canonicalFiles = discoverFiles(cwd, Infinity, new Set(["canonical"]));
-  const canonicalLayers: DecodedLayer[] = [];
-  for (const file of canonicalFiles) {
-    const layer = await readAndDecode(file);
-    if (layer) canonicalLayers.push(layer);
-  }
+  /** Watch every directory that should be watched, returning whether any was new. */
+  const syncWatchers = (): boolean => {
+    let added = false;
+    const wanted = new Set(directoriesToWatch(cwd));
+    for (const [directory, watcher] of watchers) {
+      if (!wanted.has(directory)) {
+        watcher.close();
+        watchers.delete(directory);
+      }
+    }
+    for (const directory of wanted) {
+      if (watchers.has(directory)) continue;
+      try {
+        const watcher = watch(directory, (_event, filename) => {
+          if (filename === null || RELEVANT_NAMES.has(filename)) schedule();
+        });
+        watcher.on("error", (error) => {
+          if (!closed) onError(error);
+        });
+        watchers.set(directory, watcher);
+        added = true;
+      } catch (error) {
+        // The directory went away between listing and watching; the next reload lists again.
+        if (!(
+          error instanceof Error &&
+          "code" in error &&
+          error.code === "ENOENT"
+        )) {
+          throw error;
+        }
+      }
+    }
+    return added;
+  };
 
-  if (canonicalLayers.length === 0) {
-    return { defaultMode: "standard" };
-  }
+  const reload = async (): Promise<void> => {
+    const { layers, failures } = await loadLayers(cwd);
+    if (closed) return;
+    // A file created in a directory before it was watched raised no event, so read again once it is.
+    if (syncWatchers()) scheduleRecheck();
+    if (failures.length > 0) {
+      onError(new PolicyLoadError(failures));
+      return;
+    }
+    const policy = mergeLayers(layers);
+    const key = policyKey(policy);
+    if (key === lastKey) return;
+    lastKey = key;
+    onChange(policy);
+  };
 
-  // Resolve discovery config from canonical files
-  const { up, agentFilter } = resolveDiscoveryConfig(canonicalLayers);
+  // Reloads run one at a time, in the order the changes came; the first one reports the initial policy.
+  let running: Promise<void> = reload().catch((error: unknown) => {
+    if (!closed)
+      onError(error instanceof Error ? error : new Error(String(error)));
+  });
+  const schedule = (): void => {
+    if (closed) return;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      running = running.then(reload).catch((error: unknown) => {
+        if (!closed)
+          onError(error instanceof Error ? error : new Error(String(error)));
+      });
+    }, RELOAD_DEBOUNCE_MS);
+  };
 
-  // Pass 2: discover all files using resolved config
-  const allFiles = discoverFiles(cwd, up, agentFilter);
+  const scheduleRecheck = (): void => {
+    if (closed) return;
+    clearTimeout(recheckTimer);
+    recheckTimer = setTimeout(schedule, SETTLE_RECHECK_MS);
+  };
+  let recheckTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const allLayers: DecodedLayer[] = [];
-  for (const file of allFiles) {
-    const layer = await readAndDecode(file);
-    if (layer) allLayers.push(layer);
-  }
+  syncWatchers();
+  scheduleRecheck();
 
-  return mergeLayers(allLayers);
+  return {
+    close() {
+      closed = true;
+      clearTimeout(timer);
+      clearTimeout(recheckTimer);
+      for (const watcher of watchers.values()) watcher.close();
+      watchers.clear();
+    },
+  };
 }
