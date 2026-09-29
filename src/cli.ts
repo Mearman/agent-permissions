@@ -21,6 +21,7 @@ import {
 } from "./api.ts";
 import { agentId } from "./compat/codecs.ts";
 import { ruleToString, type DecisionStep } from "./evaluate.ts";
+import { confine, type OutsideBehaviour } from "./confine.ts";
 import { sync } from "./sync.ts";
 import {
   AGENT_FILES,
@@ -372,6 +373,51 @@ async function syncCommand(args: string[]): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// confine
+// ---------------------------------------------------------------------------
+
+function isOutsideBehaviour(value: string): value is OutsideBehaviour {
+  return value === "ask" || value === "deny";
+}
+
+async function confineCommand(args: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args,
+    options: {
+      root: { type: "string", short: "r", multiple: true },
+      outside: { type: "string", default: "ask" },
+      output: { type: "string", short: "o" },
+      out: { type: "string" },
+      compact: { type: "boolean", short: "c" },
+    },
+    strict: true,
+  });
+
+  const roots = allStrings(values.root);
+  if (roots.length === 0) error("--root is required");
+  if (!isOutsideBehaviour(values.outside)) {
+    error(`--outside must be "ask" or "deny", got: ${values.outside}`);
+  }
+
+  const policy = confine({
+    roots,
+    cwd: process.cwd(),
+    outside: values.outside,
+  });
+  const jsonStr =
+    JSON.stringify(policy, null, values.compact ? undefined : 2) + "\n";
+
+  const outputSpec = firstString(values.output, values.out);
+  const outputPath =
+    outputSpec === undefined ? undefined : resolveOutputSpec(outputSpec);
+  if (outputPath) {
+    await writeJsonFile(outputPath, jsonStr);
+  } else {
+    process.stdout.write(jsonStr);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -383,6 +429,7 @@ Usage:
   agent-perms convert [--from <spec>] --to <spec>
   agent-perms validate [--input <spec>]
   agent-perms check --tool <name> --input <cmd> [--policy-file <spec>]
+  agent-perms confine --root <dir> [--root <dir>] [--output <file>]
   agent-perms sync
 
 Specs: agent name, config file path, or "-" for stdin/stdout.
@@ -399,6 +446,7 @@ Commands:
   convert   Convert between agent formats
   validate  Validate a policy file
   check     Evaluate a tool call against a policy
+  confine   Generate rules that confine Read, Edit and Write to directories
   sync      Detect, merge, and write agent configs (bidirectional)
 
 Convert flags:
@@ -416,6 +464,15 @@ Check flags:
   --policy-file <spec>               Policy file (format, file, or "-" for stdin)
   --cwd, --branch                    Evaluation context
   --explain                          Print how each command was judged, to stderr
+
+Confine flags:
+  -r, --root <dir>                   Directory the file tools may reach (repeatable, required)
+  --outside <ask|deny>               Outside the roots: prompt (default) or refuse
+  -o, --output, --out <spec>         Write to a file instead of stdout
+  -c, --compact                      Output compact JSON
+  Confine is a convenience, not a sandbox: only Read, Edit and Write are constrained, and a Bash
+  command can still reach outside the roots. Use the policy's sandbox field to enforce that. The
+  default mode set for --outside applies to every tool with no rule of its own, not only file tools.
 
 Sync flags:
   -d, --working-dir <path>           Starting directory (default: cwd)
@@ -436,6 +493,7 @@ Examples:
   agent-perms validate --input canonical
   agent-perms validate --input .agents/permissions.json
   agent-perms check --tool Bash --input "git status" --policy-file canonical
+  agent-perms confine --root . --root ../shared --output .agents/permissions.json
   agent-perms sync
   agent-perms sync -y
   agent-perms sync --dry-run
@@ -465,6 +523,9 @@ async function main(): Promise<void> {
       break;
     case "check":
       await checkCommand(args.slice(1));
+      break;
+    case "confine":
+      await confineCommand(args.slice(1));
       break;
     case "sync":
       await syncCommand(args.slice(1));

@@ -160,6 +160,9 @@ import { claudeCodeModes } from "agent-perms/compat/enums";
 
 // Sync filesystem configs
 import { sync } from "agent-perms/sync";
+
+// Generate a policy confining the file tools to directories
+import { confine } from "agent-perms/confine";
 ```
 
 ## Schema overview
@@ -392,7 +395,7 @@ Also available as the `agent-perms-mcp` binary.
 
 ## CLI
 
-The `agent-perms` binary converts, validates, syncs, and serves permission configs.
+The `agent-perms` binary converts, validates, confines, syncs, and serves permission configs.
 
 **All flags, no positionals.** Format names resolve to default config file locations.
 Use `-` for stdin/stdout.
@@ -460,6 +463,33 @@ agent-perms check --tool Bash --input "git status" --policy-file .agents/permiss
 | `--explain`         | Print the rule and layer behind each step    |
 
 Exits 0 with `allow` or 1 with `deny`.
+
+### confine
+
+```bash
+agent-perms confine --root .
+agent-perms confine --root . --root ../shared --output .agents/permissions.json
+agent-perms confine --root ~/projects/app --outside deny
+```
+
+| Flag              | Description                                                        |
+| ----------------- | ------------------------------------------------------------------ |
+| `-r`, `--root`    | Directory the file tools may reach (required, repeatable)          |
+| `--outside`       | `ask` (default) or `deny`: what happens to paths outside the roots |
+| `-o`, `--output`  | Write to a file (or format name) instead of stdout                 |
+| `-c`, `--compact` | Output compact JSON                                                |
+
+Prints a canonical policy that allows `Read`, `Edit` and `Write` on each root and everything below it, and lists the roots other than the working directory under `permissions.additionalDirectories`. Relative roots resolve against the working directory; paths are made absolute, `.` and `..` segments are collapsed, trailing separators are dropped and duplicates are removed.
+
+**What it can and cannot express.** Evaluation is deny-first and patterns are exact, `prefix:*` or `*` wildcards, none of which can negate. "Deny everything outside the roots" therefore cannot be written: a blanket deny would also beat the allow rules for the roots. Instead the policy:
+
+- allows the file tools on `<root>` and `<root>/*`, so a sibling sharing the root as a string prefix (`/work/app-secrets` for `/work/app`) is not matched;
+- denies any path containing a `..` segment, because the wildcard `/work/app/*` would otherwise match the text `/work/app/../secret`;
+- sets `defaultMode` to `restricted` (outside paths ask) or, with `--outside deny`, `readonly` (outside paths are refused). That mode is global: it also applies to every other tool that has no rule of its own, so `readonly` refuses `Bash` calls that no rule allows.
+
+Tool inputs are matched as literal text. A path given relative to the working directory matches no root rule and falls to the default mode.
+
+**This is not a sandbox.** Only the file tools are constrained. A `Bash` command can still read or write anywhere, and other tools are untouched. To restrict what shell commands can reach, use the policy's `sandbox` field.
 
 ### sync
 
