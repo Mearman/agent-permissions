@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 import { explain } from "../evaluate.ts";
-import { loadPolicy } from "../loader.ts";
+import { loadPolicy, PolicyLoadError } from "../loader.ts";
 
 /** Create an isolated temp directory for a test. */
 async function isolate(): Promise<string> {
@@ -128,20 +128,26 @@ void describe("loadPolicy", () => {
       });
     });
 
-    void it("returns undefined for invalid JSON in canonical file", async () => {
+    void it("fails on invalid JSON in a canonical file instead of dropping its rules", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });
       await writeFile(
         join(cwd, ".agents", "permissions.json"),
-        "not valid json{{{",
+        '{ "rules": [{ "tool": "Bash", "pattern": "rm:*", "tier": "deny" }',
       );
 
-      const policy = await loadPolicy({ cwd });
-      assert.equal(policy.defaultMode, "standard");
+      await assert.rejects(
+        loadPolicy({ cwd }),
+        (error: unknown) =>
+          error instanceof PolicyLoadError &&
+          error.failures.some((failure) =>
+            failure.includes("permissions.json"),
+          ),
+      );
     });
 
-    void it("returns undefined for schema-invalid canonical file", async () => {
+    void it("fails on a schema-invalid canonical file", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });
@@ -155,8 +161,38 @@ void describe("loadPolicy", () => {
         }),
       );
 
-      const policy = await loadPolicy({ cwd });
-      assert.equal(policy.defaultMode, "standard");
+      await assert.rejects(loadPolicy({ cwd }), PolicyLoadError);
+    });
+
+    void it("fails when a local override is broken, though the committed file is fine", async () => {
+      const cwd = await isolate();
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      await writeFile(
+        join(cwd, ".agents", "permissions.json"),
+        JSON.stringify({
+          rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+        }),
+      );
+      await writeFile(join(cwd, ".agents", "permissions.local.json"), "{ nope");
+
+      await assert.rejects(loadPolicy({ cwd }), PolicyLoadError);
+    });
+
+    void it("names every unusable file", async () => {
+      const root = await isolate();
+      dirs.push(root);
+      const inner = join(root, "project");
+      await mkdir(join(root, ".agents"), { recursive: true });
+      await mkdir(join(inner, ".agents"), { recursive: true });
+      await writeFile(join(root, ".agents", "permissions.json"), "{ a");
+      await writeFile(join(inner, ".agents", "permissions.json"), "{ b");
+
+      await assert.rejects(
+        loadPolicy({ cwd: inner }),
+        (error: unknown) =>
+          error instanceof PolicyLoadError && error.failures.length === 2,
+      );
     });
   });
 
@@ -554,7 +590,7 @@ void describe("loadPolicy", () => {
   });
 
   void describe("with/without mutual exclusivity", () => {
-    void it("schema rejects both with and withut", async () => {
+    void it("schema rejects both with and without", async () => {
       const cwd = await isolate();
       dirs.push(cwd);
       await mkdir(join(cwd, ".agents"), { recursive: true });
@@ -566,9 +602,8 @@ void describe("loadPolicy", () => {
         }),
       );
 
-      const policy = await loadPolicy({ cwd });
-      // Schema validation rejects the file, falls back to standard
-      assert.equal(policy.defaultMode, "standard");
+      // Schema validation rejects the file, and loading it fails rather than skipping it
+      await assert.rejects(loadPolicy({ cwd }), PolicyLoadError);
     });
   });
 });
