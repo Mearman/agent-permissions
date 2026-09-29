@@ -200,6 +200,15 @@ export const Rule = z
       description: "Permission tier to apply when this rule matches.",
     }),
 
+    /**
+     * A deny rule that also asks the host to leave the tool out of the agent's tool list. The call
+     * is refused exactly as a plain deny is.
+     */
+    hidden: z.literal(true).optional().meta({
+      description:
+        "On a deny rule: also leave the tool out of the agent's tool list. The call is refused as a plain deny is. Only a rule with no pattern hides the whole tool.",
+    }),
+
     /** Optional conditions. All must match for the rule to apply (AND logic). */
     when: RuleCondition.optional().meta({
       description:
@@ -208,6 +217,10 @@ export const Rule = z
   })
   // A key the schema does not know must be an error: dropped, a misspelled `when` would leave the rule applying everywhere.
   .strict()
+  .refine((rule) => rule.hidden !== true || rule.tier === "deny", {
+    message: "`hidden` is only valid on a deny rule",
+    path: ["hidden"],
+  })
   .meta({
     description:
       "Permission rule. Evaluated deny-first: all deny rules, then ask, then allow.",

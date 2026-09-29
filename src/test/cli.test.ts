@@ -534,6 +534,32 @@ void describe("CLI", () => {
       assert.notEqual((await run(args("-1"))).exitCode, 0);
     });
 
+    void it("marks a step hidden with --explain when a hidden rule decided", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({
+          rules: [
+            { tool: "Bash", pattern: "sudo:*", tier: "deny", hidden: true },
+          ],
+        }),
+      );
+      const result = await run([
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "sudo ls",
+        "--explain",
+        "--policy-file",
+        join(cwd, "policy.json"),
+      ]);
+      assert.equal(result.exitCode, 1);
+      assert.equal(result.stdout, "deny\n");
+      assert.match(result.stderr, /\(hidden\)/);
+    });
+
     void it("denies a matching deny rule", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);

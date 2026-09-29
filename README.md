@@ -263,6 +263,18 @@ deny rules → ask rules → allow rules → defaultMode
 
 Deny short-circuits: if any deny rule matches, the tool is blocked regardless of allow rules from any source.
 
+### Hidden tools
+
+A deny rule with `hidden: true` refuses the call exactly as a plain deny does, and also marks the tool as one to leave out of the agent's tool list. `explain` and `check` report `hidden`, and a host that builds a tool list asks which tools to show:
+
+```typescript
+import { visibleTools } from "agent-perms/evaluate";
+
+visibleTools(policy, ["Bash", "WebFetch", "Read"]); // leaves out any tool a hidden rule names
+```
+
+Only a rule that names the tool with no `pattern` hides the tool. A rule with a pattern refuses the matching inputs and leaves the tool listed. A `when` condition that holds, or is unknown, hides the tool. `hidden` is valid only on a deny rule. No agent format can hide a tool from itself, so every codec writes a hidden rule as the plain deny it refuses as.
+
 ### Delegation limits
 
 `delegation.maxDepth` and `delegation.nonDelegable` are enforced for a call that carries a `depth`: the number of agents between it and the top-level agent, 0 for the top-level agent and 1 for its subagent. A subagent's call to a tool matching a `nonDelegable` rule is denied whatever the rules would decide, and every call from an agent nested deeper than `maxDepth` is denied. `checkSpawn(policy, depth)` answers whether an agent at that depth may start a subagent. Across layers the shallowest `maxDepth` wins and the `nonDelegable` lists are joined.

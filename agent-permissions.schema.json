@@ -136,6 +136,11 @@
             ],
             "description": "Permission tier to apply when this rule matches."
           },
+          "hidden": {
+            "description": "On a deny rule: also leave the tool out of the agent's tool list. The call is refused as a plain deny is. Only a rule with no pattern hides the whole tool.",
+            "type": "boolean",
+            "const": true
+          },
           "when": {
             "description": "Optional conditions. All must match for the rule to apply (AND logic).",
             "type": "object",

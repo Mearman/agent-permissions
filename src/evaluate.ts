@@ -77,12 +77,16 @@ export interface DecisionStep {
   rule?: Rule;
   /** Where that rule came from, when the policy records provenance. */
   layer?: string;
+  /** Set when a `hidden` deny rule matched: the call is refused, and the tool should not be shown. */
+  hidden?: true;
 }
 
 /** A decision with the steps behind it. */
 export interface Explanation {
   decision: PermissionDecision;
   steps: DecisionStep[];
+  /** Whether a `hidden` deny rule matched any step, so the host should leave the tool out of its list. */
+  hidden: boolean;
 }
 
 /** Context for conditional rule evaluation (cwd, branch, etc.). */
@@ -457,6 +461,29 @@ export function checkSpawn(
   return maxDepth !== undefined && depth + 1 > maxDepth ? "deny" : "allow";
 }
 
+/**
+ * Whether a tool should appear in the agent's tool list. A `hidden` deny rule that names the tool
+ * with no pattern hides it; one with a pattern only refuses the matching inputs. A host that builds
+ * a tool list leaves out the tools this reports as hidden.
+ */
+export function isToolVisible(
+  policy: PermissionPolicy,
+  toolName: string,
+  ctx: EvaluationContext = {},
+): boolean {
+  return compile(policy).isVisible(toolName, ctx);
+}
+
+/** The tools of a list that {@link isToolVisible} keeps, in their original order. */
+export function visibleTools(
+  policy: PermissionPolicy,
+  toolNames: readonly string[],
+  ctx: EvaluationContext = {},
+): string[] {
+  const compiled = compile(policy);
+  return toolNames.filter((name) => compiled.isVisible(name, ctx));
+}
+
 /** A policy prepared for repeated evaluation. */
 export interface CompiledPolicy {
   evaluate(
@@ -469,6 +496,8 @@ export interface CompiledPolicy {
     input: string,
     ctx?: EvaluationContext,
   ): Explanation;
+  /** Whether the tool should be shown to the agent: no `hidden` deny rule hides it wholesale. */
+  isVisible(toolName: string, ctx?: EvaluationContext): boolean;
 }
 
 /**
@@ -480,9 +509,12 @@ export interface CompiledPolicy {
  */
 export function compile(policy: PermissionPolicy): CompiledPolicy {
   const rules = policy.rules ?? [];
+  // Within a tier a `hidden` rule is tried first, so a call it covers is reported as hidden even
+  // when a plain rule of the same tier matches too.
   const tiers = TIERS.map((tier) =>
     rules
       .filter((rule) => rule.tier === tier)
+      .sort((a, b) => Number(b.hidden === true) - Number(a.hidden === true))
       .map((rule) => new CompiledRule(rule)),
   );
   const fallback = defaultDecision(policy.defaultMode);
@@ -521,14 +553,15 @@ export function compile(policy: PermissionPolicy): CompiledPolicy {
       reason: "rule",
       rule: match.rule,
       ...(layer === undefined ? {} : { layer }),
+      ...(match.rule.hidden === true ? { hidden: true } : {}),
     };
   };
 
-  const explainCall = (
+  const resolve = (
     toolName: string,
     input: string,
     ctx: EvaluationContext,
-  ): Explanation => {
+  ): Pick<Explanation, "decision" | "steps"> => {
     if (maxDepth !== undefined && (ctx.depth ?? 0) > maxDepth) {
       return {
         decision: "deny",
@@ -563,10 +596,34 @@ export function compile(policy: PermissionPolicy): CompiledPolicy {
     return { decision: strictest(steps.map((step) => step.decision)), steps };
   };
 
+  const explainCall = (
+    toolName: string,
+    input: string,
+    ctx: EvaluationContext,
+  ): Explanation => {
+    const resolved = resolve(toolName, input, ctx);
+    return {
+      ...resolved,
+      hidden: resolved.steps.some((step) => step.hidden === true),
+    };
+  };
+
+  // A tool is hidden by a `hidden` deny rule that names it with no pattern. A condition that holds or
+  // is unknown hides it, as an unknown condition restricts and never grants.
+  const isVisible = (toolName: string, ctx: EvaluationContext): boolean =>
+    !(tiers[0] ?? []).some((compiled) => {
+      if (compiled.rule.hidden !== true) return false;
+      if (compiled.rule.pattern !== undefined) return false;
+      if (!compiled.matchesTool(toolName)) return false;
+      const conditions = compiled.conditions(ctx);
+      return !(conditions?.status === "definite" && !conditions.value);
+    });
+
   return {
     evaluate: (toolName, input, ctx = {}) =>
       explainCall(toolName, input, ctx).decision,
     explain: (toolName, input, ctx = {}) => explainCall(toolName, input, ctx),
+    isVisible: (toolName, ctx = {}) => isVisible(toolName, ctx),
   };
 }
 
@@ -844,7 +901,12 @@ export function ruleKey(rule: Rule): string {
   const when = Object.entries(rule.when ?? {}).sort(([a], [b]) =>
     a < b ? -1 : a > b ? 1 : 0,
   );
-  return JSON.stringify([rule.tool, rule.pattern ?? "", when]);
+  return JSON.stringify([
+    rule.tool,
+    rule.pattern ?? "",
+    when,
+    rule.hidden === true,
+  ]);
 }
 
 /**

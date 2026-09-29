@@ -209,6 +209,27 @@ void describe("check explanation", () => {
   });
 });
 
+void describe("check with a hidden rule", () => {
+  void it("refuses the call and reports the tool as hidden", () => {
+    const result = check(
+      "Bash",
+      "sudo ls",
+      {
+        rules: [
+          { tool: "Bash", pattern: "sudo:*", tier: "deny", hidden: true },
+        ],
+      },
+      {},
+    );
+    assert.equal(result.decision, "deny");
+    assert.equal(result.hidden, true);
+    assert.equal(
+      check("Bash", "ls", { defaultMode: "autonomous" }, {}).hidden,
+      false,
+    );
+  });
+});
+
 void describe("check with delegation", () => {
   const policy = {
     delegation: { maxDepth: 1, nonDelegable: ["Bash(sudo:*)"] },

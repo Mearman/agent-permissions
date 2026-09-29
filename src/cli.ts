@@ -258,7 +258,8 @@ function formatStep(step: DecisionStep): string {
   const by = stepSource(step);
   const note =
     step.reason === "unsplittable" ? " (line not fully parsed, so asks)" : "";
-  return `${step.decision}\t${step.command}\t${by}${note}`;
+  const hidden = step.hidden === true ? " (hidden)" : "";
+  return `${step.decision}\t${step.command}\t${by}${hidden}${note}`;
 }
 
 async function checkCommand(args: string[]): Promise<void> {

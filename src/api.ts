@@ -64,6 +64,8 @@ export interface CheckResult {
   decision: "allow" | "deny" | "ask";
   /** How each command was judged: the matching rule, or the default mode. */
   steps: DecisionStep[];
+  /** Whether a `hidden` deny rule matched, so the host should leave the tool out of its list. */
+  hidden: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -355,14 +357,14 @@ export function check(
   json: unknown,
   context?: CheckContext,
 ): CheckResult {
-  const { decision, steps } = explain(
+  const { decision, steps, hidden } = explain(
     permissionPolicy(json),
     tool,
     input,
     context,
   );
 
-  return { decision, steps };
+  return { decision, steps, hidden };
 }
 
 // ---------------------------------------------------------------------------
