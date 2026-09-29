@@ -195,6 +195,19 @@ async function readAndDecode(
 // Merging
 // ---------------------------------------------------------------------------
 
+/** Two delegation blocks as one that is at least as strict as each, keeping the other keys of both. */
+function mergeDelegation(
+  a: AgentPermissionPolicy["delegation"],
+  b: NonNullable<AgentPermissionPolicy["delegation"]>,
+): NonNullable<AgentPermissionPolicy["delegation"]> {
+  const merged = { ...a, ...b };
+  const depths = [a?.maxDepth, b.maxDepth].filter((d) => d !== undefined);
+  if (depths.length > 0) merged.maxDepth = Math.min(...depths);
+  const barred = [...(a?.nonDelegable ?? []), ...(b.nonDelegable ?? [])];
+  if (barred.length > 0) merged.nonDelegable = [...new Set(barred)];
+  return merged;
+}
+
 function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
   if (sources.length === 0) {
     return {};
@@ -209,13 +222,26 @@ function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
   let activeProfile: string | undefined;
   let delegation: AgentPermissionPolicy["delegation"];
   let env: AgentPermissionPolicy["env"];
+  const roles: NonNullable<AgentPermissionPolicy["roles"]> = {};
 
   for (const { policy } of sources) {
     // defaultMode: most restrictive wins
     defaultMode = mostRestrictiveMode(defaultMode, policy.defaultMode);
 
-    // Rules: collect then deduplicate with deny-first priority
-    allRules.push(...collectRules(policy));
+    // Rules: collect then deduplicate with deny-first priority. Roles are kept as roles below, so
+    // the written file is not rewritten into rules that carry a role condition.
+    allRules.push(
+      ...collectRules({ rules: policy.rules, permissions: policy.permissions }),
+    );
+
+    // Roles: each role's lists joined across sources
+    for (const [role, tiers] of Object.entries(policy.roles ?? {})) {
+      const joined = (roles[role] ??= {});
+      for (const tier of ["deny", "ask", "allow"] as const) {
+        const merged = [...(joined[tier] ?? []), ...(tiers[tier] ?? [])];
+        if (merged.length > 0) joined[tier] = [...new Set(merged)];
+      }
+    }
 
     // Additional directories: union
     if (policy.permissions?.additionalDirectories) {
@@ -232,7 +258,10 @@ function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
     if (policy.network) network = { ...network, ...policy.network };
     if (policy.profiles) profiles = { ...(profiles ?? {}), ...policy.profiles };
     if (policy.activeProfile) activeProfile = policy.activeProfile;
-    if (policy.delegation) delegation = { ...delegation, ...policy.delegation };
+    // Delegation limits only tighten: the shallowest maxDepth, every nonDelegable rule
+    if (policy.delegation) {
+      delegation = mergeDelegation(delegation, policy.delegation);
+    }
     if (policy.env) env = { ...(env ?? {}), ...policy.env };
   }
 
@@ -254,6 +283,7 @@ function mergePolicies(sources: DecodedSource[]): AgentPermissionPolicy {
   if (profiles && Object.keys(profiles).length > 0) result.profiles = profiles;
   if (activeProfile) result.activeProfile = activeProfile;
   if (delegation) result.delegation = delegation;
+  if (Object.keys(roles).length > 0) result.roles = roles;
   if (env && Object.keys(env).length > 0) result.env = env;
 
   return result;
