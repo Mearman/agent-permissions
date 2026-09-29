@@ -26,10 +26,15 @@ function compiledPattern(node: PredicateNode): string {
   return node.right.value;
 }
 
-function bashPolicy(pattern: string): PermissionPolicy {
+/**
+ * A policy over a tool whose input is matched as one raw string. These tests pin the pattern dialect
+ * to trilean's, so they avoid `Bash`, whose command lines are split into separate commands before
+ * any pattern is tried.
+ */
+function rawPolicy(pattern: string): PermissionPolicy {
   return {
     defaultMode: "standard",
-    rules: [{ tool: "Bash", pattern, tier: "allow" }],
+    rules: [{ tool: "Custom", pattern, tier: "allow" }],
   };
 }
 
@@ -84,7 +89,7 @@ void describe("trilean pattern-builder delegation", () => {
         ).test(input)
           ? "allow"
           : "ask";
-        assert.equal(evaluate(bashPolicy(pattern), "bash", input), expected);
+        assert.equal(evaluate(rawPolicy(pattern), "custom", input), expected);
       });
     }
 
@@ -104,7 +109,7 @@ void describe("trilean pattern-builder delegation", () => {
           ? "allow"
           : "ask";
         assert.equal(
-          evaluate(bashPolicy(`${prefix}:*`), "bash", input),
+          evaluate(rawPolicy(`${prefix}:*`), "custom", input),
           expected,
         );
       });

