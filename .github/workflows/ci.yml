@@ -7,10 +7,8 @@ on:
   pull_request:
     branches:
       - main
-  # Lets the audit job's own fix-PR branch get a real check/test run: a workflow_dispatch call is explicitly exempt from GitHub's rule that events caused by the default GITHUB_TOKEN (a push, a PR opened via `gh pr create`) never trigger another workflow run.
-  workflow_dispatch:
 
-# A new push to a PR supersedes that PR's in-flight run; a push to main never cancels, because the audit job's fix-PR poll loop and the release job both make mid-run decisions a cancel would truncate.
+# A new push to a PR supersedes that PR's in-flight run; a push to main never cancels, because the release job makes mid-run decisions a cancel would truncate.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -40,71 +38,15 @@ jobs:
   audit:
     name: Audit
     runs-on: ubuntu-latest
-    # Generous: the fix-PR step polls a dispatched CI run (up to 60 x 20s) after the audit itself.
-    timeout-minutes: 45
-    permissions:
-      contents: write
-      pull-requests: write
-      actions: write
-    outputs:
-      fixed: ${{ steps.audit-setup.outputs.fixed }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
-      - name: Audit (auto-fix findings with an aged patch, defer the rest)
-        id: audit-setup
-        uses: ./.github/actions/setup
+      # Fails on any high-severity advisory. Fixing one is a decision for a person or Dependabot: an override that clears it is a pull request to write and review, not something the pipeline opens itself.
+      - uses: ./.github/actions/setup
         with:
           task: audit
-          command: node --experimental-strip-types .github/scripts/audit-autofix.ts
-        env:
-          AUDIT_LEVEL: high
-
-      # Only open a PR from main itself: a PR run has nothing of its own to fix a PR against, and this keeps the fix branch out of branches this workflow doesn't own. Landing the fix through a PR means a bad fix stays off main entirely: the merge below happens only after a full CI run on the fix branch has passed.
-      - name: Open a PR with the auto-fixed overrides
-        if: steps.audit-setup.outputs.fixed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BRANCH="audit-autofix/$(date -u +%Y%m%d%H%M%S)"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
-          git add pnpm-workspace.yaml pnpm-lock.yaml
-          git commit -m "fix(deps): apply aged security overrides
-
-          $(cat /tmp/audit-fix-commit-body.txt)"
-          git push origin "$BRANCH"
-          gh pr create --title "fix(deps): apply aged security overrides" --body-file /tmp/audit-fix-commit-body.txt --base main --head "$BRANCH"
-          # A push authenticated with GITHUB_TOKEN (the git push above) never triggers another workflow run on its own — dispatch the fix branch's checks explicitly.
-          gh workflow run ci.yml --ref "$BRANCH"
-          RUN_ID=""
-          for i in 1 2 3 4 5; do
-            sleep 10
-            RUN_ID=$(gh run list --workflow=ci.yml --branch "$BRANCH" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null)
-            if [ -n "$RUN_ID" ]; then break; fi
-          done
-          if [ -z "$RUN_ID" ]; then
-            echo "::error::Dispatched CI run for $BRANCH never appeared; fix PR left open for manual merge after review."
-            exit 0
-          fi
-          echo "Waiting for CI run $RUN_ID on $BRANCH..."
-          for i in $(seq 1 60); do
-            STATUS=$(gh run view "$RUN_ID" --json status,conclusion --jq '.status + ":" + (.conclusion // "pending")' 2>/dev/null || echo "query_failed")
-            if [ "$STATUS" = "completed:success" ]; then
-              echo "CI green on $BRANCH, rebase-merging the fix PR."
-              gh pr merge --rebase "$BRANCH"
-              exit 0
-            fi
-            if [ "$STATUS" = "completed:failure" ] || [ "$STATUS" = "completed:cancelled" ]; then
-              echo "::error::CI on $BRANCH concluded $STATUS; fix PR left open so a broken fix cannot reach main."
-              exit 0
-            fi
-            echo "CI on $BRANCH still pending ($i/60)..."
-            sleep 20
-          done
-          echo "::error::Timed out waiting for CI run $RUN_ID on $BRANCH; fix PR left open."
-          exit 0
+          command: pnpm audit --audit-level high
 
   check:
     name: Check
