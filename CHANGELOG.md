@@ -1,3 +1,13 @@
+## [6.5.0](https://github.com/Mearman/agent-permissions/compare/v6.4.0...v6.5.0) (2026-09-29)
+
+### Features
+
+* **sync:** sync Oh My Pi's bash.patterns and approval mode ([a1d877f](https://github.com/Mearman/agent-permissions/commit/a1d877f8a0f3536cdfd180a2b8c18c376754ef7f))
+
+### Bug Fixes
+
+* **cli:** read and write the file a known config path names, not the default one ([af045c3](https://github.com/Mearman/agent-permissions/commit/af045c3703182d7c7d10189e9be0a731f5897845))
+
 ## [6.4.0](https://github.com/Mearman/agent-permissions/compare/v6.3.0...v6.4.0) (2026-09-29)
 
 ### Features
