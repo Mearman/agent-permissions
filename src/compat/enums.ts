@@ -112,7 +112,10 @@ export type CodexSandboxMode = z.infer<typeof CodexSandboxMode>;
 // Codex — FilesystemAccess
 // ---------------------------------------------------------------------------
 
-export const CodexFilesystemAccess = z.enum(["none", "read", "write"]);
+/**
+ * Codex's filesystem access values, from `FileSystemAccessMode` in Codex's protocol crate. `deny` is the name Codex writes; it still reads `none` as a legacy alias for it.
+ */
+export const CodexFilesystemAccess = z.enum(["read", "write", "deny", "none"]);
 
 export type CodexFilesystemAccess = z.infer<typeof CodexFilesystemAccess>;
 

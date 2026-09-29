@@ -128,7 +128,11 @@ void describe("codex codec still converts what it can enforce", () => {
     });
     assert.deepEqual(encoded, {
       permissions: {
-        default: { filesystem: { "/secrets": "none", "/dist": "read" } },
+        default: {
+          filesystem: {
+            ":workspace_roots": { secrets: "deny", dist: "read" },
+          },
+        },
       },
       default_permissions: "default",
     });
@@ -167,7 +171,7 @@ void describe("codex codec still converts what it can enforce", () => {
     assert.deepEqual(encoded, {
       permissions: {
         dev: {
-          filesystem: { "/secrets": "none" },
+          filesystem: { ":workspace_roots": { secrets: "deny" } },
           network: { domains: { "good.com": "allow" } },
         },
       },
