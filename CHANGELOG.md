@@ -1,3 +1,13 @@
+## [6.4.0](https://github.com/Mearman/agent-permissions/compare/v6.3.0...v6.4.0) (2026-09-29)
+
+### Features
+
+* **codec:** map the canonical default mode to Oh My Pi's approval mode ([ca2db34](https://github.com/Mearman/agent-permissions/commit/ca2db34f0e376902c1462ff69c73d80706fc65e5))
+
+### Tests
+
+* **codec:** take Oh My Pi's expected mode for each canonical mode from mapMode ([a978fc3](https://github.com/Mearman/agent-permissions/commit/a978fc3486ef5c59cb043eb757f98a0b290a870c))
+
 ## [6.3.0](https://github.com/Mearman/agent-permissions/compare/v6.2.4...v6.3.0) (2026-09-29)
 
 ### Features
