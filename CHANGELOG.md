@@ -1,3 +1,9 @@
+## [6.2.4](https://github.com/Mearman/agent-permissions/compare/v6.2.3...v6.2.4) (2026-09-29)
+
+### Bug Fixes
+
+* **codec:** write Codex path rules under :workspace_roots or as absolute keys ([52776cf](https://github.com/Mearman/agent-permissions/commit/52776cf09063980b7ff5b385c0d59665673d62bd))
+
 ## [6.2.3](https://github.com/Mearman/agent-permissions/compare/v6.2.2...v6.2.3) (2026-09-29)
 
 ### Bug Fixes
