@@ -109,7 +109,7 @@ void describe("extends in the Codex codec", () => {
       activeProfile: "dev",
     });
     assert.deepEqual(encoded.permissions?.dev, {
-      filesystem: { "/secrets": "none" },
+      filesystem: { ":workspace_roots": { secrets: "deny" } },
       network: { domains: { "evil.com": "deny" } },
     });
   });

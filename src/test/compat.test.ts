@@ -53,12 +53,21 @@ function getCodexProfile(
   return profile;
 }
 
-/** Narrow filesystem to the granular record variant. */
+/** Narrow filesystem to its table, asserting it exists. */
 function getFilesystemRecord(
   fs: CodexProfile["filesystem"],
-): Record<string, CodexFilesystemAccess> {
-  assert.ok(typeof fs === "object", "Expected granular filesystem record");
+): NonNullable<CodexProfile["filesystem"]> {
+  assert.ok(fs !== undefined, "Expected a filesystem table");
   return fs;
+}
+
+/** The `:workspace_roots` subpath table of a filesystem table, asserting it exists. */
+function getWorkspaceRoots(
+  fs: CodexProfile["filesystem"],
+): Record<string, CodexFilesystemAccess> {
+  const roots = getFilesystemRecord(fs)[":workspace_roots"];
+  assert.ok(typeof roots === "object", "Expected a :workspace_roots table");
+  return roots;
 }
 
 /** Narrow network.domains to a record. */
@@ -549,27 +558,6 @@ void describe("codexCodec", () => {
       ]);
     });
 
-    void it("converts filesystem shorthand 'read' to Write+Edit deny rules", () => {
-      const result = codexCodec.decode({
-        permissions: { strict: { filesystem: "read" } },
-        default_permissions: "strict",
-      });
-      assert.ok(result.rules !== undefined);
-      assert.equal(hasRule(result.rules, "Write", "deny"), true);
-      assert.equal(hasRule(result.rules, "Edit", "deny"), true);
-    });
-
-    void it("converts filesystem shorthand 'none' to full deny rules", () => {
-      const result = codexCodec.decode({
-        permissions: { locked: { filesystem: "none" } },
-        default_permissions: "locked",
-      });
-      assert.ok(result.rules !== undefined);
-      assert.equal(hasRule(result.rules, "Read", "deny"), true);
-      assert.equal(hasRule(result.rules, "Write", "deny"), true);
-      assert.equal(hasRule(result.rules, "Edit", "deny"), true);
-    });
-
     void it("converts granular filesystem rules to path-based deny rules", () => {
       const result = codexCodec.decode({
         permissions: {
@@ -580,13 +568,10 @@ void describe("codexCodec", () => {
         default_permissions: "default",
       });
       assert.ok(result.rules !== undefined);
-      assert.equal(
-        hasRule(result.rules, "Write", "deny", "./etc/config"),
-        true,
-      );
-      assert.equal(hasRule(result.rules, "Edit", "deny", "./etc/config"), true);
-      assert.equal(hasRule(result.rules, "Read", "deny", "./secrets"), true);
-      assert.equal(hasRule(result.rules, "Write", "deny", "./secrets"), true);
+      assert.equal(hasRule(result.rules, "Write", "deny", "/etc/config"), true);
+      assert.equal(hasRule(result.rules, "Edit", "deny", "/etc/config"), true);
+      assert.equal(hasRule(result.rules, "Read", "deny", "/secrets"), true);
+      assert.equal(hasRule(result.rules, "Write", "deny", "/secrets"), true);
     });
 
     void it("converts network domain rules to WebFetch rules", () => {
@@ -614,13 +599,13 @@ void describe("codexCodec", () => {
     void it("uses all profiles when default_permissions is unset", () => {
       const result = codexCodec.decode({
         permissions: {
-          safe: { filesystem: "read" },
-          open: { filesystem: "write" },
+          safe: { filesystem: { "/srv": "read" } },
+          open: { filesystem: { "/srv": "write" } },
         },
       });
       assert.ok(result.rules !== undefined);
-      assert.equal(hasRule(result.rules, "Write", "deny"), true);
-      assert.equal(hasRule(result.rules, "Edit", "deny"), true);
+      assert.equal(hasRule(result.rules, "Write", "deny", "/srv"), true);
+      assert.equal(hasRule(result.rules, "Edit", "deny", "/srv"), true);
     });
   });
 
@@ -669,8 +654,7 @@ void describe("codexCodec", () => {
       assert.ok(encoded.permissions !== undefined);
       assert.strictEqual(encoded.default_permissions, "default");
       const profile = getCodexProfile(encoded, "default");
-      const fs = getFilesystemRecord(profile.filesystem);
-      assert.strictEqual(fs["/secrets"], "none");
+      assert.strictEqual(getWorkspaceRoots(profile.filesystem).secrets, "deny");
       const domains = getNetworkDomains(profile.network);
       assert.strictEqual(domains["evil.com"], "deny");
       assert.strictEqual(domains["api.example.com"], "allow");
@@ -733,19 +717,16 @@ void describe("codexCodec", () => {
       } as const;
       const canonical = codexCodec.decode(native);
       assert.ok(canonical.rules !== undefined);
-      assert.equal(hasRule(canonical.rules, "Read", "deny", "./secrets"), true);
+      assert.equal(hasRule(canonical.rules, "Read", "deny", "/secrets"), true);
+      assert.equal(hasRule(canonical.rules, "Write", "deny", "/secrets"), true);
       assert.equal(
-        hasRule(canonical.rules, "Write", "deny", "./secrets"),
-        true,
-      );
-      assert.equal(
-        hasRule(canonical.rules, "Write", "deny", "./etc/config"),
+        hasRule(canonical.rules, "Write", "deny", "/etc/config"),
         true,
       );
       const reEncoded = z.encode(codexCodec, canonical);
       const profile = getCodexProfile(reEncoded, "default");
       const fs = getFilesystemRecord(profile.filesystem);
-      assert.strictEqual(fs["/secrets"], "none");
+      assert.strictEqual(fs["/secrets"], "deny");
       assert.strictEqual(fs["/etc/config"], "read");
     });
 
@@ -878,7 +859,7 @@ void describe("codexCodec", () => {
       assert.strictEqual(reEncoded.default_permissions, "strict");
       const strictProfile = getCodexProfile(reEncoded, "strict");
       const strictFs = getFilesystemRecord(strictProfile.filesystem);
-      assert.strictEqual(strictFs["/secrets"], "none");
+      assert.strictEqual(strictFs["/secrets"], "deny");
       const relaxedProfile = getCodexProfile(reEncoded, "relaxed");
       const relaxedFs = getFilesystemRecord(relaxedProfile.filesystem);
       assert.strictEqual(relaxedFs["/config"], "read");
