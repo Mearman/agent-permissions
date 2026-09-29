@@ -7,7 +7,7 @@
  *
  * - `message.content[]` blocks of `type: "tool_use"`, with `id`, `name` and `input`, for each call.
  * - `message.content[]` blocks of `type: "tool_result"`, with `tool_use_id`, `is_error` and `content` (a string, or a list of `{ type: "text", text }` blocks), for how each call ended.
- * - `cwd` and `gitBranch` on the entry holding the `tool_use` block, as the call's context.
+ * - `cwd` and `gitBranch` on the entry holding the `tool_use` block, as the call's context. The log records no environment variables or git remote, so conditions on those stay unknown.
  *
  * The transcript does not record which rule decided a call, or whether a call that ran was allowed outright or approved when asked. It records only the outcome, read from the result: an error starting `Permission to use ` and containing ` has been denied` means a rule denied it, an error starting `The user doesn't want to proceed with this tool use.` means the user declined when asked, and any other result means it ran. A call with no result has no recorded outcome.
  */
