@@ -1,8 +1,10 @@
 /**
- * MCP server for agent-perms — sync daemon.
+ * MCP server for agent-perms: a sync daemon, and optionally a permission-prompt tool.
  *
  * Sits as a background MCP server that keeps native agent config files bidirectionally synced with
- * `.agents/permissions.json`. Exposes no tools.
+ * `.agents/permissions.json`. By default it exposes no tools. With the permission-prompt mode on it
+ * exposes one, `permission_prompt`, which answers a host's permission prompts from the policy (see
+ * `prompt-tool.ts`).
  *
  * Modes (configured via `.agents/permissions.json` → `sync.mode`):
  *
@@ -10,8 +12,7 @@
  * - `"watch"`: Continuous sync via filesystem watching.
  * - `false` / absent: No sync (just a passive MCP server).
  *
- * The project directory is discovered via `roots/list` from the MCP client, or falls back to
- * `process.cwd()`.
+ * The project directory is the server's working directory.
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -22,6 +23,13 @@ import { existsSync, watch } from "node:fs";
 import { join, resolve } from "node:path";
 import { AgentPermissionPolicy } from "./schema.ts";
 import { parseJson, validatePolicy } from "./agent-files.ts";
+import { loadPolicy } from "./loader.ts";
+import {
+  createPermissionPrompt,
+  PermissionPromptRequest,
+  promptToolContent,
+  type AskHandler,
+} from "./prompt-tool.ts";
 import { sync } from "./sync.ts";
 
 // ---------------------------------------------------------------------------
@@ -127,7 +135,25 @@ function startWatcher(cwd: string, config: SyncConfig): void {
 // MCP server
 // ---------------------------------------------------------------------------
 
-async function main(): Promise<void> {
+export interface McpServerOptions {
+  /**
+   * Expose the `permission_prompt` tool. `onAsk` settles calls the policy asks about; without it
+   * they are denied.
+   */
+  permissionPrompt?: { onAsk?: AskHandler };
+}
+
+/** The permission-prompt tool's name; a host refers to it as `mcp__<server name>__permission_prompt`. */
+const PERMISSION_PROMPT_TOOL = "permission_prompt";
+
+/**
+ * Build the server for a project root without connecting it. It exposes no tools unless the
+ * permission-prompt mode is on.
+ */
+export function createMcpServer(
+  root: string,
+  options: McpServerOptions,
+): McpServer {
   const server = new McpServer(
     { name: "agent-perms", version: "0.1.0" },
     {
@@ -138,14 +164,44 @@ async function main(): Promise<void> {
     },
   );
 
+  const { permissionPrompt } = options;
+  if (permissionPrompt !== undefined) {
+    const answer = createPermissionPrompt({
+      loadPolicy: () => loadPolicy({ cwd: root }),
+      root,
+      ...(permissionPrompt.onAsk === undefined
+        ? {}
+        : { onAsk: permissionPrompt.onAsk }),
+    });
+    server.registerTool(
+      PERMISSION_PROMPT_TOOL,
+      {
+        description:
+          "Answers a permission prompt from the agent-perms policy: allow or deny the tool call described by tool_name and input.",
+        inputSchema: PermissionPromptRequest.shape,
+      },
+      async (request, extra) =>
+        promptToolContent(await answer(request, extra.signal)),
+    );
+  }
+
+  return server;
+}
+
+/**
+ * Serve on stdio from the current directory, running the sync the policy's `sync.mode` asks for.
+ */
+export async function startMcpServer(options: McpServerOptions): Promise<void> {
+  const projectRoot = resolve(process.cwd());
+  const server = createMcpServer(projectRoot, options);
+
   // Connect transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  // After connection, use cwd as project root
-  const projectRoot = resolve(process.cwd());
-
-  process.stderr.write(`[agent-perms-mcp] Started (root: ${projectRoot})\n`);
+  process.stderr.write(
+    `[agent-perms-mcp] Started (root: ${projectRoot}, permission prompt: ${options.permissionPrompt === undefined ? "off" : "on"})\n`,
+  );
 
   // Load config and perform initial sync
   const policy = await loadRootPolicy(projectRoot);
@@ -166,9 +222,3 @@ async function main(): Promise<void> {
 
   // Keep alive — MCP server handles the event loop
 }
-
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`[agent-perms-mcp] Fatal: ${message}\n`);
-  process.exit(1);
-});
