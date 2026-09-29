@@ -344,16 +344,18 @@ const policy = claudeCodeCodec.decode(claudeSettings.permissions);
 const codexConfig = codexCodec.encode(canonicalPolicy);
 ```
 
-| Agent           | Native format                                           | Codec             | Fidelity       |
-| --------------- | ------------------------------------------------------- | ----------------- | -------------- |
-| **Claude Code** | `Tool(pattern)` rule strings in `.claude/settings.json` | `claudeCodeCodec` | Lossless       |
-| **OpenCode**    | Per-tool `ask/allow/deny` objects in `config.json`      | `opencodeCodec`   | Near-lossless¹ |
-| **Codex**       | Named profiles + sandbox in TOML config                 | `codexCodec`      | Near-lossless² |
-| **Crush**       | Tool allowlist in `config.json`                         | `crushCodec`      | Lossy³         |
+| Agent           | Native format                                           | Codec             | Fidelity          |
+| --------------- | ------------------------------------------------------- | ----------------- | ----------------- |
+| **Claude Code** | `Tool(pattern)` rule strings in `.claude/settings.json` | `claudeCodeCodec` | Lossless          |
+| **OpenCode**    | Per-tool `ask/allow/deny` objects in `config.json`      | `opencodeCodec`   | Near-lossless¹    |
+| **Codex**       | Named profiles + sandbox in TOML config                 | `codexCodec`      | Exact or refused² |
+| **Crush**       | Tool allowlist in `config.json`                         | `crushCodec`      | Lossy³            |
 
 ¹ OpenCode's agent-specific tools have no canonical equivalent. Per-agent markdown overrides must be handled by the caller.
 
 ² Codex's `on-failure` approval policy and granular approval config have no canonical equivalent. TOML serialisation is the caller's responsibility; the codec works on parsed JS objects.
+
+Encoding never weakens a restrictive rule. Codex can enforce a `deny` on a path (read-only or no access) and a `deny` on a network domain, plus a `deny` on writes when the policy has a read-only sandbox. Any other `deny` or `ask` rule, and any `deny` or `ask` rule carrying a `when` condition, makes the encode throw `UnsupportedCapabilityError`, which lists every refused rule and why. Command rules such as `Bash(git push:*)` belong in Codex's execpolicy rules files, which the codec does not write. An `allow` rule with no Codex equivalent is left out, which can only make the result stricter. Restrictions from the top-level rules are carried into every named profile.
 
 ³ Crush has no deny, no patterns, no modes, only a bare tool allowlist. Pattern rules and deny rules are lost on encode.
 
@@ -481,6 +483,8 @@ agent-perms sync -x codex
 
 Sync merges rules with deny-first semantics (deny > ask > allow for same tool+pattern).
 Most restrictive `defaultMode` wins.
+
+If an agent's codec refuses a rule in the merged policy (see the compatibility table), sync reports the refused rules, writes nothing for any agent, and exits 1. Leave that agent out with `--without` to sync the others.
 
 ### mcp
 
