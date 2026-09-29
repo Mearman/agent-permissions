@@ -649,6 +649,15 @@ export function ruleToString(rule: Rule): string {
 }
 
 /**
+ * What decided a step: the matching rule with its tier and, when recorded, the layer it came from (`Bash(git:*) [allow] from /repo/.agents/permissions.json`), or `the default mode`.
+ */
+export function stepSource(step: DecisionStep): string {
+  if (step.rule === undefined) return "the default mode";
+  const layer = step.layer === undefined ? "" : ` from ${step.layer}`;
+  return `${ruleToString(step.rule)} [${step.rule.tier}]${layer}`;
+}
+
+/**
  * Collect all rules from a canonical policy, normalising both `rules[]` and
  * `permissions.allow/deny/ask` into a single array.
  */
