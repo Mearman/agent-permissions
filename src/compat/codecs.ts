@@ -792,9 +792,11 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
 //   approval_policy ↔ defaultMode
 //   sandbox_mode → sandbox.mode + defaultMode
 //   sandbox_workspace_write → sandbox.writableRoots + sandbox.networkAccess
-//   permissions.<name>.filesystem → deny rules with Read/Write/Edit patterns
-//   permissions.<name>.network.domains → network.domains + WebFetch rules
-//   named profiles → profiles record + activeProfile
+// permissions.<name>.filesystem → deny rules with Read/Write/Edit patterns permissions.<name>.network.domains → network.domains + WebFetch rules named profiles → profiles record + activeProfile
+//
+// Filesystem keys (Codex's `permissions_toml.rs` and `config/permissions.rs`): a key is an absolute path, `~/...`, or a special root such as `:root`, `:minimal`, `:tmpdir` or `:workspace_roots`. A key takes an access value (`read`, `write` or `deny`, with `none` read as a legacy alias of `deny`) or a table of descendant subpaths, and `:workspace_roots` is always given as such a table, with `.` for each root itself. An entry covers its path and everything under it, and the more specific of two entries wins. Codex reads `*`, `?`, `[` and `]` as glob syntax, supported only for `deny`.
+//
+// A canonical `./path` is relative to the working directory, so it becomes a subpath of `:workspace_roots`; an absolute path stays an absolute key. Both cover the whole subtree, and the workspace roots include any Codex adds beyond the working directory, so a written entry is never narrower than the rule it came from. A trailing `/*` or `/**` is that same subtree. Every other pattern (a wildcard elsewhere, a string prefix, `~`, a bare relative path, `.` or `..` segments, a character Codex would read as glob syntax) has no faithful Codex form and is refused.
 
 const codexApprovalPolicy = z.union([
   CodexApprovalMode,
@@ -810,6 +812,14 @@ const codexApprovalPolicy = z.union([
 ]);
 
 type CodexApprovalPolicy = z.infer<typeof codexApprovalPolicy>;
+
+/** One Codex filesystem entry: an access value, or a table of descendant subpaths under its key. */
+const codexFilesystemEntry = z.union([
+  CodexFilesystemAccess,
+  z.record(z.string(), CodexFilesystemAccess),
+]);
+
+type CodexFilesystemEntry = z.infer<typeof codexFilesystemEntry>;
 
 /**
  * Codex native config object — what a TOML parser produces from codex config. Only the
@@ -833,14 +843,8 @@ const codexNative = z.object({
     .record(
       z.string(),
       z.object({
-        filesystem: z
-          .union([
-            // Shorthand: apply single mode to entire workspace
-            CodexFilesystemAccess,
-            // Granular: { "/path": "read" | "write" | "none" }
-            z.record(z.string(), CodexFilesystemAccess),
-          ])
-          .optional(),
+        // { "/abs/path": "deny", ":workspace_roots": { ".": "write", "secrets": "deny" } }
+        filesystem: z.record(z.string(), codexFilesystemEntry).optional(),
         network: z
           .object({
             enabled: z.boolean().optional(),
@@ -859,8 +863,7 @@ type CodexSandboxWorkspaceWrite = NonNullable<
 >;
 
 export interface CodexProfile {
-  filesystem?:
-    CodexFilesystemAccess | Record<string, CodexFilesystemAccess> | undefined;
+  filesystem?: Record<string, CodexFilesystemEntry> | undefined;
   network?:
     | {
         enabled?: boolean | undefined;
@@ -935,51 +938,148 @@ function canonicalSandboxToCodex(
   }
 }
 
+/** The Codex special root whose subpaths are relative to each workspace root. */
+const WORKSPACE_ROOTS = ":workspace_roots";
+
+/** Codex's earlier name for `:workspace_roots`, which it still reads. */
+const PROJECT_ROOTS = ":project_roots";
+
+/** The characters Codex reads as glob syntax in a filesystem key or subpath. */
+const CODEX_GLOB = /[*?[\]]/;
+
+/** The canonical pattern for everything under a path, given the path's own pattern. */
+function subtreePattern(location: string): string {
+  return location === "/" ? "/**" : `${location}/**`;
+}
+
 /**
- * Map Codex filesystem access mode to canonical deny rules. Codex paths are absolute; we convert to
- * relative where possible.
+ * A literal path as a canonical exact pattern. Exact patterns give a backslash escape meaning, so each is doubled; a path reaching here carries no `*`, which Codex would have read as glob syntax.
+ */
+function literalPattern(path: string): string {
+  return path.replaceAll("\\", "\\\\");
+}
+
+/**
+ * Map Codex filesystem entries to canonical deny rules. An entry covers its path and everything under it, so each becomes a rule on the path and one on its subtree. A `write` entry restricts nothing and adds no rule.
+ *
+ * @throws Error on a `read` or `deny` entry whose location has no canonical form: a special root other than `:workspace_roots`, a `~` path, or glob syntax. Leaving it out would drop a restriction.
  */
 function codexFilesystemToRules(
-  fs: CodexFilesystemAccess | Record<string, CodexFilesystemAccess>,
+  fs: Record<string, CodexFilesystemEntry>,
   rules: Rule[],
 ): void {
-  if (typeof fs === "string") {
-    if (fs === "read") {
-      rules.push(
-        { tool: "Write", tier: "deny" },
-        { tool: "Edit", tier: "deny" },
-      );
-    } else if (fs === "none") {
-      rules.push(
-        { tool: "Read", tier: "deny" },
-        { tool: "Write", tier: "deny" },
-        { tool: "Edit", tier: "deny" },
-      );
-    }
-    return;
-  }
-
-  for (const [path, mode] of Object.entries(fs)) {
-    const rulePath = path.startsWith("/") ? `.${path}` : path;
-    if (mode === "none") {
-      rules.push(
-        { tool: "Read", pattern: rulePath, tier: "deny" },
-        { tool: "Write", pattern: rulePath, tier: "deny" },
-        { tool: "Edit", pattern: rulePath, tier: "deny" },
-      );
-    } else if (mode === "read") {
-      rules.push(
-        { tool: "Write", pattern: rulePath, tier: "deny" },
-        { tool: "Edit", pattern: rulePath, tier: "deny" },
-      );
+  for (const [key, entry] of Object.entries(fs)) {
+    const table = typeof entry === "string" ? { ".": entry } : entry;
+    for (const [subpath, access] of Object.entries(table)) {
+      if (access === "write") continue;
+      const location = canonicalLocation(key, subpath);
+      if (location === undefined) {
+        const where = subpath === "." ? key : `${key} ${subpath}`;
+        throw new Error(
+          `Codex filesystem entry ${where} = "${access}" has no canonical path: only absolute paths and :workspace_roots subpaths without glob syntax convert`,
+        );
+      }
+      const tools =
+        access === "read" ? ["Write", "Edit"] : ["Read", "Write", "Edit"];
+      for (const tool of tools) {
+        rules.push(
+          { tool, pattern: literalPattern(location), tier: "deny" },
+          {
+            tool,
+            pattern: subtreePattern(literalPattern(location)),
+            tier: "deny",
+          },
+        );
+      }
     }
   }
 }
 
+/** The canonical path for a Codex key and one of its subpaths (`.` for the key itself), or `undefined`. */
+function canonicalLocation(key: string, subpath: string): string | undefined {
+  if (CODEX_GLOB.test(key) || CODEX_GLOB.test(subpath)) return undefined;
+  const base =
+    key === WORKSPACE_ROOTS || key === PROJECT_ROOTS
+      ? "."
+      : key.startsWith("/")
+        ? key
+        : undefined;
+  if (base === undefined || subpath === ".") return base;
+  return base.endsWith("/") ? `${base}${subpath}` : `${base}/${subpath}`;
+}
+
 /** The file and network restrictions a set of rules puts on a Codex profile. */
 interface CodexRestrictions {
-  filesystem: Record<string, CodexFilesystemAccess>;
+  /** Absolute filesystem keys. */
+  absolute: Record<string, CodexRestriction>;
+  /** Subpaths of `:workspace_roots`, with `.` for the roots themselves. */
+  workspace: Record<string, CodexRestriction>;
   domains: Record<string, "allow" | "deny">;
+}
+
+/** The two filesystem access values a restrictive rule becomes: `read` blocks writes, `deny` blocks everything. */
+type CodexRestriction = "read" | "deny";
+
+/** Where a canonical path rule lands in Codex, or why it cannot. */
+type CodexPathLocation =
+  | { kind: "absolute" | "workspace"; path: string }
+  | { kind: "refused"; reason: string };
+
+function refusedPath(reason: string): CodexPathLocation {
+  return { kind: "refused", reason };
+}
+
+/** Whether a path is one or more segments, none of them empty, `.` or `..`. */
+function isDescendantPath(path: string): boolean {
+  return path
+    .split("/")
+    .every((segment) => segment !== "" && segment !== "." && segment !== "..");
+}
+
+/**
+ * Where Codex protects the paths a canonical file pattern names. An exact path and a trailing `/*` or `/**` map to the path's subtree, which is never narrower; anything else is refused.
+ */
+function codexPathLocation(pattern: string): CodexPathLocation {
+  const parsed = parseRulePattern(pattern);
+  let path: string;
+  if (parsed.type === "exact") {
+    path = parsed.content;
+  } else if (parsed.type === "prefix") {
+    return refusedPath("Codex matches a whole path, not a string prefix");
+  } else {
+    const base = /^(.*)\/\*\*?$/.exec(parsed.pattern)?.[1];
+    const baseParsed = base === undefined ? undefined : parseRulePattern(base);
+    if (baseParsed?.type !== "exact") {
+      return refusedPath(
+        "Codex matches a path and everything under it, not a wildcard elsewhere in the path",
+      );
+    }
+    path = baseParsed.content === "" ? "/" : baseParsed.content;
+  }
+  if (CODEX_GLOB.test(path)) {
+    return refusedPath("Codex reads *, ?, [ and ] in a path as glob syntax");
+  }
+  if (path === "." || path === "./") return { kind: "workspace", path: "." };
+  if (path.startsWith("./")) {
+    const subpath = path.slice(2).replace(/\/$/, "");
+    return isDescendantPath(subpath)
+      ? { kind: "workspace", path: subpath }
+      : refusedPath(
+          "Codex takes a workspace path only as a descendant with no empty, . or .. segments",
+        );
+  }
+  if (path === "/") return { kind: "absolute", path };
+  if (path.startsWith("/")) {
+    const absolute = path.replace(/\/$/, "");
+    return isDescendantPath(absolute.slice(1))
+      ? { kind: "absolute", path: absolute }
+      : refusedPath(
+          "Codex takes an absolute path only with no empty, . or .. segments",
+        );
+  }
+  return refusedPath(
+    "Codex takes an absolute path or a ./ path under the workspace roots",
+  );
 }
 
 const FILE_TOOLS: ReadonlySet<string> = new Set(["Read", "Write", "Edit"]);
@@ -1013,6 +1113,7 @@ function codexRefusal(
       }
       return "Codex takes filesystem access per path, not for a whole tool";
     }
+    // Whether Codex can place the path is codexPathLocation's to decide
     return rule.tier === "ask"
       ? "Codex filesystem access is read, write or deny, never asked"
       : undefined;
@@ -1021,11 +1122,7 @@ function codexRefusal(
 }
 
 /**
- * Turn rules into Codex restrictions. A `deny` or `ask` rule Codex cannot enforce is recorded in
- * `unsupported` rather than dropped. An `allow` rule that cannot be represented is left out, which
- * can only make the result stricter; one carrying a condition is left out too, since applying it
- * unconditionally would widen it. `writesBlockedBySandbox` says the output already carries a
- * read-only sandbox, which covers a tool-wide write or edit deny.
+ * Turn rules into Codex restrictions. A `deny` or `ask` rule Codex cannot enforce is recorded in `unsupported` rather than dropped. An `allow` rule that cannot be represented is left out, which can only make the result stricter; one carrying a condition is left out too, since applying it unconditionally would widen it. `writesBlockedBySandbox` says the output already carries a read-only sandbox, which covers a tool-wide write or edit deny.
  */
 function codexRestrictions(
   rules: readonly Rule[],
@@ -1033,7 +1130,11 @@ function codexRestrictions(
   writesBlockedBySandbox: boolean,
   unsupported: UnsupportedRule[],
 ): CodexRestrictions {
-  const restrictions: CodexRestrictions = { filesystem: {}, domains: {} };
+  const restrictions: CodexRestrictions = {
+    absolute: {},
+    workspace: {},
+    domains: {},
+  };
   for (const rule of rules) {
     if (rule.tier === "allow") {
       if (
@@ -1049,8 +1150,7 @@ function codexRestrictions(
       }
       continue;
     }
-    const reason = codexRefusal(rule, writesBlockedBySandbox);
-    if (reason !== undefined) {
+    const refuse = (reason: string): void => {
       unsupported.push({
         rule,
         reason:
@@ -1058,6 +1158,10 @@ function codexRestrictions(
             ? reason
             : `${reason} (in profile "${profile}")`,
       });
+    };
+    const reason = codexRefusal(rule, writesBlockedBySandbox);
+    if (reason !== undefined) {
+      refuse(reason);
       continue;
     }
     if (rule.tool === "WebFetch" && rule.pattern !== undefined) {
@@ -1066,23 +1170,30 @@ function codexRestrictions(
     } else if (rule.pattern === undefined) {
       // A tool-wide write or edit deny, already carried by the read-only sandbox
     } else {
-      restrictions.filesystem[rule.pattern] = strictestAccess(
-        restrictions.filesystem[rule.pattern],
-        rule.tool === "Read" ? "none" : "read",
+      const location = codexPathLocation(rule.pattern);
+      if (location.kind === "refused") {
+        refuse(location.reason);
+        continue;
+      }
+      const table =
+        location.kind === "absolute"
+          ? restrictions.absolute
+          : restrictions.workspace;
+      table[location.path] = strictestAccess(
+        table[location.path],
+        rule.tool === "Read" ? "deny" : "read",
       );
     }
   }
   return restrictions;
 }
 
-/** The tighter of two access modes for one path: none over read over write. */
+/** The tighter of two restrictions on one path: deny over read. */
 function strictestAccess(
-  a: CodexFilesystemAccess | undefined,
-  b: CodexFilesystemAccess,
-): CodexFilesystemAccess {
-  if (a === "none" || b === "none") return "none";
-  if (a === "read" || b === "read") return "read";
-  return b;
+  a: CodexRestriction | undefined,
+  b: CodexRestriction,
+): CodexRestriction {
+  return a === "deny" || b === "deny" ? "deny" : "read";
 }
 
 /** The tighter of two domain actions: deny over allow. */
@@ -1093,10 +1204,10 @@ function strictestDomain(
   return a === "deny" || b === "deny" ? "deny" : "allow";
 }
 
-function mergeFilesystem(
-  a: Record<string, CodexFilesystemAccess>,
-  b: Record<string, CodexFilesystemAccess>,
-): Record<string, CodexFilesystemAccess> {
+function mergeAccess(
+  a: Record<string, CodexRestriction>,
+  b: Record<string, CodexRestriction>,
+): Record<string, CodexRestriction> {
   const merged = { ...a };
   for (const [path, access] of Object.entries(b)) {
     merged[path] = strictestAccess(merged[path], access);
@@ -1115,17 +1226,44 @@ function mergeDomains(
   return merged;
 }
 
-/** A Codex profile for the restrictions, with Codex's absolute paths and no empty sections. */
+/** Whether `ancestor` is a strict ancestor of `path` in one filesystem table, where `.` and `/` are roots. */
+function isAncestorPath(ancestor: string, path: string): boolean {
+  if (ancestor === path) return false;
+  if (ancestor === "." || ancestor === "/") return true;
+  return path.startsWith(`${ancestor}/`);
+}
+
+/**
+ * The table with each path at least as strict as every ancestor in it. Codex lets the more specific of two entries win, so a nested `read` under a `deny` would reopen part of a subtree the rules deny.
+ */
+function inheritAncestors(
+  table: Record<string, CodexRestriction>,
+): Record<string, CodexRestriction> {
+  return Object.fromEntries(
+    Object.entries(table).map(([path, access]) => [
+      path,
+      Object.entries(table).reduce(
+        (strictest, [ancestor, inherited]) =>
+          isAncestorPath(ancestor, path)
+            ? strictestAccess(strictest, inherited)
+            : strictest,
+        access,
+      ),
+    ]),
+  );
+}
+
+/** A Codex profile for the restrictions, with no empty sections. */
 function codexProfileOf(restrictions: CodexRestrictions): CodexProfile {
   const profile: CodexProfile = {};
-  const paths = Object.entries(restrictions.filesystem);
-  if (paths.length > 0) {
-    profile.filesystem = Object.fromEntries(
-      paths.map(([path, access]) => [
-        path.startsWith(".") ? path.slice(1) : path,
-        access,
-      ]),
-    );
+  const filesystem: Record<string, CodexFilesystemEntry> = inheritAncestors(
+    restrictions.absolute,
+  );
+  if (Object.keys(restrictions.workspace).length > 0) {
+    filesystem[WORKSPACE_ROOTS] = inheritAncestors(restrictions.workspace);
+  }
+  if (Object.keys(filesystem).length > 0) {
+    profile.filesystem = filesystem;
   }
   if (Object.keys(restrictions.domains).length > 0) {
     profile.network = { domains: restrictions.domains };
@@ -1315,7 +1453,8 @@ export const codexCodec = z.codec(codexNative, AgentPermissionPolicy, {
         unsupported,
       );
       profiles[name] = codexProfileOf({
-        filesystem: mergeFilesystem(topLevel.filesystem, own.filesystem),
+        absolute: mergeAccess(topLevel.absolute, own.absolute),
+        workspace: mergeAccess(topLevel.workspace, own.workspace),
         domains: mergeDomains(topLevel.domains, own.domains),
       });
     }
