@@ -471,6 +471,41 @@ void describe("CLI", () => {
       assert.match(result.stderr, /deny\s+curl x\s+Bash\(curl:\*\)/);
     });
 
+    void it("takes the remote and environment conditions from flags", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({
+          defaultMode: "restricted",
+          rules: [
+            {
+              tool: "Bash",
+              pattern: "deploy:*",
+              tier: "allow",
+              when: { env: { CI: "true" }, remote: "github.com/exadev/*" },
+            },
+          ],
+        }),
+      );
+      const args = (extra: string[]): string[] => [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "deploy prod",
+        "--policy-file",
+        join(cwd, "policy.json"),
+        ...extra,
+      ];
+      const known = await run(
+        args(["--env", "CI=true", "--remote", "git@github.com:ExaDev/x.git"]),
+      );
+      assert.equal(known.stdout, "allow\n");
+      const missing = await run(args(["--env", "CI=true"]));
+      assert.equal(missing.stdout, "ask\n");
+    });
+
     void it("denies a matching deny rule", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);

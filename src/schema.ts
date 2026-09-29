@@ -148,8 +148,22 @@ export const RuleCondition = z
 
     /** Git branch name pattern (glob). */
     branch: z.string().meta({ description: "Git branch name pattern (glob)." }),
+
+    /** Environment variables that must each equal the given value. */
+    env: z.record(z.string(), z.string()).meta({
+      description:
+        "Environment variables that must each equal the given value (AND logic).",
+    }),
+
+    /** Git remote pattern (glob), matched against the remote as `host/path`, lower case. */
+    remote: z.string().meta({
+      description:
+        "Git remote pattern (glob), matched against the origin as host/path in lower case, so git@github.com:Org/Repo.git and https://github.com/org/repo both match github.com/org/*.",
+    }),
   })
-  .partial();
+  .partial()
+  // A key the schema does not know must be an error: dropped, a misspelled condition would leave the rule applying everywhere.
+  .strict();
 
 export const Rule = z
   .object({
@@ -192,6 +206,8 @@ export const Rule = z
         "Optional conditions. All must match for the rule to apply (AND logic).",
     }),
   })
+  // A key the schema does not know must be an error: dropped, a misspelled `when` would leave the rule applying everywhere.
+  .strict()
   .meta({
     description:
       "Permission rule. Evaluated deny-first: all deny rules, then ask, then allow.",

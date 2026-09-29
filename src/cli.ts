@@ -17,6 +17,7 @@ import {
   check as checkApi,
   resolveFormat,
   ConvertError,
+  type CheckContext,
   type Format,
 } from "./api.ts";
 import { agentId } from "./compat/codecs.ts";
@@ -229,6 +230,17 @@ async function validateCommand(args: string[]): Promise<void> {
 // check
 // ---------------------------------------------------------------------------
 
+/** Read repeated `--env NAME=VALUE` flags into the record the evaluation context takes. */
+function parseEnvFlags(flags: readonly string[]): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const flag of flags) {
+    const equals = flag.indexOf("=");
+    if (equals <= 0) error(`--env expects NAME=VALUE, got "${flag}"`);
+    env[flag.slice(0, equals)] = flag.slice(equals + 1);
+  }
+  return env;
+}
+
 /** One line describing how a command was judged, for `check --explain`. */
 function formatStep(step: DecisionStep): string {
   const by =
@@ -249,6 +261,8 @@ async function checkCommand(args: string[]): Promise<void> {
       "policy-file": { type: "string" },
       cwd: { type: "string" },
       branch: { type: "string" },
+      remote: { type: "string" },
+      env: { type: "string", multiple: true },
       explain: { type: "boolean" },
     },
     strict: true,
@@ -266,9 +280,11 @@ async function checkCommand(args: string[]): Promise<void> {
   const json = parsed.value;
 
   try {
-    const ctx: { cwd?: string; branch?: string } = {};
+    const ctx: CheckContext = {};
     if (values.cwd !== undefined) ctx.cwd = values.cwd;
     if (values.branch !== undefined) ctx.branch = values.branch;
+    if (values.remote !== undefined) ctx.remote = values.remote;
+    if (values.env !== undefined) ctx.env = parseEnvFlags(values.env);
     const result = checkApi(values.tool, values.input, json, ctx);
     process.stdout.write(`${result.decision}\n`);
     if (values.explain) {
@@ -462,7 +478,8 @@ Check flags:
   --tool <name>                      Tool name (required)
   --input <cmd>                      Tool input string (required)
   --policy-file <spec>               Policy file (format, file, or "-" for stdin)
-  --cwd, --branch                    Evaluation context
+  --cwd, --branch, --remote          Evaluation context
+  --env NAME=VALUE                   Environment variable in the context (repeatable)
   --explain                          Print how each command was judged, to stderr
 
 Confine flags:
