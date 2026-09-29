@@ -351,6 +351,9 @@ function mergeLayers(layers: DecodedLayer[]): PermissionPolicy {
 /**
  * Load and merge permission policy from all sources.
  *
+ * @throws PolicyLoadError if a layer file exists but cannot be read, parsed or validated. Skipping it
+ *   would drop its rules, and the policy left could be looser than the one written.
+ *
  * Two-pass process:
  *
  * 1. Discover canonical files, resolve `up`/`with`/`without` from them.
@@ -359,11 +362,13 @@ function mergeLayers(layers: DecodedLayer[]): PermissionPolicy {
 export async function loadPolicy(
   options: PolicyLoadOptions,
 ): Promise<PermissionPolicy> {
-  const { layers } = await loadLayers(options.cwd);
+  const { layers, failures } = await loadLayers(options.cwd);
+  // A file that is there but unusable must not be skipped: the policy without it can be looser.
+  if (failures.length > 0) throw new PolicyLoadError(failures);
   return mergeLayers(layers);
 }
 
-/** Thrown to `watchPolicy`'s error callback when a layer file is there but cannot be used. */
+/** Thrown by `loadPolicy`, and given to `watchPolicy`'s error callback, when a layer file is there but cannot be used. */
 export class PolicyLoadError extends Error {
   /** One line per file that could not be read, parsed or validated. */
   readonly failures: readonly string[];
