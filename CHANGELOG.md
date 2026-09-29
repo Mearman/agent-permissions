@@ -1,3 +1,9 @@
+## [6.3.0](https://github.com/Mearman/agent-permissions/compare/v6.2.4...v6.3.0) (2026-09-29)
+
+### Features
+
+* **codec:** write Codex execpolicy rules for command deny and ask rules ([0c6331a](https://github.com/Mearman/agent-permissions/commit/0c6331ac7d0dd3b775909b05b7d7261f6bf809ea))
+
 ## [6.2.4](https://github.com/Mearman/agent-permissions/compare/v6.2.3...v6.2.4) (2026-09-29)
 
 ### Bug Fixes
