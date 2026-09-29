@@ -24,6 +24,10 @@
       "description": "Default permission mode. Agent Permission Policy modes: standard, autonomous, restricted, readonly. Claude Code compatible modes: plan, dontAsk, acceptEdits, bypassPermissions, default.",
       "default": "standard"
     },
+    "ceiling": {
+      "type": "boolean",
+      "description": "Marks this layer as a ceiling: the allow rules of deeper layers only take effect where this layer also allows. Deeper layers can still add deny and ask rules, and cannot loosen the default mode."
+    },
     "activeProfile": {
       "type": "string",
       "description": "Name of the active profile from `profiles`. If unset, use the top-level permission tiers directly."

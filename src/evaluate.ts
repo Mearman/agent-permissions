@@ -53,6 +53,12 @@ export interface PermissionPolicy {
   rules?: Rule[];
   /** Where each rule came from (a file path, for the loader), keyed by the rule object itself. */
   provenance?: ReadonlyMap<Rule, string>;
+  /**
+   * The layers the rules were merged from, outermost first, matched to rules through `provenance`.
+   * A ceiling layer bounds the allow rules of the layers after it: they only take effect where the
+   * ceiling also allows. A ceiling with no allow rules bounds nothing.
+   */
+  layers?: readonly { source: string; ceiling: boolean }[];
   /** Limits on agents that start other agents; they apply to calls that carry a `depth`. */
   delegation?: {
     /** The deepest an agent may be nested; 0 allows no subagents. Unset means no limit. */
@@ -509,14 +515,42 @@ export interface CompiledPolicy {
  */
 export function compile(policy: PermissionPolicy): CompiledPolicy {
   const rules = policy.rules ?? [];
+  const layers = policy.layers ?? [];
+  const layerIndex = new Map(
+    layers.map((layer, index) => [layer.source, index]),
+  );
+  const layerOf = (rule: Rule): number => {
+    const source = policy.provenance?.get(rule);
+    return (
+      (source === undefined ? undefined : layerIndex.get(source)) ??
+      layers.length
+    );
+  };
   // Within a tier a `hidden` rule is tried first, so a call it covers is reported as hidden even
   // when a plain rule of the same tier matches too.
   const tiers = TIERS.map((tier) =>
     rules
       .filter((rule) => rule.tier === tier)
       .sort((a, b) => Number(b.hidden === true) - Number(a.hidden === true))
-      .map((rule) => new CompiledRule(rule)),
+      .map((rule) => new CompiledRule(rule, layerOf(rule))),
   );
+  // A ceiling bounds the allow rules of the layers after it, but only if it allows something itself.
+  const allowRules = tiers[TIERS.indexOf("allow")] ?? [];
+  const ceilings = layers.flatMap((layer, index) => {
+    const allow = allowRules.filter((compiled) => compiled.layer === index);
+    return layer.ceiling && allow.length > 0 ? [{ index, allow }] : [];
+  });
+  const withinCeilings = (
+    candidate: CompiledRule,
+    toolName: string,
+    input: string,
+    ctx: EvaluationContext,
+  ): boolean =>
+    ceilings.every(
+      (ceiling) =>
+        ceiling.index >= candidate.layer ||
+        ceiling.allow.some((allow) => allow.grants(toolName, input, ctx)),
+    );
   const fallback = defaultDecision(policy.defaultMode);
   const maxDepth = policy.delegation?.maxDepth;
   const nonDelegable = (policy.delegation?.nonDelegable ?? []).map(
@@ -542,7 +576,7 @@ export function compile(policy: PermissionPolicy): CompiledPolicy {
         };
       }
     }
-    const match = matchRules(tiers, toolName, command, ctx);
+    const match = matchRules(tiers, toolName, command, ctx, withinCeilings);
     if (match === undefined) {
       return { command, decision: fallback, reason: "default" };
     }
@@ -630,12 +664,25 @@ export function compile(policy: PermissionPolicy): CompiledPolicy {
 /** A rule with the matching work done on first use and kept. */
 class CompiledRule {
   readonly rule: Rule;
+  /** Index of the layer the rule came from; past the last layer when that is unknown. */
+  readonly layer: number;
   #toolMatches: ((toolName: string) => boolean) | undefined;
   #patternMatches: ((input: string) => boolean) | undefined;
   #conditions: ((ctx: EvaluationContext) => Evaluation<boolean>) | undefined;
 
-  constructor(rule: Rule) {
+  constructor(rule: Rule, layer = 0) {
     this.rule = rule;
+    this.layer = layer;
+  }
+
+  /** Whether this rule, as an allow, grants the call: it matches and no condition is unknown. */
+  grants(toolName: string, input: string, ctx: EvaluationContext): boolean {
+    if (!this.matchesTool(toolName)) return false;
+    const conditions = this.conditions(ctx);
+    if (conditions !== undefined) {
+      if (conditions.status !== "definite" || !conditions.value) return false;
+    }
+    return this.matchesInput(input);
   }
 
   matchesTool(toolName: string): boolean {
@@ -664,6 +711,12 @@ function matchRules(
   toolName: string,
   input: string,
   ctx: EvaluationContext,
+  withinCeilings: (
+    candidate: CompiledRule,
+    toolName: string,
+    input: string,
+    ctx: EvaluationContext,
+  ) => boolean,
 ): { tier: PermissionTier; rule: Rule } | undefined {
   for (const [index, tier] of TIERS.entries()) {
     for (const compiled of tiers[index] ?? []) {
@@ -673,6 +726,10 @@ function matchRules(
       // An unknown condition may hold, so it still restricts, but it never grants.
       if (conditions?.status === "indeterminate" && tier === "allow") continue;
       if (!compiled.matchesInput(input)) continue;
+      // An allow that a ceiling above its layer does not also allow is not a grant
+      if (tier === "allow" && !withinCeilings(compiled, toolName, input, ctx)) {
+        continue;
+      }
       return { tier, rule: compiled.rule };
     }
   }
