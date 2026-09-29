@@ -30,6 +30,7 @@ import {
   collectRules,
   delegationLimits,
   mapMode,
+  mostRestrictiveMode,
   deduplicateRules,
   type PermissionPolicy,
 } from "./evaluate.ts";
@@ -228,28 +229,52 @@ async function readAndDecode(
 // Merging
 // ---------------------------------------------------------------------------
 
-function mergeLayers(layers: DecodedLayer[]): PermissionPolicy {
+/** One source of policy: a name for provenance, its policy, and whether it bounds deeper layers. */
+export interface PolicyLayer {
+  /** What the layer came from, usually a file path; it is what `explain` reports for its rules. */
+  source: string;
+  policy: AgentPermissionPolicy;
+  /** The layer's allow rules bound what the layers after it can allow. */
+  ceiling?: boolean;
+}
+
+/**
+ * Merge layers, outermost first, into one policy.
+ *
+ * - Rules from every layer are collected and deduplicated deny-first; each rule remembers its layer.
+ * - The default mode is the innermost layer's, except after a ceiling layer, where a deeper layer can
+ *   only make it stricter.
+ * - Delegation limits tighten: the shallowest `maxDepth`, every `nonDelegable` rule.
+ * - A ceiling layer that allows something bounds the allow rules of the layers after it (see
+ *   {@link PermissionPolicy.layers}).
+ */
+export function mergeLayerPolicies(
+  layers: readonly PolicyLayer[],
+): PermissionPolicy {
   if (layers.length === 0) {
     return { defaultMode: "standard" };
   }
 
   let mode: PermissionPolicy["defaultMode"] = "standard";
+  let ceilingAbove = false;
   const allRules: Rule[] = [];
   const provenance = new Map<Rule, string>();
 
-  // Layers are outermost-first. Last-defined wins for defaultMode.
   for (const layer of layers) {
     if (layer.policy.defaultMode) {
-      mode = mapMode(layer.policy.defaultMode);
+      const layerMode = mapMode(layer.policy.defaultMode);
+      mode = ceilingAbove
+        ? mapMode(mostRestrictiveMode(mode, layerMode) ?? mode)
+        : layerMode;
     }
     for (const rule of collectRules(layer.policy)) {
       allRules.push(rule);
-      provenance.set(rule, layer.file.path);
+      provenance.set(rule, layer.source);
     }
+    if (layer.ceiling === true) ceilingAbove = true;
   }
 
   const rules = deduplicateRules(allRules);
-
   const delegation = delegationLimits(
     ...layers.map((layer) => layer.policy.delegation),
   );
@@ -257,8 +282,26 @@ function mergeLayers(layers: DecodedLayer[]): PermissionPolicy {
   return {
     defaultMode: mode,
     ...(rules.length > 0 ? { rules, provenance } : {}),
+    ...(layers.some((layer) => layer.ceiling === true)
+      ? {
+          layers: layers.map((layer) => ({
+            source: layer.source,
+            ceiling: layer.ceiling === true,
+          })),
+        }
+      : {}),
     ...(delegation === undefined ? {} : { delegation }),
   };
+}
+
+function mergeLayers(layers: DecodedLayer[]): PermissionPolicy {
+  return mergeLayerPolicies(
+    layers.map((layer) => ({
+      source: layer.file.path,
+      policy: layer.policy,
+      ceiling: layer.policy.ceiling === true,
+    })),
+  );
 }
 
 // ---------------------------------------------------------------------------

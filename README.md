@@ -386,6 +386,20 @@ Loads and merges layers in order (outermost-first, last-defined-wins for `defaul
 
 The loader normalises all `permissions` string arrays into structured `rules`. Deny rules from any layer short-circuit. Allow rules are additive.
 
+### Ceiling layers
+
+A layer can bound the layers after it. Set `"ceiling": true` in a policy file (an organisation's, say) and the allow rules of layers loaded later, meaning deeper directories and local overrides, only take effect where that file also allows. They can still add `deny` and `ask` rules, and they can only make the default mode stricter.
+
+```json
+{
+  "ceiling": true,
+  "defaultMode": "restricted",
+  "rules": [{ "tool": "Bash", "pattern": "git:*", "tier": "allow" }]
+}
+```
+
+A project under that file can allow `git status`, which the ceiling already allows, but an allow for `npm run *` is ignored. A ceiling that allows nothing bounds nothing, and a ceiling never bounds layers before it. `mergeLayerPolicies` does the same for layers you supply yourself, each with a source name that `explain` reports.
+
 ## Agent compatibility
 
 Bidirectional codecs convert between the canonical format and each agent's native config:

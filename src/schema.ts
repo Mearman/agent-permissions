@@ -418,6 +418,15 @@ export const AgentPermissionPolicy = z
     /** Default permission mode when starting a session. */
     defaultMode: PermissionMode,
 
+    /**
+     * Marks this file's layer as a ceiling: what it allows bounds what layers loaded after it (deeper
+     * directories, local overrides) can allow. They can still add deny and ask rules.
+     */
+    ceiling: z.boolean().meta({
+      description:
+        "Marks this layer as a ceiling: the allow rules of deeper layers only take effect where this layer also allows. Deeper layers can still add deny and ask rules, and cannot loosen the default mode.",
+    }),
+
     /** Name of the active profile from `profiles`. */
     activeProfile: z.string().meta({
       description:
