@@ -254,7 +254,7 @@ void describe("convert to Codex", () => {
     assert.throws(
       () =>
         convert("canonical", "codex", {
-          rules: [{ tool: "Bash", pattern: "git push:*", tier: "ask" }],
+          rules: [{ tool: "Bash", pattern: "git * --force", tier: "ask" }],
         }),
       UnsupportedCapabilityError,
     );

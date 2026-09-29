@@ -10,7 +10,7 @@
  */
 
 import { parseArgs } from "node:util";
-import { resolve, join } from "node:path";
+import { dirname, resolve, join } from "node:path";
 import { existsSync } from "node:fs";
 import {
   convert,
@@ -175,6 +175,16 @@ async function convertCommand(args: string[]): Promise<void> {
 
     if (outputPath) {
       await writeJsonFile(outputPath, jsonStr);
+      for (const companion of result.companions) {
+        await writeJsonFile(
+          join(dirname(outputPath), companion.path),
+          companion.content,
+        );
+      }
+    } else if (result.companions.length > 0) {
+      error(
+        `${toFormat} also needs ${result.companions.map((c) => c.path).join(", ")} beside its config, which stdout cannot carry; pass --output`,
+      );
     } else {
       process.stdout.write(jsonStr);
     }
