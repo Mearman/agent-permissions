@@ -18,6 +18,11 @@ updates:
       prefix: build(deps)
     cooldown:
       default-days: 7
+    ignore:
+      # semantic-release's release-notes-generator renders through conventional-changelog-writer 8, and preset 10 needs writer 9, so a preset 10 install makes every release fail at generateNotes. Drop this once semantic-release ships on writer 9.
+      - dependency-name: conventional-changelog-conventionalcommits
+        update-types:
+          - version-update:semver-major
     groups:
       dev-dependencies:
         dependency-type: development
