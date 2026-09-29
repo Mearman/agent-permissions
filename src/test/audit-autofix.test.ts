@@ -7,9 +7,12 @@ import {
   inertOverrideKeys,
   isAuditAdvisory,
   isAuditReport,
+  pruneInertOverrides,
+  RESOLVING_INSTALL_ARGS,
   resolvedVersionsFromLockfileText,
   withOverrides,
   type AuditAdvisory,
+  type PruneIo,
 } from "../../.github/scripts/audit-autofix.ts";
 
 function advisory(overrides: Partial<AuditAdvisory> = {}): AuditAdvisory {
@@ -206,5 +209,109 @@ packages:
       "undici@>=7.0.0 <7.29.0",
       "undici@>=8.0.0",
     ]);
+  });
+});
+
+void describe("pruneInertOverrides", () => {
+  const workspaceText = [
+    "packages: []",
+    "overrides:",
+    '  "fast-uri@>=3.0.0 <3.1.6": ">=3.1.6"',
+    '  "js-yaml@>=4.0.0 <4.3.2": ">=4.3.2"',
+    "",
+  ].join("\n");
+  const lockfileText = [
+    "lockfileVersion: '9.0'",
+    "importers:",
+    "  .:",
+    "    dependencies:",
+    "      fast-uri:",
+    "        specifier: ^3.1.8",
+    "        version: 3.1.8",
+    "packages:",
+    "  fast-uri@3.1.8:",
+    "    resolution: {integrity: sha512-x}",
+    "  js-yaml@4.3.2:",
+    "    resolution: {integrity: sha512-y}",
+    "",
+  ].join("\n");
+  const files = { workspace: workspaceText, lockfile: lockfileText };
+
+  /** A fake of the files and commands pruning touches, recording what it was asked to do. */
+  function fakeIo(options: {
+    installSucceeds: boolean;
+    auditAdvisories?: Record<string, AuditAdvisory>;
+  }) {
+    const state = { ...files };
+    const restored: { workspace: string; lockfile: string }[] = [];
+    const io: PruneIo = {
+      readWorkspace: () => parseDocument(state.workspace),
+      writeWorkspace: (doc) => {
+        state.workspace = doc.toString();
+      },
+      readLockfile: () => state.lockfile,
+      snapshot: () => ({ ...state }),
+      install: () => options.installSucceeds,
+      audit: () => ({ advisories: options.auditAdvisories ?? {} }),
+      restore: (snapshot) => {
+        restored.push(snapshot);
+        state.workspace = snapshot.workspace;
+        state.lockfile = snapshot.lockfile;
+      },
+    };
+    return { io, state, restored };
+  }
+
+  void it("removes the overrides every resolved version already satisfies", () => {
+    const { io, state } = fakeIo({ installSucceeds: true });
+    const pruned = pruneInertOverrides(io, new Set());
+    assert.deepEqual(pruned.sort(), [
+      "fast-uri@>=3.0.0 <3.1.6",
+      "js-yaml@>=4.0.0 <4.3.2",
+    ]);
+    assert.equal(state.workspace.includes("overrides"), false);
+  });
+
+  void it("puts back the files as they were before pruning when the install fails", () => {
+    const { io, state, restored } = fakeIo({ installSucceeds: false });
+    assert.deepEqual(pruneInertOverrides(io, new Set()), []);
+    assert.deepEqual(restored, [files]);
+    assert.equal(state.workspace, workspaceText);
+    assert.equal(state.lockfile, lockfileText);
+  });
+
+  void it("puts back the files as they were before pruning when the audit regresses", () => {
+    const { io, state, restored } = fakeIo({
+      installSucceeds: true,
+      auditAdvisories: { "1": advisory({ github_advisory_id: "GHSA-new" }) },
+    });
+    assert.deepEqual(pruneInertOverrides(io, new Set()), []);
+    assert.deepEqual(restored, [files]);
+    assert.equal(state.workspace, workspaceText);
+  });
+
+  void it("accepts advisories the run already started with", () => {
+    const { io } = fakeIo({
+      installSucceeds: true,
+      auditAdvisories: { "1": advisory({ github_advisory_id: "GHSA-old" }) },
+    });
+    assert.equal(pruneInertOverrides(io, new Set(["GHSA-old"])).length, 2);
+  });
+
+  void it("does nothing when no override is inert", () => {
+    const { io, restored } = fakeIo({ installSucceeds: true });
+    const noneInert: PruneIo = {
+      ...io,
+      readLockfile: () =>
+        lockfileText.replaceAll("3.1.8", "3.1.5").replaceAll("4.3.2", "4.3.1"),
+    };
+    assert.deepEqual(pruneInertOverrides(noneInert, new Set()), []);
+    assert.deepEqual(restored, []);
+  });
+});
+
+void describe("installing after an override change", () => {
+  void it("does not use a frozen lockfile, which CI turns on by default", () => {
+    assert.ok(RESOLVING_INSTALL_ARGS.includes("--no-frozen-lockfile"));
   });
 });

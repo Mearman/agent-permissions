@@ -316,6 +316,97 @@ export function resolvedVersionsFromLockfileText(
   return byPackage;
 }
 
+// `pnpm install` defaults to --frozen-lockfile when CI is set, and changing an override makes the committed lockfile outdated, so an install that has to re-resolve must say so explicitly. Without it the install fails in CI (never locally, where CI is unset) and whatever depends on it is abandoned.
+export const RESOLVING_INSTALL_ARGS = ["install", "--no-frozen-lockfile"];
+
+export interface FileSnapshot {
+  workspace: string;
+  lockfile: string;
+}
+
+// The files and commands override pruning touches, injected so its failure handling can be tested without running pnpm.
+export interface PruneIo {
+  readWorkspace(): Document;
+  writeWorkspace(doc: Document): void;
+  readLockfile(): string;
+  snapshot(): FileSnapshot;
+  /** Re-resolve after the workspace file changed; false when pnpm could not. */
+  install(): boolean;
+  audit(): AuditReport;
+  /** Put both files back as they were in the snapshot and resync node_modules to them. */
+  restore(snapshot: FileSnapshot): void;
+}
+
+function realPruneIo(): PruneIo {
+  return {
+    readWorkspace: readWorkspaceDoc,
+    writeWorkspace: writeWorkspaceDoc,
+    readLockfile: () => readFileSync(LOCKFILE, "utf8"),
+    snapshot: () => ({
+      workspace: readFileSync(WORKSPACE_FILE, "utf8"),
+      lockfile: readFileSync(LOCKFILE, "utf8"),
+    }),
+    install: () =>
+      spawnSync("pnpm", RESOLVING_INSTALL_ARGS, { encoding: "utf8" }).status ===
+      0,
+    audit: runAudit,
+    restore: (snapshot) => {
+      writeFileSync(WORKSPACE_FILE, snapshot.workspace);
+      writeFileSync(LOCKFILE, snapshot.lockfile);
+      spawnSync("pnpm", ["install", "--frozen-lockfile"], {
+        encoding: "utf8",
+      });
+    },
+  };
+}
+
+/**
+ * Remove the overrides whose package the lockfile already resolves entirely inside the target, and
+ * return their keys. The pruned state must install and audit without any advisory the run did not
+ * start with; otherwise the files go back to exactly what they were before pruning, which keeps the
+ * fixes applied earlier in the run, and nothing is pruned.
+ */
+export function pruneInertOverrides(
+  io: PruneIo,
+  initialIds: ReadonlySet<string>,
+): string[] {
+  const workspace = io.readWorkspace();
+  const overrides = currentOverrides(workspace);
+  const inert = inertOverrideKeys(
+    overrides,
+    resolvedVersionsFromLockfileText(io.readLockfile()),
+  );
+  if (inert.length === 0) return [];
+
+  const before = io.snapshot();
+  const inertSet = new Set(inert);
+  const kept: Record<string, string> = {};
+  for (const [key, value] of Object.entries(overrides)) {
+    if (!inertSet.has(key)) kept[key] = value;
+  }
+  io.writeWorkspace(withOverrides(workspace, kept));
+
+  if (!io.install()) {
+    io.restore(before);
+    console.log(
+      "::warning::override prune install failed; keeping the unpruned set.",
+    );
+    return [];
+  }
+  // Clean means: no advisory is present that this run did not start with -- the prune resurrected nothing the fixes removed and introduced nothing new.
+  const regressed = Object.values(io.audit().advisories).some(
+    (a) => !initialIds.has(a.github_advisory_id),
+  );
+  if (regressed) {
+    io.restore(before);
+    console.log(
+      "::warning::override prune regressed the audit; keeping the unpruned set.",
+    );
+    return [];
+  }
+  return inert;
+}
+
 // Wrapped in a main guard so the helpers above stay importable from the test suite: node executes this file directly for real runs, and the unit tests import the helpers without touching package.json or the lockfile.
 function main(): void {
   const initial = runAudit();
@@ -366,47 +457,15 @@ function main(): void {
     );
   }
 
-  // Prune inert overrides: entries whose package the lockfile already resolves entirely inside the override's target. The pruned pnpm-workspace.yaml rides the same fix PR, and the pruned state is verified below before it is kept -- anything that regresses restores the pre-prune files.
-  let prunedKeys: string[] = [];
-  const workspaceNow = readWorkspaceDoc();
-  const overridesNow = currentOverrides(workspaceNow);
-  const inert = inertOverrideKeys(
-    overridesNow,
-    resolvedVersionsFromLockfileText(readFileSync(LOCKFILE, "utf8")),
-  );
-  if (inert.length > 0) {
-    const inertSet = new Set(inert);
-    const pruned: Record<string, string> = {};
-    for (const [key, value] of Object.entries(overridesNow)) {
-      if (!inertSet.has(key)) pruned[key] = value;
-    }
-    writeWorkspaceDoc(withOverrides(workspaceNow, pruned));
-    if (spawnSync("pnpm", ["install"], { encoding: "utf8" }).status === 0) {
-      const postPrune = runAudit();
-      // Clean means: no advisory is present that this run did not start with -- the prune resurrected nothing the fixes removed and introduced nothing new.
-      const regressed = Object.values(postPrune.advisories).some(
-        (a) => !initialIds.has(a.github_advisory_id),
-      );
-      if (!regressed) {
-        appendSummary(
-          `\n### Pruned inert overrides\n\n${inert.map((k) => `- ${k} (every resolved version already satisfies the target)`).join("\n")}\n`,
-        );
-        console.log(
-          `Pruned ${String(inert.length)} inert override(s); the reduced set still audits clean.`,
-        );
-        prunedKeys = inert;
-      } else {
-        restoreFromGit();
-        console.log(
-          "::warning::override prune regressed the audit; keeping the unpruned set.",
-        );
-      }
-    } else {
-      restoreFromGit();
-      console.log(
-        "::warning::override prune install failed; keeping the unpruned set.",
-      );
-    }
+  // Prune inert overrides: entries whose package the lockfile already resolves entirely inside the override's target. The pruned pnpm-workspace.yaml rides the same fix PR.
+  const prunedKeys = pruneInertOverrides(realPruneIo(), initialIds);
+  if (prunedKeys.length > 0) {
+    appendSummary(
+      `\n### Pruned inert overrides\n\n${prunedKeys.map((k) => `- ${k} (every resolved version already satisfies the target)`).join("\n")}\n`,
+    );
+    console.log(
+      `Pruned ${String(prunedKeys.length)} inert override(s); the reduced set still audits clean.`,
+    );
   }
 
   if (deferred.length > 0) {
@@ -467,6 +526,18 @@ function main(): void {
       appendFileSync("/tmp/audit-fix-commit-body.txt", `\n${pruneLines}`);
     }
   }
+  // A run that reports fixes must leave them in the working tree; the PR step commits from there, and an empty commit is a silent loss of the fix.
+  if (fixedAdvisories.length > 0 || prunedKeys.length > 0) {
+    const unchanged =
+      spawnSync("git", ["diff", "--quiet", "--", LOCKFILE, WORKSPACE_FILE])
+        .status === 0;
+    if (unchanged) {
+      fail(
+        `${LOCKFILE} and ${WORKSPACE_FILE} are unchanged although the run reported fixes; they were discarded before the end of the run`,
+      );
+    }
+  }
+
   const fixedFlag =
     fixedAdvisories.length > 0 || prunedKeys.length > 0 ? "true" : "false";
   setOutput("fixed", fixedFlag);
