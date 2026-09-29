@@ -13,7 +13,9 @@
  */
 
 import {
+  compile,
   explain,
+  type CompiledPolicy,
   type DecisionStep,
   type EvaluationContext,
   type PermissionDecision,
@@ -188,10 +190,9 @@ const PRODUCED_BY: Readonly<
   rejected: ["ask"],
 };
 
-/** Judge each call against a policy, as {@link explain} judges one. */
-function judge(policy: PermissionPolicy, call: ToolCall): ReplayedCall {
-  const { decision, steps } = explain(
-    policy,
+/** Judge a call against a compiled policy, as {@link explain} judges one. */
+function judge(policy: CompiledPolicy, call: ToolCall): ReplayedCall {
+  const { decision, steps } = policy.explain(
     call.tool,
     call.subject ?? "",
     call.context,
@@ -212,8 +213,9 @@ export function replayCalls(
     deny: 0,
   };
   const differing: ReplayedCall[] = [];
+  const compiled = compile(policy);
   for (const call of calls) {
-    const replayed = judge(policy, call);
+    const replayed = judge(compiled, call);
     counts[replayed.decision]++;
     if (
       call.outcome !== undefined &&
@@ -345,10 +347,11 @@ export function suggestRules(
 ): Suggestion[] {
   const approved = new Map<string, Tally>();
   const excluded = new Map<string, Unit>();
+  const compiled = compile(policy);
 
   for (const call of calls) {
     const units = unitsOf(call);
-    const { steps } = judge(policy, call);
+    const { steps } = judge(compiled, call);
     const refused =
       call.outcome === "denied" ||
       call.outcome === "rejected" ||
