@@ -50,6 +50,30 @@ export type PermissionTier = "deny" | "ask" | "allow";
 export interface PermissionPolicy {
   defaultMode: "autonomous" | "standard" | "restricted" | "readonly";
   rules?: Rule[];
+  /** Where each rule came from (a file path, for the loader), keyed by the rule object itself. */
+  provenance?: ReadonlyMap<Rule, string>;
+}
+
+/** How one command was judged. */
+export interface DecisionStep {
+  /** The command that was judged: the whole input, or one command of a shell line. */
+  command: string;
+  decision: PermissionDecision;
+  /**
+   * `rule`: a rule decided. `default`: no rule matched and the default mode decided. `unsplittable`:
+   * a shell line the splitter does not model, so a matching allow rule was raised to `ask`.
+   */
+  reason: "rule" | "default" | "unsplittable";
+  /** The rule that matched, when one did. */
+  rule?: Rule;
+  /** Where that rule came from, when the policy records provenance. */
+  layer?: string;
+}
+
+/** A decision with the steps behind it. */
+export interface Explanation {
+  decision: PermissionDecision;
+  steps: DecisionStep[];
 }
 
 /** Context for conditional rule evaluation (cwd, branch, etc.). */
@@ -321,31 +345,75 @@ export function evaluate(
   input: string,
   ctx: EvaluationContext = {},
 ): PermissionDecision {
-  const whole = matchRules(policy, toolName, input, ctx);
-  const fallback = defaultDecision(policy.defaultMode);
-  if (!isShellTool(toolName)) return whole ?? fallback;
+  return explain(policy, toolName, input, ctx).decision;
+}
+
+/**
+ * Evaluate a tool call and report how each command was judged: the rule that matched and the layer
+ * it came from, or that the default mode decided. {@link evaluate} returns only the decision.
+ */
+export function explain(
+  policy: PermissionPolicy,
+  toolName: string,
+  input: string,
+  ctx: EvaluationContext = {},
+): Explanation {
+  const judge = (
+    command: string,
+    reason: DecisionStep["reason"] = "rule",
+  ): DecisionStep => {
+    const match = matchRules(policy, toolName, command, ctx);
+    if (match === undefined) {
+      return {
+        command,
+        decision: defaultDecision(policy.defaultMode),
+        reason: "default",
+      };
+    }
+    const layer = policy.provenance?.get(match.rule);
+    return {
+      command,
+      decision: match.tier,
+      reason,
+      rule: match.rule,
+      ...(layer === undefined ? {} : { layer }),
+    };
+  };
+
+  const whole = judge(input);
+  if (!isShellTool(toolName))
+    return { decision: whole.decision, steps: [whole] };
 
   const commands = splitShellCommand(input);
   if (commands === undefined) {
-    return whole === "allow" ? "ask" : (whole ?? fallback);
+    if (whole.reason === "rule" && whole.decision === "allow") {
+      return {
+        decision: "ask",
+        steps: [{ ...whole, decision: "ask", reason: "unsplittable" }],
+      };
+    }
+    return { decision: whole.decision, steps: [whole] };
   }
 
   // A rule written against the whole line can restrict it, but only the commands can grant it.
-  const decisions = commands.map(
-    (command) => matchRules(policy, toolName, command, ctx) ?? fallback,
-  );
-  if (whole === "deny" || whole === "ask") decisions.push(whole);
-  if (decisions.length === 0) return whole ?? fallback;
-  return strictest(decisions);
+  const steps = commands.map((command) => judge(command));
+  if (
+    whole.reason === "rule" &&
+    (whole.decision === "deny" || whole.decision === "ask")
+  ) {
+    steps.push(whole);
+  }
+  if (steps.length === 0) return { decision: whole.decision, steps: [whole] };
+  return { decision: strictest(steps.map((s) => s.decision)), steps };
 }
 
-/** The tier of the first rule that matches, checking deny before ask before allow, or `undefined`. */
+/** The first rule that matches, checking deny before ask before allow, or `undefined`. */
 function matchRules(
   policy: PermissionPolicy,
   toolName: string,
   input: string,
   ctx: EvaluationContext,
-): PermissionTier | undefined {
+): { tier: PermissionTier; rule: Rule } | undefined {
   const { rules } = policy;
   if (!rules) return undefined;
   for (const tier of TIERS) {
@@ -365,7 +433,7 @@ function matchRules(
         if (!matchPattern(parsed, input)) continue;
       }
       // No pattern = match any input; pattern matched = match
-      return tier;
+      return { tier, rule };
     }
   }
   return undefined;

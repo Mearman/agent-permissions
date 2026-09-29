@@ -20,6 +20,7 @@ import {
   type Format,
 } from "./api.ts";
 import { agentId } from "./compat/codecs.ts";
+import { ruleToString, type DecisionStep } from "./evaluate.ts";
 import { sync } from "./sync.ts";
 import {
   AGENT_FILES,
@@ -227,6 +228,17 @@ async function validateCommand(args: string[]): Promise<void> {
 // check
 // ---------------------------------------------------------------------------
 
+/** One line describing how a command was judged, for `check --explain`. */
+function formatStep(step: DecisionStep): string {
+  const by =
+    step.rule === undefined
+      ? "the default mode"
+      : `${ruleToString(step.rule)} [${step.rule.tier}]${step.layer === undefined ? "" : ` from ${step.layer}`}`;
+  const note =
+    step.reason === "unsplittable" ? " (line not fully parsed, so asks)" : "";
+  return `${step.decision}\t${step.command}\t${by}${note}`;
+}
+
 async function checkCommand(args: string[]): Promise<void> {
   const { values } = parseArgs({
     args,
@@ -236,6 +248,7 @@ async function checkCommand(args: string[]): Promise<void> {
       "policy-file": { type: "string" },
       cwd: { type: "string" },
       branch: { type: "string" },
+      explain: { type: "boolean" },
     },
     strict: true,
   });
@@ -257,6 +270,11 @@ async function checkCommand(args: string[]): Promise<void> {
     if (values.branch !== undefined) ctx.branch = values.branch;
     const result = checkApi(values.tool, values.input, json, ctx);
     process.stdout.write(`${result.decision}\n`);
+    if (values.explain) {
+      for (const step of result.steps) {
+        process.stderr.write(`${formatStep(step)}\n`);
+      }
+    }
     process.exit(result.decision === "deny" ? 1 : 0);
   } catch (e) {
     if (e instanceof ConvertError) {
@@ -397,6 +415,7 @@ Check flags:
   --input <cmd>                      Tool input string (required)
   --policy-file <spec>               Policy file (format, file, or "-" for stdin)
   --cwd, --branch                    Evaluation context
+  --explain                          Print how each command was judged, to stderr
 
 Sync flags:
   -d, --working-dir <path>           Starting directory (default: cwd)

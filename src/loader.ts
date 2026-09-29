@@ -234,20 +234,24 @@ function mergeLayers(layers: DecodedLayer[]): PermissionPolicy {
 
   let mode: PermissionPolicy["defaultMode"] = "standard";
   const allRules: Rule[] = [];
+  const provenance = new Map<Rule, string>();
 
   // Layers are outermost-first. Last-defined wins for defaultMode.
   for (const layer of layers) {
     if (layer.policy.defaultMode) {
       mode = mapMode(layer.policy.defaultMode);
     }
-    allRules.push(...collectRules(layer.policy));
+    for (const rule of collectRules(layer.policy)) {
+      allRules.push(rule);
+      provenance.set(rule, layer.file.path);
+    }
   }
 
   const rules = deduplicateRules(allRules);
 
   return {
     defaultMode: mode,
-    ...(rules.length > 0 ? { rules } : {}),
+    ...(rules.length > 0 ? { rules, provenance } : {}),
   };
 }
 

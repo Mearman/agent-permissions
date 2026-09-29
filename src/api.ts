@@ -6,7 +6,12 @@
  */
 
 import { CODECS, agentId, type AgentId } from "./compat/codecs.ts";
-import { evaluate, collectRules, mapMode } from "./evaluate.ts";
+import {
+  explain,
+  collectRules,
+  mapMode,
+  type DecisionStep,
+} from "./evaluate.ts";
 import { validatePolicy, type ValidationError } from "./agent-files.ts";
 import { isAgentId, isRecord } from "./guards.ts";
 import { AgentPermissionPolicy } from "./schema.ts";
@@ -44,6 +49,8 @@ export interface ValidateResult {
 export interface CheckResult {
   /** The evaluation decision. */
   decision: "allow" | "deny" | "ask";
+  /** How each command was judged: the matching rule, or the default mode. */
+  steps: DecisionStep[];
 }
 
 // ---------------------------------------------------------------------------
@@ -344,14 +351,14 @@ export function check(
   const mode = policy.defaultMode ?? "standard";
   const mappedMode = mapMode(mode);
 
-  const decision = evaluate(
+  const { decision, steps } = explain(
     { defaultMode: mappedMode, rules },
     tool,
     input,
     context,
   );
 
-  return { decision };
+  return { decision, steps };
 }
 
 // ---------------------------------------------------------------------------
