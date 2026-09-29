@@ -36,6 +36,7 @@ import {
 import { definite, indeterminate, type Evaluation } from "trilean/evaluation";
 import type { ExpressionNode, PredicateNode } from "trilean/tree";
 
+import { normaliseRemote } from "./remote.ts";
 import { splitShellCommand } from "./shell.ts";
 import type { Rule, RuleCondition } from "./schema.ts";
 
@@ -80,6 +81,10 @@ export interface Explanation {
 export interface EvaluationContext {
   cwd?: string;
   branch?: string;
+  /** Environment variables the caller vouches for; an unset name is unknown, not empty. */
+  env?: Readonly<Record<string, string | undefined>>;
+  /** The git remote in any common URL form; it is normalised before comparing. */
+  remote?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -287,6 +292,12 @@ function compileConditions(
   if (when.branch !== undefined) {
     checks.push(conditionOn("branch", when.branch));
   }
+  for (const [name, expected] of Object.entries(when.env ?? {})) {
+    checks.push(envCondition(name, expected));
+  }
+  if (when.remote !== undefined) {
+    checks.push(remoteCondition(when.remote));
+  }
   return (ctx) => {
     const results = checks.map((check) => check(ctx));
     for (const result of results) {
@@ -296,6 +307,31 @@ function compileConditions(
       if (result.status === "indeterminate") return result;
     }
     return definite(true);
+  };
+}
+
+function envCondition(
+  name: string,
+  expected: string,
+): (ctx: EvaluationContext) => Evaluation<boolean> {
+  return (ctx) => {
+    const actual = ctx.env?.[name];
+    if (actual === undefined) {
+      return indeterminate("not-found", `the context has no env ${name}`);
+    }
+    return definite(actual === expected);
+  };
+}
+
+function remoteCondition(
+  pattern: string,
+): (ctx: EvaluationContext) => Evaluation<boolean> {
+  const matches = compileGlobPath(pattern.toLowerCase());
+  return (ctx) => {
+    if (ctx.remote === undefined) {
+      return indeterminate("not-found", "the context has no remote");
+    }
+    return definite(matches(normaliseRemote(ctx.remote)));
   };
 }
 

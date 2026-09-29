@@ -11,6 +11,7 @@ import {
   collectRules,
   mapMode,
   type DecisionStep,
+  type EvaluationContext,
   type PermissionPolicy,
 } from "./evaluate.ts";
 import {
@@ -52,6 +53,9 @@ export interface ValidateResult {
   /** Validation errors (empty when valid). */
   errors: ValidationError[];
 }
+
+/** The facts about the call that a rule's `when` conditions are checked against. */
+export type CheckContext = EvaluationContext;
 
 /** Result of checking a tool call against a policy. */
 export interface CheckResult {
@@ -338,7 +342,7 @@ export function validate(json: unknown): ValidateResult {
  * @param tool - Tool name (e.g. "Bash", "Read").
  * @param input - Tool input string to match against patterns.
  * @param json - Parsed canonical policy JSON.
- * @param context - Optional evaluation context (cwd, branch).
+ * @param context - Optional evaluation context (cwd, branch, remote, env).
  *
  * @returns Check result with the evaluation decision.
  *
@@ -348,7 +352,7 @@ export function check(
   tool: string,
   input: string,
   json: unknown,
-  context?: { cwd?: string; branch?: string },
+  context?: CheckContext,
 ): CheckResult {
   const { decision, steps } = explain(
     permissionPolicy(json),

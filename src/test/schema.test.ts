@@ -343,3 +343,40 @@ void describe("AgentPermissionPolicy", () => {
     });
   });
 });
+
+void describe("a rule's unknown keys", () => {
+  void it("rejects a misspelled condition instead of dropping it", () => {
+    // Dropped, `when: { brnach: "main" }` would become `when: {}` and the rule would apply everywhere.
+    const result = AgentPermissionPolicy.safeParse({
+      rules: [
+        {
+          tool: "Bash",
+          pattern: "git push:*",
+          tier: "allow",
+          when: { brnach: "main" },
+        },
+      ],
+    });
+    assert.equal(result.success, false);
+  });
+
+  void it("rejects an unknown key on a rule", () => {
+    const result = AgentPermissionPolicy.safeParse({
+      rules: [{ tool: "Bash", tier: "allow", whn: { branch: "main" } }],
+    });
+    assert.equal(result.success, false);
+  });
+
+  void it("accepts the env and remote conditions", () => {
+    const result = AgentPermissionPolicy.safeParse({
+      rules: [
+        {
+          tool: "Bash",
+          tier: "allow",
+          when: { env: { CI: "true" }, remote: "github.com/exadev/*" },
+        },
+      ],
+    });
+    assert.equal(result.success, true);
+  });
+});

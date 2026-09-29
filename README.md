@@ -665,6 +665,17 @@ Rules with `when` only match when all conditions are met (AND logic):
 }
 ```
 
+Conditions available in `when`, all combined with AND:
+
+| Condition | Matches                                                                                                                                                |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cwd`     | Working directory, as a glob                                                                                                                           |
+| `branch`  | Git branch, as a glob                                                                                                                                  |
+| `env`     | Environment variables that must each equal the given value, as `{ "CI": "true" }`                                                                      |
+| `remote`  | Git remote, as a glob against `host/path` in lower case; `git@github.com:Org/Repo.git` and `https://github.com/org/repo` both match `github.com/org/*` |
+
+A key that is not one of these is a validation error, so a misspelled condition cannot silently leave a rule applying everywhere.
+
 A condition on a field the evaluation context does not carry (no `cwd` or no `branch` supplied) is unknown, not satisfied. An unknown condition never lets an allow rule apply, and still lets a deny or ask rule apply, since the condition may hold. A definite mismatch on one condition settles the rule even if another condition is unknown.
 
 ### Full policy with profiles, sandbox, per-agent overrides

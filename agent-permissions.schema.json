@@ -147,6 +147,20 @@
               "branch": {
                 "type": "string",
                 "description": "Git branch name pattern (glob)."
+              },
+              "env": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Environment variables that must each equal the given value (AND logic)."
+              },
+              "remote": {
+                "type": "string",
+                "description": "Git remote pattern (glob), matched against the origin as host/path in lower case, so git@github.com:Org/Repo.git and https://github.com/org/repo both match github.com/org/*."
               }
             },
             "additionalProperties": false
