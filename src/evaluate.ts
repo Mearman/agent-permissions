@@ -986,7 +986,7 @@ const MODE_RESTRICTIVENESS: Record<string, number> = {
   default: 2,
   auto: 2,
   autonomous: 1,
-  dontAsk: 1,
+  dontAsk: 4,
   bypassPermissions: 1,
 };
 
@@ -1007,12 +1007,13 @@ export function mapMode(mode: string): PermissionPolicy["defaultMode"] {
   switch (mode) {
     case "autonomous":
     case "bypassPermissions":
-    case "dontAsk":
       return "autonomous";
     case "restricted":
     case "plan":
       return "restricted";
+    // Claude Code's dontAsk turns every prompt into a denial: what no rule allows is refused.
     case "readonly":
+    case "dontAsk":
       return "readonly";
     default:
       return "standard";

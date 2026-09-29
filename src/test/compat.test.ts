@@ -449,11 +449,14 @@ void describe("crushCodec", () => {
       assert.deepStrictEqual(encoded.allowed_tools, ["view"]);
     });
 
-    void it("produces empty allowed_tools for deny-only policy", () => {
-      const encoded = z.encode(crushCodec, {
-        rules: [{ tool: "Bash", pattern: "sudo:*", tier: "deny" }],
-      });
-      assert.deepStrictEqual(encoded.allowed_tools, []);
+    void it("refuses a deny-only policy instead of writing an empty allowlist", () => {
+      assert.throws(
+        () =>
+          z.encode(crushCodec, {
+            rules: [{ tool: "Bash", pattern: "sudo:*", tier: "deny" }],
+          }),
+        UnsupportedCapabilityError,
+      );
     });
   });
 

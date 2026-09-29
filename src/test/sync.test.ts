@@ -449,13 +449,13 @@ void describe("sync", () => {
     const cwd = await mkdtemp(join(tmpdir(), "sync-test-"));
     dirs.push(cwd);
 
-    // Claude Code has autonomous (dontAsk)
+    // Claude Code has autonomous (bypassPermissions)
     await mkdir(join(cwd, ".claude"), { recursive: true });
     await writeFile(
       join(cwd, ".claude", "settings.json"),
       JSON.stringify({
         permissions: {
-          defaultMode: "dontAsk",
+          defaultMode: "bypassPermissions",
           allow: ["Read"],
         },
       }),
