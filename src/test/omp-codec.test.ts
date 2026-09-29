@@ -8,7 +8,11 @@ import { CODECS, ompCodec } from "../compat/codecs.ts";
 import { UnsupportedCapabilityError } from "../compat/unsupported.ts";
 import { evaluate, mapMode, type PermissionDecision } from "../evaluate.ts";
 import { splitShellCommand } from "../shell.ts";
-import type { AgentPermissionPolicy, Rule } from "../schema.ts";
+import {
+  PermissionMode,
+  type AgentPermissionPolicy,
+  type Rule,
+} from "../schema.ts";
 
 interface OmpPattern {
   match: string;
@@ -349,15 +353,16 @@ function refusal(policy: AgentPermissionPolicy): UnsupportedCapabilityError {
 }
 
 void describe("ompCodec default mode", () => {
+  /** Every canonical mode, grouped by how the evaluator reads it, so aliases follow the evaluator. */
+  const modesReadAs = (
+    mode: "standard" | "restricted" | "autonomous" | "readonly",
+  ): PermissionMode[] =>
+    PermissionMode.options.filter((option) => mapMode(option) === mode);
+
   void it("writes always-ask for a mode that asks for calls no rule covers", () => {
-    for (const defaultMode of [
-      "standard",
-      "restricted",
-      "plan",
-      "default",
-      "acceptEdits",
-      "auto",
-    ] as const) {
+    const asking = [...modesReadAs("standard"), ...modesReadAs("restricted")];
+    assert.ok(asking.includes("standard") && asking.includes("restricted"));
+    for (const defaultMode of asking) {
       assert.equal(approvalModeOf({ defaultMode }), "always-ask", defaultMode);
     }
   });
@@ -370,11 +375,8 @@ void describe("ompCodec default mode", () => {
   });
 
   void it("leaves OMP's own mode alone for an autonomous mode or none", () => {
-    for (const defaultMode of [
-      "autonomous",
-      "dontAsk",
-      "bypassPermissions",
-    ] as const) {
+    assert.ok(modesReadAs("autonomous").includes("autonomous"));
+    for (const defaultMode of modesReadAs("autonomous")) {
       assert.deepEqual(ompCodec.encode({ defaultMode }), {}, defaultMode);
     }
     assert.deepEqual(ompCodec.encode({}), {});
@@ -394,17 +396,10 @@ void describe("ompCodec default mode", () => {
   });
 
   void it("never approves a write or exec call that the canonical mode asks for", () => {
-    for (const defaultMode of [
-      "standard",
-      "restricted",
-      "plan",
-      "default",
-      "acceptEdits",
-      "auto",
-      "autonomous",
-      "dontAsk",
-      "bypassPermissions",
-    ] as const) {
+    const refused = modesReadAs("readonly");
+    for (const defaultMode of PermissionMode.options.filter(
+      (option) => !refused.includes(option),
+    )) {
       const mode = approvalModeOf({ defaultMode }) ?? "yolo";
       const approves: readonly string[] = OMP_MODE_APPROVES[mode];
       for (const [tier, tool] of [
@@ -422,6 +417,12 @@ void describe("ompCodec default mode", () => {
           `${defaultMode}: canonical ${decided} for ${tool}, OMP ${mode} approves ${tier}`,
         );
       }
+    }
+  });
+
+  void it("refuses every mode read as readonly, which OMP has no mode for", () => {
+    for (const defaultMode of modesReadAs("readonly")) {
+      assert.equal(refusal({ defaultMode }).settings[0]?.value, defaultMode);
     }
   });
 
