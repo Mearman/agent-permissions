@@ -8,6 +8,7 @@
 import {
   CODECS,
   CODEX_EXECPOLICY_RULES_PATH,
+  OMP_APPROVAL_MODES,
   agentId,
   encodeCodex,
   type AgentId,
@@ -167,14 +168,21 @@ export function detectFormat(value: unknown): Format | undefined {
   // Kiro: allowedTools or toolsSettings
   if (Array.isArray(obj.allowedTools) || "toolsSettings" in obj) return "kiro";
 
-  // OMP: bash.patterns, an array of { match, approval } entries. Checked before OpenCode, whose
-  // bash key is a string or an object of patterns.
+  // OMP: bash.patterns, an array of { match, approval } entries, or one of its approval modes in
+  // tools.approvalMode. Checked before OpenCode, whose bash key is a string or an object of patterns.
   if (
     isRecord(obj.bash) &&
     Array.isArray(obj.bash.patterns) &&
     obj.bash.patterns.every(
       (entry) => isRecord(entry) && "match" in entry && "approval" in entry,
     )
+  ) {
+    return "omp";
+  }
+  const { tools } = obj;
+  if (
+    isRecord(tools) &&
+    OMP_APPROVAL_MODES.some((mode) => mode === tools.approvalMode)
   ) {
     return "omp";
   }
