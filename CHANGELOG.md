@@ -1,3 +1,9 @@
+## [6.2.2](https://github.com/Mearman/agent-permissions/compare/v6.2.1...v6.2.2) (2026-09-29)
+
+### Bug Fixes
+
+* **loader:** fail on a policy file that cannot be used instead of skipping it ([bce8093](https://github.com/Mearman/agent-permissions/commit/bce809352d733108865a9c252c815b81fa923d37))
+
 ## [6.2.1](https://github.com/Mearman/agent-permissions/compare/v6.2.0...v6.2.1) (2026-09-29)
 
 ### CI
