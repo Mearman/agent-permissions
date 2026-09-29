@@ -1,3 +1,9 @@
+## [6.2.3](https://github.com/Mearman/agent-permissions/compare/v6.2.2...v6.2.3) (2026-09-29)
+
+### Bug Fixes
+
+* **codec:** stop the other codecs dropping or loosening rules without saying so ([91302ad](https://github.com/Mearman/agent-permissions/commit/91302add5d1b59f50fa88f0b4a6fd6d02cda53b0))
+
 ## [6.2.2](https://github.com/Mearman/agent-permissions/compare/v6.2.1...v6.2.2) (2026-09-29)
 
 ### Bug Fixes
