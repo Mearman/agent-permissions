@@ -809,14 +809,46 @@ Rules with `when` only match when all conditions are met (AND logic):
 
 Conditions available in `when`, all combined with AND:
 
-| Condition | Matches                                                                                                                                                |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `cwd`     | Working directory, as a glob                                                                                                                           |
-| `branch`  | Git branch, as a glob                                                                                                                                  |
-| `env`     | Environment variables that must each equal the given value, as `{ "CI": "true" }`                                                                      |
-| `remote`  | Git remote, as a glob against `host/path` in lower case; `git@github.com:Org/Repo.git` and `https://github.com/org/repo` both match `github.com/org/*` |
+| Condition   | Matches                                                                                                                                                                              |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cwd`       | Working directory, as a glob                                                                                                                                                         |
+| `branch`    | Git branch, as a glob                                                                                                                                                                |
+| `env`       | Environment variables that must each equal the given value, as `{ "CI": "true" }`                                                                                                    |
+| `remote`    | Git remote, as a glob against `host/path` in lower case; `git@github.com:Org/Repo.git` and `https://github.com/org/repo` both match `github.com/org/*`                               |
+| `predicate` | A [trilean](https://www.npmjs.com/package/trilean) predicate tree over the context, for what the fields above cannot say: an OR of remotes, or "unless this variable has this value" |
 
 A key that is not one of these is a validation error, so a misspelled condition cannot silently leave a rule applying everywhere.
+
+A `predicate` is validated with trilean's own schema and evaluated with trilean's synchronous evaluator, under the same three-valued rules as the other conditions. Its reference keys name context fields: `cwd`, `branch`, `actor`, `remote` (normalised, as `remote` compares it), `env:NAME` (text) and `role:NAME` (a boolean). A field the context does not carry is unknown, so a predicate that depends on it never lets an allow rule apply and still lets a deny or ask rule apply, while a definite result on one side of an `or` or `and` settles it whatever the other side is. Here a rule allows `deploy` on either of two repositories:
+
+```json
+{
+  "tool": "Bash",
+  "pattern": "deploy:*",
+  "tier": "allow",
+  "when": {
+    "predicate": {
+      "kind": "or",
+      "left": {
+        "kind": "textCompare",
+        "op": "equals",
+        "left": { "kind": "reference", "key": "remote" },
+        "right": { "kind": "textLiteral", "value": "github.com/acme/api" }
+      },
+      "right": {
+        "kind": "textCompare",
+        "op": "equals",
+        "left": { "kind": "reference", "key": "remote" },
+        "right": { "kind": "textLiteral", "value": "github.com/acme/web" }
+      }
+    }
+  }
+}
+```
+
+A predicate may not contain `exists`, `some`, `every`, `fold`, `accumulator`, `lookup`, `delegate`, `treeReference` or `call` nodes. `exists` would read an unknown field as absent, and a quantifier over the roles would read unknown roles as an empty list, either of which turns "the host did not say" into a definite answer that can grant; compare the value itself instead (`not` over an `equals` on `env:STAGE` is unknown when the variable is unset). The schema rejects these, and compiling a policy built in code with one throws.
+
+A codec writes a rule with a `predicate` as it writes any other conditioned rule: an allow it cannot condition is left out, and a deny or ask is written without the condition, which is stricter, or refused where the target cannot do that.
 
 A condition on a field the evaluation context does not carry (no `cwd` or no `branch` supplied) is unknown, not satisfied. An unknown condition never lets an allow rule apply, and still lets a deny or ask rule apply, since the condition may hold. A definite mismatch on one condition settles the rule even if another condition is unknown.
 
