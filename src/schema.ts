@@ -10,6 +10,8 @@
 
 import * as z from "zod";
 
+import { profileProblems } from "./profiles.ts";
+
 // ---------------------------------------------------------------------------
 // Permission modes
 // ---------------------------------------------------------------------------
@@ -356,7 +358,17 @@ export const Sandbox = z
  * Maps to Codex's `permissions.<name>` + `default_permissions` fields. Agents that don't support
  * named profiles should use the profile specified by `activeProfile` (or `"default"` if unset).
  */
-export const Profiles = z.record(z.string(), PermissionTiers).meta({
+/** A profile: permission tiers, optionally extending other profiles by name. */
+export const ProfileTiers = PermissionTiers.extend({
+  /** Profiles this one builds on; their rules come first, then this profile's own. */
+  extends: z.array(z.string()).meta({
+    description:
+      "Names of profiles this one extends. Their rules come first, then this profile's own; extending only adds.",
+    examples: [["base"]],
+  }),
+}).partial();
+
+export const Profiles = z.record(z.string(), ProfileTiers).meta({
   description:
     "Named permission profiles. Each profile is a complete set of permission tiers. " +
     "Select one at session start via `activeProfile`.",
@@ -539,6 +551,14 @@ export const AgentPermissionPolicy = z
   .partial()
   .strict()
   .check((ctx) => {
+    for (const problem of profileProblems(ctx.value.profiles)) {
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value,
+        message: problem.message,
+        path: ["profiles", problem.profile, "extends"],
+      });
+    }
     if (ctx.value.with !== undefined && ctx.value.without !== undefined) {
       ctx.issues.push({
         code: "custom",

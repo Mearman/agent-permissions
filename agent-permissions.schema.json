@@ -255,6 +255,18 @@
             ],
             "description": "Default permission mode. Accepted here for Claude Code compatibility, or at the top level for the canonical placement.",
             "default": "standard"
+          },
+          "extends": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Names of profiles this one extends. Their rules come first, then this profile's own; extending only adds.",
+            "examples": [
+              [
+                "base"
+              ]
+            ]
           }
         },
         "additionalProperties": false

@@ -764,6 +764,22 @@ A key that is not one of these is a validation error, so a misspelled condition 
 
 A condition on a field the evaluation context does not carry (no `cwd` or no `branch` supplied) is unknown, not satisfied. An unknown condition never lets an allow rule apply, and still lets a deny or ask rule apply, since the condition may hold. A definite mismatch on one condition settles the rule even if another condition is unknown.
 
+### Profiles that extend profiles
+
+A profile can build on others with `extends` and state only what differs:
+
+```json
+{
+  "profiles": {
+    "base": { "deny": ["Bash(sudo:*)"], "allow": ["Read", "Grep"] },
+    "dev": { "extends": ["base"], "allow": ["Bash(npm run *)"] }
+  },
+  "activeProfile": "dev"
+}
+```
+
+Extending only adds: a profile's lists are its parents' lists followed by its own, so a child cannot remove a restriction a parent set, and its default mode is its own or else the last parent's that sets one. A parent that does not exist, or profiles that extend each other in a cycle, fail validation. `resolveProfiles` flattens `extends`, and the Codex codec writes each profile with its parents' rules.
+
 ### Full policy with profiles, sandbox, per-agent overrides
 
 See [`spec/examples/full.json`](spec/examples/full.json).
