@@ -6,6 +6,8 @@
 
 A vendor-neutral permission policy format for AI coding agents. One file works across Claude Code, OpenAI Codex, OpenCode, Crush, Oh My Pi, and any agent that adopts the spec.
 
+[![npm downloads chart, log scale](https://shieldcn.dev/chart/npm/agent-perms.svg?bg=transparent&logo=false&yScale=log)](https://www.npmjs.com/package/agent-perms)
+
 ## Quick start
 
 Create `.agents/permissions.json` in your project root:
