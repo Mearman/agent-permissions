@@ -1,3 +1,9 @@
+## [6.6.1](https://github.com/Mearman/agent-permissions/compare/v6.6.0...v6.6.1) (2026-10-02)
+
+### Documentation
+
+* add live usage charts to the readme ([50c9857](https://github.com/Mearman/agent-permissions/commit/50c9857253f94e1a7d46f21b45635d30bf557833))
+
 ## [6.6.0](https://github.com/Mearman/agent-permissions/compare/v6.5.0...v6.6.0) (2026-09-29)
 
 ### Features

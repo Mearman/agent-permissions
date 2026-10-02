@@ -1,7 +1,7 @@
 {
   "name": "agent-perms",
   "description": "Cross-agent permission policy sync daemon. Keeps native agent config files (.claude/settings.json, opencode.json, etc.) bidirectionally synced with .agents/permissions.json. Optionally exposes a permission-prompt tool that answers tool-call approvals from the policy.",
-  "version": "6.6.0",
+  "version": "6.6.1",
   "author": {
     "name": "Joseph Mearman",
     "url": "https://github.com/Mearman"
