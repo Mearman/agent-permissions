@@ -1,8 +1,6 @@
 # agent-perms
 
-[![npm version](https://img.shields.io/npm/v/agent-perms.svg)](https://www.npmjs.com/package/agent-perms)
-[![License](https://img.shields.io/badge/License-Apache--2.0-lightgrey.svg)](LICENSE)
-[![CI](https://img.shields.io/github/actions/workflow/status/Mearman/agent-permissions/ci.yml?branch=main)](https://github.com/Mearman/agent-permissions/actions)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white)](https://github.com/Mearman/agent-permissions) [![npm](https://img.shields.io/badge/npm-CB3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/agent-perms) [![Release](https://img.shields.io/github/v/release/Mearman/agent-permissions)](https://github.com/Mearman/agent-permissions/releases/latest) [![CI](https://img.shields.io/github/actions/workflow/status/Mearman/agent-permissions/ci.yml?branch=main)](https://github.com/Mearman/agent-permissions/actions)
 
 A vendor-neutral permission policy format for AI coding agents. One file works across Claude Code, OpenAI Codex, OpenCode, Crush, Oh My Pi, and any agent that adopts the spec.
 
