@@ -3,7 +3,7 @@
   "name": "io.github.mearman/agent-perms",
   "title": "Agent Perms",
   "description": "MCP sync daemon that keeps native agent config files bidirectionally synced with .agents/permissions.json. Optionally exposes a permission-prompt tool that answers tool-call approvals from the policy.",
-  "version": "6.6.1",
+  "version": "6.6.2",
   "repository": {
     "url": "https://github.com/Mearman/agent-permissions",
     "source": "github"
@@ -12,7 +12,7 @@
     {
       "registryType": "npm",
       "identifier": "agent-perms",
-      "version": "6.6.1",
+      "version": "6.6.2",
       "transport": {
         "type": "stdio"
       },

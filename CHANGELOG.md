@@ -1,3 +1,9 @@
+## [6.6.2](https://github.com/Mearman/agent-permissions/compare/v6.6.1...v6.6.2) (2026-10-02)
+
+### Documentation
+
+* use one shared badge set in the readme ([dcaf679](https://github.com/Mearman/agent-permissions/commit/dcaf67924e7f1c926e99b5812d04adb79525b153))
+
 ## [6.6.1](https://github.com/Mearman/agent-permissions/compare/v6.6.0...v6.6.1) (2026-10-02)
 
 ### Documentation
