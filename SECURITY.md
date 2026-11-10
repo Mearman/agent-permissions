@@ -6,7 +6,7 @@ The latest release on the `latest` channel is the only supported version. Releas
 
 ## Reporting a vulnerability
 
-Report privately through [GitHub security advisories](https://github.com/Mearman/agent-permissions/security/advisories/new) ("Report a vulnerability"). Please do not open a public issue for anything security-sensitive. Include the affected version, a reproduction, and the impact as you understand it; a proof of concept helps but is not required.
+Report privately through [GitHub security advisories](https://github.com/ExaDev/agent-permissions/security/advisories/new) ("Report a vulnerability"). Please do not open a public issue for anything security-sensitive. Include the affected version, a reproduction, and the impact as you understand it; a proof of concept helps but is not required.
 
 ## What this package does with trust
 

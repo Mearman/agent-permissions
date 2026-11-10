@@ -350,7 +350,7 @@ export function convert(
   if (to === "canonical") {
     // Inject $schema so generated files get IDE support
     const schemaUrl =
-      "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
+      "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json";
     output = { $schema: schemaUrl, ...canonical };
   } else if (to === "codex") {
     const { config, rules } = encodeCodex(canonical);

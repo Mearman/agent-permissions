@@ -5,7 +5,7 @@
   "description": "MCP sync daemon that keeps native agent config files bidirectionally synced with .agents/permissions.json. Optionally exposes a permission-prompt tool that answers tool-call approvals from the policy.",
   "version": "6.6.2",
   "repository": {
-    "url": "https://github.com/Mearman/agent-permissions",
+    "url": "https://github.com/ExaDev/agent-permissions",
     "source": "github"
   },
   "packages": [

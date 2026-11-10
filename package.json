@@ -81,10 +81,10 @@
   ],
   "author": "Joseph Mearman",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/Mearman/agent-permissions#readme",
+  "homepage": "https://github.com/ExaDev/agent-permissions#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Mearman/agent-permissions.git"
+    "url": "git+https://github.com/ExaDev/agent-permissions.git"
   },
   "publishConfig": {
     "access": "public",
@@ -134,6 +134,6 @@
   },
   "packageManager": "pnpm@11.21.0",
   "bugs": {
-    "url": "https://github.com/Mearman/agent-permissions/issues"
+    "url": "https://github.com/ExaDev/agent-permissions/issues"
   }
 }
