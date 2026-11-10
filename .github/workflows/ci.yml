@@ -167,7 +167,7 @@ jobs:
           if [ -n "$TAG" ]; then
             gh release upload "$TAG" agent-permissions.schema.json --clobber
             EXISTING=$(gh release view "$TAG" --json body --jq '.body')
-            SCHEMA_URL="https://github.com/Mearman/agent-permissions/releases/download/${TAG}/agent-permissions.schema.json"
+            SCHEMA_URL="https://github.com/ExaDev/agent-permissions/releases/download/${TAG}/agent-permissions.schema.json"
             {
               echo "$EXISTING"
               echo ""

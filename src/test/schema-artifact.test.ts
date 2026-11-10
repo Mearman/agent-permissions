@@ -16,7 +16,7 @@ function generateExpected(): unknown {
     target: "draft-07",
   });
   const REPO_RAW_BASE =
-    "https://raw.githubusercontent.com/Mearman/agent-permissions/main";
+    "https://raw.githubusercontent.com/ExaDev/agent-permissions/main";
   return {
     $id: `${REPO_RAW_BASE}/agent-permissions.schema.json`,
     $schema: "http://json-schema.org/draft-07/schema#",

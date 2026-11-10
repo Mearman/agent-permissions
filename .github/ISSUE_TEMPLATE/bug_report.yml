@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        A deny rule that fails open, a codec round-trip that silently drops a rule, or a sync that writes the wrong file are all security-relevant even without a traditional exploit -- see [SECURITY.md](https://github.com/Mearman/agent-permissions/blob/main/SECURITY.md). If that is what you have found, please report it privately through a security advisory instead of here.
+        A deny rule that fails open, a codec round-trip that silently drops a rule, or a sync that writes the wrong file are all security-relevant even without a traditional exploit -- see [SECURITY.md](https://github.com/ExaDev/agent-permissions/blob/main/SECURITY.md). If that is what you have found, please report it privately through a security advisory instead of here.
 
   - type: dropdown
     id: area

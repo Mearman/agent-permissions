@@ -411,7 +411,7 @@ void describe("sync", () => {
     dirs.push(cwd);
 
     const schemaUrl =
-      "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
+      "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json";
     const policy = {
       $schema: schemaUrl,
       rules: [{ tool: "Read", tier: "allow" }],

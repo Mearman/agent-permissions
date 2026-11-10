@@ -984,7 +984,7 @@ void describe("CLI", () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
       const schemaUrl =
-        "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json";
+        "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json";
       await mkdir(join(cwd, ".agents"), { recursive: true });
       await writeFile(
         join(cwd, ".agents", "permissions.json"),

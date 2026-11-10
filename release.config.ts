@@ -32,7 +32,7 @@ export const commitTypes: readonly CommitType[] = [
 
 const config = {
   // The SSH URL, because semantic-release otherwise pushes to package.json's https repository URL with the workflow token, which the branch ruleset rejects. The Release job checks out with a deploy key the ruleset lets bypass, and this makes the pushes use it.
-  repositoryUrl: "git@github.com:Mearman/agent-permissions.git",
+  repositoryUrl: "git@github.com:ExaDev/agent-permissions.git",
   branches: [{ name: "main", channel: "latest" }],
   plugins: [
     [

@@ -20,7 +20,7 @@ function zodSchemaPlugin() {
       });
 
       const REPO_RAW_BASE =
-        "https://raw.githubusercontent.com/Mearman/agent-permissions/main";
+        "https://raw.githubusercontent.com/ExaDev/agent-permissions/main";
 
       const output = {
         $id: `${REPO_RAW_BASE}/agent-permissions.schema.json`,

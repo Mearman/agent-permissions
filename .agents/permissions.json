@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+  "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
   "defaultMode": "standard",
   "rules": [
     { "tool": "Read", "tier": "allow" },

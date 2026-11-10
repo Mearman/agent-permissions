@@ -1,6 +1,6 @@
 # agent-perms
 
-[![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white)](https://github.com/Mearman/agent-permissions) [![npm](https://img.shields.io/badge/npm-CB3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/agent-perms) [![Release](https://img.shields.io/github/v/release/Mearman/agent-permissions)](https://github.com/Mearman/agent-permissions/releases/latest) [![CI](https://img.shields.io/github/actions/workflow/status/Mearman/agent-permissions/ci.yml?branch=main)](https://github.com/Mearman/agent-permissions/actions)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white)](https://github.com/ExaDev/agent-permissions) [![npm](https://img.shields.io/badge/npm-CB3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/agent-perms) [![Release](https://img.shields.io/github/v/release/ExaDev/agent-permissions)](https://github.com/ExaDev/agent-permissions/releases/latest) [![CI](https://img.shields.io/github/actions/workflow/status/ExaDev/agent-permissions/ci.yml?branch=main)](https://github.com/ExaDev/agent-permissions/actions)
 
 A vendor-neutral permission policy format for AI coding agents. One file works across Claude Code, OpenAI Codex, OpenCode, Crush, Oh My Pi, and any agent that adopts the spec.
 
@@ -12,7 +12,7 @@ Create `.agents/permissions.json` in your project root:
 
 ```json
 {
-  "$schema": "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+  "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
   "defaultMode": "standard",
   "rules": [
     { "tool": "Bash", "pattern": "sudo:*", "tier": "deny" },
@@ -72,7 +72,7 @@ claude mcp add agent-perms -- npx -y agent-perms mcp
 **Claude Code (plugin marketplace):**
 
 ```
-/plugin marketplace add https://github.com/Mearman/agent-permissions.git
+/plugin marketplace add https://github.com/ExaDev/agent-permissions.git
 /plugin install agent-perms@agent-perms
 ```
 
@@ -738,7 +738,7 @@ To explicitly reference the schema:
 
 ```json
 {
-  "$schema": "https://github.com/Mearman/agent-permissions/releases/latest/download/agent-permissions.schema.json"
+  "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json"
 }
 ```
 
