@@ -1,3 +1,28 @@
+## [6.6.3](https://github.com/ExaDev/agent-permissions/compare/v6.6.2...v6.6.3) (2026-11-11)
+
+### Bug Fixes
+
+* **deps:** update the packages the high-severity audit flags ([e743801](https://github.com/ExaDev/agent-permissions/commit/e743801c89a16a19417b075a95b22330c85edd8a))
+* point every repository reference at the ExaDev organisation ([19d6885](https://github.com/ExaDev/agent-permissions/commit/19d688543597f35ec347af8d3bf97881b3214202))
+* publish to GitHub Packages under the organisation scope ([bf22af2](https://github.com/ExaDev/agent-permissions/commit/bf22af2a131f2b5434968f85c5e0435b0929ef3c))
+
+### Styles
+
+* format turbo.json with prettier ([a1cf980](https://github.com/ExaDev/agent-permissions/commit/a1cf980b4470e77988926c138846e91c0d41a2d4))
+
+### Build
+
+* **deps:** bump yaml ([0c55a82](https://github.com/ExaDev/agent-permissions/commit/0c55a82e221af3035d72d7816caaff1b7bae7452))
+
+### CI
+
+* **deps:** bump pnpm/action-setup from 6.1.0 to 6.1.1 ([0322627](https://github.com/ExaDev/agent-permissions/commit/03226272c643f95f51cadde9e0f99b382ca9c43d))
+
+### Chores
+
+* disable turbo agentGuidance, which replaces the AGENTS.md symlink with a regular file ([ee23e21](https://github.com/ExaDev/agent-permissions/commit/ee23e218aa258b03f9a37560b72b8eab4c935429))
+* upgrade turbo to 2.11.5 and disable agentGuidance ([a26b776](https://github.com/ExaDev/agent-permissions/commit/a26b776d57652c3fadae022b297a23a24c46c0a3))
+
 ## [6.6.2](https://github.com/Mearman/agent-permissions/compare/v6.6.1...v6.6.2) (2026-10-02)
 
 ### Documentation
