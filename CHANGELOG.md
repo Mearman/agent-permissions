@@ -1,3 +1,9 @@
+## [6.6.4](https://github.com/ExaDev/agent-permissions/compare/v6.6.3...v6.6.4) (2026-11-11)
+
+### CI
+
+* **deps:** bump pnpm/action-setup in /.github/actions/setup ([83ebe27](https://github.com/ExaDev/agent-permissions/commit/83ebe271c86319aff271a148fab39ab1a7286668))
+
 ## [6.6.3](https://github.com/ExaDev/agent-permissions/compare/v6.6.2...v6.6.3) (2026-11-11)
 
 ### Bug Fixes
