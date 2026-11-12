@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        The README's codec fidelity table and footnotes already document several gaps as deliberate rather than missing (Crush has no deny/patterns/modes, OpenCode's agent-specific tools have no canonical equivalent, and so on) -- worth checking there first, since some of what looks unsupported is a decision, not an oversight.
+        The codec fidelity table and footnotes in docs/agent-compatibility.md already document several gaps as deliberate rather than missing (Crush has no deny/patterns/modes, OpenCode's agent-specific tools have no canonical equivalent, and so on) -- worth checking there first, since some of what looks unsupported is a decision, not an oversight.
 
   - type: dropdown
     id: area
