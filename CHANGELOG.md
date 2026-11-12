@@ -1,3 +1,10 @@
+## [6.6.5](https://github.com/ExaDev/agent-permissions/compare/v6.6.4...v6.6.5) (2026-11-12)
+
+### Documentation
+
+* move reference sections out of the README into docs ([58fc26f](https://github.com/ExaDev/agent-permissions/commit/58fc26f90d13be7d47c50bbc61280c303cf62e6d))
+* point the feature request template at the compatibility doc ([c9e29e1](https://github.com/ExaDev/agent-permissions/commit/c9e29e189967c2ee87e0d2239890d134a884979d))
+
 ## [6.6.4](https://github.com/ExaDev/agent-permissions/compare/v6.6.3...v6.6.4) (2026-11-11)
 
 ### CI
