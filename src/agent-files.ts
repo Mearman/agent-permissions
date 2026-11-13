@@ -39,6 +39,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { MODELLED_PATHS, OmpEncoded, type AgentId } from "./compat/codecs.ts";
 import { isAgentId, isRecord } from "./guards.ts";
+import { SyncRefusedError } from "./sync-error.ts";
 import { type Format } from "./api.ts";
 
 // ---------------------------------------------------------------------------
@@ -605,9 +606,19 @@ export function editJsonConfig(
   const layout = layoutOf(text);
   for (const path of modelled) {
     const parsed = parseNativeJson(text, source, jsonc);
-    if (!parsed.ok) throw new Error(parsed.error);
+    if (!parsed.ok) {
+      throw new SyncRefusedError(
+        source,
+        "invalid-format",
+        parsed.error.replace(`${source}: `, ""),
+      );
+    }
     if (!isRecord(parsed.value)) {
-      throw new Error(`${source}: the top level must be a JSON object`);
+      throw new SyncRefusedError(
+        source,
+        "not-an-object",
+        "the top level must be a JSON object",
+      );
     }
     const found = lookup(parsed.value, path);
     // The value to replace: the non-object blocking the path, else the path itself, or, when the
@@ -714,17 +725,22 @@ export async function readIfPresent(path: string): Promise<string | null> {
     bytes = await readFile(path);
   } catch (error) {
     if (hasCode(error, "ENOENT")) return null;
-    throw new Error(`${path}: cannot be read (${messageOf(error)})`, {
-      cause: error,
-    });
+    throw new SyncRefusedError(
+      path,
+      "unreadable",
+      `cannot be read (${messageOf(error)})`,
+      { cause: error },
+    );
   }
   try {
     return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
       bytes,
     );
   } catch (error) {
-    throw new Error(
-      `${path}: is not valid UTF-8, so it was not read and is left as it is`,
+    throw new SyncRefusedError(
+      path,
+      "not-utf8",
+      "is not valid UTF-8, so it was not read and is left as it is",
       { cause: error },
     );
   }
@@ -749,8 +765,10 @@ async function writeTarget(path: string): Promise<string> {
     return await realpath(path);
   } catch (error) {
     if (hasCode(error, "ENOENT")) {
-      throw new Error(
-        `${path}: is a symbolic link to a file that does not exist, so it was not written`,
+      throw new SyncRefusedError(
+        path,
+        "dangling-link",
+        "is a symbolic link to a file that does not exist, so it was not written",
         { cause: error },
       );
     }
@@ -769,8 +787,10 @@ export async function assertUnchanged(
   expected: string | null,
 ): Promise<void> {
   if ((await readIfPresent(await writeTarget(path))) !== expected) {
-    throw new Error(
-      `${path}: changed since it was read, so it was not written; run the command again`,
+    throw new SyncRefusedError(
+      path,
+      "changed",
+      "changed since it was read, so it was not written; run the command again",
     );
   }
 }
@@ -811,9 +831,7 @@ export async function writeFileAtomic(
     await replaceFile(path, content, expected, options);
   } catch (error) {
     // Every failure names the file asked for, never the temporary file or the link's target.
-    if (error instanceof Error && error.message.startsWith(`${path}: `)) {
-      throw error;
-    }
+    if (error instanceof SyncRefusedError) throw error;
     throw new Error(`${path}: could not be written (${fsReason(error)})`, {
       cause: error,
     });
@@ -827,7 +845,7 @@ async function replaceFile(
   options: WriteFileOptions,
 ): Promise<void> {
   const target = await writeTarget(path);
-  if (expected !== undefined) await assertUnchanged(target, expected);
+  if (expected !== undefined) await assertUnchanged(path, expected);
   const directory = dirname(target);
   await mkdir(directory, { recursive: true });
   let existing;
@@ -838,7 +856,7 @@ async function replaceFile(
   }
   const mode = options.mode ?? (existing ? existing.mode & 0o7777 : undefined);
   const writeInPlace = async (): Promise<void> => {
-    if (expected !== undefined) await assertUnchanged(target, expected);
+    if (expected !== undefined) await assertUnchanged(path, expected);
     await writeFile(target, content);
   };
   if (existing !== undefined && existing.nlink > 1) {
@@ -854,14 +872,16 @@ async function replaceFile(
       try {
         await chown(temporary, existing.uid, existing.gid);
       } catch (error) {
-        throw new Error(
-          `${path}: is owned by another user and sync cannot keep that owner (${messageOf(error)}), so it was not written`,
+        throw new SyncRefusedError(
+          path,
+          "owner",
+          `is owned by another user and sync cannot keep that owner (${messageOf(error)}), so it was not written`,
           { cause: error },
         );
       }
     }
     await options.afterTemporaryWritten?.();
-    if (expected !== undefined) await assertUnchanged(target, expected);
+    if (expected !== undefined) await assertUnchanged(path, expected);
     await (options.renameFile ?? rename)(temporary, target);
   } catch (error) {
     await rm(temporary, { force: true });

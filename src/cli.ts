@@ -196,7 +196,15 @@ async function convertCommand(args: string[]): Promise<void> {
       values.compact === true,
     );
 
-    if (outputPath) refuseExistingOpaqueConfig(outputPath);
+    if (outputPath) {
+      refuseExistingOpaqueConfig(outputPath);
+      const pathFormat = nativeFormatOfPath(outputPath);
+      if (pathFormat !== undefined && pathFormat !== toFormat) {
+        error(
+          `${outputPath} is ${pathFormat}'s config file, and --to is ${toFormat}; writing it would replace ${pathFormat}'s settings with ${toFormat}'s`,
+        );
+      }
+    }
     if (outputPath && nativeFormatOfPath(outputPath) === toFormat) {
       // A native config holds the user's other settings, so the encoding is merged into it by the
       // writer sync uses. The encoding is the bare permissions payload, which the writer wraps.
@@ -565,7 +573,7 @@ async function syncCommand(args: string[]): Promise<void> {
     ompAgentDir: defaultOmpAgentDir(),
     ompGlobal: values["omp-global"] ?? false,
   });
-  if (result.refused.length > 0) process.exit(1);
+  if (result.refused.length > 0 || result.aborted) process.exit(1);
 }
 
 // ---------------------------------------------------------------------------
