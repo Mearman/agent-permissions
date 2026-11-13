@@ -63,9 +63,13 @@ jobs:
       # Workflow YAML linting: two shell/YAML-level bugs in these workflows were found by actionlint run by hand during a CI debugging session; nothing in CI checked them until now.
       - name: Lint workflow YAML (actionlint)
         run: |
-          # The install script is fetched at the commit of the tag that matches VERSION, so a later change to the script's branch cannot reach this job.
+          # The release archive is checked against a SHA-256 fixed here, so neither the download script nor the release asset can change under this job. Move VERSION and SHA256 together.
           VERSION="1.7.7"
-          curl -sSfL "https://raw.githubusercontent.com/rhysd/actionlint/03d0035246f3e81f36aed592ffb4bebf33a03106/scripts/download-actionlint.bash" | bash -s -- "$VERSION"
+          SHA256="023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757"
+          ARCHIVE="actionlint_${VERSION}_linux_amd64.tar.gz"
+          curl -sSfL -o "$ARCHIVE" "https://github.com/rhysd/actionlint/releases/download/v${VERSION}/${ARCHIVE}"
+          echo "${SHA256}  ${ARCHIVE}" | sha256sum --check --strict -
+          tar -xzf "$ARCHIVE" actionlint
           ./actionlint -color
 
       - uses: ./.github/actions/setup
