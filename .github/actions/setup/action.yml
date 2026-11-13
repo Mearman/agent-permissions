@@ -20,16 +20,16 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: pnpm/action-setup@v6.1.1
+    - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
-    - uses: actions/setup-node@v7
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       if: inputs.node-version == ''
       with:
         node-version-file: .tool-versions
         cache: pnpm
         registry-url: ${{ inputs.registry-url }}
 
-    - uses: actions/setup-node@v7
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       if: inputs.node-version != ''
       with:
         node-version: ${{ inputs.node-version }}
@@ -41,7 +41,7 @@ runs:
 
     # Turbo's cache keyed on the inputs that can change a task outcome (lockfile + task graph), with the run id in the primary key so every run saves a fresh entry and restore-keys fall back to the nearest match -- an exact-hit restore on an unchanged dependency graph instead of the old github.sha keys, which could only ever hit via the prefix fallback.
     - name: Restore turbo cache
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: .turbo
         # Node-scoped: turbo's task hashes do not include the node version, so an unscoped key would let one matrix leg replay its cached results on another leg (a plain-test result standing in for the coverage run). The "file" fallback scopes runs that use the .tool-versions baseline.

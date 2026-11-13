@@ -25,7 +25,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # Fails on any high-severity advisory. Fixing one is a decision for a person or Dependabot: an override that clears it is a pull request to write and review, not something the pipeline opens itself.
       - uses: ./.github/actions/setup
@@ -56,15 +56,16 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
       # Workflow YAML linting: two shell/YAML-level bugs in these workflows were found by actionlint run by hand during a CI debugging session; nothing in CI checked them until now.
       - name: Lint workflow YAML (actionlint)
         run: |
+          # The install script is fetched at the commit of the tag that matches VERSION, so a later change to the script's branch cannot reach this job.
           VERSION="1.7.7"
-          curl -sSfL "https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash" | bash -s -- "$VERSION"
+          curl -sSfL "https://raw.githubusercontent.com/rhysd/actionlint/03d0035246f3e81f36aed592ffb4bebf33a03106/scripts/download-actionlint.bash" | bash -s -- "$VERSION"
           ./actionlint -color
 
       - uses: ./.github/actions/setup
@@ -98,7 +99,7 @@ jobs:
           - node-version: 26
             command: pnpm test:coverage
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
@@ -150,7 +151,7 @@ jobs:
       tag: ${{ steps.detect-release.outputs.tag }}
     steps:
       # Checked out over SSH with a write deploy key, which the main ruleset lets bypass: semantic-release pushes the changelog and version commit and the tag straight to main, and the workflow token cannot. The GitHub release itself is made through the API with the workflow token. See CONTRIBUTING.md.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
@@ -218,7 +219,7 @@ jobs:
       id-token: write
     steps:
       # The release tag, not main: a push landing between the release job finishing and this job starting would otherwise build newer source and publish it under the just-tagged version.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ needs.release.outputs.tag }}
           persist-credentials: false
@@ -251,7 +252,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ needs.release.outputs.tag }}
           persist-credentials: false
