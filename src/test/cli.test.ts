@@ -247,6 +247,30 @@ void describe("CLI", () => {
       }
     });
 
+    void it("refuses an output that is another agent's config file than --to", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".claude"), { recursive: true });
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+      );
+      const settings = join(cwd, ".claude", "settings.json");
+      await writeFile(settings, '{"model": "opus"}');
+      const result = await run([
+        "convert",
+        "--from",
+        join(cwd, "policy.json"),
+        "--to",
+        "opencode",
+        "--output",
+        settings,
+      ]);
+      assert.equal(result.exitCode, 1);
+      assert.match(result.stderr, /settings\.json.*claude-code.*opencode/u);
+      assert.equal(await readFile(settings, "utf-8"), '{"model": "opus"}');
+    });
+
     void it("converts with --compact flag", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
@@ -1141,6 +1165,20 @@ void describe("CLI", () => {
         "{ not json",
       );
       assert.equal(existsSync(join(cwd, "opencode.json")), false);
+    });
+
+    void it("treats the end of input at the prompt as no: prints Aborted, writes nothing and exits 1", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      await writeFile(
+        join(cwd, ".agents", "permissions.json"),
+        JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+      );
+      const result = await run(["sync", "--working-dir", cwd, "--create"], "");
+      assert.equal(result.exitCode, 1);
+      assert.match(result.stderr, /Aborted\./u);
+      assert.equal(existsSync(join(cwd, ".claude", "settings.json")), false);
     });
 
     void it("merges canonical and claude-code configs", async () => {

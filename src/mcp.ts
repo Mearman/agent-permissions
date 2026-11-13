@@ -106,6 +106,8 @@ export function createSerialRunner(
 ): () => Promise<void> {
   let current: Promise<void> | undefined;
   const state = { pending: false };
+  // A function, so the check sees a request made during `run` and not the assignment before it.
+  const requestedAgain = (): boolean => state.pending;
   return () => {
     if (current !== undefined) {
       state.pending = true;
@@ -116,7 +118,7 @@ export function createSerialRunner(
         do {
           state.pending = false;
           await run();
-        } while (state.pending);
+        } while (requestedAgain());
       } finally {
         current = undefined;
       }

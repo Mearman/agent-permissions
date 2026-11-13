@@ -31,6 +31,9 @@ import { existsSync } from "node:fs";
 import { AgentPermissionPolicy, type Rule } from "./schema.ts";
 import { CODECS, OmpEncoded, type AgentId } from "./compat/codecs.ts";
 import { UnsupportedCapabilityError } from "./compat/unsupported.ts";
+import { SyncRefusedError, type SyncRefusalReason } from "./sync-error.ts";
+
+export { SyncRefusedError, type SyncRefusalReason } from "./sync-error.ts";
 import { isAgentId, isPermissionMode } from "./guards.ts";
 import {
   collectRules,
@@ -102,6 +105,8 @@ export interface SyncResult {
    * nothing is written, since a partial sync would leave the refused agents on a looser policy.
    */
   refused: UnsupportedCapabilityError[];
+  /** Whether the changes were declined at the prompt, by an answer or by the end of input. */
+  aborted: boolean;
 }
 
 /**
@@ -256,11 +261,20 @@ async function readAndDecode(
   if (def.extract === undefined) return undefined;
 
   const writes = !file.local && writePaths.has(file.path);
-  const unusable = (reason: string, content?: string): undefined => {
-    if (writes)
-      throw new Error(
-        reason.startsWith(file.path) ? reason : `${file.path}: ${reason}`,
+  const unusable = (
+    reasonCode: SyncRefusalReason,
+    reason: string,
+    content?: string,
+  ): undefined => {
+    if (writes) {
+      throw new SyncRefusedError(
+        file.path,
+        reasonCode,
+        reason.startsWith(`${file.path}: `)
+          ? reason.slice(file.path.length + 2)
+          : reason,
       );
+    }
     note(file.path, `${reason} (left out of the merge)`, content);
     return undefined;
   };
@@ -269,8 +283,12 @@ async function readAndDecode(
   try {
     content = await readFileRequired(file.path);
   } catch (error) {
-    unusable(error instanceof Error ? error.message : String(error));
-    return;
+    if (writes) throw error;
+    note(
+      file.path,
+      `${error instanceof Error ? error.message : String(error)} (left out of the merge)`,
+    );
+    return undefined;
   }
   if (isBlank(content)) return undefined;
 
@@ -279,12 +297,12 @@ async function readAndDecode(
   if (file.agent === "omp") {
     const parsed = parseAgentFile("omp", content, file.path);
     if (!parsed.ok) {
-      unusable(parsed.error, content);
+      unusable("invalid-format", parsed.error, content);
       return;
     }
     const result = decodeNative("omp", parsed.value);
     if (!result.ok) {
-      unusable(result.error, content);
+      unusable("undecodable", result.error, content);
       return;
     }
     return { file, policy: result.value };
@@ -316,7 +334,7 @@ async function readAndDecode(
   if (nativePayload(file.agent, parsed.value) === undefined) return undefined;
   const result = decodeNative(file.agent, parsed.value);
   if (!result.ok) {
-    unusable(result.error, content);
+    unusable("undecodable", result.error, content);
     return;
   }
   return { file, policy: result.value };
@@ -326,7 +344,11 @@ async function readAndDecode(
 async function readFileRequired(path: string): Promise<string> {
   const content = await readIfPresent(path);
   if (content === null) {
-    throw new Error(`${path}: vanished while it was being read`);
+    throw new SyncRefusedError(
+      path,
+      "unreadable",
+      "vanished while it was being read",
+    );
   }
   return content;
 }
@@ -685,6 +707,19 @@ function formatChange(change: FileChange): string {
 // Main sync function
 // ---------------------------------------------------------------------------
 
+/**
+ * Detect, merge and write the permission configs found from `options.cwd` upward.
+ *
+ * Rejects, writing nothing, with a {@link SyncRefusedError} naming the file and a machine-readable
+ * reason when a file sync would write cannot be used: it cannot be read, is not valid UTF-8 or not
+ * valid for its agent, holds a value its codec cannot decode, is a link to nothing, changed after
+ * it was read, or belongs to another user. A source that sync would not write (an ancestor's
+ * config, a local override) is left out of the merge with a warning instead. Rejects with a
+ * {@link SyncWriteError} when applying stops part way, listing what was and was not written.
+ *
+ * Resolves with the planned changes. A rule an agent cannot enforce is reported in `refused`, and
+ * nothing is written.
+ */
 export async function sync(options: SyncOptions): Promise<SyncResult> {
   const {
     cwd,
@@ -746,7 +781,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     process.stderr.write(
       "No permission configs found. Create .agents/permissions.json to get started.\n",
     );
-    return { changes: [], applied: false, refused: [] };
+    return { changes: [], applied: false, refused: [], aborted: false };
   }
 
   if (verbose) {
@@ -780,7 +815,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
 
   if (sources.length === 0) {
     process.stderr.write("No readable permission configs found.\n");
-    return { changes: [], applied: false, refused: [] };
+    return { changes: [], applied: false, refused: [], aborted: false };
   }
 
   // 3. Merge all sources
@@ -810,12 +845,12 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     process.stderr.write(
       "Nothing was written. Fix the rules above, or leave the agent out with --without.\n",
     );
-    return { changes: [], applied: false, refused };
+    return { changes: [], applied: false, refused, aborted: false };
   }
 
   if (targets.length === 0) {
     process.stderr.write("No write targets.\n");
-    return { changes: [], applied: false, refused: [] };
+    return { changes: [], applied: false, refused: [], aborted: false };
   }
 
   // 5. Build changes
@@ -823,7 +858,18 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   for (const target of targets) {
     const current = target.exists ? await readIfPresent(target.path) : null;
 
-    const proposed = target.render(current);
+    let proposed: string;
+    try {
+      proposed = target.render(current);
+    } catch (error) {
+      // An agent's own message about its file (invalid YAML, a non-mapping top level) is a refusal.
+      if (error instanceof SyncRefusedError || !(error instanceof Error)) {
+        throw error;
+      }
+      throw new SyncRefusedError(target.path, "invalid-format", error.message, {
+        cause: error,
+      });
+    }
 
     // Skip if content is semantically identical
     if (current !== null) {
@@ -843,7 +889,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
 
   if (changes.length === 0) {
     process.stderr.write("Already in sync — no changes needed.\n");
-    return { changes: [], applied: true, refused: [] };
+    return { changes: [], applied: true, refused: [], aborted: false };
   }
 
   // 6. Display changes
@@ -856,7 +902,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   // 7. Apply or prompt
   if (dryRun) {
     process.stderr.write("(dry run — no changes written)\n");
-    return { changes, applied: false, refused: [] };
+    return { changes, applied: false, refused: [], aborted: false };
   }
 
   if (!yes) {
@@ -864,7 +910,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     const answer = await readLine();
     if (answer.toLowerCase() !== "y" && answer.toLowerCase() !== "yes") {
       process.stderr.write("Aborted.\n");
-      return { changes, applied: false, refused: [] };
+      return { changes, applied: false, refused: [], aborted: true };
     }
   }
 
@@ -894,19 +940,33 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   }
 
   process.stderr.write(`Applied ${String(changes.length)} change(s).\n`);
-  return { changes, applied: true, refused: [] };
+  return { changes, applied: true, refused: [], aborted: false };
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** One line from standard input; the end of input is an empty answer, which declines. */
 function readLine(): Promise<string> {
   return new Promise((resolve) => {
-    process.stdin.setEncoding("utf-8");
-    process.stdin.once("data", (data: string) => {
-      resolve(data.trim());
-    });
+    const stdin = process.stdin;
+    stdin.setEncoding("utf-8");
+    const finish = (answer: string): void => {
+      stdin.off("data", onData);
+      stdin.off("end", onEnd);
+      stdin.off("close", onEnd);
+      resolve(answer);
+    };
+    const onData = (data: string): void => {
+      finish(data.trim());
+    };
+    const onEnd = (): void => {
+      finish("");
+    };
+    stdin.on("data", onData);
+    stdin.once("end", onEnd);
+    stdin.once("close", onEnd);
   });
 }
 
