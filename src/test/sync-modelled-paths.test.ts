@@ -125,7 +125,7 @@ void describe("sync replaces only what it decoded", () => {
     await put(
       cwd,
       "opencode.json",
-      JSON.stringify({ permission: { list: "deny", doom_loop: "ask" } }),
+      JSON.stringify({ permission: { bash: {}, doom_loop: "ask" } }),
     );
 
     await sync(options(cwd));
