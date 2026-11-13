@@ -25,6 +25,7 @@
 
 import { parse as parseYaml } from "yaml";
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { AgentPermissionPolicy, type Rule } from "./schema.ts";
@@ -40,6 +41,7 @@ import {
   AGENT_FILES,
   assertUnchanged,
   decodeNative,
+  editJsonConfig,
   editOmpConfig,
   isBlank,
   nativeConfigPath,
@@ -439,6 +441,70 @@ interface WriteTarget {
   exists: boolean;
 }
 
+/**
+ * The top-level keys of the canonical file that sync owns: exactly what the merge produces. Every
+ * other key (`$schema` of an existing file, `ceiling`, `with`, `without`, `up`, `sync`, and any the
+ * schema gains) is the user's and is never rewritten.
+ */
+export const SYNC_OWNED_KEYS: readonly string[] = [
+  "defaultMode",
+  "rules",
+  "permissions",
+  "sandbox",
+  "network",
+  "profiles",
+  "activeProfile",
+  "delegation",
+  "roles",
+  "env",
+];
+
+const SCHEMA_URL =
+  "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json";
+
+/** The rules of a policy as a sorted list of their JSON, so two policies compare by content. */
+function ruleKeys(rules: readonly Rule[]): string[] {
+  return rules.map((rule) => JSON.stringify(rule)).sort();
+}
+
+/**
+ * The canonical file's content after a sync. A new or empty file is the merged policy with its
+ * schema reference. An existing file is edited as text: only the keys the merge produces are
+ * replaced (or removed when the merge has none), so everything else in it survives byte for byte.
+ * The user's `permissions.allow`, `deny` and `ask` lists are folded into `rules` by the merge, and
+ * are left as written unless the merge changed the rules.
+ *
+ * @param own The policy decoded from this file, when it could be read.
+ */
+function renderCanonical(
+  current: string | null,
+  merged: AgentPermissionPolicy,
+  own: AgentPermissionPolicy | undefined,
+  path: string,
+): string {
+  if (current === null || isBlank(current)) {
+    return JSON.stringify({ $schema: SCHEMA_URL, ...merged }, null, 2) + "\n";
+  }
+  const rulesUnchanged =
+    own !== undefined &&
+    isDeepStrictEqual(
+      ruleKeys(
+        deduplicateRules(
+          collectRules({ rules: own.rules, permissions: own.permissions }),
+        ),
+      ),
+      ruleKeys(merged.rules ?? []),
+    );
+  const paths = SYNC_OWNED_KEYS.flatMap((key) => {
+    if (key === "rules") return rulesUnchanged ? [] : [[key]];
+    if (key === "permissions") {
+      return rulesUnchanged ? [[key, "additionalDirectories"]] : [[key]];
+    }
+    return [[key]];
+  });
+  return editJsonConfig(current, merged, paths, false, path);
+}
+
 /** What sync needs from a codec, so the encoding step can be tested without real agent formats. */
 interface Encoder {
   encode(canonical: AgentPermissionPolicy): unknown;
@@ -464,15 +530,17 @@ export function computeWriteTargets(
 
   // Always write canonical at cwd (unless excluded)
   const canonicalPath = join(cwd, ".agents", "permissions.json");
-  const schemaUrl =
-    "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json";
-  const canonicalWithSchema = { $schema: schemaUrl, ...merged };
   if (!agentFilter || agentFilter.has("canonical")) {
-    const content = JSON.stringify(canonicalWithSchema, null, 2) + "\n";
+    const own = sources.find(
+      (s) =>
+        s.file.agent === "canonical" &&
+        !s.file.local &&
+        s.file.path === canonicalPath,
+    )?.policy;
     targets.push({
       agent: "canonical",
       path: canonicalPath,
-      render: () => content,
+      render: (current) => renderCanonical(current, merged, own, canonicalPath),
       exists: existsSync(canonicalPath),
     });
   }
