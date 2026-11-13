@@ -36,6 +36,7 @@ import {
   findDefaultFile,
   nativeConfigPath,
   nativeFormatOfPath,
+  opaqueFormatOfPath,
   writeNativeConfig,
   readInput,
   parseAgentFile,
@@ -87,6 +88,19 @@ function resolveOutputSpec(spec: string | undefined): string | undefined {
   }
   return resolve(spec);
 }
+/**
+ * Exit with an error when an output path is an existing Codex or Crush config file: neither has an
+ * edit that keeps its other settings, so writing it would replace them.
+ */
+function refuseExistingOpaqueConfig(path: string): void {
+  const format = opaqueFormatOfPath(path);
+  if (format !== undefined && existsSync(path)) {
+    error(
+      `${path} already exists and holds other ${format} settings that a write would replace; write to a new path and merge by hand`,
+    );
+  }
+}
+
 function firstString(
   ...values: (string | boolean | undefined)[]
 ): string | undefined {
@@ -182,6 +196,7 @@ async function convertCommand(args: string[]): Promise<void> {
       values.compact === true,
     );
 
+    if (outputPath) refuseExistingOpaqueConfig(outputPath);
     if (outputPath && nativeFormatOfPath(outputPath) === toFormat) {
       // A native config holds the user's other settings, so the encoding is merged into it by the
       // writer sync uses. The encoding is the bare permissions payload, which the writer wraps.
@@ -591,6 +606,7 @@ async function confineCommand(args: string[]): Promise<void> {
   const outputSpec = firstString(values.output, values.out);
   const outputPath =
     outputSpec === undefined ? undefined : resolveOutputSpec(outputSpec);
+  if (outputPath) refuseExistingOpaqueConfig(outputPath);
   const nativeFormat =
     outputPath === undefined ? undefined : nativeFormatOfPath(outputPath);
   if (outputPath && nativeFormat !== undefined) {

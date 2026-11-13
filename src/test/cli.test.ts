@@ -208,6 +208,45 @@ void describe("CLI", () => {
       );
     });
 
+    void it("refuses to write over an existing codex.toml or .crush.json, and writes a new one whole", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+      );
+      for (const [format, name] of [
+        ["crush", ".crush.json"],
+        ["codex", "codex.toml"],
+      ] as const) {
+        const existing = join(cwd, name);
+        await writeFile(existing, "other = 1\n");
+        const refused = await run(
+          ["convert", "--from", join(cwd, "policy.json"), "--to", format],
+          undefined,
+          undefined,
+          cwd,
+        );
+        assert.equal(refused.exitCode, 1, format);
+        assert.match(
+          refused.stderr,
+          new RegExp(name.replace(".", "\\.")),
+          format,
+        );
+        assert.equal(await readFile(existing, "utf-8"), "other = 1\n");
+
+        await rm(existing);
+        const created = await run(
+          ["convert", "--from", join(cwd, "policy.json"), "--to", format],
+          undefined,
+          undefined,
+          cwd,
+        );
+        assert.equal(created.exitCode, 0, created.stderr);
+        assert.equal(existsSync(existing), true, format);
+      }
+    });
+
     void it("converts with --compact flag", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
