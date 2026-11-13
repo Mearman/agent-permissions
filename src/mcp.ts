@@ -40,7 +40,7 @@ import { sync } from "./sync.ts";
 // Config resolution
 // ---------------------------------------------------------------------------
 
-interface SyncConfig {
+export interface SyncConfig {
   mode: "sync" | "watch" | false;
   backup: boolean;
 }
@@ -92,6 +92,24 @@ async function performSync(cwd: string, config: SyncConfig): Promise<void> {
   });
 }
 
+/**
+ * Sync in the background, for a caller that does not await it (the file watcher). A sync that stops,
+ * because a config file cannot be read or decoded or changed meanwhile, is reported on stderr and
+ * the daemon keeps running; it never rejects.
+ */
+export async function syncInBackground(
+  cwd: string,
+  config: SyncConfig,
+): Promise<void> {
+  try {
+    await performSync(cwd, config);
+  } catch (error) {
+    process.stderr.write(
+      `[agent-perms-mcp] Sync stopped: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+  }
+}
+
 function startWatcher(cwd: string, config: SyncConfig): void {
   if (config.mode !== "watch") return;
 
@@ -121,7 +139,7 @@ function startWatcher(cwd: string, config: SyncConfig): void {
           filename === ".crush.json" ||
           filename === "codex.toml"
         ) {
-          void performSync(cwd, config);
+          void syncInBackground(cwd, config);
         }
       });
       watcher.on("error", () => {
