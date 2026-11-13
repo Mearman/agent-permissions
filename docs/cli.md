@@ -42,6 +42,8 @@ agent-perms convert --from claude-code --to canonical --output my-policy.json
 | `--compact` | `-c`  |                   | Single-line JSON                                       |
 | `--verbose` | `-v`  |                   | Show decode/encode summary on stderr                   |
 
+When the output is an agent's own config file (a bare format name, or a path ending in that agent's file name such as `.claude/settings.json`), the encoded permissions are merged into the file by the writer `sync` uses, so its other settings survive, and a file that cannot be read as that agent's format is refused. An output path that is not an agent's config file receives the encoded document whole.
+
 ## validate
 
 ```bash
@@ -118,6 +120,8 @@ agent-perms confine --root ~/projects/app --outside deny
 | `--outside`       | `ask` (default) or `deny`: what happens to paths outside the roots |
 | `-o`, `--output`  | Write to a file (or format name) instead of stdout                 |
 | `-c`, `--compact` | Output compact JSON                                                |
+
+With `--output` set to a bare format name other than `canonical`, or to a path ending in an agent's config file name, the policy is encoded for that agent and merged into the file in the same way as `convert`; any other output path receives the canonical policy whole.
 
 Prints a canonical policy that allows `Read`, `Edit` and `Write` on each root and everything below it, and lists the roots other than the working directory under `permissions.additionalDirectories`. Relative roots resolve against the working directory; paths are made absolute, `.` and `..` segments are collapsed, trailing separators are dropped and duplicates are removed.
 

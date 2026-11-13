@@ -25,6 +25,7 @@ function run(
   args: string[],
   stdin?: string,
   ompAgentDir: string = mkdtempSync(join(tmpdir(), "agent-perms-omp-")),
+  cwd: string = mkdtempSync(join(tmpdir(), "agent-perms-cli-")),
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     // A throwaway cwd per invocation: the CLI resolves and writes config files relative to cwd, and running it from the repo root made the suite overwrite the repo's own dogfooded .agents/permissions.json. Oh My Pi's agent directory is a throwaway too, so sync never reads or writes the real global config.
@@ -32,7 +33,7 @@ function run(
       "node",
       ["--experimental-strip-types", CLI, ...args],
       {
-        cwd: mkdtempSync(join(tmpdir(), "agent-perms-cli-")),
+        cwd,
         env: { ...process.env, PI_CODING_AGENT_DIR: ompAgentDir },
       },
       (err, stdout, stderr) => {
@@ -127,6 +128,84 @@ void describe("CLI", () => {
       ]);
       assert.equal(result.exitCode, 0, result.stderr);
       assert.match(await readFile(target, "utf-8"), /"Read"/u);
+    });
+
+    void it("merges into the live settings file a bare format name resolves to, keeping its other keys", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      await mkdir(join(cwd, ".claude"), { recursive: true });
+      await writeFile(
+        join(cwd, ".agents", "permissions.json"),
+        JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+      );
+      await writeFile(
+        join(cwd, ".claude", "settings.json"),
+        JSON.stringify({ model: "opus", permissions: { deny: ["Bash(x)"] } }),
+      );
+      const result = await run(
+        ["convert", "--from", "canonical", "--to", "claude-code"],
+        undefined,
+        undefined,
+        cwd,
+      );
+      assert.equal(result.exitCode, 0, result.stderr);
+      const settings: unknown = JSON.parse(
+        await readFile(join(cwd, ".claude", "settings.json"), "utf-8"),
+      );
+      assert.ok(isRecord(settings));
+      assert.equal(settings.model, "opus");
+      assert.ok(isRecord(settings.permissions));
+      assert.deepEqual(settings.permissions.allow, ["Read"]);
+      assert.equal("allow" in settings, false);
+    });
+
+    void it("writes the encoded document whole to an explicit path that is not a native config file", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+      );
+      await writeFile(join(cwd, "out.json"), '{"model": "opus"}');
+      const result = await run([
+        "convert",
+        "--from",
+        join(cwd, "policy.json"),
+        "--to",
+        "claude-code",
+        "--output",
+        join(cwd, "out.json"),
+      ]);
+      assert.equal(result.exitCode, 0, result.stderr);
+      const out: unknown = JSON.parse(
+        await readFile(join(cwd, "out.json"), "utf-8"),
+      );
+      assert.ok(isRecord(out));
+      assert.equal("model" in out, false);
+      assert.deepEqual(out.allow, ["Read"]);
+    });
+
+    void it("refuses to write over a native config it cannot read as JSON", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".claude"), { recursive: true });
+      await writeFile(
+        join(cwd, "policy.json"),
+        JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+      );
+      await writeFile(join(cwd, ".claude", "settings.json"), "{ not json");
+      const result = await run(
+        ["convert", "--from", join(cwd, "policy.json"), "--to", "claude-code"],
+        undefined,
+        undefined,
+        cwd,
+      );
+      assert.equal(result.exitCode, 1);
+      assert.equal(
+        await readFile(join(cwd, ".claude", "settings.json"), "utf-8"),
+        "{ not json",
+      );
     });
 
     void it("converts with --compact flag", async () => {
@@ -1189,6 +1268,30 @@ void describe("CLI", () => {
 
   // =========================================================================
   void describe("confine", () => {
+    void it("merges into the live settings file a bare format name resolves to", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".claude"), { recursive: true });
+      await writeFile(
+        join(cwd, ".claude", "settings.json"),
+        JSON.stringify({ model: "opus", hooks: { a: 1 } }),
+      );
+      const result = await run(
+        ["confine", "--root", cwd, "--output", "claude-code"],
+        undefined,
+        undefined,
+        cwd,
+      );
+      assert.equal(result.exitCode, 0, result.stderr);
+      const settings: unknown = JSON.parse(
+        await readFile(join(cwd, ".claude", "settings.json"), "utf-8"),
+      );
+      assert.ok(isRecord(settings));
+      assert.equal(settings.model, "opus");
+      assert.deepEqual(settings.hooks, { a: 1 });
+      assert.ok(isRecord(settings.permissions));
+    });
+
     void it("prints a canonical policy that confines to the roots", async () => {
       const result = await run([
         "confine",
