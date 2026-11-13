@@ -278,6 +278,15 @@ export function parseAgentFile(
 const BYTE_ORDER_MARK = "\uFEFF";
 
 /**
+ * Whether a config file's text is empty, or only whitespace and a byte order mark. Such a file
+ * holds no settings: as a source it contributes nothing, and as a target it is written as a new
+ * document.
+ */
+export function isBlank(text: string): boolean {
+  return text.replace(BYTE_ORDER_MARK, "").trim() === "";
+}
+
+/**
  * Parse a native agent config as the agent reads it: JSONC when `jsonc`, otherwise strict JSON,
  * which refuses comments and trailing commas with a message that says so. A leading byte order
  * mark is skipped.
@@ -588,7 +597,9 @@ export function editJsonConfig(
   jsonc: boolean,
   source: string,
 ): string {
-  if (current === null) return JSON.stringify(wrapped, null, 2) + "\n";
+  if (current === null || isBlank(current)) {
+    return JSON.stringify(wrapped, null, 2) + "\n";
+  }
   const bom = current.startsWith(BYTE_ORDER_MARK) ? BYTE_ORDER_MARK : "";
   let text = current.slice(bom.length);
   const layout = layoutOf(text);
@@ -635,8 +646,12 @@ export function renderNativeConfig(
   encoded: unknown,
   source: string,
 ): string {
-  if (format === "omp")
-    return editOmpConfig(current, OmpEncoded.parse(encoded));
+  if (format === "omp") {
+    return editOmpConfig(
+      current === null || isBlank(current) ? null : current,
+      OmpEncoded.parse(encoded),
+    );
+  }
   const def = AGENT_FILES[format];
   const wrapped = def.wrap ? def.wrap(encoded) : encoded;
   if (def.modelled === undefined)

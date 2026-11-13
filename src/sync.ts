@@ -40,6 +40,7 @@ import {
   assertUnchanged,
   decodeNative,
   editOmpConfig,
+  isBlank,
   nativeConfigPath,
   nativeFileNames,
   nativePayload,
@@ -218,11 +219,9 @@ async function readAndDecode(
   // OMP's config is written by editing it in place, so one that cannot be read is an error: skipping
   // it would let the write replace entries nobody read.
   if (file.agent === "omp") {
-    const parsed = parseAgentFile(
-      "omp",
-      await readFileRequired(file.path),
-      file.path,
-    );
+    const text = await readFileRequired(file.path);
+    if (isBlank(text)) return undefined;
+    const parsed = parseAgentFile("omp", text, file.path);
     if (!parsed.ok) throw new Error(parsed.error);
     const result = decodeNative("omp", parsed.value);
     if (!result.ok) throw new Error(`${file.path}: ${result.error}`);
@@ -232,6 +231,7 @@ async function readAndDecode(
   // A file that exists and cannot be read stops the sync: reading it as absent would let a write
   // replace a file nobody read.
   const content = await readFileRequired(file.path);
+  if (isBlank(content)) return undefined;
 
   // Canonical files parse directly. One that cannot be used is left out of the merge, with a warning.
   if (file.agent === "canonical") {
