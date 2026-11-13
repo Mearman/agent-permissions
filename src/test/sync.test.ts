@@ -1294,3 +1294,279 @@ void describe("sync of Oh My Pi's config", () => {
     assert.equal(existsSync(join(cwd, ".omp", "config.yml.bak")), true);
   });
 });
+
+void describe("sync of native JSON configs that hold other settings", () => {
+  const dirs: string[] = [];
+  after(async () => {
+    await Promise.all(dirs.map((d) => rm(d, { recursive: true })));
+  });
+
+  async function project(canonical: Record<string, unknown>): Promise<string> {
+    const cwd = await mkdtemp(join(tmpdir(), "sync-keep-"));
+    dirs.push(cwd);
+    await mkdir(join(cwd, ".agents"), { recursive: true });
+    await writeFile(
+      join(cwd, ".agents", "permissions.json"),
+      JSON.stringify(canonical),
+    );
+    return cwd;
+  }
+
+  function options(
+    cwd: string,
+    overrides: Partial<SyncOptions> = {},
+  ): SyncOptions {
+    return {
+      cwd,
+      up: 0,
+      with: [],
+      without: [],
+      yes: true,
+      dryRun: false,
+      create: false,
+      verbose: false,
+      backup: false,
+      ompAgentDir: join(tmpdir(), "no-omp-agent"),
+      ompGlobal: false,
+      ...overrides,
+    };
+  }
+
+  async function writeNative(
+    cwd: string,
+    path: string,
+    content: string,
+  ): Promise<void> {
+    await mkdir(join(cwd, path, ".."), { recursive: true });
+    await writeFile(join(cwd, path), content);
+  }
+
+  async function readJson(path: string): Promise<Record<string, unknown>> {
+    const parsed: unknown = JSON.parse(await readFile(path, "utf-8"));
+    assert.ok(isRecord(parsed));
+    return parsed;
+  }
+
+  const denyRm = { tool: "Bash", pattern: "rm:*", tier: "deny" } as const;
+  const hooks = {
+    PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command" }] }],
+  };
+
+  void it("keeps every other key of .claude/settings.json, in order", async () => {
+    const cwd = await project({ rules: [denyRm] });
+    await writeNative(
+      cwd,
+      ".claude/settings.json",
+      JSON.stringify({
+        model: "opus",
+        permissions: { allow: ["Read"] },
+        env: { A: "1" },
+        hooks,
+      }),
+    );
+
+    await sync(options(cwd));
+
+    const settings = await readJson(join(cwd, ".claude", "settings.json"));
+    assert.deepEqual(Object.keys(settings), [
+      "model",
+      "permissions",
+      "env",
+      "hooks",
+    ]);
+    assert.equal(settings.model, "opus");
+    assert.deepEqual(settings.env, { A: "1" });
+    assert.deepEqual(settings.hooks, hooks);
+    assert.deepEqual(settings.permissions, {
+      allow: ["Read"],
+      deny: ["Bash(rm:*)"],
+      ask: [],
+    });
+  });
+
+  void it("replaces the permissions key rather than merging into it", async () => {
+    const cwd = await project({
+      rules: [{ tool: "Bash", pattern: "git:*", tier: "deny" }],
+    });
+    await writeNative(
+      cwd,
+      ".claude/settings.json",
+      JSON.stringify({
+        permissions: { allow: ["Bash(git:*)"], additionalDirectories: ["/x"] },
+        model: "opus",
+      }),
+    );
+
+    await sync(options(cwd));
+
+    const settings = await readJson(join(cwd, ".claude", "settings.json"));
+    assert.deepEqual(settings.permissions, {
+      allow: [],
+      deny: ["Bash(git:*)"],
+      ask: [],
+      additionalDirectories: ["/x"],
+    });
+    assert.equal(settings.model, "opus");
+  });
+
+  void it("adds permissions after the existing keys when the file has none", async () => {
+    const cwd = await project({ rules: [denyRm] });
+    await writeNative(
+      cwd,
+      ".claude/settings.json",
+      JSON.stringify({ model: "opus" }),
+    );
+
+    await sync(options(cwd, { create: true }));
+
+    const settings = await readJson(join(cwd, ".claude", "settings.json"));
+    assert.deepEqual(Object.keys(settings), ["model", "permissions"]);
+  });
+
+  void it("keeps every other key of opencode.json", async () => {
+    const cwd = await project({ rules: [denyRm] });
+    await writeNative(
+      cwd,
+      "opencode.json",
+      JSON.stringify({
+        $schema: "https://opencode.ai/config.json",
+        model: "anthropic/claude",
+        permission: { read: "allow" },
+        mcp: { docs: { type: "remote", url: "https://example.com/mcp" } },
+      }),
+    );
+
+    await sync(options(cwd));
+
+    const config = await readJson(join(cwd, "opencode.json"));
+    assert.deepEqual(Object.keys(config), [
+      "$schema",
+      "model",
+      "permission",
+      "mcp",
+    ]);
+    assert.equal(config.model, "anthropic/claude");
+    assert.deepEqual(config.mcp, {
+      docs: { type: "remote", url: "https://example.com/mcp" },
+    });
+    assert.deepEqual(config.permission, {
+      read: "allow",
+      bash: { "rm *": "deny" },
+    });
+  });
+
+  void it("keeps the other keys of .kiro/permissions.json and drops a permissions key the policy no longer encodes", async () => {
+    const cwd = await project({ rules: [denyRm] });
+    await writeNative(
+      cwd,
+      ".kiro/permissions.json",
+      JSON.stringify({
+        name: "project agent",
+        allowedTools: ["read"],
+        toolsSettings: { web_fetch: { trusted: ["\\A.*\\z"] } },
+        prompt: "be careful",
+      }),
+    );
+
+    await sync(options(cwd));
+
+    const config = await readJson(join(cwd, ".kiro", "permissions.json"));
+    assert.equal(config.name, "project agent");
+    assert.equal(config.prompt, "be careful");
+    assert.deepEqual(config.allowedTools, ["read"]);
+    assert.deepEqual(config.toolsSettings, {
+      web_fetch: { trusted: ["\\A.*\\z"] },
+      shell: { deniedCommands: ["\\Arm:*\\z"] },
+    });
+  });
+
+  void it("creates a file that is absent holding only the permissions", async () => {
+    const cwd = await project({ rules: [denyRm] });
+
+    await sync(options(cwd, { create: true }));
+
+    const settings = await readJson(join(cwd, ".claude", "settings.json"));
+    assert.deepEqual(Object.keys(settings), ["permissions"]);
+  });
+
+  void it("reports no change when the file already holds the permissions and other keys", async () => {
+    const cwd = await project({ rules: [denyRm] });
+    await writeNative(
+      cwd,
+      ".claude/settings.json",
+      JSON.stringify({
+        permissions: { allow: [], deny: ["Bash(rm:*)"], ask: [] },
+        model: "opus",
+      }),
+    );
+
+    const first = await sync(options(cwd));
+    const second = await sync(options(cwd));
+
+    assert.equal(
+      first.changes.some((c) => c.agent === "claude-code"),
+      false,
+    );
+    assert.deepEqual(second.changes, []);
+  });
+
+  void it("shows the kept keys in a dry run and writes nothing", async () => {
+    const cwd = await project({ rules: [denyRm] });
+    const original = JSON.stringify({
+      model: "opus",
+      permissions: { allow: ["Read"] },
+    });
+    await writeNative(cwd, ".claude/settings.json", original);
+
+    const result = await sync(options(cwd, { dryRun: true }));
+
+    const change = result.changes.find((c) => c.agent === "claude-code");
+    assert.ok(change);
+    assert.match(change.proposed, /"model": "opus"/u);
+    assert.equal(
+      await readFile(join(cwd, ".claude", "settings.json"), "utf-8"),
+      original,
+    );
+  });
+
+  void it("backs up the file as it was when asked", async () => {
+    const cwd = await project({ rules: [denyRm] });
+    const original = JSON.stringify({
+      model: "opus",
+      permissions: { allow: ["Read"] },
+    });
+    await writeNative(cwd, ".claude/settings.json", original);
+
+    await sync(options(cwd, { backup: true }));
+
+    assert.equal(
+      await readFile(join(cwd, ".claude", "settings.json.bak"), "utf-8"),
+      original,
+    );
+  });
+
+  for (const [label, content] of [
+    ["invalid JSON", "{ not json"],
+    ["a top level that is not an object", "[]"],
+  ] as const) {
+    void it(`refuses an existing file holding ${label} and writes nothing`, async () => {
+      const cwd = await project({ rules: [denyRm] });
+      await writeNative(cwd, ".claude/settings.json", content);
+
+      await assert.rejects(
+        sync(options(cwd, { create: true })),
+        /settings\.json/u,
+      );
+
+      assert.equal(
+        await readFile(join(cwd, ".claude", "settings.json"), "utf-8"),
+        content,
+      );
+      assert.equal(
+        existsSync(join(cwd, ".claude", "settings.json.bak")),
+        false,
+      );
+      assert.equal(existsSync(join(cwd, "opencode.json")), false);
+    });
+  }
+});

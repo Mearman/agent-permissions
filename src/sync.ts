@@ -39,6 +39,7 @@ import {
 import {
   AGENT_FILES,
   decodeNative,
+  editJsonConfig,
   editOmpConfig,
   ompGlobalConfigPath,
   parseAgentFile,
@@ -400,13 +401,17 @@ export function computeWriteTargets(
     }
 
     // Wrap in native config structure (e.g. { permissions: ... })
-    if (def.wrap) encoded = def.wrap(encoded);
-    const content = JSON.stringify(encoded, null, 2) + "\n";
+    const wrapped = def.wrap ? def.wrap(encoded) : encoded;
+    const ownedKeys = def.ownedKeys;
 
     targets.push({
       agent,
       path: filePath,
-      render: () => content,
+      // A native config also holds the user's other settings, so only the keys the encoding owns change.
+      render: (current) =>
+        ownedKeys === undefined
+          ? JSON.stringify(wrapped, null, 2) + "\n"
+          : editJsonConfig(current, wrapped, ownedKeys, filePath),
       exists: fileExists,
     });
   }

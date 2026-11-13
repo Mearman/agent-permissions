@@ -37,6 +37,12 @@ export interface AgentFileDef {
   extract?: (raw: unknown) => unknown;
   /** Wrap encoded permissions back into the native config structure. */
   wrap?: (encoded: unknown) => unknown;
+  /**
+   * The top-level keys of the native file that the encoding owns: sync replaces each with its
+   * encoded value (or removes it when the encoding has none) and keeps every other key. Absent for
+   * a file that is wholly the tool's own.
+   */
+  ownedKeys?: readonly string[];
 }
 
 /** Default config file for each agent format, relative to a project root. */
@@ -55,6 +61,7 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
       return raw.permissions;
     },
     wrap: (encoded) => ({ permissions: encoded }),
+    ownedKeys: ["permissions"],
   },
   codex: { name: "codex.toml" }, // TOML — read only if pre-parsed
   opencode: {
@@ -64,6 +71,7 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
       return raw.permission;
     },
     wrap: (encoded) => ({ permission: encoded }),
+    ownedKeys: ["permission"],
   },
   crush: { name: ".crush.json" }, // Crush has no standard config file
   // OMP's project config. Its global copy lives in the agent directory (see ompGlobalConfigPath),
@@ -76,6 +84,7 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
     name: ".kiro/permissions.json",
     extract: (raw) => raw,
     wrap: (encoded) => encoded,
+    ownedKeys: ["allowedTools", "toolsSettings"],
   },
 };
 
@@ -242,6 +251,48 @@ export function editOmpConfig(
     doc.setIn(["tools", "approvalMode"], encoded.tools.approvalMode);
   }
   return doc.toString();
+}
+
+/**
+ * A native JSON config with the keys the encoding owns replaced and every other key kept, in its
+ * original order. An owned key the file already holds is replaced in place, or removed when the
+ * encoding has none; one it does not hold is appended in the encoding's order.
+ *
+ * @param current The file's content, or `null` for a new file.
+ * @param wrapped The encoded permissions in the native structure (`AgentFileDef.wrap`).
+ * @param ownedKeys The top-level keys `wrapped` replaces (`AgentFileDef.ownedKeys`).
+ * @param source The file's path, named in the error.
+ * @throws Error when `current` is not valid JSON or its top level is not an object, rather than
+ *   replacing a file it could not read.
+ */
+export function editJsonConfig(
+  current: string | null,
+  wrapped: unknown,
+  ownedKeys: readonly string[],
+  source: string,
+): string {
+  if (!isRecord(wrapped) || Array.isArray(wrapped)) {
+    throw new Error(`${source}: the encoded permissions are not an object`);
+  }
+  let existing: Record<string, unknown> = {};
+  if (current !== null) {
+    const parsed = parseJson(current, source);
+    if (!parsed.ok) throw new Error(parsed.error);
+    if (!isRecord(parsed.value) || Array.isArray(parsed.value)) {
+      throw new Error(`${source}: the top level must be a JSON object`);
+    }
+    existing = parsed.value;
+  }
+  const owned = new Set(ownedKeys);
+  const edited: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(existing)) {
+    if (!owned.has(key)) edited[key] = value;
+    else if (key in wrapped) edited[key] = wrapped[key];
+  }
+  for (const [key, value] of Object.entries(wrapped)) {
+    if (!(key in edited)) edited[key] = value;
+  }
+  return JSON.stringify(edited, null, 2) + "\n";
 }
 
 /** Write JSON to a file, creating parent directories as needed. */
