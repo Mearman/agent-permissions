@@ -24,6 +24,7 @@
  */
 
 import { parse as parseYaml } from "yaml";
+import { createHash } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { AgentPermissionPolicy, type Rule } from "./schema.ts";
@@ -82,6 +83,11 @@ export interface SyncOptions {
   ompAgentDir: string;
   /** Also write Oh My Pi's global config, which every OMP session on the machine reads. */
   ompGlobal: boolean;
+  /**
+   * A caller that syncs repeatedly (the daemon) passes the same map each time so a warning about a
+   * source is written once per change of that file's content, not on every run.
+   */
+  warned?: Map<string, string>;
 }
 
 export interface SyncResult {
@@ -198,10 +204,41 @@ export interface DecodedSource {
   policy: AgentPermissionPolicy;
 }
 
+/** What reading sources needs to know about this run. */
+interface ReadContext {
+  agentFilter: Set<string> | undefined;
+  /** The files this run would write: only a problem with one of these stops the sync. */
+  writePaths: ReadonlySet<string>;
+  /** Report a source that was left out, once per change of its content. */
+  note: (path: string, reason: string, content?: string) => void;
+}
+
+/** A reporter that writes each warning to stderr, once per change when given a memory. */
+function makeNote(
+  warned: Map<string, string> | undefined,
+): ReadContext["note"] {
+  return (path, reason, content) => {
+    const text = reason.startsWith(path) ? reason : `${path}: ${reason}`;
+    const key = `${text}\0${content === undefined ? "" : createHash("sha1").update(content).digest("hex")}`;
+    if (warned !== undefined) {
+      if (warned.get(path) === key) return;
+      warned.set(path, key);
+    }
+    process.stderr.write(`warning: ${text}\n`);
+  };
+}
+
+/**
+ * Read one source. A source that cannot be used (unreadable, not valid UTF-8, not valid for its
+ * agent, or holding a value the codec cannot decode) stops the sync only when sync would write that
+ * file, since writing would replace entries nobody read; anywhere else (an ancestor's config, a
+ * local override) it is left out with a warning, and the agent still applies it itself.
+ */
 async function readAndDecode(
   file: AgentFile,
-  agentFilter: Set<string> | undefined,
+  context: ReadContext,
 ): Promise<DecodedSource | undefined> {
+  const { agentFilter, writePaths, note } = context;
   // Skip if --with/--without excludes this agent
   if (
     agentFilter &&
@@ -216,54 +253,69 @@ async function readAndDecode(
   // Skip agents without extract/wrap (crush, codex) or without a file def
   if (def.extract === undefined) return undefined;
 
-  // OMP's config is written by editing it in place, so one that cannot be read is an error: skipping
-  // it would let the write replace entries nobody read.
+  const writes = !file.local && writePaths.has(file.path);
+  const unusable = (reason: string, content?: string): undefined => {
+    if (writes)
+      throw new Error(
+        reason.startsWith(file.path) ? reason : `${file.path}: ${reason}`,
+      );
+    note(file.path, `${reason} (left out of the merge)`, content);
+    return undefined;
+  };
+
+  let content: string;
+  try {
+    content = await readFileRequired(file.path);
+  } catch (error) {
+    unusable(error instanceof Error ? error.message : String(error));
+    return;
+  }
+  if (isBlank(content)) return undefined;
+
+  // OMP's config is written by editing it in place, so one that cannot be read is an error when it
+  // is to be written: skipping it would let the write replace entries nobody read.
   if (file.agent === "omp") {
-    const text = await readFileRequired(file.path);
-    if (isBlank(text)) return undefined;
-    const parsed = parseAgentFile("omp", text, file.path);
-    if (!parsed.ok) throw new Error(parsed.error);
+    const parsed = parseAgentFile("omp", content, file.path);
+    if (!parsed.ok) {
+      unusable(parsed.error, content);
+      return;
+    }
     const result = decodeNative("omp", parsed.value);
-    if (!result.ok) throw new Error(`${file.path}: ${result.error}`);
+    if (!result.ok) {
+      unusable(result.error, content);
+      return;
+    }
     return { file, policy: result.value };
   }
-
-  // A file that exists and cannot be read stops the sync: reading it as absent would let a write
-  // replace a file nobody read.
-  const content = await readFileRequired(file.path);
-  if (isBlank(content)) return undefined;
 
   // Canonical files parse directly. One that cannot be used is left out of the merge, with a warning.
   if (file.agent === "canonical") {
     const parsed = parseJson(content, file.path);
     if (!parsed.ok) {
-      skipped(file.path, parsed.error);
-      return;
+      note(file.path, `${parsed.error} (left out of the merge)`, content);
+      return undefined;
     }
     const validated = validatePolicy(parsed.value);
     if (!validated.ok) {
-      skipped(file.path, validated.error);
-      return;
+      note(file.path, `${validated.error} (left out of the merge)`, content);
+      return undefined;
     }
     return { file, policy: validated.value };
   }
 
   const parsed = parseNativeJson(content, file.path, def.jsonc === true);
   if (!parsed.ok) {
-    skipped(file.path, parsed.error);
-    return;
+    note(file.path, `${parsed.error} (left out of the merge)`, content);
+    return undefined;
   }
 
   // A native file without a permissions payload has nothing to read; one whose payload cannot be
-  // decoded stops the sync, because the write would replace entries nobody read.
+  // decoded stops the sync when it is to be written, because the write would replace entries nobody read.
   if (nativePayload(file.agent, parsed.value) === undefined) return undefined;
   const result = decodeNative(file.agent, parsed.value);
   if (!result.ok) {
-    if (file.local) {
-      skipped(file.path, result.error);
-      return;
-    }
-    throw new Error(`${file.path}: ${result.error}`);
+    unusable(result.error, content);
+    return;
   }
   return { file, policy: result.value };
 }
@@ -271,15 +323,10 @@ async function readAndDecode(
 /** A file's text; one that exists and cannot be read is an error naming it. */
 async function readFileRequired(path: string): Promise<string> {
   const content = await readIfPresent(path);
-  if (content === null)
+  if (content === null) {
     throw new Error(`${path}: vanished while it was being read`);
+  }
   return content;
-}
-
-/** A source that could not be used and is never written: noted on stderr, and left out of the merge. */
-function skipped(path: string, reason: string): undefined {
-  process.stderr.write(`warning: skipped ${path}: ${reason}\n`);
-  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -599,6 +646,18 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     files.push({ agent: "omp", path: ompGlobalPath, local: false });
   }
 
+  const note = makeNote(options.warned);
+  const projectRoot = resolve(cwd);
+  const writePaths = new Set<string>([
+    join(projectRoot, ".agents", "permissions.json"),
+    ...Object.values(AGENT_FILES).flatMap((def) =>
+      def.extract === undefined
+        ? []
+        : nativeFileNames(def).map((name) => join(projectRoot, name)),
+    ),
+    ...(ompGlobal ? [ompGlobalPath] : []),
+  ]);
+
   // OpenCode loads every one of its config file names and applies them in order, so a second file
   // keeps contributing rules that sync, which edits only the preferred one, does not touch.
   for (const [agent, def] of Object.entries(AGENT_FILES)) {
@@ -607,8 +666,9 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
         files.some((f) => f.agent === agent && f.path === join(dir, name)),
       );
       if (present.length > 1) {
-        process.stderr.write(
-          `warning: ${present.map((n) => join(dir, n)).join(" and ")} both exist; ${join(dir, present[0] ?? def.name)} takes precedence and is the one sync edits, but the agent applies both\n`,
+        note(
+          join(dir, present[0] ?? def.name),
+          `${present.map((n) => join(dir, n)).join(" and ")} both exist; the first takes precedence and is the one sync edits, but the agent applies both`,
         );
       }
     }
@@ -634,7 +694,11 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   const sources: DecodedSource[] = [];
   for (const file of files) {
     // Skip local files for write-back consideration
-    const decoded = await readAndDecode(file, agentFilter);
+    const decoded = await readAndDecode(file, {
+      agentFilter,
+      writePaths,
+      note,
+    });
     if (decoded) {
       sources.push(decoded);
       if (verbose) {

@@ -74,6 +74,9 @@ async function loadRootPolicy(
 // Sync operations
 // ---------------------------------------------------------------------------
 
+/** What the daemon has already warned about, so a warning repeats only when its file changes. */
+const warnedSources = new Map<string, string>();
+
 async function performSync(cwd: string, config: SyncConfig): Promise<void> {
   if (config.mode === false) return;
 
@@ -89,6 +92,7 @@ async function performSync(cwd: string, config: SyncConfig): Promise<void> {
     backup: config.backup,
     ompAgentDir: defaultOmpAgentDir(),
     ompGlobal: false,
+    warned: warnedSources,
   });
 }
 
