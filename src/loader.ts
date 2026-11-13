@@ -22,6 +22,7 @@ import { existsSync, watch, type FSWatcher } from "node:fs";
 import { type AgentPermissionPolicy, type Rule } from "./schema.ts";
 import {
   AGENT_FILES,
+  isBlank,
   nativeFileNames,
   parseJson,
   parseNativeJson,
@@ -226,6 +227,9 @@ async function readLayer(file: DiscoveredFile): Promise<ReadResult> {
       ? { failure: `${file.path} could not be read` }
       : { absent: true };
   }
+
+  // An empty file holds no settings, so it is a layer that says nothing.
+  if (isBlank(content)) return { layer: { file, policy: {} } };
 
   const parsed =
     file.agent === "canonical"
