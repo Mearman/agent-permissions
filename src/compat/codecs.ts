@@ -1948,6 +1948,17 @@ export const ompCodec = z.codec(ompNative, AgentPermissionPolicy, {
 // ---------------------------------------------------------------------------
 
 /**
+ * Whether decoding an OpenCode key folds it into a canonical tool that encodes to a different key
+ * (`list` into `Glob`, which writes `glob`; `websearch` into `WebFetch`, which writes `webfetch`).
+ * Such a key cannot round-trip, so replacing it would delete a user's rule and move it to another
+ * key; it is left out of the modelled paths and stays as written.
+ */
+function ocFoldsElsewhere(key: string): boolean {
+  const canonical = ocToCanonical[key];
+  return canonical !== undefined && canonicalToOc[canonical] !== key;
+}
+
+/**
  * The leaf paths of each native permissions payload that the codec both reads and writes, relative
  * to the payload. Sync replaces exactly these paths in a user's file and leaves every other
  * key beneath the payload (settings the codec does not model, or a newer agent version's keys)
@@ -1956,7 +1967,7 @@ export const ompCodec = z.codec(ompNative, AgentPermissionPolicy, {
 export const MODELLED_PATHS = {
   "claude-code": Object.keys(claudeCodeNative.shape).map((key) => [key]),
   opencode: Object.keys(opencodeNativeObject.shape)
-    .filter((key) => !OC_UNMAPPED_TOOLS.has(key))
+    .filter((key) => !OC_UNMAPPED_TOOLS.has(key) && !ocFoldsElsewhere(key))
     .map((key) => [key]),
   kiro: [
     ["allowedTools"],

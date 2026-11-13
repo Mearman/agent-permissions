@@ -308,17 +308,18 @@ async function readAndDecode(
     return { file, policy: result.value };
   }
 
-  // Canonical files parse directly. One that cannot be used is left out of the merge, with a warning.
+  // Canonical files parse directly. One in the directory sync writes that cannot be used stops the
+  // sync, since writing would replace rules nobody read; any other is left out of the merge.
   if (file.agent === "canonical") {
     const parsed = parseJson(content, file.path);
     if (!parsed.ok) {
-      note(file.path, `${parsed.error} (left out of the merge)`, content);
-      return undefined;
+      unusable("invalid-format", parsed.error, content);
+      return;
     }
     const validated = validatePolicy(parsed.value);
     if (!validated.ok) {
-      note(file.path, `${validated.error} (left out of the merge)`, content);
-      return undefined;
+      unusable("undecodable", validated.error, content);
+      return;
     }
     return { file, policy: validated.value };
   }

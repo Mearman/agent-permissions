@@ -754,8 +754,8 @@ void describe("sync", () => {
       join(cwd, ".agents", "permissions.json"),
       JSON.stringify({
         rules: [{ tool: "Read", tier: "allow" }],
-        sandbox: { mode: "docker" },
-        network: { outbound: "deny" },
+        sandbox: { mode: "workspace-write" },
+        network: { enabled: false },
       }),
     );
 
@@ -780,9 +780,9 @@ void describe("sync", () => {
     const parsed: unknown = JSON.parse(canonical);
     assert.ok(isRecord(parsed));
     assert.ok(isRecord(parsed.sandbox));
-    assert.equal(parsed.sandbox.mode, "docker");
+    assert.equal(parsed.sandbox.mode, "workspace-write");
     assert.ok(isRecord(parsed.network));
-    assert.equal(parsed.network.outbound, "deny");
+    assert.equal(parsed.network.enabled, false);
   });
 
   void it("merges profiles and activeProfile", async () => {
@@ -795,10 +795,7 @@ void describe("sync", () => {
       JSON.stringify({
         rules: [{ tool: "Read", tier: "allow" }],
         profiles: {
-          strict: {
-            defaultMode: "restricted",
-            rules: [{ tool: "Bash", tier: "deny" }],
-          },
+          strict: { deny: ["Bash"], allow: ["Read"] },
         },
         activeProfile: "strict",
       }),
@@ -837,7 +834,7 @@ void describe("sync", () => {
       join(cwd, ".agents", "permissions.json"),
       JSON.stringify({
         rules: [{ tool: "Read", tier: "allow" }],
-        delegation: { agents: ["claude-code", "opencode"] },
+        delegation: { maxDepth: 2 },
         env: { NODE_ENV: "production" },
       }),
     );
