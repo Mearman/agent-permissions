@@ -34,6 +34,9 @@ import {
   defaultOmpAgentDir,
   editOmpConfig,
   findDefaultFile,
+  nativeConfigPath,
+  nativeFormatOfPath,
+  writeNativeConfig,
   readInput,
   parseAgentFile,
   parseJson,
@@ -80,7 +83,7 @@ function resolveInputSpec(spec: string | undefined): string | undefined {
 function resolveOutputSpec(spec: string | undefined): string | undefined {
   if (spec === undefined || spec === "-") return undefined;
   if (isFormatName(spec)) {
-    return resolve(join(process.cwd(), AGENT_FILES[spec].name));
+    return resolve(nativeConfigPath(process.cwd(), AGENT_FILES[spec]));
   }
   return resolve(spec);
 }
@@ -179,7 +182,11 @@ async function convertCommand(args: string[]): Promise<void> {
       values.compact === true,
     );
 
-    if (outputPath) {
+    if (outputPath && nativeFormatOfPath(outputPath) === toFormat) {
+      // A native config holds the user's other settings, so the encoding is merged into it by the
+      // writer sync uses. The encoding is the bare permissions payload, which the writer wraps.
+      await writeNativeConfig(toFormat, outputPath, result.output);
+    } else if (outputPath) {
       // An existing OMP config holds much more than permissions, so it is edited in place
       await writeJsonFile(
         outputPath,
@@ -584,7 +591,16 @@ async function confineCommand(args: string[]): Promise<void> {
   const outputSpec = firstString(values.output, values.out);
   const outputPath =
     outputSpec === undefined ? undefined : resolveOutputSpec(outputSpec);
-  if (outputPath) {
+  const nativeFormat =
+    outputPath === undefined ? undefined : nativeFormatOfPath(outputPath);
+  if (outputPath && nativeFormat !== undefined) {
+    // The policy is written as that agent's native config, merged into the file by sync's writer.
+    await writeNativeConfig(
+      nativeFormat,
+      outputPath,
+      convert("canonical", nativeFormat, policy).output,
+    );
+  } else if (outputPath) {
     await writeJsonFile(outputPath, jsonStr);
   } else {
     process.stdout.write(jsonStr);
