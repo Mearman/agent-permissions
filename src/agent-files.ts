@@ -781,6 +781,8 @@ export interface WriteFileOptions {
   mode?: number;
   /** The rename that puts the temporary file in place; `fs.rename` unless a test replaces it. */
   renameFile?: (from: string, to: string) => Promise<void>;
+  /** Runs once the temporary file is written, before the final check; for tests of that check. */
+  afterTemporaryWritten?: () => Promise<void>;
 }
 
 /**
@@ -858,6 +860,7 @@ async function replaceFile(
         );
       }
     }
+    await options.afterTemporaryWritten?.();
     if (expected !== undefined) await assertUnchanged(target, expected);
     await (options.renameFile ?? rename)(temporary, target);
   } catch (error) {

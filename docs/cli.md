@@ -176,6 +176,8 @@ agent-perms mcp
 
 Starts the MCP sync daemon on stdio. Sync config comes from `.agents/permissions.json` via the `sync` field. Typically invoked by agent harnesses via `npx agent-perms-mcp`, not run directly.
 
+The daemon runs one sync at a time. Events that arrive while a sync is running, including those its own writes raise, collapse into a single follow-up run, so the daemon does not report its own writes as a failure.
+
 | Flag                  | Description                                                                                       |
 | --------------------- | ------------------------------------------------------------------------------------------------- |
 | `--permission-prompt` | Expose the `permission_prompt` tool (see [Permission-prompt tool](mcp.md#permission-prompt-tool)) |
