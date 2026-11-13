@@ -999,6 +999,32 @@ void describe("CLI", () => {
       assert.match(result.stderr, /Already in sync/);
     });
 
+    void it("exits 1 and writes nothing when a native config it must edit is not valid JSON", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      await mkdir(join(cwd, ".claude"), { recursive: true });
+      await writeFile(
+        join(cwd, ".agents", "permissions.json"),
+        JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+      );
+      await writeFile(join(cwd, ".claude", "settings.json"), "{ not json");
+      const result = await run([
+        "sync",
+        "--working-dir",
+        cwd,
+        "--yes",
+        "--create",
+      ]);
+      assert.equal(result.exitCode, 1);
+      assert.match(result.stderr, /settings\.json/);
+      assert.equal(
+        await readFile(join(cwd, ".claude", "settings.json"), "utf-8"),
+        "{ not json",
+      );
+      assert.equal(existsSync(join(cwd, "opencode.json")), false);
+    });
+
     void it("merges canonical and claude-code configs", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);
