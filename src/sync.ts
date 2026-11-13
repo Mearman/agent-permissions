@@ -44,6 +44,7 @@ import {
   ompGlobalConfigPath,
   parseAgentFile,
   parseJson,
+  readIfPresent,
   validatePolicy,
 } from "./agent-files.ts";
 
@@ -196,13 +197,10 @@ async function readAndDecode(
     return { file, policy: result.value };
   }
 
-  // Read and parse
-  let content: string;
-  try {
-    content = await readFile(file.path, "utf-8");
-  } catch {
-    return undefined;
-  }
+  // A file that exists and cannot be read stops the sync: reading it as absent would let a write
+  // replace a file nobody read.
+  const content = await readIfPresent(file.path);
+  if (content === null) return undefined;
   const parsed = parseJson(content, file.path);
   if (!parsed.ok) return undefined;
 
@@ -617,14 +615,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   // 5. Build changes
   const changes: FileChange[] = [];
   for (const target of targets) {
-    let current: string | null = null;
-    if (target.exists) {
-      try {
-        current = await readFile(target.path, "utf-8");
-      } catch {
-        current = null;
-      }
-    }
+    const current = target.exists ? await readIfPresent(target.path) : null;
 
     const proposed = target.render(current);
 

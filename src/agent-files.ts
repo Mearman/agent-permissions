@@ -295,6 +295,30 @@ export function editJsonConfig(
   return JSON.stringify(edited, null, 2) + "\n";
 }
 
+/**
+ * A file's text, or `null` when it does not exist. Only a missing file counts as absent: any other
+ * failure (a permission error, a directory, an I/O error) is thrown naming the file, so a file that
+ * exists and cannot be read is never taken for a new one and written over.
+ */
+export async function readIfPresent(path: string): Promise<string | null> {
+  try {
+    return await readFile(path, "utf-8");
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return null;
+    }
+    throw new Error(
+      `${path}: cannot be read (${error instanceof Error ? error.message : String(error)})`,
+      { cause: error },
+    );
+  }
+}
+
 /** Write JSON to a file, creating parent directories as needed. */
 export async function writeJsonFile(
   path: string,
