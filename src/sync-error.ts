@@ -11,6 +11,11 @@ export type SyncRefusalReason =
   | "not-utf8"
   /** The file is not valid for its agent, for example malformed JSON, or comments in strict JSON. */
   | "invalid-format"
+  /**
+   * A path sync would edit occurs more than once in the file, so the agent would read a different
+   * occurrence than the edit changes.
+   */
+  | "duplicate-key"
   /** The file's top level is not an object (or a mapping, for YAML). */
   | "not-an-object"
   /** A value the agent's codec models could not be decoded, so writing would replace it unread. */
