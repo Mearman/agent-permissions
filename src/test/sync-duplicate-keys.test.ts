@@ -38,7 +38,17 @@ void describe("a duplicate key on an edited path is refused", () => {
 
     assert.equal(error.path, path);
     assert.equal(error.reason, "duplicate-key");
-    assert.match(error.message, /permissions/u);
+    assert.match(error.message, /permissions.*at 1:2 and 1:35/u);
+  });
+
+  void it("when a duplicate is on a path whose value would not change, as it is read as well as edited", async () => {
+    const { error } = await refusedFor(
+      '{\n  "permissions": {\n    "deny": ["Bash(rm:*)"],\n    "deny": ["Bash(rm:*)"]\n  }\n}\n',
+      { rules: [denyRm] },
+    );
+
+    assert.equal(error.reason, "duplicate-key");
+    assert.match(error.message, /deny.*at 3:5 and 4:5/u);
   });
 
   void it("when the list being replaced appears twice", async () => {

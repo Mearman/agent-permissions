@@ -483,9 +483,12 @@ export function pickModelled(
 }
 
 /**
- * Refuse to edit a path when the file holds it, or one of its parents, more than once. The agent
- * reads the last occurrence, as `JSON.parse` does, while the text edit finds the first, so the edit
- * would change a value the agent ignores and leave the one it reads.
+ * Refuse a modelled path when the file holds it, or one of its parents, more than once, whether or
+ * not the value is to change. The agent reads the last occurrence, as `JSON.parse` does, while a
+ * text edit finds the first, so an edit would change a value the agent ignores and leave the one it
+ * reads in force, and a decode that read one occurrence would write over the other.
+ *
+ * @throws SyncRefusedError naming the key and the line and column of each occurrence.
  */
 function refuseDuplicates(text: string, path: JsonPath, source: string): void {
   let node = parseTree(text);
@@ -495,14 +498,24 @@ function refuseDuplicates(text: string, path: JsonPath, source: string): void {
       (property) => property.children?.[0]?.value === key,
     );
     if (matching.length > 1) {
+      const where = matching
+        .map((property) => positionOf(text, property.offset))
+        .join(" and ");
       throw new SyncRefusedError(
         source,
         "duplicate-key",
-        `holds the key "${key}" more than once, so the value the agent reads cannot be edited safely; remove the duplicate`,
+        `holds the key "${key}" more than once (at ${where}), so the value the agent reads cannot be edited safely; remove the duplicate`,
       );
     }
     node = matching[0]?.children?.[1];
   }
+}
+
+/** The 1-based line and column of an offset, as `line:column`. */
+function positionOf(text: string, offset: number): string {
+  const before = text.slice(0, offset);
+  const line = before.split("\n").length;
+  return `${String(line)}:${String(offset - before.lastIndexOf("\n"))}`;
 }
 
 /** How the text of a file is laid out, so inserted text matches it. */
@@ -678,8 +691,8 @@ export function editJsonConfig(
     }
     const previous = lookup(parsed.value, target).value;
     const next = lookup(wrapped, target).value;
+    refuseDuplicates(text, path, source);
     if (isDeepStrictEqual(previous, next)) continue;
-    refuseDuplicates(text, target, source);
     for (const edit of setPath(text, target, next, layout)) {
       text = splice(text, edit);
     }
