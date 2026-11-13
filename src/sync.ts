@@ -23,7 +23,7 @@
  *   is kept, and the old file is always backed up first.
  */
 
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { parse as parseYaml } from "yaml";
 import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
@@ -38,6 +38,7 @@ import {
 } from "./evaluate.ts";
 import {
   AGENT_FILES,
+  assertUnchanged,
   decodeNative,
   editJsonConfig,
   editOmpConfig,
@@ -46,6 +47,7 @@ import {
   parseJson,
   readIfPresent,
   validatePolicy,
+  writeFileAtomic,
 } from "./agent-files.ts";
 
 // ---------------------------------------------------------------------------
@@ -662,7 +664,10 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     }
   }
 
-  // 8. Write files
+  // 8. Write files. Every file is checked first, so one that changed since it was read stops the
+  // sync before the first write; each write checks again as it replaces its file.
+  for (const change of changes)
+    await assertUnchanged(change.path, change.current);
   for (const change of changes) {
     // Backup if requested and file exists. OMP's config is hand-written and holds much more than
     // permissions, so it is always backed up.
@@ -670,11 +675,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
       await writeFile(change.path + ".bak", change.current);
     }
 
-    // Ensure directory exists
-    const dir = dirname(change.path);
-    await mkdir(dir, { recursive: true });
-
-    await writeFile(change.path, change.proposed);
+    await writeFileAtomic(change.path, change.proposed, change.current);
   }
 
   process.stderr.write(`Applied ${String(changes.length)} change(s).\n`);

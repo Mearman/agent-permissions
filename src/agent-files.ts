@@ -5,7 +5,17 @@
  * read/write helpers for the convert/validate/check/sync pipeline.
  */
 
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import {
+  chmod,
+  mkdir,
+  readFile,
+  realpath,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import {
   Document,
   isMap,
@@ -13,7 +23,7 @@ import {
   parseDocument,
   stringify as stringifyYaml,
 } from "yaml";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { type AgentId, type OmpEncoded } from "./compat/codecs.ts";
@@ -316,6 +326,58 @@ export async function readIfPresent(path: string): Promise<string | null> {
       `${path}: cannot be read (${error instanceof Error ? error.message : String(error)})`,
       { cause: error },
     );
+  }
+}
+
+/** The file a write to `path` lands on: the target of a symlink, so the link itself is kept. */
+async function writeTarget(path: string): Promise<string> {
+  return existsSync(path) ? realpath(path) : path;
+}
+
+/**
+ * Stop unless the file still holds what a proposal was computed from.
+ *
+ * @param expected The content the proposal was computed from, or `null` for a file that was absent.
+ * @throws Error when the file now differs, or cannot be read.
+ */
+export async function assertUnchanged(
+  path: string,
+  expected: string | null,
+): Promise<void> {
+  if ((await readIfPresent(await writeTarget(path))) !== expected) {
+    throw new Error(
+      `${path} changed since it was read, so it was not written; run the command again`,
+    );
+  }
+}
+
+/**
+ * Write a file through a temporary file in the same directory and a rename, so a crash or a full
+ * disk never leaves it half written, after checking that it still holds what the new content was
+ * computed from. A symlink is followed and kept, and an existing file's mode is kept.
+ *
+ * @param expected The content the new content was computed from, or `null` for a new file.
+ * @throws Error when the file changed since `expected` was read.
+ */
+export async function writeFileAtomic(
+  path: string,
+  content: string,
+  expected: string | null,
+): Promise<void> {
+  const target = await writeTarget(path);
+  await assertUnchanged(path, expected);
+  const directory = dirname(target);
+  await mkdir(directory, { recursive: true });
+  const mode =
+    expected === null ? undefined : (await stat(target)).mode & 0o777;
+  const temporary = join(directory, `.${basename(target)}.${randomUUID()}.tmp`);
+  try {
+    await writeFile(temporary, content);
+    if (mode !== undefined) await chmod(temporary, mode);
+    await rename(temporary, target);
+  } catch (error) {
+    await rm(temporary, { force: true });
+    throw error;
   }
 }
 
