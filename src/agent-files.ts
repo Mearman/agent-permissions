@@ -7,6 +7,8 @@
 
 import {
   chmod,
+  chown,
+  lstat,
   mkdir,
   readFile,
   realpath,
@@ -648,33 +650,77 @@ export function renderNativeConfig(
   );
 }
 
+/** Whether an error carries a Node error code. */
+function hasCode(error: unknown, code: string): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === code
+  );
+}
+
+/** The message of any thrown value. */
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * A file's text, or `null` when it does not exist. Only a missing file counts as absent: any other
  * failure (a permission error, a directory, an I/O error) is thrown naming the file, so a file that
- * exists and cannot be read is never taken for a new one and written over.
+ * exists and cannot be read is never taken for a new one and written over. The file is read as
+ * bytes and decoded strictly as UTF-8, with a byte order mark kept, so what is returned writes back
+ * as exactly the bytes that were read; a file that is not valid UTF-8 is refused rather than
+ * rewritten with replacement characters.
  */
 export async function readIfPresent(path: string): Promise<string | null> {
+  let bytes: Buffer;
   try {
-    return await readFile(path, "utf-8");
+    bytes = await readFile(path);
   } catch (error) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      error.code === "ENOENT"
-    ) {
-      return null;
-    }
+    if (hasCode(error, "ENOENT")) return null;
+    throw new Error(`${path}: cannot be read (${messageOf(error)})`, {
+      cause: error,
+    });
+  }
+  try {
+    return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
+      bytes,
+    );
+  } catch (error) {
     throw new Error(
-      `${path}: cannot be read (${error instanceof Error ? error.message : String(error)})`,
+      `${path}: is not valid UTF-8, so it was not read and is left as it is`,
       { cause: error },
     );
   }
 }
 
-/** The file a write to `path` lands on: the target of a symlink, so the link itself is kept. */
+/**
+ * The file a write to `path` lands on: the target of a symlink, so the link itself is kept.
+ *
+ * @throws Error when `path` is a symlink to a file that does not exist, since replacing it would
+ *   swap the link for a regular file.
+ */
 async function writeTarget(path: string): Promise<string> {
-  return existsSync(path) ? realpath(path) : path;
+  let info;
+  try {
+    info = await lstat(path);
+  } catch (error) {
+    if (hasCode(error, "ENOENT")) return path;
+    throw error;
+  }
+  if (!info.isSymbolicLink()) return path;
+  try {
+    return await realpath(path);
+  } catch (error) {
+    if (hasCode(error, "ENOENT")) {
+      throw new Error(
+        `${path}: is a symbolic link to a file that does not exist, so it was not written`,
+        { cause: error },
+      );
+    }
+    throw error;
+  }
 }
 
 /**
@@ -694,34 +740,94 @@ export async function assertUnchanged(
   }
 }
 
+/** Options of `writeFileAtomic`. */
+export interface WriteFileOptions {
+  /** The mode of the new file; the replaced file's mode when omitted. */
+  mode?: number;
+  /** The rename that puts the temporary file in place; `fs.rename` unless a test replaces it. */
+  renameFile?: (from: string, to: string) => Promise<void>;
+}
+
 /**
  * Write a file through a temporary file in the same directory and a rename, so a crash or a full
  * disk never leaves it half written, after checking that it still holds what the new content was
- * computed from. A symlink is followed and kept, and an existing file's mode is kept.
+ * computed from, and again immediately before the rename. A symlink is followed and kept. The
+ * temporary file is created with the final mode, never a wider one, and has the replaced file's
+ * owner, and it is removed on any failure.
  *
- * @param expected The content the new content was computed from, or `null` for a new file.
- * @throws Error when the file changed since `expected` was read.
+ * A rename cannot replace a hard-linked file without breaking the link, or a single-file bind mount
+ * (it fails with `EBUSY` or `EXDEV`). For those the content is written in place instead, which keeps
+ * the link and the mount and is not atomic; this is a stated condition, not a fallback for errors.
+ *
+ * @param expected The content the new content was computed from, or `null` for a new file; omit
+ *   the check with `undefined`.
+ * @throws Error when the file changed since `expected` was read, is a link to nothing, belongs to
+ *   another user whose ownership cannot be kept, or cannot be written.
  */
 export async function writeFileAtomic(
   path: string,
   content: string,
-  expected: string | null,
+  expected: string | null | undefined,
+  options: WriteFileOptions = {},
 ): Promise<void> {
   const target = await writeTarget(path);
-  await assertUnchanged(path, expected);
+  if (expected !== undefined) await assertUnchanged(target, expected);
   const directory = dirname(target);
   await mkdir(directory, { recursive: true });
-  const mode =
-    expected === null ? undefined : (await stat(target)).mode & 0o777;
+  let existing;
+  try {
+    existing = await stat(target);
+  } catch (error) {
+    if (!hasCode(error, "ENOENT")) throw error;
+  }
+  const mode = options.mode ?? (existing ? existing.mode & 0o7777 : undefined);
+  const writeInPlace = async (): Promise<void> => {
+    if (expected !== undefined) await assertUnchanged(target, expected);
+    await writeFile(target, content);
+  };
+  if (existing !== undefined && existing.nlink > 1) {
+    await writeInPlace();
+    return;
+  }
   const temporary = join(directory, `.${basename(target)}.${randomUUID()}.tmp`);
   try {
-    await writeFile(temporary, content);
+    await writeFile(temporary, content, { flag: "wx", mode: mode ?? 0o666 });
     if (mode !== undefined) await chmod(temporary, mode);
-    await rename(temporary, target);
+    const uid = process.getuid?.();
+    if (existing !== undefined && uid !== undefined && existing.uid !== uid) {
+      try {
+        await chown(temporary, existing.uid, existing.gid);
+      } catch (error) {
+        throw new Error(
+          `${path}: is owned by another user and sync cannot keep that owner (${messageOf(error)}), so it was not written`,
+          { cause: error },
+        );
+      }
+    }
+    if (expected !== undefined) await assertUnchanged(target, expected);
+    await (options.renameFile ?? rename)(temporary, target);
   } catch (error) {
     await rm(temporary, { force: true });
+    if (hasCode(error, "EBUSY") || hasCode(error, "EXDEV")) {
+      await writeInPlace();
+      return;
+    }
     throw error;
   }
+}
+
+/**
+ * Keep a copy of a file's original content beside it as `<path>.bak`, with the file's mode so a
+ * private config does not become readable by others, written atomically.
+ *
+ * @param original The file's content as it was read.
+ */
+export async function writeBackup(
+  path: string,
+  original: string,
+): Promise<void> {
+  const mode = (await stat(await writeTarget(path))).mode & 0o7777;
+  await writeFileAtomic(`${path}.bak`, original, undefined, { mode });
 }
 
 /**
