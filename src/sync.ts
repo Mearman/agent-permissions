@@ -23,7 +23,6 @@
  *   is kept, and the old file is always backed up first.
  */
 
-import { writeFile } from "node:fs/promises";
 import { parse as parseYaml } from "yaml";
 import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
@@ -51,6 +50,7 @@ import {
   readIfPresent,
   renderNativeConfig,
   validatePolicy,
+  writeBackup,
   writeFileAtomic,
 } from "./agent-files.ts";
 
@@ -720,7 +720,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     // Backup if requested and file exists. OMP's config is hand-written and holds much more than
     // permissions, so it is always backed up.
     if ((backup || change.agent === "omp") && change.current !== null) {
-      await writeFile(change.path + ".bak", change.current);
+      await writeBackup(change.path, change.current);
     }
 
     await writeFileAtomic(change.path, change.proposed, change.current);
