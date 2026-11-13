@@ -271,6 +271,71 @@ void describe("CLI", () => {
       assert.equal(await readFile(settings, "utf-8"), '{"model": "opus"}');
     });
 
+    void it("merges into settings.local.json and into Oh My Pi's config, and refuses any other agent's file", async () => {
+      const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".claude"), { recursive: true });
+      await mkdir(join(cwd, ".omp"), { recursive: true });
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      const policy = join(cwd, "policy.json");
+      await writeFile(
+        policy,
+        JSON.stringify({
+          rules: [{ tool: "Bash", pattern: "rm:*", tier: "deny" }],
+        }),
+      );
+      const local = join(cwd, ".claude", "settings.local.json");
+      await writeFile(local, '{"model": "opus"}\n');
+      const omp = join(cwd, ".omp", "config.yml");
+      await writeFile(omp, "# mine\nmodel: fast\n");
+      const canonical = join(cwd, ".agents", "permissions.json");
+      await writeFile(canonical, '{"sync": {"mode": "watch"}}\n');
+
+      const toLocal = await run([
+        "convert",
+        "--from",
+        policy,
+        "--to",
+        "claude-code",
+        "--output",
+        local,
+      ]);
+      const toOmp = await run([
+        "convert",
+        "--from",
+        policy,
+        "--to",
+        "omp",
+        "--output",
+        omp,
+      ]);
+      const toCanonicalFile = await run([
+        "convert",
+        "--from",
+        policy,
+        "--to",
+        "claude-code",
+        "--output",
+        canonical,
+      ]);
+
+      assert.equal(toLocal.exitCode, 0, toLocal.stderr);
+      assert.match(
+        await readFile(local, "utf-8"),
+        /"model": "opus"[\s\S]*Bash\(rm:\*\)/u,
+      );
+      assert.equal(toOmp.exitCode, 0, toOmp.stderr);
+      const ompText = await readFile(omp, "utf-8");
+      assert.match(ompText, /# mine/u);
+      assert.match(ompText, /model: fast/u);
+      assert.match(ompText, /rm/u);
+      assert.equal(toCanonicalFile.exitCode, 1);
+      assert.equal(
+        await readFile(canonical, "utf-8"),
+        '{"sync": {"mode": "watch"}}\n',
+      );
+    });
+
     void it("converts with --compact flag", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);

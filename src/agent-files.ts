@@ -148,19 +148,34 @@ export function nativeConfigPath(dir: string, def: AgentFileDef): string {
 }
 
 /**
- * The agent whose JSON config file a path is, by the trailing segments of its name, for the agents
- * whose file holds other settings beside the permissions. Anything else is an arbitrary output
- * file.
+ * The format whose config file a path is, by the trailing segments of its name (a main file under
+ * any of its names, or a local override), or undefined for any other path. The path must be
+ * absolute, since a name is matched after a separator.
  */
-export function nativeFormatOfPath(path: string): AgentId | undefined {
+export function configFormatOfPath(path: string): Format | undefined {
   const normalised = path.split(sep).join("/");
   for (const [format, def] of Object.entries(AGENT_FILES)) {
-    if (def.modelled === undefined || !isAgentId(format)) continue;
-    if (nativeFileNames(def).some((n) => normalised.endsWith(`/${n}`))) {
-      return format;
-    }
+    if (format !== "canonical" && !isAgentId(format)) continue;
+    const names = [
+      ...nativeFileNames(def),
+      ...(def.localName === undefined ? [] : [def.localName]),
+    ];
+    if (names.some((n) => normalised.endsWith(`/${n}`))) return format;
   }
   return undefined;
+}
+
+/**
+ * The agent whose config file a path is when that file holds other settings beside the
+ * permissions and can be edited in place: the JSON agents and Oh My Pi. Anything else is a file
+ * written whole.
+ */
+export function nativeFormatOfPath(path: string): AgentId | undefined {
+  const format = configFormatOfPath(path);
+  if (format === undefined || format === "canonical") return undefined;
+  return AGENT_FILES[format].modelled !== undefined || format === "omp"
+    ? format
+    : undefined;
 }
 
 /**

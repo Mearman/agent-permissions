@@ -12,7 +12,6 @@
 import { parseArgs } from "node:util";
 import { dirname, resolve, join } from "node:path";
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import {
   convert,
   validate as validateApi,
@@ -24,7 +23,7 @@ import {
   type CheckContext,
   type Format,
 } from "./api.ts";
-import { OmpEncoded, agentId } from "./compat/codecs.ts";
+import { agentId } from "./compat/codecs.ts";
 import { isAgentId } from "./guards.ts";
 import { ruleToString, stepSource, type DecisionStep } from "./evaluate.ts";
 import { confine, type OutsideBehaviour } from "./confine.ts";
@@ -32,7 +31,7 @@ import { sync } from "./sync.ts";
 import {
   AGENT_FILES,
   defaultOmpAgentDir,
-  editOmpConfig,
+  configFormatOfPath,
   findDefaultFile,
   nativeConfigPath,
   nativeFormatOfPath,
@@ -197,29 +196,20 @@ async function convertCommand(args: string[]): Promise<void> {
     );
 
     if (outputPath) {
-      refuseExistingOpaqueConfig(outputPath);
-      const pathFormat = nativeFormatOfPath(outputPath);
+      const pathFormat = configFormatOfPath(outputPath);
       if (pathFormat !== undefined && pathFormat !== toFormat) {
         error(
           `${outputPath} is ${pathFormat}'s config file, and --to is ${toFormat}; writing it would replace ${pathFormat}'s settings with ${toFormat}'s`,
         );
       }
-    }
-    if (outputPath && nativeFormatOfPath(outputPath) === toFormat) {
-      // A native config holds the user's other settings, so the encoding is merged into it by the
-      // writer sync uses. The encoding is the bare permissions payload, which the writer wraps.
-      await writeNativeConfig(toFormat, outputPath, result.output);
-    } else if (outputPath) {
-      // An existing OMP config holds much more than permissions, so it is edited in place
-      await writeJsonFile(
-        outputPath,
-        toFormat === "omp" && existsSync(outputPath)
-          ? editOmpConfig(
-              await readFile(outputPath, "utf-8"),
-              OmpEncoded.parse(result.output),
-            )
-          : jsonStr,
-      );
+      refuseExistingOpaqueConfig(outputPath);
+      if (nativeFormatOfPath(outputPath) === toFormat) {
+        // A native config holds the user's other settings, so the encoding is merged into it by the
+        // writer sync uses. The encoding is the bare permissions payload, which the writer wraps.
+        await writeNativeConfig(toFormat, outputPath, result.output);
+      } else {
+        await writeJsonFile(outputPath, jsonStr);
+      }
       for (const companion of result.companions) {
         await writeJsonFile(
           join(dirname(outputPath), companion.path),
