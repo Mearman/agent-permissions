@@ -107,7 +107,7 @@ void describe("the temporary file", () => {
         renameFile: () =>
           Promise.reject(Object.assign(new Error("boom"), { code: "EIO" })),
       }),
-      /boom/u,
+      /EIO/u,
     );
 
     assert.deepEqual(await temporaries(cwd), []);

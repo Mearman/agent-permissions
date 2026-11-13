@@ -666,6 +666,26 @@ function messageOf(error: unknown): string {
 }
 
 /**
+ * Why a file system call failed, without the paths Node puts in its message, so a failure on a
+ * temporary file is reported against the file that was asked for.
+ */
+function fsReason(error: unknown): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+  ) {
+    const syscall =
+      "syscall" in error && typeof error.syscall === "string"
+        ? ` during ${error.syscall}`
+        : "";
+    return `${error.code}${syscall}`;
+  }
+  return messageOf(error);
+}
+
+/**
  * A file's text, or `null` when it does not exist. Only a missing file counts as absent: any other
  * failure (a permission error, a directory, an I/O error) is thrown naming the file, so a file that
  * exists and cannot be read is never taken for a new one and written over. The file is read as
@@ -735,7 +755,7 @@ export async function assertUnchanged(
 ): Promise<void> {
   if ((await readIfPresent(await writeTarget(path))) !== expected) {
     throw new Error(
-      `${path} changed since it was read, so it was not written; run the command again`,
+      `${path}: changed since it was read, so it was not written; run the command again`,
     );
   }
 }
@@ -769,6 +789,25 @@ export async function writeFileAtomic(
   content: string,
   expected: string | null | undefined,
   options: WriteFileOptions = {},
+): Promise<void> {
+  try {
+    await replaceFile(path, content, expected, options);
+  } catch (error) {
+    // Every failure names the file asked for, never the temporary file or the link's target.
+    if (error instanceof Error && error.message.startsWith(`${path}: `)) {
+      throw error;
+    }
+    throw new Error(`${path}: could not be written (${fsReason(error)})`, {
+      cause: error,
+    });
+  }
+}
+
+async function replaceFile(
+  path: string,
+  content: string,
+  expected: string | null | undefined,
+  options: WriteFileOptions,
 ): Promise<void> {
   const target = await writeTarget(path);
   if (expected !== undefined) await assertUnchanged(target, expected);
