@@ -575,6 +575,21 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
     files.push({ agent: "omp", path: ompGlobalPath, local: false });
   }
 
+  // OpenCode loads every one of its config file names and applies them in order, so a second file
+  // keeps contributing rules that sync, which edits only the preferred one, does not touch.
+  for (const [agent, def] of Object.entries(AGENT_FILES)) {
+    for (const dir of new Set(files.map((f) => dirname(f.path)))) {
+      const present = nativeFileNames(def).filter((name) =>
+        files.some((f) => f.agent === agent && f.path === join(dir, name)),
+      );
+      if (present.length > 1) {
+        process.stderr.write(
+          `warning: ${present.map((n) => join(dir, n)).join(" and ")} both exist; ${join(dir, present[0] ?? def.name)} takes precedence and is the one sync edits, but the agent applies both\n`,
+        );
+      }
+    }
+  }
+
   if (files.length === 0) {
     process.stderr.write(
       "No permission configs found. Create .agents/permissions.json to get started.\n",

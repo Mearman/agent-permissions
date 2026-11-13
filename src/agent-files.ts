@@ -160,6 +160,20 @@ export function nativeFormatOfPath(path: string): AgentId | undefined {
   return undefined;
 }
 
+/**
+ * The agent whose own config file a path is when that file has no permissions-only edit (Codex's
+ * TOML, Crush's file), so an existing one cannot be written without losing its other settings.
+ */
+export function opaqueFormatOfPath(
+  path: string,
+): "codex" | "crush" | undefined {
+  const normalised = path.split(sep).join("/");
+  for (const format of ["codex", "crush"] as const) {
+    if (normalised.endsWith(`/${AGENT_FILES[format].name}`)) return format;
+  }
+  return undefined;
+}
+
 /** Get the default file name for a format. */
 export function defaultFileName(format: Format): string {
   return AGENT_FILES[format].name;

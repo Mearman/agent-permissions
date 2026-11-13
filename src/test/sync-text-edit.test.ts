@@ -127,3 +127,42 @@ void describe("bytes outside the owned keys survive an edit", () => {
     assert.match(edited, /"rm \*":\s*"deny"/u);
   });
 });
+
+void describe("OpenCode's two config file names", () => {
+  void it("edits opencode.jsonc, which OpenCode ranks above opencode.json, and warns that both apply", async () => {
+    const cwd = await project({ rules: [denyRm] });
+    const plain = await put(
+      cwd,
+      "opencode.json",
+      '{"permission": {"read": "allow"}}\n',
+    );
+    const rich = await put(
+      cwd,
+      "opencode.jsonc",
+      '{\n  // mine\n  "permission": {"edit": "ask"}\n}\n',
+    );
+    const chunks: string[] = [];
+    const original = process.stderr.write.bind(process.stderr);
+    process.stderr.write = (data: string | Uint8Array): boolean => {
+      chunks.push(String(data));
+      return true;
+    };
+    try {
+      await sync(options(cwd));
+    } finally {
+      process.stderr.write = original;
+    }
+
+    assert.equal(
+      await readFile(plain, "utf-8"),
+      '{"permission": {"read": "allow"}}\n',
+    );
+    const edited = await readFile(rich, "utf-8");
+    assert.ok(edited.includes("// mine"));
+    assert.match(edited, /"rm \*":\s*"deny"/u);
+    assert.match(
+      chunks.join(""),
+      /opencode\.jsonc and .*opencode\.json both exist/u,
+    );
+  });
+});
