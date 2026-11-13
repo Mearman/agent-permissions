@@ -64,7 +64,12 @@ export interface AgentFileDef {
   wrap?: (encoded: unknown) => unknown;
   /**
    * Other names the file is read under, preferred to `name` when one exists (OpenCode's JSONC
-   * form). A file is created under `name` only when none of them exists.
+   * form). A file is created under `name` only when none of them exists. OpenCode loads every one
+   * of these names and applies them from lowest to highest priority, so `opencode.jsonc` is applied
+   * after `opencode.json`: anomalyco/opencode at commit 83960f8a56b2f2b8ad0b751f23baaf9d0eb65ad9,
+   * `packages/core/src/config/discovery.ts` (`names`, the `names.toReversed()` candidates and the
+   * reversed `direct` list) and `packages/core/src/config.ts` (the source order, documented as
+   * lowest to highest priority).
    */
   alternateNames?: readonly string[];
   /** Whether the agent reads the file as JSONC, so comments and trailing commas are valid. */
