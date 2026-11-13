@@ -60,6 +60,20 @@ void describe("CI references are immutable", () => {
     }
   });
 
+  void it("checks the SHA-256 of everything a step downloads with curl", () => {
+    for (const { path, text } of ciFiles()) {
+      for (const step of text.split(/^\s*- (?=name:|uses:|run:)/gmu)) {
+        if (/\bcurl\b/u.test(step)) {
+          assert.match(
+            step,
+            /sha256sum --check/u,
+            `${path}: ${step.slice(0, 80)}`,
+          );
+        }
+      }
+    }
+  });
+
   void it("finds the unpinned forms it is meant to refuse", () => {
     assert.deepEqual(externalUses("      - uses: actions/checkout@v7"), [
       "actions/checkout@v7",
