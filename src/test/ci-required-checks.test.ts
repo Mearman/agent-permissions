@@ -46,7 +46,7 @@ const PUSH_ONLY_CONDITIONS: readonly string[] = [
 ];
 
 /** The status functions that let a job run although a job it needs was skipped or failed. */
-const STATUS_FUNCTION = /\b(?:always|failure|cancelled|success)\s*\(/u;
+const STATUS_FUNCTION = /\b(?:always|failure|cancelled|success)\s*\(/iu;
 
 function needsOf(jobs: Jobs, id: string): string[] {
   const needs = jobs[id]?.needs;
@@ -137,6 +137,7 @@ void describe("ci.yml required-checks", () => {
       for (const condition of [
         "github.event_name == 'push' || github.event_name == 'pull_request'",
         "always() && github.event_name == 'push'",
+        "Always() && github.event_name == 'push'",
         "!(github.event_name == 'push')",
         "github.event_name != 'pull_request'",
         "contains(github.event_name, 'push')",
@@ -157,7 +158,7 @@ void describe("ci.yml required-checks", () => {
       );
       assert.equal(
         pushOnly(
-          parsed({ release, a: { needs: ["release"], if: "always()" } }),
+          parsed({ release, a: { needs: ["release"], if: "Always()" } }),
           "a",
         ),
         false,
