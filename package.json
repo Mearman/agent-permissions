@@ -92,6 +92,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
+    "jsonc-parser": "3.3.1",
     "trilean": "^1.7.0",
     "yaml": "^2.9.0",
     "zod": "^4.6.7"

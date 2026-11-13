@@ -220,28 +220,27 @@ const ocAction = PermissionBehavior;
 
 const ocRule = z.union([ocAction, z.record(z.string(), ocAction)]);
 
-const opencodeNative = z.union([
-  ocAction,
-  z
-    .object({
-      read: ocRule.optional(),
-      edit: ocRule.optional(),
-      glob: ocRule.optional(),
-      grep: ocRule.optional(),
-      list: ocRule.optional(),
-      bash: ocRule.optional(),
-      task: ocRule.optional(),
-      external_directory: ocRule.optional(),
-      todowrite: ocAction.optional(),
-      question: ocAction.optional(),
-      webfetch: ocAction.optional(),
-      websearch: ocAction.optional(),
-      lsp: ocRule.optional(),
-      doom_loop: ocAction.optional(),
-      skill: ocRule.optional(),
-    })
-    .strict(),
-]);
+const opencodeNativeObject = z
+  .object({
+    read: ocRule.optional(),
+    edit: ocRule.optional(),
+    glob: ocRule.optional(),
+    grep: ocRule.optional(),
+    list: ocRule.optional(),
+    bash: ocRule.optional(),
+    task: ocRule.optional(),
+    external_directory: ocRule.optional(),
+    todowrite: ocAction.optional(),
+    question: ocAction.optional(),
+    webfetch: ocAction.optional(),
+    websearch: ocAction.optional(),
+    lsp: ocRule.optional(),
+    doom_loop: ocAction.optional(),
+    skill: ocRule.optional(),
+  })
+  .strict();
+
+const opencodeNative = z.union([ocAction, opencodeNativeObject]);
 
 /** Map OpenCode tool names to our canonical names. OpenCode uses lowercase; we use PascalCase. */
 const ocToCanonical: Record<string, string> = {
@@ -1947,6 +1946,29 @@ export const ompCodec = z.codec(ompNative, AgentPermissionPolicy, {
 // ---------------------------------------------------------------------------
 // Codec registry
 // ---------------------------------------------------------------------------
+
+/**
+ * The leaf paths of each native permissions payload that the codec both reads and writes, relative
+ * to the payload. Sync replaces exactly these paths in a user's file and leaves every other
+ * key beneath the payload (settings the codec does not model, or a newer agent version's keys)
+ * untouched. A key of the native schema the codec skips on decode and never encodes is left out.
+ */
+export const MODELLED_PATHS = {
+  "claude-code": Object.keys(claudeCodeNative.shape).map((key) => [key]),
+  opencode: Object.keys(opencodeNativeObject.shape)
+    .filter((key) => !OC_UNMAPPED_TOOLS.has(key))
+    .map((key) => [key]),
+  kiro: [
+    ["allowedTools"],
+    ...Object.entries(kiroNative.shape.toolsSettings.unwrap().shape).flatMap(
+      ([tool, settings]) =>
+        Object.keys(settings.unwrap().unwrap().shape)
+          // Flags Kiro reads that decode drops and encode never writes.
+          .filter((key) => key !== "autoAllowReadonly")
+          .map((key) => ["toolsSettings", tool, key]),
+    ),
+  ],
+} satisfies Record<string, readonly (readonly string[])[]>;
 
 export const CODECS = {
   "claude-code": claudeCodeCodec,
