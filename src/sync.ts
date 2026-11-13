@@ -95,6 +95,30 @@ export interface SyncResult {
   refused: UnsupportedCapabilityError[];
 }
 
+/**
+ * Thrown when writing the planned files stops part way. Nothing is rolled back: `written` lists the
+ * files that were replaced and `notWritten` the rest, the failed one first.
+ */
+export class SyncWriteError extends Error {
+  readonly written: readonly string[];
+  readonly notWritten: readonly string[];
+
+  constructor(
+    cause: unknown,
+    written: readonly string[],
+    notWritten: readonly string[],
+  ) {
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    super(
+      `${reason}. Written: ${written.length > 0 ? written.join(", ") : "none"}. Not written: ${notWritten.join(", ")}.`,
+      { cause },
+    );
+    this.name = "SyncWriteError";
+    this.written = written;
+    this.notWritten = notWritten;
+  }
+}
+
 export interface FileChange {
   /** Absolute path to the file. */
   path: string;
@@ -713,17 +737,28 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   }
 
   // 8. Write files. Every file is checked first, so one that changed since it was read stops the
-  // sync before the first write; each write checks again as it replaces its file.
-  for (const change of changes)
-    await assertUnchanged(change.path, change.current);
+  // sync before the first write; each write checks again as it replaces its file. A failure part
+  // way through is reported with exactly what was written and what was not; nothing is rolled back.
   for (const change of changes) {
-    // Backup if requested and file exists. OMP's config is hand-written and holds much more than
-    // permissions, so it is always backed up.
-    if ((backup || change.agent === "omp") && change.current !== null) {
-      await writeBackup(change.path, change.current);
+    await assertUnchanged(change.path, change.current);
+  }
+  const written: string[] = [];
+  for (const change of changes) {
+    try {
+      // Backup if requested and file exists. OMP's config is hand-written and holds much more than
+      // permissions, so it is always backed up.
+      if ((backup || change.agent === "omp") && change.current !== null) {
+        await writeBackup(change.path, change.current);
+      }
+      await writeFileAtomic(change.path, change.proposed, change.current);
+    } catch (error) {
+      throw new SyncWriteError(
+        error,
+        written,
+        changes.map((c) => c.path).filter((p) => !written.includes(p)),
+      );
     }
-
-    await writeFileAtomic(change.path, change.proposed, change.current);
+    written.push(change.path);
   }
 
   process.stderr.write(`Applied ${String(changes.length)} change(s).\n`);
