@@ -70,7 +70,9 @@ void describe("CI references are immutable", () => {
       ["main"],
     );
     assert.deepEqual(
-      rawRefs("curl https://raw.githubusercontent.com/o/r/refs/heads/main/s.sh"),
+      rawRefs(
+        "curl https://raw.githubusercontent.com/o/r/refs/heads/main/s.sh",
+      ),
       ["refs"],
     );
   });

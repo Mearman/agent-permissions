@@ -117,10 +117,7 @@ void describe("ci.yml required-checks", () => {
 
     void it("accepts the exact push-only conditions", () => {
       assert.equal(
-        pushOnly(
-          parsed({ a: { if: "github.event_name == 'push'" } }),
-          "a",
-        ),
+        pushOnly(parsed({ a: { if: "github.event_name == 'push'" } }), "a"),
         true,
       );
       assert.equal(
