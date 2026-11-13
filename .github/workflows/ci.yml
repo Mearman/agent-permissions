@@ -108,6 +108,28 @@ jobs:
           command: ${{ matrix.command }}
           node-version: "${{ matrix.node-version }}"
 
+  # The single stable branch-protection target: it aggregates every job that runs on a pull request, so the required status check never needs updating when a job is added, renamed or split. It runs even when a needed job fails or is skipped, because a skipped aggregate would read as passing. A job that is skipped on purpose (lint-commits outside pull requests) counts as passing; anything else, including a cancelled or skipped-by-failure job, fails it.
+  required-checks:
+    name: Required Checks
+    if: always()
+    needs: [lint-commits, audit, check, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every required job succeeded or was skipped
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            case "$result" in
+              success | skipped) ;;
+              *)
+                echo "A required job finished as: $result"
+                exit 1
+                ;;
+            esac
+          done
+
   release:
     name: Release
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
