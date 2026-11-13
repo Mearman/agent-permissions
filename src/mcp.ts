@@ -97,21 +97,71 @@ async function performSync(cwd: string, config: SyncConfig): Promise<void> {
 }
 
 /**
- * Sync in the background, for a caller that does not await it (the file watcher). A sync that stops,
+ * A function that runs `run` with at most one run in flight: a request made while a run is going
+ * is remembered, and any number of them collapse into a single follow-up run that starts when the
+ * current one ends. The promise a request returns settles when the run that serves it has finished.
+ */
+export function createSerialRunner(
+  run: () => Promise<void>,
+): () => Promise<void> {
+  let current: Promise<void> | undefined;
+  const state = { pending: false };
+  return () => {
+    if (current !== undefined) {
+      state.pending = true;
+      return current;
+    }
+    const started = (async () => {
+      try {
+        do {
+          state.pending = false;
+          await run();
+        } while (state.pending);
+      } finally {
+        current = undefined;
+      }
+    })();
+    current = started;
+    return started;
+  };
+}
+
+/** The serialised sync of each project directory, with the configuration the latest call gave. */
+const backgroundSyncs = new Map<
+  string,
+  { config: SyncConfig; request: () => Promise<void> }
+>();
+
+/**
+ * Sync in the background, for a caller that does not await it (the file watcher). Runs of one
+ * project directory are serialised, so the daemon's own writes, which raise watcher events while a
+ * run is still going, collapse into one follow-up run instead of racing it. A sync that stops,
  * because a config file cannot be read or decoded or changed meanwhile, is reported on stderr and
  * the daemon keeps running; it never rejects.
  */
-export async function syncInBackground(
+export function syncInBackground(
   cwd: string,
   config: SyncConfig,
 ): Promise<void> {
-  try {
-    await performSync(cwd, config);
-  } catch (error) {
-    process.stderr.write(
-      `[agent-perms-mcp] Sync stopped: ${error instanceof Error ? error.message : String(error)}\n`,
-    );
+  let entry = backgroundSyncs.get(cwd);
+  if (entry === undefined) {
+    const created = {
+      config,
+      request: createSerialRunner(async () => {
+        try {
+          await performSync(cwd, created.config);
+        } catch (error) {
+          process.stderr.write(
+            `[agent-perms-mcp] Sync stopped: ${error instanceof Error ? error.message : String(error)}\n`,
+          );
+        }
+      }),
+    };
+    backgroundSyncs.set(cwd, created);
+    entry = created;
   }
+  entry.config = config;
+  return entry.request();
 }
 
 function startWatcher(cwd: string, config: SyncConfig): void {
