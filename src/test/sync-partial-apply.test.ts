@@ -26,7 +26,7 @@ void describe("a failure part way through applying", () => {
       ".claude/settings.json",
       '{"model": "x"}\n',
     );
-    await put(cwd, "opencode.json", '{"permission": {}}\n');
+    await put(cwd, "opencode.json", '{"permission": {"read": "allow"}}\n');
     await chmod(join(cwd, ".claude"), 0o500);
     let failure: unknown;
     try {
