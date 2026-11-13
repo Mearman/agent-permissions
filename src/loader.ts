@@ -22,7 +22,9 @@ import { existsSync, watch, type FSWatcher } from "node:fs";
 import { type AgentPermissionPolicy, type Rule } from "./schema.ts";
 import {
   AGENT_FILES,
+  nativeFileNames,
   parseJson,
+  parseNativeJson,
   validatePolicy,
   decodeNative,
 } from "./agent-files.ts";
@@ -159,9 +161,11 @@ function discoverFiles(
       // Skip agents without extract (codex TOML, crush no file)
       if (agent !== "canonical" && def.extract === undefined) continue;
 
-      const main = join(current, def.name);
-      if (existsSync(main)) {
-        bucket.push({ agent, path: main, local: false });
+      for (const name of nativeFileNames(def)) {
+        const main = join(current, name);
+        if (existsSync(main)) {
+          bucket.push({ agent, path: main, local: false });
+        }
       }
 
       if (def.localName) {
@@ -223,7 +227,14 @@ async function readLayer(file: DiscoveredFile): Promise<ReadResult> {
       : { absent: true };
   }
 
-  const parsed = parseJson(content, file.path);
+  const parsed =
+    file.agent === "canonical"
+      ? parseJson(content, file.path)
+      : parseNativeJson(
+          content,
+          file.path,
+          AGENT_FILES[file.agent].jsonc === true,
+        );
   if (!parsed.ok) return { failure: `${file.path}: ${parsed.error}` };
 
   const policy = decodeFile(file, parsed.value);
@@ -400,9 +411,10 @@ const SETTLE_RECHECK_MS = 250;
 /** The file and directory names that can hold a layer, so other changes are ignored. */
 const RELEVANT_NAMES: ReadonlySet<string> = new Set(
   Object.values(AGENT_FILES).flatMap((def) =>
-    [def.name, "localName" in def ? def.localName : undefined].flatMap(
-      (path) => (path === undefined ? [] : path.split("/")),
-    ),
+    [
+      ...nativeFileNames(def),
+      "localName" in def ? def.localName : undefined,
+    ].flatMap((path) => (path === undefined ? [] : path.split("/"))),
   ),
 );
 
@@ -414,7 +426,7 @@ function directoriesToWatch(cwd: string): string[] {
     directories.add(current);
     for (const def of Object.values(AGENT_FILES)) {
       for (const name of [
-        def.name,
+        ...nativeFileNames(def),
         "localName" in def ? def.localName : undefined,
       ]) {
         if (name !== undefined) directories.add(dirname(join(current, name)));

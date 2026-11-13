@@ -16,6 +16,15 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
+import {
+  findNodeAtLocation,
+  modify,
+  parse as parseJsonc,
+  parseTree,
+  type ParseError,
+} from "jsonc-parser";
+import { ZodError } from "zod";
 import {
   Document,
   isMap,
@@ -23,16 +32,19 @@ import {
   parseDocument,
   stringify as stringifyYaml,
 } from "yaml";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { type AgentId, type OmpEncoded } from "./compat/codecs.ts";
-import { isRecord } from "./guards.ts";
+import { MODELLED_PATHS, OmpEncoded, type AgentId } from "./compat/codecs.ts";
+import { isAgentId, isRecord } from "./guards.ts";
 import { type Format } from "./api.ts";
 
 // ---------------------------------------------------------------------------
 // File mapping
 // ---------------------------------------------------------------------------
+
+/** A path of object keys from the top level of a JSON document. */
+export type JsonPath = readonly string[];
 
 /** Per-format config file info. */
 export interface AgentFileDef {
@@ -48,11 +60,21 @@ export interface AgentFileDef {
   /** Wrap encoded permissions back into the native config structure. */
   wrap?: (encoded: unknown) => unknown;
   /**
-   * The top-level keys of the native file that the encoding owns: sync replaces each with its
-   * encoded value (or removes it when the encoding has none) and keeps every other key. Absent for
-   * a file that is wholly the tool's own.
+   * Other names the file is read under, preferred to `name` when one exists (OpenCode's JSONC
+   * form). A file is created under `name` only when none of them exists.
    */
-  ownedKeys?: readonly string[];
+  alternateNames?: readonly string[];
+  /** Whether the agent reads the file as JSONC, so comments and trailing commas are valid. */
+  jsonc?: boolean;
+  /** The top-level key `extract` reads, named when its content cannot be decoded. */
+  payloadKey?: string;
+  /**
+   * The leaf paths of the native file that the codec both reads and writes. Sync replaces exactly
+   * these paths (removing one the encoding has no value for) and leaves every other byte of the
+   * file alone; decode sees only these paths, so a setting the codec does not model neither fails
+   * the decode nor is lost. Absent for a file that is wholly the tool's own.
+   */
+  modelled?: readonly JsonPath[];
 }
 
 /** Default config file for each agent format, relative to a project root. */
@@ -71,17 +93,24 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
       return raw.permissions;
     },
     wrap: (encoded) => ({ permissions: encoded }),
-    ownedKeys: ["permissions"],
+    payloadKey: "permissions",
+    modelled: MODELLED_PATHS["claude-code"].map((path) => [
+      "permissions",
+      ...path,
+    ]),
   },
   codex: { name: "codex.toml" }, // TOML — read only if pre-parsed
   opencode: {
     name: "opencode.json",
+    alternateNames: ["opencode.jsonc"],
+    jsonc: true,
     extract: (raw) => {
       if (!isRecord(raw) || !("permission" in raw)) return undefined;
       return raw.permission;
     },
     wrap: (encoded) => ({ permission: encoded }),
-    ownedKeys: ["permission"],
+    payloadKey: "permission",
+    modelled: MODELLED_PATHS.opencode.map((path) => ["permission", ...path]),
   },
   crush: { name: ".crush.json" }, // Crush has no standard config file
   // OMP's project config. Its global copy lives in the agent directory (see ompGlobalConfigPath),
@@ -94,9 +123,42 @@ export const AGENT_FILES: Record<AgentId | "canonical", AgentFileDef> = {
     name: ".kiro/permissions.json",
     extract: (raw) => raw,
     wrap: (encoded) => encoded,
-    ownedKeys: ["allowedTools", "toolsSettings"],
+    modelled: MODELLED_PATHS.kiro,
   },
 };
+
+/** Every name a format's main file is read under, preferred first. */
+export function nativeFileNames(def: AgentFileDef): string[] {
+  return [...(def.alternateNames ?? []), def.name];
+}
+
+/**
+ * A format's main file in a directory: the first of its names that exists there, else the name a
+ * new file gets.
+ */
+export function nativeConfigPath(dir: string, def: AgentFileDef): string {
+  return (
+    nativeFileNames(def)
+      .map((name) => join(dir, name))
+      .find((candidate) => existsSync(candidate)) ?? join(dir, def.name)
+  );
+}
+
+/**
+ * The agent whose JSON config file a path is, by the trailing segments of its name, for the agents
+ * whose file holds other settings beside the permissions. Anything else is an arbitrary output
+ * file.
+ */
+export function nativeFormatOfPath(path: string): AgentId | undefined {
+  const normalised = path.split(sep).join("/");
+  for (const [format, def] of Object.entries(AGENT_FILES)) {
+    if (def.modelled === undefined || !isAgentId(format)) continue;
+    if (nativeFileNames(def).some((n) => normalised.endsWith(`/${n}`))) {
+      return format;
+    }
+  }
+  return undefined;
+}
 
 /** Get the default file name for a format. */
 export function defaultFileName(format: Format): string {
@@ -112,16 +174,16 @@ export function defaultFileName(format: Format): string {
  * existing file found, or the default path in `startDir`.
  */
 export function findDefaultFile(format: Format, startDir: string): string {
-  const fileName = defaultFileName(format);
+  const def = AGENT_FILES[format];
   let dir = resolve(startDir);
   for (;;) {
-    const candidate = join(dir, fileName);
+    const candidate = nativeConfigPath(dir, def);
     if (existsSync(candidate)) return candidate;
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
-  return join(resolve(startDir), fileName);
+  return join(resolve(startDir), def.name);
 }
 
 // ---------------------------------------------------------------------------
@@ -184,7 +246,10 @@ export function parseAgentFile(
   source: string,
 ): Result<unknown> {
   if (format !== "omp" && !/\.ya?ml$/u.test(source)) {
-    return parseJson(raw, source);
+    const jsonc =
+      (format !== undefined && AGENT_FILES[format].jsonc === true) ||
+      source.endsWith(".jsonc");
+    return jsonc ? parseNativeJson(raw, source, true) : parseJson(raw, source);
   }
   try {
     const value: unknown = parseYaml(raw);
@@ -192,6 +257,42 @@ export function parseAgentFile(
   } catch {
     return fail(`${source}: invalid YAML`);
   }
+}
+
+const BYTE_ORDER_MARK = "\uFEFF";
+
+/**
+ * Parse a native agent config as the agent reads it: JSONC when `jsonc`, otherwise strict JSON,
+ * which refuses comments and trailing commas with a message that says so. A leading byte order
+ * mark is skipped.
+ */
+export function parseNativeJson(
+  raw: string,
+  source: string,
+  jsonc: boolean,
+): Result<unknown> {
+  const text = raw.startsWith(BYTE_ORDER_MARK)
+    ? raw.slice(BYTE_ORDER_MARK.length)
+    : raw;
+  const errors: ParseError[] = [];
+  const value: unknown = parseJsonc(text, errors, {
+    allowTrailingComma: jsonc,
+    disallowComments: !jsonc,
+  });
+  if (errors.length === 0) return ok(value);
+  if (!jsonc) {
+    const lenient: ParseError[] = [];
+    parseJsonc(text, lenient, {
+      allowTrailingComma: true,
+      disallowComments: false,
+    });
+    if (lenient.length === 0) {
+      return fail(
+        `${source}: comments and trailing commas are not valid here, because the agent reads this file as strict JSON`,
+      );
+    }
+  }
+  return fail(`${source}: invalid JSON`);
 }
 
 /** A native config as file content: YAML for OMP, JSON for everything else. */
@@ -263,46 +364,274 @@ export function editOmpConfig(
   return doc.toString();
 }
 
+/** What a walk down a path found: the value, or the first prefix holding something that is not an object. */
+interface Lookup {
+  value: unknown;
+  /** Set when a prefix of the path holds a non-object, so nothing can lie beneath it. */
+  blocked?: { depth: number; value: unknown };
+}
+
+function lookup(root: unknown, path: JsonPath): Lookup {
+  let current: unknown = root;
+  for (const [depth, key] of path.entries()) {
+    if (!isRecord(current)) {
+      return { value: undefined, blocked: { depth, value: current } };
+    }
+    if (!Object.hasOwn(current, key)) return { value: undefined };
+    current = current[key];
+  }
+  return { value: current };
+}
+
+function setAt(
+  target: Record<string, unknown>,
+  path: JsonPath,
+  value: unknown,
+): void {
+  let node = target;
+  for (const key of path.slice(0, -1)) {
+    const next = Object.hasOwn(node, key) ? node[key] : undefined;
+    if (next === undefined) {
+      const child: Record<string, unknown> = {};
+      node[key] = child;
+      node = child;
+    } else if (isRecord(next)) {
+      node = next;
+    } else {
+      return;
+    }
+  }
+  const last = path.at(-1);
+  if (last !== undefined) node[last] = value;
+}
+
 /**
- * A native JSON config with the keys the encoding owns replaced and every other key kept, in its
- * original order. An owned key the file already holds is replaced in place, or removed when the
- * encoding has none; one it does not hold is appended in the encoding's order.
+ * A copy of a parsed native config holding only the modelled paths. Where a prefix of a path holds
+ * something that is not an object (OpenCode's `"permission": "allow"`), that value is kept whole.
+ */
+export function pickModelled(
+  raw: unknown,
+  paths: readonly JsonPath[],
+): Record<string, unknown> | undefined {
+  if (!isRecord(raw)) return undefined;
+  const picked: Record<string, unknown> = {};
+  for (const path of paths) {
+    const found = lookup(raw, path);
+    if (found.blocked !== undefined) {
+      setAt(picked, path.slice(0, found.blocked.depth), found.blocked.value);
+      continue;
+    }
+    // A container the file holds stays present even when none of its modelled leaves is set, so an
+    // empty `permissions` object is still a permissions payload.
+    const container = path.slice(0, -1);
+    if (
+      container.length > 0 &&
+      lookup(picked, container).value === undefined &&
+      isRecord(lookup(raw, container).value)
+    ) {
+      setAt(picked, container, {});
+    }
+    if (found.value !== undefined) setAt(picked, path, found.value);
+  }
+  return picked;
+}
+
+/** How the text of a file is laid out, so inserted text matches it. */
+interface Layout {
+  /** One level of indentation. */
+  unit: string;
+  eol: string;
+  /** Whether the file spans more than one line; a one-line file gets compact insertions. */
+  multiline: boolean;
+}
+
+function layoutOf(text: string): Layout {
+  const indent = /^([ \t]+)\S/mu.exec(text)?.[1];
+  return {
+    unit: indent === undefined ? "  " : indent.startsWith("\t") ? "\t" : indent,
+    eol: text.includes("\r\n") ? "\r\n" : "\n",
+    multiline: text.includes("\n"),
+  };
+}
+
+/** The leading whitespace of the line holding an offset. */
+function lineIndent(text: string, offset: number): string {
+  const start = text.lastIndexOf("\n", offset - 1) + 1;
+  return /^[ \t]*/u.exec(text.slice(start))?.[0] ?? "";
+}
+
+/** A value as JSON in a file's layout, its continuation lines indented from `base`. */
+function printValue(value: unknown, layout: Layout, base: string): string {
+  if (!layout.multiline) return JSON.stringify(value);
+  return JSON.stringify(value, null, layout.unit)
+    .split("\n")
+    .join(`\n${base}`)
+    .replace(/\n/gu, layout.eol);
+}
+
+/** One splice of the file's text. */
+interface Splice {
+  offset: number;
+  length: number;
+  content: string;
+}
+
+function splice(text: string, edit: Splice): string {
+  return (
+    text.slice(0, edit.offset) +
+    edit.content +
+    text.slice(edit.offset + edit.length)
+  );
+}
+
+/**
+ * The splice that sets `path` in a parsed document to `value`: a replacement of the old value's
+ * text, an insertion after the object's last property, or, for `undefined`, the removal jsonc-parser
+ * works out (it takes the comma with it). Everything outside the spliced span stays as it was.
+ */
+function setPath(
+  text: string,
+  path: JsonPath,
+  value: unknown,
+  layout: Layout,
+): Splice[] {
+  if (value === undefined) {
+    return modify(text, [...path], undefined, {}).map((edit) => ({
+      offset: edit.offset,
+      length: edit.length,
+      content: edit.content,
+    }));
+  }
+  const root = parseTree(text);
+  const existing = root ? findNodeAtLocation(root, [...path]) : undefined;
+  if (existing !== undefined) {
+    return [
+      {
+        offset: existing.offset,
+        length: existing.length,
+        content: printValue(value, layout, lineIndent(text, existing.offset)),
+      },
+    ];
+  }
+  const key = path.at(-1);
+  const parent = root
+    ? findNodeAtLocation(root, [...path.slice(0, -1)])
+    : undefined;
+  if (key === undefined || parent?.type !== "object") {
+    throw new Error("the document has no object to insert into");
+  }
+  const properties = parent.children ?? [];
+  const last = properties.at(-1);
+  const keyText = JSON.stringify(key);
+  if (last === undefined) {
+    const outer = lineIndent(text, parent.offset);
+    const inner = outer + layout.unit;
+    return [
+      {
+        offset: parent.offset + 1,
+        length: 0,
+        content: layout.multiline
+          ? `${layout.eol}${inner}${keyText}: ${printValue(value, layout, inner)}${layout.eol}${outer}`
+          : `${keyText}:${printValue(value, layout, "")}`,
+      },
+    ];
+  }
+  const block = text.slice(parent.offset, last.offset).includes("\n");
+  const indent = lineIndent(text, last.offset);
+  const spaced = /^"(?:[^"\\]|\\.)*"\s*:\s/u.test(text.slice(last.offset));
+  return [
+    {
+      offset: last.offset + last.length,
+      length: 0,
+      content: block
+        ? `,${layout.eol}${indent}${keyText}: ${printValue(value, layout, indent)}`
+        : `,${spaced ? " " : ""}${keyText}:${spaced ? " " : ""}${printValue(value, { ...layout, multiline: false }, "")}`,
+    },
+  ];
+}
+
+/**
+ * A native JSON config with each modelled path replaced by the encoding's value (removed when the
+ * encoding has none) and every other byte of the file untouched: the edit is a splice of the text,
+ * so comments, formatting, key order, number spelling and a byte order mark survive. Where the file
+ * holds a non-object in place of a parent of a modelled path, that whole value is replaced, and a
+ * path whose parents are missing is created beneath the shallowest missing one in a single splice.
  *
  * @param current The file's content, or `null` for a new file.
  * @param wrapped The encoded permissions in the native structure (`AgentFileDef.wrap`).
- * @param ownedKeys The top-level keys `wrapped` replaces (`AgentFileDef.ownedKeys`).
- * @param source The file's path, named in the error.
- * @throws Error when `current` is not valid JSON or its top level is not an object, rather than
- *   replacing a file it could not read.
+ * @param modelled The paths `wrapped` supplies (`AgentFileDef.modelled`).
+ * @param jsonc Whether the agent accepts comments and trailing commas in this file.
+ * @param source The file's path, named in errors.
+ * @throws Error when `current` is not valid for the agent or its top level is not an object, rather
+ *   than replacing a file it could not read.
  */
 export function editJsonConfig(
   current: string | null,
   wrapped: unknown,
-  ownedKeys: readonly string[],
+  modelled: readonly JsonPath[],
+  jsonc: boolean,
   source: string,
 ): string {
-  if (!isRecord(wrapped) || Array.isArray(wrapped)) {
-    throw new Error(`${source}: the encoded permissions are not an object`);
-  }
-  let existing: Record<string, unknown> = {};
-  if (current !== null) {
-    const parsed = parseJson(current, source);
+  if (current === null) return JSON.stringify(wrapped, null, 2) + "\n";
+  const bom = current.startsWith(BYTE_ORDER_MARK) ? BYTE_ORDER_MARK : "";
+  let text = current.slice(bom.length);
+  const layout = layoutOf(text);
+  for (const path of modelled) {
+    const parsed = parseNativeJson(text, source, jsonc);
     if (!parsed.ok) throw new Error(parsed.error);
-    if (!isRecord(parsed.value) || Array.isArray(parsed.value)) {
+    if (!isRecord(parsed.value)) {
       throw new Error(`${source}: the top level must be a JSON object`);
     }
-    existing = parsed.value;
+    const found = lookup(parsed.value, path);
+    // The value to replace: the non-object blocking the path, else the path itself, or, when the
+    // path is absent, the shallowest missing ancestor, so a whole subtree is created at once.
+    let target = path;
+    if (found.blocked !== undefined) {
+      target = path.slice(0, found.blocked.depth);
+    } else if (found.value === undefined) {
+      const missing = path.findIndex(
+        (_key, depth) =>
+          lookup(parsed.value, path.slice(0, depth + 1)).value === undefined,
+      );
+      target = path.slice(0, missing + 1);
+    }
+    const previous = lookup(parsed.value, target).value;
+    const next = lookup(wrapped, target).value;
+    if (isDeepStrictEqual(previous, next)) continue;
+    for (const edit of setPath(text, target, next, layout)) {
+      text = splice(text, edit);
+    }
   }
-  const owned = new Set(ownedKeys);
-  const edited: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(existing)) {
-    if (!owned.has(key)) edited[key] = value;
-    else if (key in wrapped) edited[key] = wrapped[key];
-  }
-  for (const [key, value] of Object.entries(wrapped)) {
-    if (!(key in edited)) edited[key] = value;
-  }
-  return JSON.stringify(edited, null, 2) + "\n";
+  return bom + text;
+}
+
+/**
+ * A native config's content after writing `encoded` into it, for every format sync and convert
+ * write: Oh My Pi's YAML is edited in place, a JSON config has its modelled paths replaced, and a
+ * file that is wholly the tool's own is written whole.
+ *
+ * @param current The file's content, or `null` for a new file.
+ * @throws Error when `current` cannot be read as the agent's format.
+ */
+export function renderNativeConfig(
+  format: Format,
+  current: string | null,
+  encoded: unknown,
+  source: string,
+): string {
+  if (format === "omp")
+    return editOmpConfig(current, OmpEncoded.parse(encoded));
+  const def = AGENT_FILES[format];
+  const wrapped = def.wrap ? def.wrap(encoded) : encoded;
+  if (def.modelled === undefined)
+    return JSON.stringify(wrapped, null, 2) + "\n";
+  return editJsonConfig(
+    current,
+    wrapped,
+    def.modelled,
+    def.jsonc === true,
+    source,
+  );
 }
 
 /**
@@ -381,6 +710,22 @@ export async function writeFileAtomic(
   }
 }
 
+/**
+ * Write an encoded policy into an agent's native config at `path`, merging into what is there: the
+ * one writer `convert` and `confine` share with `sync`.
+ *
+ * @throws Error when the existing file cannot be read as the agent's format, or changed meanwhile.
+ */
+export async function writeNativeConfig(
+  format: Format,
+  path: string,
+  encoded: unknown,
+): Promise<void> {
+  const current = await readIfPresent(path);
+  const content = renderNativeConfig(format, current, encoded, path);
+  if (content !== current) await writeFileAtomic(path, content, current);
+}
+
 /** Write JSON to a file, creating parent directories as needed. */
 export async function writeJsonFile(
   path: string,
@@ -426,6 +771,17 @@ export function validatePolicy(json: unknown): ValidateResult {
 }
 
 /**
+ * The permissions payload of a parsed native config, read from its modelled paths only: a setting
+ * the codec does not model is not seen. Undefined when the config has none.
+ */
+export function nativePayload(format: AgentId, raw: unknown): unknown {
+  const def = AGENT_FILES[format];
+  const subject =
+    def.modelled === undefined ? raw : pickModelled(raw, def.modelled);
+  return def.extract?.(subject);
+}
+
+/**
  * Decode native agent config → canonical policy. Extracts the permissions payload using the agent's
  * extract(), decodes via codec, then validates against the canonical schema.
  */
@@ -439,7 +795,7 @@ export function decodeNative(format: AgentId, raw: unknown): ValidateResult {
     };
   }
 
-  const payload = def.extract(raw);
+  const payload = nativePayload(format, raw);
   if (payload === undefined || payload === null) {
     return {
       ok: false,
@@ -455,7 +811,17 @@ export function decodeNative(format: AgentId, raw: unknown): ValidateResult {
     // @ts-expect-error unknown payload passed to a native-typed decode; invalid shapes throw and are handled by the catch
     decoded = codec.decode(payload);
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
+    const prefix = def.payloadKey === undefined ? "" : `${def.payloadKey}.`;
+    const message =
+      e instanceof ZodError
+        ? e.issues
+            .map(
+              (issue) => `${prefix}${issue.path.join(".")}: ${issue.message}`,
+            )
+            .join("; ")
+        : e instanceof Error
+          ? e.message
+          : String(e);
     return {
       ok: false,
       error: `${format} decode failed: ${message}`,

@@ -136,6 +136,7 @@ function startWatcher(cwd: string, config: SyncConfig): void {
           filename === "settings.json" ||
           filename === "settings.local.json" ||
           filename === "opencode.json" ||
+          filename === "opencode.jsonc" ||
           filename === ".crush.json" ||
           filename === "codex.toml"
         ) {

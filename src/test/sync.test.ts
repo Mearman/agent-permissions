@@ -1455,7 +1455,7 @@ void describe("sync of native JSON configs that hold other settings", () => {
     });
   });
 
-  void it("keeps the other keys of .kiro/permissions.json and drops a permissions key the policy no longer encodes", async () => {
+  void it("keeps the other keys of .kiro/permissions.json and the settings it merges into", async () => {
     const cwd = await project({ rules: [denyRm] });
     await writeNative(
       cwd,
@@ -1522,7 +1522,7 @@ void describe("sync of native JSON configs that hold other settings", () => {
 
     const change = result.changes.find((c) => c.agent === "claude-code");
     assert.ok(change);
-    assert.match(change.proposed, /"model": "opus"/u);
+    assert.match(change.proposed, /"model":\s*"opus"/u);
     assert.equal(
       await readFile(join(cwd, ".claude", "settings.json"), "utf-8"),
       original,

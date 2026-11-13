@@ -23,7 +23,7 @@
  *   is kept, and the old file is always backed up first.
  */
 
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { parse as parseYaml } from "yaml";
 import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
@@ -40,12 +40,16 @@ import {
   AGENT_FILES,
   assertUnchanged,
   decodeNative,
-  editJsonConfig,
   editOmpConfig,
+  nativeConfigPath,
+  nativeFileNames,
+  nativePayload,
   ompGlobalConfigPath,
   parseAgentFile,
   parseJson,
+  parseNativeJson,
   readIfPresent,
+  renderNativeConfig,
   validatePolicy,
   writeFileAtomic,
 } from "./agent-files.ts";
@@ -123,9 +127,11 @@ function detectFiles(dir: string): AgentFile[] {
   for (const [key, def] of Object.entries(AGENT_FILES)) {
     if (!isAgentId(key) && key !== "canonical") continue;
     const agent: AgentId | "canonical" = key;
-    const main = join(dir, def.name);
-    if (existsSync(main)) {
-      found.push({ agent, path: main, local: false });
+    for (const name of nativeFileNames(def)) {
+      const main = join(dir, name);
+      if (existsSync(main)) {
+        found.push({ agent, path: main, local: false });
+      }
     }
     if (def.localName) {
       const local = join(dir, def.localName);
@@ -190,7 +196,7 @@ async function readAndDecode(
   if (file.agent === "omp") {
     const parsed = parseAgentFile(
       "omp",
-      await readFile(file.path, "utf-8"),
+      await readFileRequired(file.path),
       file.path,
     );
     if (!parsed.ok) throw new Error(parsed.error);
@@ -201,22 +207,55 @@ async function readAndDecode(
 
   // A file that exists and cannot be read stops the sync: reading it as absent would let a write
   // replace a file nobody read.
-  const content = await readIfPresent(file.path);
-  if (content === null) return undefined;
-  const parsed = parseJson(content, file.path);
-  if (!parsed.ok) return undefined;
+  const content = await readFileRequired(file.path);
 
-  // Canonical files parse directly
+  // Canonical files parse directly. One that cannot be used is left out of the merge, with a warning.
   if (file.agent === "canonical") {
+    const parsed = parseJson(content, file.path);
+    if (!parsed.ok) {
+      skipped(file.path, parsed.error);
+      return;
+    }
     const validated = validatePolicy(parsed.value);
-    if (!validated.ok) return undefined;
+    if (!validated.ok) {
+      skipped(file.path, validated.error);
+      return;
+    }
     return { file, policy: validated.value };
   }
 
-  // Native files — extract, decode, validate
+  const parsed = parseNativeJson(content, file.path, def.jsonc === true);
+  if (!parsed.ok) {
+    skipped(file.path, parsed.error);
+    return;
+  }
+
+  // A native file without a permissions payload has nothing to read; one whose payload cannot be
+  // decoded stops the sync, because the write would replace entries nobody read.
+  if (nativePayload(file.agent, parsed.value) === undefined) return undefined;
   const result = decodeNative(file.agent, parsed.value);
-  if (!result.ok) return undefined;
+  if (!result.ok) {
+    if (file.local) {
+      skipped(file.path, result.error);
+      return;
+    }
+    throw new Error(`${file.path}: ${result.error}`);
+  }
   return { file, policy: result.value };
+}
+
+/** A file's text; one that exists and cannot be read is an error naming it. */
+async function readFileRequired(path: string): Promise<string> {
+  const content = await readIfPresent(path);
+  if (content === null)
+    throw new Error(`${path}: vanished while it was being read`);
+  return content;
+}
+
+/** A source that could not be used and is never written: noted on stderr, and left out of the merge. */
+function skipped(path: string, reason: string): undefined {
+  process.stderr.write(`warning: skipped ${path}: ${reason}\n`);
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -375,7 +414,7 @@ export function computeWriteTargets(
     if (agent === "codex" || agent === "crush") continue; // TOML / no file
 
     const def = AGENT_FILES[agent];
-    const filePath = join(cwd, def.name);
+    const filePath = nativeConfigPath(cwd, def);
     const fileExists = existsSync(filePath);
 
     if (!fileExists && !create) continue;
@@ -400,18 +439,12 @@ export function computeWriteTargets(
       continue;
     }
 
-    // Wrap in native config structure (e.g. { permissions: ... })
-    const wrapped = def.wrap ? def.wrap(encoded) : encoded;
-    const ownedKeys = def.ownedKeys;
-
     targets.push({
       agent,
       path: filePath,
-      // A native config also holds the user's other settings, so only the keys the encoding owns change.
+      // A native config also holds the user's other settings, so only the paths the codec models change.
       render: (current) =>
-        ownedKeys === undefined
-          ? JSON.stringify(wrapped, null, 2) + "\n"
-          : editJsonConfig(current, wrapped, ownedKeys, filePath),
+        renderNativeConfig(agent, current, encoded, filePath),
       exists: fileExists,
     });
   }
@@ -457,13 +490,13 @@ function sameData(
       JSON.stringify(parseYaml(current)) === JSON.stringify(parseYaml(proposed))
     );
   }
-  try {
-    const currentParsed: unknown = JSON.parse(current);
-    const proposedParsed: unknown = JSON.parse(proposed);
-    return JSON.stringify(currentParsed) === JSON.stringify(proposedParsed);
-  } catch {
-    return current === proposed;
-  }
+  // A JSONC file's text differs from its data by comments, so both sides are read leniently.
+  const currentParsed = parseNativeJson(current, "current", true);
+  const proposedParsed = parseNativeJson(proposed, "proposed", true);
+  if (!currentParsed.ok || !proposedParsed.ok) return current === proposed;
+  return (
+    JSON.stringify(currentParsed.value) === JSON.stringify(proposedParsed.value)
+  );
 }
 
 // ---------------------------------------------------------------------------
