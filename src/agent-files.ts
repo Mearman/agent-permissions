@@ -462,6 +462,29 @@ export function pickModelled(
   return picked;
 }
 
+/**
+ * Refuse to edit a path when the file holds it, or one of its parents, more than once. The agent
+ * reads the last occurrence, as `JSON.parse` does, while the text edit finds the first, so the edit
+ * would change a value the agent ignores and leave the one it reads.
+ */
+function refuseDuplicates(text: string, path: JsonPath, source: string): void {
+  let node = parseTree(text);
+  for (const key of path) {
+    if (node?.type !== "object") return;
+    const matching = (node.children ?? []).filter(
+      (property) => property.children?.[0]?.value === key,
+    );
+    if (matching.length > 1) {
+      throw new SyncRefusedError(
+        source,
+        "duplicate-key",
+        `holds the key "${key}" more than once, so the value the agent reads cannot be edited safely; remove the duplicate`,
+      );
+    }
+    node = matching[0]?.children?.[1];
+  }
+}
+
 /** How the text of a file is laid out, so inserted text matches it. */
 interface Layout {
   /** One level of indentation. */
@@ -636,6 +659,7 @@ export function editJsonConfig(
     const previous = lookup(parsed.value, target).value;
     const next = lookup(wrapped, target).value;
     if (isDeepStrictEqual(previous, next)) continue;
+    refuseDuplicates(text, target, source);
     for (const edit of setPath(text, target, next, layout)) {
       text = splice(text, edit);
     }
