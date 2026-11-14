@@ -1,0 +1,403 @@
+{
+  "cases": [
+    {
+      "id": "shell.001",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": [""],
+      "expect": []
+    },
+    {
+      "id": "shell.002",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"git status\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status"],
+      "expect": ["git status"]
+    },
+    {
+      "id": "shell.003",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"  git status  \"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["  git status  "],
+      "expect": ["git status"]
+    },
+    {
+      "id": "shell.004",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"ls;\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["ls;"],
+      "expect": ["ls"]
+    },
+    {
+      "id": "shell.005",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"git status && git diff\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status && git diff"],
+      "unordered": true,
+      "expect": ["git diff", "git status"]
+    },
+    {
+      "id": "shell.006",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"a; b || c | d & e\\nf\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["a; b || c | d & e\nf"],
+      "expect": ["a", "b", "c", "d", "e", "f"]
+    },
+    {
+      "id": "shell.007",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"a |& b\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["a |& b"],
+      "expect": ["a", "b"]
+    },
+    {
+      "id": "shell.008",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"git commit -m \\\"a && b\\\"\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git commit -m \"a && b\""],
+      "expect": ["git commit -m \"a && b\""]
+    },
+    {
+      "id": "shell.009",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"echo 'a; b'\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo 'a; b'"],
+      "expect": ["echo 'a; b'"]
+    },
+    {
+      "id": "shell.010",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"echo a\\\\;b\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo a\\;b"],
+      "expect": ["echo a\\;b"]
+    },
+    {
+      "id": "shell.011",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"git log 2>&1 | head\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git log 2>&1 | head"],
+      "expect": ["git log 2>&1", "head"]
+    },
+    {
+      "id": "shell.012",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"cmd &> out.txt\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cmd &> out.txt"],
+      "expect": ["cmd &> out.txt"]
+    },
+    {
+      "id": "shell.013",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"cmd >& out.txt\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cmd >& out.txt"],
+      "expect": ["cmd >& out.txt"]
+    },
+    {
+      "id": "shell.014",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"cmd >| out.txt\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cmd >| out.txt"],
+      "expect": ["cmd >| out.txt"]
+    },
+    {
+      "id": "shell.015",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"cat <<< word\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cat <<< word"],
+      "expect": ["cat <<< word"]
+    },
+    {
+      "id": "shell.016",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"echo ${HOME}\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo ${HOME}"],
+      "expect": ["echo ${HOME}"]
+    },
+    {
+      "id": "shell.017",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"echo $'a\\\\nb'\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo $'a\\nb'"],
+      "expect": ["echo $'a\\nb'"]
+    },
+    {
+      "id": "shell.018",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"echo '$(rm -rf /)'\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo '$(rm -rf /)'"],
+      "expect": ["echo '$(rm -rf /)'"]
+    },
+    {
+      "id": "shell.019",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"echo $(date)\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo $(date)"],
+      "expect": ["date", "echo $(date)"]
+    },
+    {
+      "id": "shell.020",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"echo \\\"$(date) x\\\"\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo \"$(date) x\""],
+      "expect": ["date", "echo \"$(date) x\""]
+    },
+    {
+      "id": "shell.021",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"echo `date`\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo `date`"],
+      "expect": ["date", "echo `date`"]
+    },
+    {
+      "id": "shell.022",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"echo $(echo $(id))\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo $(echo $(id))"],
+      "unordered": true,
+      "expect": ["echo $(echo $(id))", "echo $(id)", "id"]
+    },
+    {
+      "id": "shell.023",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"diff <(sort a) <(sort b)\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["diff <(sort a) <(sort b)"],
+      "unordered": true,
+      "expect": ["diff <(sort a) <(sort b)", "sort a", "sort b"]
+    },
+    {
+      "id": "shell.024",
+      "from": "shell.test.ts: splitShellCommand: commands it can split > \"echo $(a && b)\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo $(a && b)"],
+      "expect": ["a", "b", "echo $(a && b)"]
+    },
+    {
+      "id": "shell.025",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"echo \\\"unterminated\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo \"unterminated"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.026",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"echo 'unterminated\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo 'unterminated"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.027",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"echo $(unterminated\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo $(unterminated"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.028",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"echo `unterminated\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo `unterminated"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.029",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"echo $((1 + 2))\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo $((1 + 2))"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.030",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"cat <<EOF\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cat <<EOF"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.031",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"(cd x && ls)\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["(cd x && ls)"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.032",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"if true; then ls; fi\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["if true; then ls; fi"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.033",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"for i in 1 2; do echo $i; done\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["for i in 1 2; do echo $i; done"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.034",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"while true; do ls; done\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["while true; do ls; done"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.035",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"case x in a) ls;; esac\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["case x in a) ls;; esac"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.036",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"ls # a comment\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["ls # a comment"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.037",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"ls \\\\\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["ls \\"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.038",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"echo ${x:-$(id)}\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo ${x:-$(id)}"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.039",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"echo ${x\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo ${x"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.040",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"[[ -f x ]] && ls\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["[[ -f x ]] && ls"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.041",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"{ ls; }\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["{ ls; }"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.042",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"time ls\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["time ls"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.043",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"! ls\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["! ls"],
+      "expectUndefined": true
+    },
+    {
+      "id": "shell.044",
+      "from": "shell.test.ts: splitShellCommand: commands it will not split > \"function f\"",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["function f"],
+      "expectUndefined": true
+    }
+  ]
+}

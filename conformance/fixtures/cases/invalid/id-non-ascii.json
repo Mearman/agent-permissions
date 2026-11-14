@@ -1,0 +1,13 @@
+{
+  "cases": [
+    {
+      "id": "a.\u00e9",
+      "from": "a.test.ts: d > t",
+      "kind": "function",
+      "module": "m",
+      "function": "f",
+      "args": [],
+      "expect": 1
+    }
+  ]
+}

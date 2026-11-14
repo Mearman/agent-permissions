@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "id": "a.002",
+      "from": "recorded: evaluate (a decision)",
+      "kind": "evaluate",
+      "tool": "bash",
+      "input": "ls",
+      "expect": "ask"
+    }
+  ]
+}

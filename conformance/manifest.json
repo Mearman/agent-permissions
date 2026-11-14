@@ -1,0 +1,20 @@
+{
+  "files": {
+    "profiles/profiles.json": {
+      "cases": 11,
+      "skip": []
+    },
+    "remote/remote.json": {
+      "cases": 26,
+      "skip": []
+    },
+    "shell/differential-20260929.json": {
+      "cases": 1,
+      "skip": []
+    },
+    "shell/shell.json": {
+      "cases": 44,
+      "skip": []
+    }
+  }
+}

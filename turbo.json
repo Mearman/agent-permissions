@@ -25,6 +25,7 @@
         "*.json",
         "tsconfig.json",
         "spec/examples/**",
+        "conformance/**",
         ".claude-plugin/**",
         ".agents/permissions.json",
         "pnpm-workspace.yaml",
@@ -40,6 +41,7 @@
       "inputs": [
         "src/**/*.ts",
         "spec/examples/**",
+        "conformance/**",
         "tsconfig.json",
         "agent-permissions.schema.json"
       ],
@@ -58,6 +60,7 @@
       "inputs": [
         "src/**/*.ts",
         "spec/examples/**",
+        "conformance/**",
         "tsconfig.json",
         "agent-permissions.schema.json"
       ],

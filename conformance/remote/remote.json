@@ -1,0 +1,238 @@
+{
+  "cases": [
+    {
+      "id": "remote.001",
+      "from": "remote.test.ts: normaliseRemote > https://github.com/ExaDev/agent-perms.git",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["https://github.com/ExaDev/agent-perms.git"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.002",
+      "from": "remote.test.ts: normaliseRemote > https://github.com/ExaDev/agent-perms",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["https://github.com/ExaDev/agent-perms"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.003",
+      "from": "remote.test.ts: normaliseRemote > https://github.com/ExaDev/agent-perms/",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["https://github.com/ExaDev/agent-perms/"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.004",
+      "from": "remote.test.ts: normaliseRemote > git@github.com:ExaDev/agent-perms.git",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["git@github.com:ExaDev/agent-perms.git"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.005",
+      "from": "remote.test.ts: normaliseRemote > ssh://git@github.com/ExaDev/agent-perms.git",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["ssh://git@github.com/ExaDev/agent-perms.git"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.006",
+      "from": "remote.test.ts: normaliseRemote > ssh://git@github.com:22/ExaDev/agent-perms.git",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["ssh://git@github.com:22/ExaDev/agent-perms.git"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.007",
+      "from": "remote.test.ts: normaliseRemote > https://user:secret@github.com/o/r.git",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["https://user:secret@github.com/o/r.git"],
+      "expect": "github.com/o/r"
+    },
+    {
+      "id": "remote.008",
+      "from": "remote.test.ts: normaliseRemote > https://GitHub.COM/o/r",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["https://GitHub.COM/o/r"],
+      "expect": "github.com/o/r"
+    },
+    {
+      "id": "remote.009",
+      "from": "remote.test.ts: normaliseRemote > git://example.com/o/r.git",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["git://example.com/o/r.git"],
+      "expect": "example.com/o/r"
+    },
+    {
+      "id": "remote.010",
+      "from": "remote.test.ts: normaliseRemote > github.com/o/r",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/o/r"],
+      "expect": "github.com/o/r"
+    },
+    {
+      "id": "remote.011",
+      "from": "remote.test.ts: normaliseRemote > github.com/o/r.git",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/o/r.git"],
+      "expect": "github.com/o/r"
+    },
+    {
+      "id": "remote.012",
+      "from": "remote.test.ts: normaliseRemote > /srv/git/repo.git",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["/srv/git/repo.git"],
+      "expect": "/srv/git/repo"
+    },
+    {
+      "id": "remote.013",
+      "from": "remote.test.ts: normaliseRemote > file:///srv/git/repo.git",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["file:///srv/git/repo.git"],
+      "expect": "/srv/git/repo"
+    },
+    {
+      "id": "remote.014",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/exadev/agent-perms"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.015",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/exadev/agent-perms"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.016",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/exadev/agent-perms"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.017",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/exadev/agent-perms"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.018",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/exadev/agent-perms"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.019",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/exadev/agent-perms"],
+      "expect": "github.com/exadev/agent-perms"
+    },
+    {
+      "id": "remote.020",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/o/r"],
+      "expect": "github.com/o/r"
+    },
+    {
+      "id": "remote.021",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/o/r"],
+      "expect": "github.com/o/r"
+    },
+    {
+      "id": "remote.022",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["example.com/o/r"],
+      "expect": "example.com/o/r"
+    },
+    {
+      "id": "remote.023",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/o/r"],
+      "expect": "github.com/o/r"
+    },
+    {
+      "id": "remote.024",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["github.com/o/r"],
+      "expect": "github.com/o/r"
+    },
+    {
+      "id": "remote.025",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["/srv/git/repo"],
+      "expect": "/srv/git/repo"
+    },
+    {
+      "id": "remote.026",
+      "from": "remote.test.ts: normaliseRemote > is idempotent",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["/srv/git/repo"],
+      "expect": "/srv/git/repo"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ExaDev/agent-permissions/tree/main/conformance/manifest.schema.json",
+  "title": "agent-permissions conformance manifest",
+  "description": "What the corpus holds: per corpus file, how many cases it has and which of them are skipped by one implementation. Every runner checks the corpus against it, so a case cannot be dropped or hidden without a change to this file in the same commit. File names and the ascending order of `skip` are checked by every loader.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["files"],
+  "properties": {
+    "files": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cases", "skip"],
+        "properties": {
+          "cases": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "skip": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

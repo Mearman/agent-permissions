@@ -1,0 +1,13 @@
+{
+  "cases": [
+    {
+      "id": "a.001",
+      "from": "recorded: evaluate (a decision)",
+      "kind": "function",
+      "module": "m",
+      "function": "f",
+      "args": [],
+      "expect": 1
+    }
+  ]
+}

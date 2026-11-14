@@ -1,0 +1,358 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ExaDev/agent-permissions/tree/main/conformance/case.schema.json",
+  "title": "agent-permissions conformance corpus file",
+  "description": "A corpus file: a non-empty list of cases, each of one kind.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cases"],
+  "properties": {
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/case"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Lower-case ASCII letters, digits, dots, hyphens and underscores, starting with a letter or digit; unique across the corpus (checked by every loader)."
+    },
+    "from": {
+      "type": "string",
+      "minLength": 1,
+      "description": "`<test file>.test.ts: <describe> > <test>` or `recorded: <what>` (checked by every loader)."
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at"],
+      "properties": {
+        "at": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          }
+        },
+        "equals": {
+          "description": "any JSON value"
+        },
+        "notEquals": {
+          "description": "any JSON value"
+        },
+        "contains": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "subset": {
+          "description": "any JSON value"
+        },
+        "absent": {
+          "const": true
+        }
+      },
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["equals"],
+          "properties": {
+            "equals": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["notEquals"],
+          "properties": {
+            "notEquals": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["contains"],
+          "properties": {
+            "contains": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["subset"],
+          "properties": {
+            "subset": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["absent"],
+          "properties": {
+            "absent": {}
+          }
+        }
+      ]
+    },
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "kind": {
+          "const": "function"
+        },
+        "skip": {
+          "enum": ["ts", "rust"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "function": {
+          "type": "string",
+          "minLength": 1
+        },
+        "args": {
+          "type": "array"
+        },
+        "expect": {
+          "description": "any JSON value"
+        },
+        "expectUndefined": {
+          "const": true
+        },
+        "unordered": {
+          "type": "boolean"
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "throws": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "message": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "checks": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/check"
+              }
+            }
+          },
+          "required": []
+        }
+      },
+      "required": ["id", "from", "kind", "module", "function", "args"],
+      "dependentRequired": {
+        "skip": ["reason"],
+        "reason": ["skip"]
+      },
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["expect"],
+          "properties": {
+            "expect": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["expectUndefined"],
+          "properties": {
+            "expectUndefined": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["checks"],
+          "properties": {
+            "checks": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["throws"],
+          "properties": {
+            "throws": {}
+          }
+        }
+      ]
+    },
+    "evaluate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "kind": {
+          "const": "evaluate"
+        },
+        "skip": {
+          "enum": ["ts", "rust"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy": {
+          "type": "object"
+        },
+        "tool": {
+          "type": "string"
+        },
+        "input": {
+          "type": "string"
+        },
+        "context": {
+          "type": "object"
+        },
+        "expect": {
+          "enum": ["allow", "ask", "deny"]
+        }
+      },
+      "required": ["id", "from", "kind", "policy", "tool", "input", "expect"],
+      "dependentRequired": {
+        "skip": ["reason"],
+        "reason": ["skip"]
+      }
+    },
+    "shell-differential": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "from",
+        "kind",
+        "seed",
+        "markers",
+        "minimumSplittableShare",
+        "lines"
+      ],
+      "dependentRequired": {
+        "skip": ["reason"],
+        "reason": ["skip"]
+      },
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "kind": {
+          "const": "shell-differential"
+        },
+        "skip": {
+          "enum": ["ts", "rust"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "markers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "minimumSplittableShare": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["line", "ran"],
+            "properties": {
+              "line": {
+                "type": "string"
+              },
+              "ran": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "case": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/function"
+        },
+        {
+          "$ref": "#/$defs/evaluate"
+        },
+        {
+          "$ref": "#/$defs/shell-differential"
+        }
+      ]
+    }
+  }
+}

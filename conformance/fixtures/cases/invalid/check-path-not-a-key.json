@@ -1,0 +1,18 @@
+{
+  "cases": [
+    {
+      "id": "a.001",
+      "from": "a.test.ts: d > t",
+      "kind": "function",
+      "module": "m",
+      "function": "f",
+      "args": [],
+      "checks": [
+        {
+          "at": [1.5],
+          "equals": 1
+        }
+      ]
+    }
+  ]
+}

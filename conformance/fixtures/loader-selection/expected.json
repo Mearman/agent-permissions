@@ -1,0 +1,11 @@
+{
+  "problems": [
+    "a/Upper.json",
+    "a/stray.txt",
+    "a/sub",
+    "a/\ud83d\ude00.txt",
+    "other.json",
+    "stray.json"
+  ],
+  "selected": ["a/a.json", "a/b.json", "b/z.json"]
+}

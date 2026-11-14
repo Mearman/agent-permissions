@@ -20,6 +20,8 @@ export default defineConfig(
       "pnpm-lock.yaml",
       "CHANGELOG.md",
       ".claude-plugin/plugin.json",
+      // Corpus fixtures are inputs the loaders must refuse or accept, some of them malformed on purpose.
+      "conformance/fixtures/",
     ],
   },
 

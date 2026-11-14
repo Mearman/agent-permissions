@@ -1,0 +1,14 @@
+{
+  "cases": [
+    {
+      "id": "a.001",
+      "from": "a.test.ts: d > t",
+      "kind": "function",
+      "module": "m",
+      "function": "f",
+      "args": [],
+      "expect": 1,
+      "skip": "ts"
+    }
+  ]
+}
