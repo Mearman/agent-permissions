@@ -1,3 +1,70 @@
+## [7.1.0](https://github.com/ExaDev/agent-permissions/compare/v7.0.1...v7.1.0) (2026-11-14)
+
+### Features
+
+* **schema:** implement pattern and propertyNames in the rust validator ([4d96e8b](https://github.com/ExaDev/agent-permissions/commit/4d96e8bffdcf5922370a00c62231a0af1c12732e))
+* **sync:** let a library caller inject the call that reads a config file ([991bb22](https://github.com/ExaDev/agent-permissions/commit/991bb2278fd08ad2323da093fd68a9c2ce2f6173))
+
+### Bug Fixes
+
+* assert the safety property of every CLI refusal case, not only its exit code ([24d5cb6](https://github.com/ExaDev/agent-permissions/commit/24d5cb6276008dc6212f2412c92119b8a794f25c))
+* close three loader disagreements, and describe deny.toml's rules as they are now ([9fd4541](https://github.com/ExaDev/agent-permissions/commit/9fd45414969a8054170190593dfded0e14a0083d))
+* **loader:** do not repeat the file path in a load failure message ([8bb8ab6](https://github.com/ExaDev/agent-permissions/commit/8bb8ab6ec3ecaa5d9301e738ce8cf4e6a524e404))
+* **remote:** drop the query and fragment of a remote with its credentials ([0768f03](https://github.com/ExaDev/agent-permissions/commit/0768f03a8c4947196a939cebdea4821087a4f4da))
+* **remote:** refuse every remaining credential-bearing remote form ([88a34f0](https://github.com/ExaDev/agent-permissions/commit/88a34f081a8c7606ae64eb648caa017abfb15125))
+* **runner:** refuse an unrecognised value encoding and bound the mcp wait ([b62af75](https://github.com/ExaDev/agent-permissions/commit/b62af753b5c1d18f84260bb9e4aa69a9a362e766))
+
+### Reverts
+
+* **loader:** keep the load failure text as it is on main ([a665ca7](https://github.com/ExaDev/agent-permissions/commit/a665ca790306f3d65cdac47c89f41dd77e5f5514))
+* **remote:** keep the remote normaliser's behaviour as it is on main ([e9af21d](https://github.com/ExaDev/agent-permissions/commit/e9af21dae48497acd13a9a3a26f1b5dbb4f476fd))
+* **sync:** remove the readFile option of sync and readIfPresent ([06d5748](https://github.com/ExaDev/agent-permissions/commit/06d5748a0f1aef38a60bc47ae3bc8e85386924fb))
+
+### Documentation
+
+* describe the conformance corpus in CONTRIBUTING and leave the published README as it is ([feccb70](https://github.com/ExaDev/agent-permissions/commit/feccb7012da06f7946bdfade29ab0b831c9dad57))
+
+### Styles
+
+* format the corpus loader the way the repository formats JavaScript ([2c678f8](https://github.com/ExaDev/agent-permissions/commit/2c678f8f8263d94f76711f3eb553abed6d146ad8))
+
+### Tests
+
+* add the conformance corpus format, its shared runner and the harnesses that check it ([ee780c6](https://github.com/ExaDev/agent-permissions/commit/ee780c65fb85817d66d910e77945d355ba867fcd))
+* add the corpus checks the remaining tests need ([6228508](https://github.com/ExaDev/agent-permissions/commit/6228508dcde556c3547dfecefbeec688c34f9aee))
+* add the steps, layered, prompt, mcp and watch kinds and prove each validator keyword ([c6d828d](https://github.com/ExaDev/agent-permissions/commit/c6d828dc435ef4688c3baabf13d1c20423a5397a))
+* align the corpus loaders on dollar keys and allow only encodings a case uses ([f07a9ed](https://github.com/ExaDev/agent-permissions/commit/f07a9ed10805ce8389cf99aaf8bcf70c3d48a4c9))
+* **cli:** fail a refusal case when any new file appears beside the refused one ([6ecaa15](https://github.com/ExaDev/agent-permissions/commit/6ecaa15acd8ea2882d5964d30465d056698034cb))
+* count the tests the corpus loop actually queues, not only parsed cases ([9aa1527](https://github.com/ExaDev/agent-permissions/commit/9aa1527dd2317c09ce1d88979f3520951df58e28))
+* extract the evaluator, codec, schema, replay and confine tests into the corpus ([772ee93](https://github.com/ExaDev/agent-permissions/commit/772ee93f9a2a1ba7256b9bc4e065ae20121669e8))
+* extract the layered loading, ceiling, provenance and compile tests into layered cases ([4c58291](https://github.com/ExaDev/agent-permissions/commit/4c58291998f7165964d2015e9e2ee022436e2f1d))
+* extract the MCP server tests into line-delimited JSON-RPC exchanges ([e0d9d58](https://github.com/ExaDev/agent-permissions/commit/e0d9d582af734ddcea1992e0e3e98746e6d0932f))
+* extract the permission-prompt tests into prompt cases ([158c9d0](https://github.com/ExaDev/agent-permissions/commit/158c9d0e882848f399b60984ab7a92863fd37033))
+* extract the policy watch tests into scripted watch cases ([828e606](https://github.com/ExaDev/agent-permissions/commit/828e6067673b21adee74bb43e705b4609ef77c55))
+* extract the remaining sync, codec, CLI and file-format tests, with standard error and seams ([a46bbf4](https://github.com/ExaDev/agent-permissions/commit/a46bbf4a313e9ea87928c79e4e48f88df4532fa0))
+* extract the sync, loader, native-file and CLI tests into the corpus over file trees ([a3bbf81](https://github.com/ExaDev/agent-permissions/commit/a3bbf81529a7e2a04bf2626c1ae67483c89f9cda))
+* leave message text out of corpus cases whose tests did not assert it ([ced796a](https://github.com/ExaDev/agent-permissions/commit/ced796a885cdd9a7cef94533be77a797c8412a6c))
+* list the tests kept in TypeScript with their reasons and check the list both ways ([8daaf84](https://github.com/ExaDev/agent-permissions/commit/8daaf846efea2ef9b860eba8228df616f0e7be01))
+* pin the single file name in a load failure with corpus cases ([4ead702](https://github.com/ExaDev/agent-permissions/commit/4ead702f53f91e504fd77542dc4ca6b4621e1fb9))
+* produce read faults and refuse root in the conformance runner ([329122d](https://github.com/ExaDev/agent-permissions/commit/329122daeac0bd4bfa9fe815316be1d9648836f9))
+* record every call of the codec alias round-trip tests in the corpus ([87eccee](https://github.com/ExaDev/agent-permissions/commit/87ecceef0052e11a4c2a5d061f1f127650c5057c))
+* record the bash version and platform the shell differential lines were recorded on ([1a066cb](https://github.com/ExaDev/agent-permissions/commit/1a066cb3a470dcb580346e75088aa552ec86e0a5))
+* refuse an unrecognised value encoding in both corpus loaders ([b195915](https://github.com/ExaDev/agent-permissions/commit/b195915445efa6fe552c5bc3fd39d9a99ce58e3f))
+* remove duplicate cases and pin the exact rule a refusal echoes back ([79553d6](https://github.com/ExaDev/agent-permissions/commit/79553d64cce6a98e01f8738dd0341d7da01aeb4f))
+* require a cli refusal case to assert files written or none ([1e5aa1f](https://github.com/ExaDev/agent-permissions/commit/1e5aa1f7f0501439e394391f10b7a1ec57004043))
+* restore the message and reason text review found missing ([4f3f45b](https://github.com/ExaDev/agent-permissions/commit/4f3f45b622039f4c2f904e1e3017ddca2b848db4))
+* stop pinning an OpenCode encoding that looks like a defect, and explain the Kiro anchors ([f7136f1](https://github.com/ExaDev/agent-permissions/commit/f7136f119625578bd895a1e0c9be041005379c8a))
+
+### Build
+
+* add the Rust workspace, its cargo-deny allowlist and the jobs that check them ([f4a9402](https://github.com/ExaDev/agent-permissions/commit/f4a9402188c562d157425f144b60491c0987913c))
+* allow the remote scope in commit messages ([d33c735](https://github.com/ExaDev/agent-permissions/commit/d33c7355fd55f4c9d79d1881b7449da113c62936))
+* allow the runner scope in commit messages ([49b118c](https://github.com/ExaDev/agent-permissions/commit/49b118cd00085b1b130d5251858b0aaec3cdb4a6))
+* allow the rust scope in commit messages ([15ef0cf](https://github.com/ExaDev/agent-permissions/commit/15ef0cf27068eee34aadf190d1c92b927bfbc013))
+* **rust:** enable float_roundtrip so parsing agrees at the boundary ([b78d8ec](https://github.com/ExaDev/agent-permissions/commit/b78d8ec184c5236298d002722c0dcc0027e3fc85))
+* **rust:** run every check on the pinned toolchain with no host compiler wrapper ([8a46c81](https://github.com/ExaDev/agent-permissions/commit/8a46c81bce1791b5d461f49a5706e2961f0e382e))
+* **rust:** state the one feature serde_json needs ([4e87938](https://github.com/ExaDev/agent-permissions/commit/4e87938269b96a61198f8c93b3d1d3908a4f96f2))
+
 ## [7.0.1](https://github.com/ExaDev/agent-permissions/compare/v7.0.0...v7.0.1) (2026-11-14)
 
 ### Bug Fixes
