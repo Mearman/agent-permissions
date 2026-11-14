@@ -778,11 +778,18 @@ function fsReason(error: unknown): string {
  * bytes and decoded strictly as UTF-8, with a byte order mark kept, so what is returned writes back
  * as exactly the bytes that were read; a file that is not valid UTF-8 is refused rather than
  * rewritten with replacement characters.
+ *
+ * `read` is the call that fetches the bytes, `fs.readFile` unless a caller injects one so a test or
+ * the conformance runner can make a read fail the way a real disk does (EIO, EMFILE). Nothing but
+ * a library caller reaches it: the command line and the MCP server never pass one.
  */
-export async function readIfPresent(path: string): Promise<string | null> {
+export async function readIfPresent(
+  path: string,
+  read: (path: string) => Promise<Buffer> = readFile,
+): Promise<string | null> {
   let bytes: Buffer;
   try {
-    bytes = await readFile(path);
+    bytes = await read(path);
   } catch (error) {
     if (hasCode(error, "ENOENT")) return null;
     throw new SyncRefusedError(
