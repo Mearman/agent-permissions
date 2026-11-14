@@ -3,9 +3,9 @@
 //! the TypeScript runner applies: which files are corpus files, what a valid file is, and that the corpus is what
 //! `conformance/manifest.json` says it is. A file that does not match is a failure, never a skip.
 //!
-//! Executing the cases against the native crates is added with each crate; until then this proves that the Rust
-//! side reads the same files, selected the same way and validated by the same schemas, as the TypeScript runner
-//! does. Every case kind in the schema is validated in full, and a kind the schema does not define is refused.
+//! This harness reads the same files, selected the same way and validated by the same schemas, as the TypeScript
+//! runner does. Every case kind in the schema is validated in full, and a kind the schema does not define is
+//! refused. It executes no case: a case is skipped here for want of a native implementation to run it against.
 
 mod keywords;
 mod schema;
@@ -68,16 +68,19 @@ fn file_problems(schemas: &Schemas, document: &Value) -> Result<Vec<String>, Str
             found.push(format!("id {id} is used twice"));
         }
         let from = case["from"].as_str().unwrap_or_default();
-        let original = from.split_once(".test.ts: ").is_some_and(|(file, title)| {
-            !title.is_empty()
-                && !file.is_empty()
-                && file.chars().all(|c| {
-                    c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '.' | '-' | '_')
-                })
-        });
-        let recorded = from
-            .strip_prefix("recorded: ")
-            .is_some_and(|what| !what.is_empty());
+        let no_newline = !from.contains('\n');
+        let original = no_newline
+            && from.split_once(".test.ts: ").is_some_and(|(file, title)| {
+                !title.is_empty()
+                    && !file.is_empty()
+                    && file.chars().all(|c| {
+                        c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '.' | '-' | '_')
+                    })
+            });
+        let recorded = no_newline
+            && from
+                .strip_prefix("recorded: ")
+                .is_some_and(|what| !what.is_empty());
         if !original && !recorded {
             found.push(format!(
                 "{id}: from is neither a test title nor a recorded behaviour"
@@ -362,7 +365,7 @@ fn main() -> ExitCode {
     }
     if failures.is_empty() {
         println!(
-            "checked {} files: {} cases, 0 executed, {skipped_marked} skipped because they are marked for rust, {} skipped because no native executor exists yet",
+            "checked {} files: {} cases, 0 executed, {skipped_marked} skipped because they are marked for rust, {} skipped because there is no native implementation to run them against",
             files.len(),
             total,
             total - skipped_marked

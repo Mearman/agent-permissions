@@ -35,16 +35,16 @@ allow = [
     { crate = "zmij", reason = "serde_json formats floating point numbers with it." },
 ]
 
-# The wasm-bindgen family generates FFI, so only the binding crate may depend on it and no library crate can pull it in.
+# The wasm-bindgen family generates FFI, so only a crate named agent-perms-wasm may depend on it and no library crate can pull it in.
 deny = [
-    { crate = "wasm-bindgen", wrappers = ["agent-perms-wasm"], reason = "Generated JavaScript bindings, reserved for the binding crate." },
-    { crate = "js-sys", wrappers = ["agent-perms-wasm"], reason = "JavaScript built-ins for the binding crate." },
-    { crate = "wasm-bindgen-futures", wrappers = ["agent-perms-wasm"], reason = "Promise interop for the binding crate." },
+    { crate = "wasm-bindgen", wrappers = ["agent-perms-wasm"], reason = "Generated JavaScript bindings; only a crate named agent-perms-wasm may depend on it." },
+    { crate = "js-sys", wrappers = ["agent-perms-wasm"], reason = "JavaScript built-ins; only a crate named agent-perms-wasm may depend on it." },
+    { crate = "wasm-bindgen-futures", wrappers = ["agent-perms-wasm"], reason = "Promise interop; only a crate named agent-perms-wasm may depend on it." },
 ]
 
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-# The trilean crates are git dependencies pinned by revision, and no other git source is allowed.
+# A crate from the trilean repository may be taken as a git dependency pinned by revision; no other git source is allowed.
 allow-git = ["https://github.com/ExaDev/trilean"]
