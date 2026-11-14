@@ -28,6 +28,7 @@ import * as remote from "../remote.ts";
 import * as replay from "../replay.ts";
 import * as schema from "../schema.ts";
 import * as shell from "../shell.ts";
+import * as sync from "../sync.ts";
 
 /** Which implementation this runner is: a case marked `skip: "ts"` is not executed here. */
 const IMPLEMENTATION = "ts";
@@ -51,8 +52,13 @@ const target = {
     replay,
     schema,
     shell,
+    sync,
   },
-  kinds: {},
+  cli: [
+    process.execPath,
+    "--experimental-strip-types",
+    join(import.meta.dirname, "..", "cli.ts"),
+  ],
 };
 
 const schemas = compileSchemas(

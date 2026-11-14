@@ -8,7 +8,9 @@
       "function": "f",
       "args": [],
       "throws": {
-        "message": ["x"]
+        "message": [
+          "x"
+        ]
       }
     }
   ]

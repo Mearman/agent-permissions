@@ -1,0 +1,13 @@
+{
+  "cases": [
+    {
+      "id": "a.003",
+      "from": "recorded: cli",
+      "kind": "cli",
+      "args": [],
+      "expect": {
+        "exit": 0
+      }
+    }
+  ]
+}

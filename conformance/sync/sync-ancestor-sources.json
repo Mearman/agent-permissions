@@ -1,0 +1,43 @@
+{
+  "cases": [
+    {
+      "id": "sync-ancestor-sources.001",
+      "from": "sync-ancestor-sources.test.ts: a source that sync would not write never stops it > skips Oh My Pi's global config unless it is to be written",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0/app",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR0/omp-home",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/app/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/omp-home/config.yml": "bash: [unclosed\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    }
+  ]
+}

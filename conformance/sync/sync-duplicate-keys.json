@@ -1,0 +1,195 @@
+{
+  "cases": [
+    {
+      "id": "sync-duplicate-keys.001",
+      "from": "sync-duplicate-keys.test.ts: a duplicate key on an edited path is refused > when the object holding the permissions appears twice",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "duplicate-key"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"]},\"permissions\":{\"allow\":[\"Read\"]}}"
+      }
+    },
+    {
+      "id": "sync-duplicate-keys.002",
+      "from": "sync-duplicate-keys.test.ts: a duplicate key on an edited path is refused > when a duplicate is on a path whose value would not change, as it is read as well as edited",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "duplicate-key"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"deny\": [\"Bash(rm:*)\"],\n    \"deny\": [\"Bash(rm:*)\"]\n  }\n}\n"
+      }
+    },
+    {
+      "id": "sync-duplicate-keys.003",
+      "from": "sync-duplicate-keys.test.ts: a duplicate key on an edited path is refused > when the list being replaced appears twice",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "duplicate-key"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(a)\"],\"deny\":[\"Bash(b)\"]}}"
+      }
+    },
+    {
+      "id": "sync-duplicate-keys.004",
+      "from": "sync-duplicate-keys.test.ts: a duplicate key on an edited path is refused > when the list being removed appears twice",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "duplicate-key"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[],\"allow\":[]}}"
+      }
+    },
+    {
+      "id": "sync-duplicate-keys.005",
+      "from": "sync-duplicate-keys.test.ts: a duplicate key on an edited path is refused > but not when the duplicate is on a key sync does not edit",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": ["then"],
+          "absent": true
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\": \"a\", \"model\": \"b\", \"permissions\": {}}\n"
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\"model\": \"a\", \"model\": \"b\", \"permissions\": {\n  \"allow\": [],\n  \"deny\": [\n    \"Bash(rm:*)\"\n  ],\n  \"ask\": []\n}}\n"
+      }
+    }
+  ]
+}

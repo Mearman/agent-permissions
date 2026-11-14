@@ -1,0 +1,740 @@
+{
+  "cases": [
+    {
+      "id": "sync-roundtrip.001",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps claude-code: permissions.deny",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"]}}",
+            "proposed": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"allow\":[],\"ask\":[]}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"allow\":[],\"ask\":[]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.002",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps claude-code: permissions.ask",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"ask\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"permissions\":{\"ask\":[\"Bash(rm:*)\"]}}",
+            "proposed": "{\"permissions\":{\"ask\":[\"Bash(rm:*)\"],\"allow\":[],\"deny\":[]}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"ask\":[\"Bash(rm:*)\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"ask\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"ask\":[\"Bash(rm:*)\"],\"allow\":[],\"deny\":[]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.003",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps opencode: permission.read",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"deny\"}]}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/opencode.json": "{\"permission\":{\"read\":\"deny\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"deny\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.004",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps opencode: permission.edit",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Edit\",\"tier\":\"deny\"}]}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/opencode.json": "{\"permission\":{\"edit\":\"deny\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Edit\",\"tier\":\"deny\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.005",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps opencode: permission.glob",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Glob\",\"tier\":\"deny\"}]}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/opencode.json": "{\"permission\":{\"glob\":\"deny\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Glob\",\"tier\":\"deny\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.006",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps opencode: permission.grep",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Grep\",\"tier\":\"deny\"}]}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/opencode.json": "{\"permission\":{\"grep\":\"deny\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Grep\",\"tier\":\"deny\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.007",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps opencode: permission.bash",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"tier\":\"deny\"}]}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/opencode.json": "{\"permission\":{\"bash\":\"deny\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"tier\":\"deny\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.008",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps opencode: permission.task",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Agent\",\"tier\":\"deny\"}]}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/opencode.json": "{\"permission\":{\"task\":\"deny\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Agent\",\"tier\":\"deny\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.009",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps opencode: permission.webfetch",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"WebFetch\",\"tier\":\"deny\"}]}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/opencode.json": "{\"permission\":{\"webfetch\":\"deny\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"WebFetch\",\"tier\":\"deny\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.010",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps kiro: toolsSettings.shell.deniedCommands",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm\",\"tier\":\"deny\"}]}"
+          },
+          {
+            "path": "$DIR0/.kiro/permissions.json",
+            "agent": "kiro",
+            "kind": "update",
+            "current": "{\"toolsSettings\":{\"shell\":{\"deniedCommands\":[\"rm\"]}}}",
+            "proposed": "{\"toolsSettings\":{\"shell\":{\"deniedCommands\":[\"\\\\Arm\\\\z\"]}}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"shell\":{\"deniedCommands\":[\"rm\"]}}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm\",\"tier\":\"deny\"}]}",
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"shell\":{\"deniedCommands\":[\"\\\\Arm\\\\z\"]}}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.011",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps kiro: toolsSettings.shell.denyByDefault",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"defaultMode\":\"restricted\"}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"shell\":{\"denyByDefault\":true}}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"restricted\"}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.012",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps kiro: toolsSettings.read.deniedPaths",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Read\",\"pattern\":\"rm\",\"tier\":\"deny\"}]}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"read\":{\"deniedPaths\":[\"rm\"]}}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"pattern\":\"rm\",\"tier\":\"deny\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.013",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps kiro: toolsSettings.write.deniedPaths",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Write\",\"pattern\":\"rm\",\"tier\":\"deny\"}]}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"write\":{\"deniedPaths\":[\"rm\"]}}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Write\",\"pattern\":\"rm\",\"tier\":\"deny\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.014",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps kiro: toolsSettings.aws.deniedServices",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Aws\",\"pattern\":\"service:rm\",\"tier\":\"deny\"}]}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"aws\":{\"deniedServices\":[\"rm\"]}}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Aws\",\"pattern\":\"service:rm\",\"tier\":\"deny\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.015",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > keeps kiro: toolsSettings.web_fetch.blocked",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"WebFetch\",\"pattern\":\"url:rm\",\"tier\":\"deny\"}]}"
+          },
+          {
+            "path": "$DIR0/.kiro/permissions.json",
+            "agent": "kiro",
+            "kind": "update",
+            "current": "{\"toolsSettings\":{\"web_fetch\":{\"blocked\":[\"rm\"]}}}",
+            "proposed": "{\"toolsSettings\":{\"web_fetch\":{\"blocked\":[\"\\\\Arm\\\\z\"]}}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"web_fetch\":{\"blocked\":[\"rm\"]}}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"WebFetch\",\"pattern\":\"url:rm\",\"tier\":\"deny\"}]}",
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"web_fetch\":{\"blocked\":[\"\\\\Arm\\\\z\"]}}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-roundtrip.016",
+      "from": "sync-roundtrip.test.ts: a restriction at a modelled path survives a sync with nothing else to merge > leaves OpenCode's list and websearch, which the codec folds into other tools, untouched",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/opencode.json",
+            "agent": "opencode",
+            "kind": "update",
+            "current": "{\"permission\":{\"list\":\"deny\",\"websearch\":\"ask\"}}",
+            "proposed": "{\"permission\":{\"list\":\"deny\",\"websearch\":\"ask\",\"bash\":\"ask\"}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/opencode.json": "{\"permission\":{\"list\":\"deny\",\"websearch\":\"ask\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/opencode.json": "{\"permission\":{\"list\":\"deny\",\"websearch\":\"ask\",\"bash\":\"ask\"}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    }
+  ]
+}

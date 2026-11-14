@@ -7,5 +7,9 @@
     "other.json",
     "stray.json"
   ],
-  "selected": ["a/a.json", "a/b.json", "b/z.json"]
+  "selected": [
+    "a/a.json",
+    "a/b.json",
+    "b/z.json"
+  ]
 }

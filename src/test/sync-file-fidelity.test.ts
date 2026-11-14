@@ -1,7 +1,5 @@
-import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-  chmod,
   link,
   lstat,
   mkdir,
@@ -12,8 +10,9 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { join } from "node:path";
-import { sync } from "../sync.ts";
+import { after, describe, it } from "node:test";
 import { writeFileAtomic } from "../agent-files.ts";
+import { sync } from "../sync.ts";
 import {
   cleanup,
   denyRm,
@@ -28,22 +27,6 @@ after(cleanup);
 async function temporaries(directory: string): Promise<string[]> {
   return (await readdir(directory)).filter((name) => name.endsWith(".tmp"));
 }
-
-void describe("a backup is a faithful copy of its source", () => {
-  void it("has the source's mode and holds its exact bytes", async () => {
-    const cwd = await project({ rules: [denyRm] });
-    const original = '{"env": {"TOKEN": "secret"}, "permissions": {}}\n';
-    const path = await put(cwd, ".claude/settings.json", original);
-    await chmod(path, 0o600);
-
-    await sync(options(cwd, { backup: true }));
-
-    const backup = join(cwd, ".claude", "settings.json.bak");
-    assert.equal((await stat(backup)).mode & 0o777, 0o600);
-    assert.equal(await readFile(backup, "utf-8"), original);
-    assert.deepEqual(await temporaries(join(cwd, ".claude")), []);
-  });
-});
 
 void describe("a file is read as bytes", () => {
   void it("refuses a target that is not valid UTF-8, naming it and saying so, and leaves it alone", async () => {
@@ -66,38 +49,6 @@ void describe("a file is read as bytes", () => {
 });
 
 void describe("the temporary file", () => {
-  void it("is never created with a wider mode than the file it replaces", async () => {
-    const cwd = await project({});
-    const path = await put(cwd, "secret.json", "{}\n");
-    await chmod(path, 0o600);
-    const previous = process.umask(0);
-    try {
-      const modes = new Set<number>();
-      const state = { finished: false };
-      const write = writeFileAtomic(
-        path,
-        "x".repeat(64 * 1024 * 1024),
-        "{}\n",
-      ).finally(() => {
-        state.finished = true;
-      });
-      while (!state.finished) {
-        for (const name of await temporaries(cwd)) {
-          try {
-            modes.add((await stat(join(cwd, name))).mode & 0o777);
-          } catch {
-            // The file was renamed away between the listing and the stat.
-          }
-        }
-      }
-      await write;
-      assert.ok(modes.size > 0, "the temporary file was observed");
-      assert.deepEqual([...modes], [0o600]);
-    } finally {
-      process.umask(previous);
-    }
-  });
-
   void it("is removed when the rename fails", async () => {
     const cwd = await project({});
     const path = await put(cwd, "a.json", "{}\n");

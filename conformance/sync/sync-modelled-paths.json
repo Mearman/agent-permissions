@@ -1,0 +1,438 @@
+{
+  "cases": [
+    {
+      "id": "sync-modelled-paths.001",
+      "from": "sync-modelled-paths.test.ts: sync replaces only what it decoded > keeps Claude Code's other permissions keys, and the deny rule beside them",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"disableBypassPermissionsMode\":\"disable\"},\"model\":\"opus\"}",
+            "proposed": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"disableBypassPermissionsMode\":\"disable\",\"allow\":[\"Read\"],\"ask\":[]},\"model\":\"opus\"}"
+          },
+          {
+            "path": "$DIR0/.kiro/permissions.json",
+            "agent": "kiro",
+            "kind": "create",
+            "current": null,
+            "proposed": "{\n  \"allowedTools\": [\n    \"read\"\n  ],\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n"
+          },
+          {
+            "path": "$DIR0/opencode.json",
+            "agent": "opencode",
+            "kind": "create",
+            "current": null,
+            "proposed": "{\n  \"permission\": {\n    \"read\": \"allow\",\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+          },
+          {
+            "path": "$DIR0/.omp/config.yml",
+            "agent": "omp",
+            "kind": "create",
+            "current": null,
+            "proposed": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"disableBypassPermissionsMode\":\"disable\"},\"model\":\"opus\"}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"disableBypassPermissionsMode\":\"disable\",\"allow\":[\"Read\"],\"ask\":[]},\"model\":\"opus\"}",
+        "$DIR0/.kiro/permissions.json": "{\n  \"allowedTools\": [\n    \"read\"\n  ],\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"read\": \"allow\",\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-modelled-paths.002",
+      "from": "sync-modelled-paths.test.ts: sync replaces only what it decoded > keeps OpenCode's permission keys the codec does not map",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/opencode.json",
+            "agent": "opencode",
+            "kind": "update",
+            "current": "{\"permission\":{\"read\":\"allow\",\"doom_loop\":\"deny\",\"skill\":{\"*\":\"ask\"}}}",
+            "proposed": "{\"permission\":{\"read\":\"allow\",\"doom_loop\":\"deny\",\"skill\":{\"*\":\"ask\"},\"bash\":{\"rm *\":\"deny\"}}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": "{\"permission\":{\"read\":\"allow\",\"doom_loop\":\"deny\",\"skill\":{\"*\":\"ask\"}}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/opencode.json": "{\"permission\":{\"read\":\"allow\",\"doom_loop\":\"deny\",\"skill\":{\"*\":\"ask\"},\"bash\":{\"rm *\":\"deny\"}}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-modelled-paths.003",
+      "from": "sync-modelled-paths.test.ts: sync replaces only what it decoded > keeps a permission key from a newer OpenCode instead of failing to decode",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/opencode.json",
+            "agent": "opencode",
+            "kind": "update",
+            "current": "{\"permission\":{\"read\":\"allow\",\"future_tool\":\"deny\"}}",
+            "proposed": "{\"permission\":{\"read\":\"allow\",\"future_tool\":\"deny\",\"bash\":{\"rm *\":\"deny\"}}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": "{\"permission\":{\"read\":\"allow\",\"future_tool\":\"deny\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/opencode.json": "{\"permission\":{\"read\":\"allow\",\"future_tool\":\"deny\",\"bash\":{\"rm *\":\"deny\"}}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-modelled-paths.004",
+      "from": "sync-modelled-paths.test.ts: sync replaces only what it decoded > keeps Kiro's behaviour flags and the settings of tools it does not model",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.kiro/permissions.json",
+            "agent": "kiro",
+            "kind": "update",
+            "current": "{\"toolsSettings\":{\"shell\":{\"autoAllowReadonly\":true},\"aws\":{\"autoAllowReadonly\":true},\"code\":{\"enabled\":true}}}",
+            "proposed": "{\"toolsSettings\":{\"shell\":{\"autoAllowReadonly\":true,\"deniedCommands\":[\"\\\\Arm:*\\\\z\"]},\"aws\":{\"autoAllowReadonly\":true},\"code\":{\"enabled\":true}}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"shell\":{\"autoAllowReadonly\":true},\"aws\":{\"autoAllowReadonly\":true},\"code\":{\"enabled\":true}}}"
+      },
+      "expectFiles": {
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"shell\":{\"autoAllowReadonly\":true,\"deniedCommands\":[\"\\\\Arm:*\\\\z\"]},\"aws\":{\"autoAllowReadonly\":true},\"code\":{\"enabled\":true}}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-modelled-paths.005",
+      "from": "sync-modelled-paths.test.ts: sync replaces only what it decoded > removes a modelled path the encoding no longer writes, for Claude Code",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"model\":\"opus\",\"permissions\":{\"allow\":[],\"ask\":[]}}",
+            "proposed": "{\"model\":\"opus\",\"permissions\":{}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\":{\"allow\":[],\"ask\":[]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\":{}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-modelled-paths.006",
+      "from": "sync-modelled-paths.test.ts: sync replaces only what it decoded > removes a modelled path the encoding no longer writes, for OpenCode",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/opencode.json",
+            "agent": "opencode",
+            "kind": "update",
+            "current": "{\"permission\":{\"bash\":{},\"doom_loop\":\"ask\"}}",
+            "proposed": "{\"permission\":{\"doom_loop\":\"ask\",\"glob\":\"deny\"}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Glob\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": "{\"permission\":{\"bash\":{},\"doom_loop\":\"ask\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/opencode.json": "{\"permission\":{\"doom_loop\":\"ask\",\"glob\":\"deny\"}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-modelled-paths.007",
+      "from": "sync-modelled-paths.test.ts: sync replaces only what it decoded > removes a modelled path the encoding no longer writes, for Kiro",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.kiro/permissions.json",
+            "agent": "kiro",
+            "kind": "update",
+            "current": "{\"toolsSettings\":{\"shell\":{\"denyByDefault\":false,\"autoAllowReadonly\":true}}}",
+            "proposed": "{\"toolsSettings\":{\"shell\":{\"autoAllowReadonly\":true}}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[]}",
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"shell\":{\"denyByDefault\":false,\"autoAllowReadonly\":true}}}"
+      },
+      "expectFiles": {
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"shell\":{\"autoAllowReadonly\":true}}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-modelled-paths.008",
+      "from": "sync-modelled-paths.test.ts: sync replaces only what it decoded > stops naming the file and key when a modelled key cannot be decoded, with or without create",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "undecodable"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\":{\"allow\":\"Read\"}}"
+      }
+    },
+    {
+      "id": "sync-modelled-paths.009",
+      "from": "sync-modelled-paths.test.ts: sync replaces only what it decoded > stops naming the file and key when a modelled key cannot be decoded, with or without create",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "undecodable"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\":{\"allow\":\"Read\"}}"
+      }
+    }
+  ]
+}

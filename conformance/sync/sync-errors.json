@@ -1,0 +1,160 @@
+{
+  "cases": [
+    {
+      "id": "sync-errors.001",
+      "from": "sync-errors.test.ts: sync rejects with a typed error that names the file and the reason > for a config that is not valid JSON",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "invalid-format"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{ nope"
+      }
+    },
+    {
+      "id": "sync-errors.002",
+      "from": "sync-errors.test.ts: sync rejects with a typed error that names the file and the reason > for a config whose top level is not an object",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "not-an-object"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "[]"
+      }
+    },
+    {
+      "id": "sync-errors.003",
+      "from": "sync-errors.test.ts: sync rejects with a typed error that names the file and the reason > for a value its codec cannot decode",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "undecodable"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":\"Read\"}}"
+      }
+    },
+    {
+      "id": "sync-errors.004",
+      "from": "sync-errors.test.ts: sync rejects with a typed error that names the file and the reason > for a canonical file that is not valid JSON",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.agents/permissions.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "invalid-format"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{ nope",
+        "$DIR0/.claude/settings.json": "{\"permissions\": {\"allow\": [\"Read\"]}}"
+      }
+    }
+  ]
+}

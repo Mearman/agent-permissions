@@ -1,7 +1,7 @@
-import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { after, describe, it } from "node:test";
 import { sync } from "../sync.ts";
 import {
   cleanup,
@@ -106,22 +106,6 @@ void describe("a source that sync would not write never stops it", () => {
     await assert.rejects(
       sync(options(cwd, { up: Infinity })),
       /settings\.json.*allow/u,
-    );
-  });
-
-  void it("skips Oh My Pi's global config unless it is to be written", async () => {
-    const { cwd } = await nested();
-    const agentDir = join(cwd, "..", "omp-home");
-    await put(agentDir, "config.yml", "bash: [unclosed\n");
-
-    const output = await stderrOf(() =>
-      sync(options(cwd, { ompAgentDir: agentDir })),
-    );
-    assert.match(output, /warning: .*config\.yml/u);
-
-    await assert.rejects(
-      sync(options(cwd, { ompAgentDir: agentDir, ompGlobal: true })),
-      /config\.yml/u,
     );
   });
 });

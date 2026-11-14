@@ -4,6 +4,14 @@
       "cases": 46,
       "skip": []
     },
+    "cli/cli-output-refusal.json": {
+      "cases": 26,
+      "skip": []
+    },
+    "cli/cli.json": {
+      "cases": 75,
+      "skip": []
+    },
     "codec/codec-alias-roundtrip.json": {
       "cases": 12,
       "skip": []
@@ -92,8 +100,16 @@
       "cases": 42,
       "skip": []
     },
+    "files/agent-files.tree.json": {
+      "cases": 11,
+      "skip": []
+    },
     "loader/loader-ceiling.json": {
       "cases": 4,
+      "skip": []
+    },
+    "loader/loader.json": {
+      "cases": 15,
       "skip": []
     },
     "profiles/profiles.json": {
@@ -118,6 +134,50 @@
     },
     "shell/shell.json": {
       "cases": 44,
+      "skip": []
+    },
+    "sync/sync-ancestor-sources.json": {
+      "cases": 1,
+      "skip": []
+    },
+    "sync/sync-atomic-write.json": {
+      "cases": 3,
+      "skip": []
+    },
+    "sync/sync-canonical-keys.json": {
+      "cases": 5,
+      "skip": []
+    },
+    "sync/sync-duplicate-keys.json": {
+      "cases": 5,
+      "skip": []
+    },
+    "sync/sync-empty-file.json": {
+      "cases": 25,
+      "skip": []
+    },
+    "sync/sync-errors.json": {
+      "cases": 4,
+      "skip": []
+    },
+    "sync/sync-file-fidelity.json": {
+      "cases": 1,
+      "skip": []
+    },
+    "sync/sync-modelled-paths.json": {
+      "cases": 9,
+      "skip": []
+    },
+    "sync/sync-roundtrip.json": {
+      "cases": 16,
+      "skip": []
+    },
+    "sync/sync-text-edit.json": {
+      "cases": 14,
+      "skip": []
+    },
+    "sync/sync.json": {
+      "cases": 43,
       "skip": []
     },
     "validate/claude-code-compat.json": {
