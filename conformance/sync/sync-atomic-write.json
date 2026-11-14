@@ -1,0 +1,119 @@
+{
+  "cases": [
+    {
+      "id": "sync-atomic-write.001",
+      "from": "sync-atomic-write.test.ts: a write is atomic and current > replaces the file through a rename, leaving no temporary file and keeping its mode",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "create"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\": \"opus\"}\n"
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\"model\": \"opus\", \"permissions\": {\"allow\":[],\"deny\":[\"Bash(rm:*)\"],\"ask\":[]}}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-atomic-write.002",
+      "from": "sync-atomic-write.test.ts: a write is atomic and current > stops without writing when the file changed since the proposal",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeFileAtomic",
+      "args": ["$DIR0/a.json", "{\"a\": 2}\n", "{\"a\": 0}\n"],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/a.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "changed"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/a.json": "{\"a\": 1}\n"
+      }
+    },
+    {
+      "id": "sync-atomic-write.003",
+      "from": "sync-atomic-write.test.ts: a write is atomic and current > stops when a file expected to be absent has appeared",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeFileAtomic",
+      "args": ["$DIR0/a.json", "{}\n", null],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/a.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "changed"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/a.json": "{}\n"
+      }
+    }
+  ]
+}

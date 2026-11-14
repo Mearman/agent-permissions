@@ -1,0 +1,700 @@
+{
+  "cases": [
+    {
+      "id": "sync-text-edit.001",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > leaves two-space indent untouched in .claude/settings.json",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\n  \"model\": \"opus\",\n  \"permissions\": {\"allow\": [\"Read\"]},\n  \"env\": {\"A\": \"1\"}\n}\n",
+            "proposed": "{\n  \"model\": \"opus\",\n  \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []},\n  \"env\": {\"A\": \"1\"}\n}\n"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\n  \"model\": \"opus\",\n  \"permissions\": {\"allow\": [\"Read\"]},\n  \"env\": {\"A\": \"1\"}\n}\n"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\n  \"model\": \"opus\",\n  \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []},\n  \"env\": {\"A\": \"1\"}\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.002",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > leaves tabs untouched in .claude/settings.json",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\n\t\"model\": \"opus\",\n\t\"permissions\": {\"allow\": [\"Read\"]},\n\t\"env\": {\"A\": \"1\"}\n}\n",
+            "proposed": "{\n\t\"model\": \"opus\",\n\t\"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []},\n\t\"env\": {\"A\": \"1\"}\n}\n"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\n\t\"model\": \"opus\",\n\t\"permissions\": {\"allow\": [\"Read\"]},\n\t\"env\": {\"A\": \"1\"}\n}\n"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\n\t\"model\": \"opus\",\n\t\"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []},\n\t\"env\": {\"A\": \"1\"}\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.003",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > leaves a compact file untouched in .claude/settings.json",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"model\":\"opus\",\"permissions\": {\"allow\": [\"Read\"]},\"env\":{\"A\":\"1\"}}",
+            "proposed": "{\"model\":\"opus\",\"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []},\"env\":{\"A\":\"1\"}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\": {\"allow\": [\"Read\"]},\"env\":{\"A\":\"1\"}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []},\"env\":{\"A\":\"1\"}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.004",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > leaves CRLF line ends untouched in .claude/settings.json",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\r\n  \"model\": \"opus\",\r\n  \"permissions\": {\"allow\": [\"Read\"]},\r\n  \"env\": {}\r\n}\r\n",
+            "proposed": "{\r\n  \"model\": \"opus\",\r\n  \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []},\r\n  \"env\": {}\r\n}\r\n"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\r\n  \"model\": \"opus\",\r\n  \"permissions\": {\"allow\": [\"Read\"]},\r\n  \"env\": {}\r\n}\r\n"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\r\n  \"model\": \"opus\",\r\n  \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []},\r\n  \"env\": {}\r\n}\r\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.005",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > leaves a number past double precision untouched in .claude/settings.json",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"big\": 12345678901234567890, \"tiny\": 1e-400, \"permissions\": {\"allow\": [\"Read\"]}}",
+            "proposed": "{\"big\": 12345678901234567890, \"tiny\": 1e-400, \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"big\": 12345678901234567890, \"tiny\": 1e-400, \"permissions\": {\"allow\": [\"Read\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"big\": 12345678901234567890, \"tiny\": 1e-400, \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.006",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > leaves integer-like keys in order untouched in .claude/settings.json",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"z\": 1, \"2\": \"b\", \"1\": \"a\", \"permissions\": {\"allow\": [\"Read\"]}}",
+            "proposed": "{\"z\": 1, \"2\": \"b\", \"1\": \"a\", \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"z\": 1, \"2\": \"b\", \"1\": \"a\", \"permissions\": {\"allow\": [\"Read\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"z\": 1, \"2\": \"b\", \"1\": \"a\", \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.007",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > leaves a duplicate key untouched in .claude/settings.json",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"a\": 1, \"a\": 2, \"permissions\": {\"allow\": [\"Read\"]}}",
+            "proposed": "{\"a\": 1, \"a\": 2, \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"a\": 1, \"a\": 2, \"permissions\": {\"allow\": [\"Read\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"a\": 1, \"a\": 2, \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.008",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > leaves a key named __proto__ untouched in .claude/settings.json",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"__proto__\": {\"x\": 1}, \"permissions\": {\"allow\": [\"Read\"]}}",
+            "proposed": "{\"__proto__\": {\"x\": 1}, \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"__proto__\": {\"x\": 1}, \"permissions\": {\"allow\": [\"Read\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"__proto__\": {\"x\": 1}, \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.009",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > leaves trailing spaces and no final newline untouched in .claude/settings.json",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"model\": \"opus\",   \n  \"permissions\": {\"allow\": [\"Read\"]}  \n}",
+            "proposed": "{\"model\": \"opus\",   \n  \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}  \n}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\": \"opus\",   \n  \"permissions\": {\"allow\": [\"Read\"]}  \n}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\": \"opus\",   \n  \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}  \n}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.010",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > leaves a number written with a trailing zero untouched in .claude/settings.json",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"n\": 1.0, \"m\": -0, \"permissions\": {\"allow\": [\"Read\"]}}",
+            "proposed": "{\"n\": 1.0, \"m\": -0, \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"n\": 1.0, \"m\": -0, \"permissions\": {\"allow\": [\"Read\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"n\": 1.0, \"m\": -0, \"permissions\": {\"allow\": [\"Read\"], \"deny\": [\"Bash(rm:*)\"], \"ask\": []}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.011",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > keeps a byte order mark where it was",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "﻿{\"model\": \"opus\", \"permissions\": {}}\n",
+            "proposed": "﻿{\"model\": \"opus\", \"permissions\": {\n  \"allow\": [],\n  \"deny\": [\n    \"Bash(rm:*)\"\n  ],\n  \"ask\": []\n}}\n"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "﻿{\"model\": \"opus\", \"permissions\": {}}\n"
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "﻿{\"model\": \"opus\", \"permissions\": {\n  \"allow\": [],\n  \"deny\": [\n    \"Bash(rm:*)\"\n  ],\n  \"ask\": []\n}}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.012",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > refuses comments and trailing commas in .claude/settings.json, saying they are not valid there",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "invalid-format"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\n  // my model\n  \"model\": \"opus\"\n}\n"
+      }
+    },
+    {
+      "id": "sync-text-edit.013",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > refuses comments and trailing commas in .claude/settings.json, saying they are not valid there",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "invalid-format"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\": \"opus\",}\n"
+      }
+    },
+    {
+      "id": "sync-text-edit.014",
+      "from": "sync-text-edit.test.ts: OpenCode's two config file names > edits opencode.jsonc, which OpenCode ranks above opencode.json, and warns that both apply",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.agents/permissions.json",
+                "agent": "canonical",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/opencode.jsonc",
+                "agent": "opencode",
+                "kind": "update"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": "{\"permission\": {\"read\": \"allow\"}}\n",
+        "$DIR0/opencode.jsonc": "{\n  // mine\n  \"permission\": {\"edit\": \"ask\"}\n}\n"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Edit\",\"tier\":\"ask\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/opencode.jsonc": "{\n  // mine\n  \"permission\": {\"edit\": \"ask\", \"read\": \"allow\", \"bash\": {\"rm *\":\"deny\"}}\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    }
+  ]
+}

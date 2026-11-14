@@ -9,7 +9,9 @@
       "args": [],
       "checks": [
         {
-          "at": ["a"],
+          "at": [
+            "a"
+          ],
           "equals": 1,
           "notEquals": 2
         }

@@ -1,0 +1,365 @@
+{
+  "cases": [
+    {
+      "id": "loader.001",
+      "from": "loader.test.ts: loadPolicy > delegation limits > keeps the shallowest maxDepth and every nonDelegable rule across layers",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "expect": {
+        "defaultMode": "standard",
+        "delegation": {
+          "maxDepth": 1,
+          "nonDelegable": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./.agents/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"delegation\":{\"maxDepth\":3,\"nonDelegable\":[\"Bash(sudo:*)\"]}}",
+        "$DIR0/.agents/permissions.local.json": "{\"delegation\":{\"maxDepth\":1,\"nonDelegable\":[\"Write(./.agents/**)\"]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "loader.002",
+      "from": "loader.test.ts: loadPolicy > delegation limits > is absent when no layer sets a limit",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["delegation"],
+          "absent": true
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      }
+    },
+    {
+      "id": "loader.003",
+      "from": "loader.test.ts: loadPolicy > canonical loading > returns standard mode when no files exist",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "standard"
+        },
+        {
+          "at": ["rules"],
+          "absent": true
+        }
+      ]
+    },
+    {
+      "id": "loader.004",
+      "from": "loader.test.ts: loadPolicy > canonical loading > fails on invalid JSON in a canonical file instead of dropping its rules",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "throws": {
+        "name": "PolicyLoadError",
+        "checks": [
+          {
+            "at": ["failures"],
+            "subset": [
+              "$DIR0/.agents/permissions.json: $DIR0/.agents/permissions.json: invalid JSON"
+            ]
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{ \"rules\": [{ \"tool\": \"Bash\", \"pattern\": \"rm:*\", \"tier\": \"deny\" }"
+      }
+    },
+    {
+      "id": "loader.005",
+      "from": "loader.test.ts: loadPolicy > canonical loading > fails on a schema-invalid canonical file",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "throws": {
+        "name": "PolicyLoadError",
+        "checks": [
+          {
+            "at": ["failures"],
+            "subset": [
+              "$DIR0/.agents/permissions.json is not a valid canonical policy"
+            ]
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"not-a-real-mode\",\"permissions\":{\"deny\":[12345]}}"
+      }
+    },
+    {
+      "id": "loader.006",
+      "from": "loader.test.ts: loadPolicy > canonical loading > fails when a local override is broken, though the committed file is fine",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "throws": {
+        "name": "PolicyLoadError",
+        "checks": [
+          {
+            "at": ["failures"],
+            "subset": [
+              "$DIR0/.agents/permissions.local.json: $DIR0/.agents/permissions.local.json: invalid JSON"
+            ]
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.agents/permissions.local.json": "{ nope"
+      }
+    },
+    {
+      "id": "loader.007",
+      "from": "loader.test.ts: loadPolicy > canonical loading > names every unusable file",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0/project"
+        }
+      ],
+      "throws": {
+        "name": "PolicyLoadError",
+        "checks": [
+          {
+            "at": ["failures"],
+            "subset": [
+              "$DIR0/.agents/permissions.json: $DIR0/.agents/permissions.json: invalid JSON",
+              "$DIR0/project/.agents/permissions.json: $DIR0/project/.agents/permissions.json: invalid JSON"
+            ]
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{ a",
+        "$DIR0/project/.agents/permissions.json": "{ b"
+      }
+    },
+    {
+      "id": "loader.008",
+      "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > ignores Claude Code settings when with does not include it",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules"],
+          "absent": true
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\"}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Bash(git *)\"],\"deny\":[\"Bash(rm -rf *)\"]}}"
+      }
+    },
+    {
+      "id": "loader.009",
+      "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > excludes agent when without lists it",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules"],
+          "absent": true
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"without\":[\"claude-code\"]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Bash(git *)\"]}}"
+      }
+    },
+    {
+      "id": "loader.010",
+      "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > skips codex (TOML not supported)",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules"],
+          "absent": true
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"with\":[\"codex\"]}",
+        "$DIR0/codex.toml": "# codex config\n"
+      }
+    },
+    {
+      "id": "loader.011",
+      "from": "loader.test.ts: loadPolicy > walk-up discovery > respects up: 0 from outermost canonical file",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0/subproject"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "standard"
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"up\":0,\"defaultMode\":\"autonomous\"}"
+      }
+    },
+    {
+      "id": "loader.012",
+      "from": "loader.test.ts: loadPolicy > walk-up discovery > respects up: N limiting parent traversal",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0/a/b/c"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "standard"
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"up\":0,\"defaultMode\":\"autonomous\"}"
+      }
+    },
+    {
+      "id": "loader.013",
+      "from": "loader.test.ts: loadPolicy > mode mapping > maps bypassPermissions to autonomous",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "autonomous"
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"bypassPermissions\"}"
+      }
+    },
+    {
+      "id": "loader.014",
+      "from": "loader.test.ts: loadPolicy > mode mapping > maps plan to restricted",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "restricted"
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"plan\"}"
+      }
+    },
+    {
+      "id": "loader.015",
+      "from": "loader.test.ts: loadPolicy > with/without mutual exclusivity > schema rejects both with and without",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "throws": {
+        "name": "PolicyLoadError",
+        "checks": [
+          {
+            "at": ["failures"],
+            "subset": [
+              "$DIR0/.agents/permissions.json is not a valid canonical policy"
+            ]
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"with\":[\"claude-code\"],\"without\":[\"opencode\"]}"
+      }
+    }
+  ]
+}

@@ -2,7 +2,9 @@
   "files": {
     "a/a.json": {
       "cases": 1,
-      "skip": ["a.001"]
+      "skip": [
+        "a.001"
+      ]
     }
   }
 }

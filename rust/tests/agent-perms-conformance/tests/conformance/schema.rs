@@ -208,6 +208,19 @@ fn check(
                     }
                 }
             }
+            "anyOf" => {
+                let mut matching = 0;
+                for branch in value.as_array().ok_or("anyOf must be a list")? {
+                    let mut inner = Vec::new();
+                    check(root, branch, instance, path, &mut inner)?;
+                    if inner.is_empty() {
+                        matching += 1;
+                    }
+                }
+                if matching == 0 {
+                    fail!("matches none of the anyOf branches");
+                }
+            }
             "oneOf" => {
                 let mut matching = 0;
                 for branch in value.as_array().ok_or("oneOf must be a list")? {

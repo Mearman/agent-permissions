@@ -1,0 +1,1982 @@
+{
+  "cases": [
+    {
+      "id": "cli.001",
+      "from": "cli.test.ts: CLI > convert > converts claude-code to canonical",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/settings.json",
+        "--to",
+        "canonical",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/settings.json": "{\"allow\":[\"Bash(git status)\",\"Read\"],\"deny\":[\"Bash(sudo:*)\"]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.002",
+      "from": "cli.test.ts: CLI > convert > converts canonical to crush",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "crush",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"permissions\":{\"allow\":[\"Read\",\"Bash\",\"Grep\"]}}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "allowed_tools": ["view", "bash", "grep"]
+        }
+      }
+    },
+    {
+      "id": "cli.003",
+      "from": "cli.test.ts: CLI > convert > writes to a known config path where it is, not in the working directory",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "$DIR0/.claude/settings.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [\n      \"Read\"\n    ],\n    \"deny\": [],\n    \"ask\": []\n  }\n}\n"
+      }
+    },
+    {
+      "id": "cli.004",
+      "from": "cli.test.ts: CLI > convert > writes the encoded document whole to an explicit path that is not a native config file",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "claude-code",
+        "--output",
+        "$DIR0/out.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/out.json": "{\"model\": \"opus\"}",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/out.json": "{\n  \"allow\": [\n    \"Read\"\n  ],\n  \"deny\": [],\n  \"ask\": []\n}\n"
+      }
+    },
+    {
+      "id": "cli.005",
+      "from": "cli.test.ts: CLI > convert > converts with --compact flag",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "canonical",
+        "--compact",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.006",
+      "from": "cli.test.ts: CLI > convert > converts with --verbose flag",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "canonical",
+        "--verbose",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.007",
+      "from": "cli.test.ts: CLI > convert > writes to a file with --output",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/input.json",
+        "--to",
+        "canonical",
+        "--output",
+        "$DIR0/output.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/input.json": "{\"allow\":[\"Read\"]}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/output.json": "{\n  \"$schema\": \"https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json\",\n  \"rules\": [\n    {\n      \"tool\": \"Read\",\n      \"tier\": \"allow\"\n    }\n  ]\n}\n"
+      }
+    },
+    {
+      "id": "cli.008",
+      "from": "cli.test.ts: CLI > convert > rejects missing --to",
+      "kind": "cli",
+      "args": ["convert", "--from", "canonical"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["--to is required"]
+      }
+    },
+    {
+      "id": "cli.009",
+      "from": "cli.test.ts: CLI > convert > rejects unknown --to format",
+      "kind": "cli",
+      "args": ["convert", "--from", "canonical", "--to", "phantom"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["unknown --to format"]
+      }
+    },
+    {
+      "id": "cli.010",
+      "from": "cli.test.ts: CLI > convert > rejects unknown --from format (non-existent file)",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "/nonexistent/path.json",
+        "--to",
+        "canonical"
+      ],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["unknown --from format"]
+      }
+    },
+    {
+      "id": "cli.011",
+      "from": "cli.test.ts: CLI > convert > auto-detects format from file content",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/settings.json",
+        "--to",
+        "canonical",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/settings.json": "{\"allow\":[\"Read\"]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.012",
+      "from": "cli.test.ts: CLI > convert > converts from stdin with '-'",
+      "kind": "cli",
+      "args": ["convert", "--from", "-", "--to", "canonical", "--output", "-"],
+      "stdin": "{\"allow\":[\"Read\"]}",
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.013",
+      "from": "cli.test.ts: CLI > convert > reports ConvertError with validation details",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "canonical",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Bash\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "allow"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.014",
+      "from": "cli.test.ts: CLI > convert > handles invalid JSON input",
+      "kind": "cli",
+      "args": ["convert", "--from", "-", "--to", "canonical", "--output", "-"],
+      "stdin": "not json{{{",
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["invalid JSON"]
+      }
+    },
+    {
+      "id": "cli.015",
+      "from": "cli.test.ts: CLI > convert > accepts --input as alias for --from",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--input",
+        "$DIR0/policy.json",
+        "--to",
+        "canonical",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"allow\":[\"Read\"]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.016",
+      "from": "cli.test.ts: CLI > convert > accepts --in as alias for --from",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--in",
+        "$DIR0/policy.json",
+        "--to",
+        "canonical",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"allow\":[\"Read\"]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.017",
+      "from": "cli.test.ts: CLI > convert > accepts --out as alias for --output",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "canonical",
+        "--out",
+        "$DIR0/out.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"allow\":[\"Read\"]}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/out.json": "{\n  \"$schema\": \"https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json\",\n  \"rules\": [\n    {\n      \"tool\": \"Read\",\n      \"tier\": \"allow\"\n    }\n  ]\n}\n"
+      }
+    },
+    {
+      "id": "cli.018",
+      "from": "cli.test.ts: CLI > convert > resolves format name for --to as output file",
+      "kind": "cli",
+      "args": ["convert", "--from", "$DIR0/input.json", "--to", "canonical"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/input.json": "{\"allow\":[\"Read\"]}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR2/.agents/permissions.json": "{\n  \"$schema\": \"https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json\",\n  \"rules\": [\n    {\n      \"tool\": \"Read\",\n      \"tier\": \"allow\"\n    }\n  ]\n}\n"
+      }
+    },
+    {
+      "id": "cli.019",
+      "from": "cli.test.ts: CLI > validate > validates a correct policy file",
+      "kind": "cli",
+      "args": ["validate", "--input", "$DIR0/policy.json"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"standard\"}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "valid\n"
+      }
+    },
+    {
+      "id": "cli.020",
+      "from": "cli.test.ts: CLI > validate > rejects an invalid policy file",
+      "kind": "cli",
+      "args": ["validate", "--input", "$DIR0/bad.json"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/bad.json": "{\"defaultMode\":\"yolo\"}"
+      },
+      "expect": {
+        "exit": 2,
+        "stderrIncludes": ["validation errors"]
+      }
+    },
+    {
+      "id": "cli.021",
+      "from": "cli.test.ts: CLI > validate > rejects invalid JSON",
+      "kind": "cli",
+      "args": ["validate", "--input", "$DIR0/broken.json"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/broken.json": "not json{{{"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["invalid JSON"]
+      }
+    },
+    {
+      "id": "cli.022",
+      "from": "cli.test.ts: CLI > validate > validates from stdin with '-'",
+      "kind": "cli",
+      "args": ["validate", "--input", "-"],
+      "stdin": "{\"defaultMode\":\"standard\"}",
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "valid\n"
+      }
+    },
+    {
+      "id": "cli.023",
+      "from": "cli.test.ts: CLI > validate > shows validation error details",
+      "kind": "cli",
+      "args": ["validate", "--input", "$DIR0/bad.json"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/bad.json": "{\"rules\":[{\"notTool\":\"Bash\"}]}"
+      },
+      "expect": {
+        "exit": 2,
+        "stderrIncludes": ["rules."]
+      }
+    },
+    {
+      "id": "cli.024",
+      "from": "cli.test.ts: CLI > validate > accepts --in as alias for --input",
+      "kind": "cli",
+      "args": ["validate", "--in", "$DIR0/policy.json"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"standard\"}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "valid\n"
+      }
+    },
+    {
+      "id": "cli.025",
+      "from": "cli.test.ts: CLI > convert to and from OMP > writes an OMP config as YAML",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "omp",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n"
+      }
+    },
+    {
+      "id": "cli.026",
+      "from": "cli.test.ts: CLI > check > allows a matching rule",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "git status",
+        "--policy-file",
+        "$DIR0/policy.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "allow\n"
+      }
+    },
+    {
+      "id": "cli.027",
+      "from": "cli.test.ts: CLI > check > takes the remote and environment conditions from flags",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "deploy prod",
+        "--policy-file",
+        "$DIR0/policy.json",
+        "--env",
+        "CI=true",
+        "--remote",
+        "git@github.com:ExaDev/x.git"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"restricted\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"deploy:*\",\"tier\":\"allow\",\"when\":{\"env\":{\"CI\":\"true\"},\"remote\":\"github.com/exadev/*\"}}]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "allow\n"
+      }
+    },
+    {
+      "id": "cli.028",
+      "from": "cli.test.ts: CLI > check > takes the remote and environment conditions from flags",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "deploy prod",
+        "--policy-file",
+        "$DIR0/policy.json",
+        "--env",
+        "CI=true"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"restricted\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"deploy:*\",\"tier\":\"allow\",\"when\":{\"env\":{\"CI\":\"true\"},\"remote\":\"github.com/exadev/*\"}}]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "ask\n"
+      }
+    },
+    {
+      "id": "cli.029",
+      "from": "cli.test.ts: CLI > check > applies delegation limits for the depth given with --depth",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "sudo ls",
+        "--depth",
+        "1",
+        "--policy-file",
+        "$DIR0/policy.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"autonomous\",\"delegation\":{\"nonDelegable\":[\"Bash(sudo:*)\"]}}"
+      },
+      "expect": {
+        "exit": 1,
+        "stdout": "deny\n"
+      }
+    },
+    {
+      "id": "cli.030",
+      "from": "cli.test.ts: CLI > check > applies delegation limits for the depth given with --depth",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "sudo ls",
+        "--depth",
+        "0",
+        "--policy-file",
+        "$DIR0/policy.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"autonomous\",\"delegation\":{\"nonDelegable\":[\"Bash(sudo:*)\"]}}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "allow\n"
+      }
+    },
+    {
+      "id": "cli.031",
+      "from": "cli.test.ts: CLI > check > applies delegation limits for the depth given with --depth",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "sudo ls",
+        "--depth",
+        "-1",
+        "--policy-file",
+        "$DIR0/policy.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"autonomous\",\"delegation\":{\"nonDelegable\":[\"Bash(sudo:*)\"]}}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli.032",
+      "from": "cli.test.ts: CLI > check > takes the actor and roles from flags",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "git push origin",
+        "--policy-file",
+        "$DIR0/policy.json",
+        "--actor",
+        "ada",
+        "--role",
+        "maintainer",
+        "--role",
+        "dev"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"restricted\",\"roles\":{\"maintainer\":{\"allow\":[\"Bash(git push:*)\"]}}}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "allow\n"
+      }
+    },
+    {
+      "id": "cli.033",
+      "from": "cli.test.ts: CLI > check > takes the actor and roles from flags",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "git push origin",
+        "--policy-file",
+        "$DIR0/policy.json",
+        "--actor",
+        "bob",
+        "--role",
+        "dev"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"restricted\",\"roles\":{\"maintainer\":{\"allow\":[\"Bash(git push:*)\"]}}}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "ask\n"
+      }
+    },
+    {
+      "id": "cli.034",
+      "from": "cli.test.ts: CLI > check > takes the actor and roles from flags",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "git push origin",
+        "--policy-file",
+        "$DIR0/policy.json",
+        "--actor",
+        "ada"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"restricted\",\"roles\":{\"maintainer\":{\"allow\":[\"Bash(git push:*)\"]}}}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "ask\n"
+      }
+    },
+    {
+      "id": "cli.035",
+      "from": "cli.test.ts: CLI > check > denies a matching deny rule",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "sudo rm -rf /",
+        "--policy-file",
+        "$DIR0/policy.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"sudo:*\",\"tier\":\"deny\"}]}"
+      },
+      "expect": {
+        "exit": 1,
+        "stdout": "deny\n"
+      }
+    },
+    {
+      "id": "cli.036",
+      "from": "cli.test.ts: CLI > check > asks when no rule matches in standard mode",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "Bash",
+        "--input",
+        "anything",
+        "--policy-file",
+        "$DIR0/policy.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"defaultMode\":\"standard\"}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "ask\n"
+      }
+    },
+    {
+      "id": "cli.037",
+      "from": "cli.test.ts: CLI > check > requires --tool",
+      "kind": "cli",
+      "args": ["check", "--input", "cmd"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["--tool is required"]
+      }
+    },
+    {
+      "id": "cli.038",
+      "from": "cli.test.ts: CLI > check > requires --input",
+      "kind": "cli",
+      "args": ["check", "--tool", "Bash"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["--input is required"]
+      }
+    },
+    {
+      "id": "cli.039",
+      "from": "cli.test.ts: CLI > check > passes --cwd context",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "Bash",
+        "--input",
+        "git status",
+        "--policy-file",
+        "$DIR0/policy.json",
+        "--cwd",
+        "/specific/path"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\",\"when\":{\"cwd\":\"/specific/path\"}}]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "allow\n"
+      }
+    },
+    {
+      "id": "cli.040",
+      "from": "cli.test.ts: CLI > check > passes --branch context",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "Bash",
+        "--input",
+        "git status",
+        "--policy-file",
+        "$DIR0/policy.json",
+        "--branch",
+        "main"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\",\"when\":{\"branch\":\"main\"}}]}"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "allow\n"
+      }
+    },
+    {
+      "id": "cli.041",
+      "from": "cli.test.ts: CLI > check > reports ConvertError for invalid policy",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "Bash",
+        "--input",
+        "cmd",
+        "--policy-file",
+        "$DIR0/bad.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/bad.json": "{\"defaultMode\":\"yolo\"}"
+      },
+      "expect": {
+        "exit": 2,
+        "stderrIncludes": ["error"]
+      }
+    },
+    {
+      "id": "cli.042",
+      "from": "cli.test.ts: CLI > check > handles invalid JSON in policy file",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "Bash",
+        "--input",
+        "cmd",
+        "--policy-file",
+        "$DIR0/bad.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/bad.json": "not json"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["invalid JSON"]
+      }
+    },
+    {
+      "id": "cli.043",
+      "from": "cli.test.ts: CLI > replay > counts decisions and lists the calls recorded differently",
+      "kind": "cli",
+      "args": [
+        "replay",
+        "--policy-file",
+        "$DIR0/policy.json",
+        "--transcript",
+        "$DIR0/session.jsonl"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"sudo:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/session.jsonl": "{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"git status\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t2\",\"name\":\"Bash\",\"input\":{\"command\":\"sudo reboot\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t2\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t3\",\"name\":\"Bash\",\"input\":{\"command\":\"ls\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t3\",\"content\":\"The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.\",\"is_error\":true}]}}\n"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "allow\t1\nask\t1\ndeny\t1\n\ndiffers from the transcript:\ndeny\tran\tBash\tsudo reboot\n"
+      }
+    },
+    {
+      "id": "cli.044",
+      "from": "cli.test.ts: CLI > replay > requires --transcript",
+      "kind": "cli",
+      "args": ["replay", "--policy-file", "canonical"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["--transcript is required"]
+      }
+    },
+    {
+      "id": "cli.045",
+      "from": "cli.test.ts: CLI > suggest > prints a policy of allow rules for calls approved repeatedly",
+      "kind": "cli",
+      "args": ["suggest", "--transcript", "$DIR0/session.jsonl"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/session.jsonl": "{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"npm run build\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t2\",\"name\":\"Bash\",\"input\":{\"command\":\"npm run lint\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t2\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t3\",\"name\":\"Bash\",\"input\":{\"command\":\"make\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t3\",\"content\":\"ok\"}]}}\n"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm run:*",
+              "tier": "allow"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.046",
+      "from": "cli.test.ts: CLI > suggest > honours --min-count and leaves out what the policy allows",
+      "kind": "cli",
+      "args": [
+        "suggest",
+        "--transcript",
+        "$DIR0/session.jsonl",
+        "--policy-file",
+        "$DIR0/policy.json",
+        "--min-count",
+        "1"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"permissions\":{\"allow\":[\"Bash(git:*)\"]}}",
+        "$DIR0/session.jsonl": "{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"git status\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t2\",\"name\":\"Bash\",\"input\":{\"command\":\"make\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t2\",\"content\":\"ok\"}]}}\n"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "make",
+              "tier": "allow"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.047",
+      "from": "cli.test.ts: CLI > suggest > rejects a --min-count that is not a positive integer",
+      "kind": "cli",
+      "args": ["suggest", "--transcript", "-", "--min-count", "0"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["--min-count must be a positive integer"]
+      }
+    },
+    {
+      "id": "cli.048",
+      "from": "cli.test.ts: CLI > sync > detects and reports no configs",
+      "kind": "cli",
+      "args": ["sync", "--working-dir", "$DIR0"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "expect": {
+        "exit": 0
+      }
+    },
+    {
+      "id": "cli.049",
+      "from": "cli.test.ts: CLI > sync > syncs a single canonical file (no-op)",
+      "kind": "cli",
+      "args": ["sync", "--working-dir", "$DIR0", "--yes"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\n  \"$schema\": \"https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json\",\n  \"defaultMode\": \"standard\"\n}\n"
+      },
+      "expect": {
+        "exit": 0
+      }
+    },
+    {
+      "id": "cli.050",
+      "from": "cli.test.ts: CLI > sync > exits 1 and writes nothing when a native config it must edit is not valid JSON",
+      "kind": "cli",
+      "args": ["sync", "--working-dir", "$DIR0", "--yes", "--create"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{ not json"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli.051",
+      "from": "cli.test.ts: CLI > sync > treats the end of input at the prompt as no: prints Aborted, writes nothing and exits 1",
+      "kind": "cli",
+      "args": ["sync", "--working-dir", "$DIR0", "--create"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli.052",
+      "from": "cli.test.ts: CLI > sync > merges canonical and claude-code configs",
+      "kind": "cli",
+      "args": ["sync", "--working-dir", "$DIR0", "--yes", "--verbose"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Bash(git status)\"]}}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"git status\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\",\"Bash(git status)\"],\"deny\":[],\"ask\":[]}}"
+      }
+    },
+    {
+      "id": "cli.053",
+      "from": "cli.test.ts: CLI > sync > dry-run shows changes without writing",
+      "kind": "cli",
+      "args": ["sync", "--working-dir", "$DIR0", "--dry-run"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Bash(git status)\"]}}"
+      },
+      "expect": {
+        "exit": 0
+      }
+    },
+    {
+      "id": "cli.054",
+      "from": "cli.test.ts: CLI > sync > rejects --with and --without together",
+      "kind": "cli",
+      "args": ["sync", "--with", "claude-code", "--without", "opencode"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["mutually exclusive"]
+      }
+    },
+    {
+      "id": "cli.055",
+      "from": "cli.test.ts: CLI > sync > rejects unknown --with agent",
+      "kind": "cli",
+      "args": ["sync", "--with", "phantom"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["unknown agent"]
+      }
+    },
+    {
+      "id": "cli.056",
+      "from": "cli.test.ts: CLI > sync > rejects unknown --without agent",
+      "kind": "cli",
+      "args": ["sync", "--without", "phantom"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["unknown agent"]
+      }
+    },
+    {
+      "id": "cli.057",
+      "from": "cli.test.ts: CLI > sync > rejects invalid --up value",
+      "kind": "cli",
+      "args": ["sync", "--up", "abc"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["--up must be"]
+      }
+    },
+    {
+      "id": "cli.058",
+      "from": "cli.test.ts: CLI > sync > accepts --up numeric value",
+      "kind": "cli",
+      "args": ["sync", "--working-dir", "$DIR0", "--up", "0", "--yes"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\"}"
+      },
+      "expect": {
+        "exit": 0
+      }
+    },
+    {
+      "id": "cli.059",
+      "from": "cli.test.ts: CLI > sync > writes backup files with --backup",
+      "kind": "cli",
+      "args": ["sync", "--working-dir", "$DIR0", "--yes", "--backup"],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\"}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"]}}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.agents/permissions.json.bak": "{\"defaultMode\":\"standard\"}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"],\"deny\":[],\"ask\":[],\"defaultMode\":\"default\"}}",
+        "$DIR0/.claude/settings.json.bak": "{\"permissions\":{\"allow\":[\"Read\"]}}"
+      }
+    },
+    {
+      "id": "cli.060",
+      "from": "cli.test.ts: CLI > sync > creates missing config files with --create",
+      "kind": "cli",
+      "args": [
+        "sync",
+        "--working-dir",
+        "$DIR0",
+        "--yes",
+        "--create",
+        "--with",
+        "claude-code"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [\n      \"Read\"\n    ],\n    \"deny\": [],\n    \"ask\": []\n  }\n}\n"
+      }
+    },
+    {
+      "id": "cli.061",
+      "from": "cli.test.ts: CLI > confine > prints a canonical policy that confines to the roots",
+      "kind": "cli",
+      "args": ["confine", "--root", "/work/app", "--root", "/work/shared"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/work/app", "/work/shared"]
+          }
+        }
+      }
+    },
+    {
+      "id": "cli.062",
+      "from": "cli.test.ts: CLI > confine > prints a canonical policy that confines to the roots",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "Read",
+        "--input",
+        "/work/shared/a.ts",
+        "--policy-file",
+        "-"
+      ],
+      "stdin": "{\n  \"defaultMode\": \"restricted\",\n  \"rules\": [\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"/work/app\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"/work/app/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"/work/app\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"/work/app/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"/work/app\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"/work/app/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"/work/shared\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"/work/shared/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"/work/shared\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"/work/shared/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"/work/shared\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"/work/shared/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    }\n  ],\n  \"permissions\": {\n    \"additionalDirectories\": [\n      \"/work/app\",\n      \"/work/shared\"\n    ]\n  }\n}\n",
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "allow\n"
+      }
+    },
+    {
+      "id": "cli.063",
+      "from": "cli.test.ts: CLI > confine > prints a canonical policy that confines to the roots",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "Read",
+        "--input",
+        "/work/app-secrets/a",
+        "--policy-file",
+        "-"
+      ],
+      "stdin": "{\n  \"defaultMode\": \"restricted\",\n  \"rules\": [\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"/work/app\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"/work/app/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"/work/app\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"/work/app/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"/work/app\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"/work/app/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"/work/shared\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"/work/shared/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"/work/shared\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"/work/shared/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"/work/shared\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"/work/shared/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    }\n  ],\n  \"permissions\": {\n    \"additionalDirectories\": [\n      \"/work/app\",\n      \"/work/shared\"\n    ]\n  }\n}\n",
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "ask\n"
+      }
+    },
+    {
+      "id": "cli.064",
+      "from": "cli.test.ts: CLI > confine > lists roots other than the working directory as additional directories",
+      "kind": "cli",
+      "args": ["confine", "--root", ".", "--root", "/work/shared"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "$DIR1",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "$DIR1/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "$DIR1",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "$DIR1/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "$DIR1",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "$DIR1/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/work/shared"]
+          }
+        }
+      }
+    },
+    {
+      "id": "cli.065",
+      "from": "cli.test.ts: CLI > confine > denies outside paths with --outside deny",
+      "kind": "cli",
+      "args": ["confine", "--root", "/work/app", "--outside", "deny"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "defaultMode": "readonly",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/work/app"]
+          }
+        }
+      }
+    },
+    {
+      "id": "cli.066",
+      "from": "cli.test.ts: CLI > confine > writes to --output instead of stdout",
+      "kind": "cli",
+      "args": [
+        "confine",
+        "--root",
+        "/work/app",
+        "--output",
+        "$DIR0/confine.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/confine.json": "{\n  \"defaultMode\": \"restricted\",\n  \"rules\": [\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"/work/app\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"/work/app/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"/work/app\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"/work/app/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"/work/app\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"/work/app/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    }\n  ],\n  \"permissions\": {\n    \"additionalDirectories\": [\n      \"/work/app\"\n    ]\n  }\n}\n"
+      }
+    },
+    {
+      "id": "cli.067",
+      "from": "cli.test.ts: CLI > confine > fails without a root",
+      "kind": "cli",
+      "args": ["confine"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["--root is required"]
+      }
+    },
+    {
+      "id": "cli.068",
+      "from": "cli.test.ts: CLI > confine > rejects an unknown --outside value",
+      "kind": "cli",
+      "args": ["confine", "--root", "/w", "--outside", "allow"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["--outside"]
+      }
+    },
+    {
+      "id": "cli.069",
+      "from": "cli.test.ts: CLI > confine > is described in the usage text",
+      "kind": "cli",
+      "args": ["--help"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "agent-perms — cross-agent permission policy tool\n\nUsage:\n  agent-perms convert [--from <spec>] --to <spec>\n  agent-perms validate [--input <spec>]\n  agent-perms check --tool <name> --input <cmd> [--policy-file <spec>]\n  agent-perms replay --transcript <file> [--policy-file <spec>]\n  agent-perms suggest --transcript <file> [--policy-file <spec>] [--min-count <n>]\n  agent-perms confine --root <dir> [--root <dir>] [--output <file>]\n  agent-perms sync\n\nSpecs: agent name, config file path, or \"-\" for stdin/stdout.\n\n  Format names resolve to default config files:\n    claude-code  →  .claude/settings.json\n    canonical    →  .agents/permissions.json\n    opencode     →  opencode.json\n    kiro         →  .kiro/permissions.json\n    codex        →  codex.toml\n    crush        →  .crush.json\n\nCommands:\n  convert   Convert between agent formats\n  validate  Validate a policy file\n  check     Evaluate a tool call against a policy\n  replay    Count what a policy decides for each call in a session transcript\n  suggest   Propose allow rules for calls a session transcript approved repeatedly\n  confine   Generate rules that confine Read, Edit and Write to directories\n  sync      Detect, merge, and write agent configs (bidirectional)\n  mcp       Serve the MCP sync daemon on stdio\n\nConvert flags:\n  -f, --from, --input, --in <spec>   Source (format, file, or \"-\" for stdin)\n  -t, --to, --output, --out <spec>   Target (format, file, or \"-\" for stdout)\n  -c, --compact                      Output compact JSON\n  -v, --verbose                      Show decode/encode summary on stderr\n\nValidate flags:\n  -i, --input, --in <spec>           Policy file (format, file, or \"-\" for stdin)\n\nCheck flags:\n  --tool <name>                      Tool name (required)\n  --input <cmd>                      Tool input string (required)\n  --policy-file <spec>               Policy file (format, file, or \"-\" for stdin)\n  --cwd, --branch, --remote          Evaluation context\n  --env NAME=VALUE                   Environment variable in the context (repeatable)\n  --depth <n>                        Agents between the call and the top-level agent\n  --actor <name>, --role <name>      Who is making the call and the roles they hold (--role repeats)\n  --explain                          Print how each command was judged, to stderr\n\nReplay flags:\n  --transcript <file>                Session transcript, JSON Lines (or \"-\" for stdin)\n  --policy-file <spec>               Policy file (format, file, or \"-\" for stdin)\n\nSuggest flags:\n  --transcript <file>                Session transcript, JSON Lines (or \"-\" for stdin)\n  --policy-file <spec>               Policy whose rules exclude or already cover calls\n  --min-count <n>                    Approvals a rule must cover (default: 2)\nConfine flags:\n  -r, --root <dir>                   Directory the file tools may reach (repeatable, required)\n  --outside <ask|deny>               Outside the roots: prompt (default) or refuse\n  -o, --output, --out <spec>         Write to a file instead of stdout\n  -c, --compact                      Output compact JSON\n  Confine is a convenience, not a sandbox: only Read, Edit and Write are constrained, and a Bash\n  command can still reach outside the roots. Use the policy's sandbox field to enforce that. The\n  default mode set for --outside applies to every tool with no rule of its own, not only file tools.\n\nSync flags:\n  -d, --working-dir <path>           Starting directory (default: cwd)\n  -u, --up <n|all>                   Ascend n parent directories (default: all)\n  -w, --with <agent>                 Only sync these agents (repeatable)\n  -x, --without <agent>              Sync all except these agents (repeatable)\n  -y, --yes                          Apply without prompting\n  --dry-run                          Show changes only, never write\n  -c, --create                       Create config files that don't exist\n  -v, --verbose                      Show rule provenance\n  -b, --backup                       Write .bak files before overwriting\n  --omp-global                       Also write Oh My Pi's global config (every OMP session reads it)\n\nMcp flags:\n  --permission-prompt                Expose the permission_prompt tool\n\nExamples:\n  agent-perms convert --from claude-code --to canonical\n  agent-perms convert --from .claude/settings.json --to crush\n  agent-perms convert --from claude-code --to -\n  cat settings.json | agent-perms convert --from - --to canonical --output -\n  agent-perms validate --input canonical\n  agent-perms validate --input .agents/permissions.json\n  agent-perms check --tool Bash --input \"git status\" --policy-file canonical\n  agent-perms replay --transcript session.jsonl --policy-file canonical\n  agent-perms suggest --transcript session.jsonl --policy-file canonical\n  agent-perms confine --root . --root ../shared --output .agents/permissions.json\n  agent-perms sync\n  agent-perms sync -y\n  agent-perms sync --dry-run\n  agent-perms sync -w claude-code -w opencode\n  agent-perms sync -x codex\n  agent-perms sync -w claude-code --create\n  agent-perms mcp --permission-prompt\n"
+      }
+    },
+    {
+      "id": "cli.070",
+      "from": "cli.test.ts: CLI > usage and routing > shows usage with --help",
+      "kind": "cli",
+      "args": ["--help"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "agent-perms — cross-agent permission policy tool\n\nUsage:\n  agent-perms convert [--from <spec>] --to <spec>\n  agent-perms validate [--input <spec>]\n  agent-perms check --tool <name> --input <cmd> [--policy-file <spec>]\n  agent-perms replay --transcript <file> [--policy-file <spec>]\n  agent-perms suggest --transcript <file> [--policy-file <spec>] [--min-count <n>]\n  agent-perms confine --root <dir> [--root <dir>] [--output <file>]\n  agent-perms sync\n\nSpecs: agent name, config file path, or \"-\" for stdin/stdout.\n\n  Format names resolve to default config files:\n    claude-code  →  .claude/settings.json\n    canonical    →  .agents/permissions.json\n    opencode     →  opencode.json\n    kiro         →  .kiro/permissions.json\n    codex        →  codex.toml\n    crush        →  .crush.json\n\nCommands:\n  convert   Convert between agent formats\n  validate  Validate a policy file\n  check     Evaluate a tool call against a policy\n  replay    Count what a policy decides for each call in a session transcript\n  suggest   Propose allow rules for calls a session transcript approved repeatedly\n  confine   Generate rules that confine Read, Edit and Write to directories\n  sync      Detect, merge, and write agent configs (bidirectional)\n  mcp       Serve the MCP sync daemon on stdio\n\nConvert flags:\n  -f, --from, --input, --in <spec>   Source (format, file, or \"-\" for stdin)\n  -t, --to, --output, --out <spec>   Target (format, file, or \"-\" for stdout)\n  -c, --compact                      Output compact JSON\n  -v, --verbose                      Show decode/encode summary on stderr\n\nValidate flags:\n  -i, --input, --in <spec>           Policy file (format, file, or \"-\" for stdin)\n\nCheck flags:\n  --tool <name>                      Tool name (required)\n  --input <cmd>                      Tool input string (required)\n  --policy-file <spec>               Policy file (format, file, or \"-\" for stdin)\n  --cwd, --branch, --remote          Evaluation context\n  --env NAME=VALUE                   Environment variable in the context (repeatable)\n  --depth <n>                        Agents between the call and the top-level agent\n  --actor <name>, --role <name>      Who is making the call and the roles they hold (--role repeats)\n  --explain                          Print how each command was judged, to stderr\n\nReplay flags:\n  --transcript <file>                Session transcript, JSON Lines (or \"-\" for stdin)\n  --policy-file <spec>               Policy file (format, file, or \"-\" for stdin)\n\nSuggest flags:\n  --transcript <file>                Session transcript, JSON Lines (or \"-\" for stdin)\n  --policy-file <spec>               Policy whose rules exclude or already cover calls\n  --min-count <n>                    Approvals a rule must cover (default: 2)\nConfine flags:\n  -r, --root <dir>                   Directory the file tools may reach (repeatable, required)\n  --outside <ask|deny>               Outside the roots: prompt (default) or refuse\n  -o, --output, --out <spec>         Write to a file instead of stdout\n  -c, --compact                      Output compact JSON\n  Confine is a convenience, not a sandbox: only Read, Edit and Write are constrained, and a Bash\n  command can still reach outside the roots. Use the policy's sandbox field to enforce that. The\n  default mode set for --outside applies to every tool with no rule of its own, not only file tools.\n\nSync flags:\n  -d, --working-dir <path>           Starting directory (default: cwd)\n  -u, --up <n|all>                   Ascend n parent directories (default: all)\n  -w, --with <agent>                 Only sync these agents (repeatable)\n  -x, --without <agent>              Sync all except these agents (repeatable)\n  -y, --yes                          Apply without prompting\n  --dry-run                          Show changes only, never write\n  -c, --create                       Create config files that don't exist\n  -v, --verbose                      Show rule provenance\n  -b, --backup                       Write .bak files before overwriting\n  --omp-global                       Also write Oh My Pi's global config (every OMP session reads it)\n\nMcp flags:\n  --permission-prompt                Expose the permission_prompt tool\n\nExamples:\n  agent-perms convert --from claude-code --to canonical\n  agent-perms convert --from .claude/settings.json --to crush\n  agent-perms convert --from claude-code --to -\n  cat settings.json | agent-perms convert --from - --to canonical --output -\n  agent-perms validate --input canonical\n  agent-perms validate --input .agents/permissions.json\n  agent-perms check --tool Bash --input \"git status\" --policy-file canonical\n  agent-perms replay --transcript session.jsonl --policy-file canonical\n  agent-perms suggest --transcript session.jsonl --policy-file canonical\n  agent-perms confine --root . --root ../shared --output .agents/permissions.json\n  agent-perms sync\n  agent-perms sync -y\n  agent-perms sync --dry-run\n  agent-perms sync -w claude-code -w opencode\n  agent-perms sync -x codex\n  agent-perms sync -w claude-code --create\n  agent-perms mcp --permission-prompt\n"
+      }
+    },
+    {
+      "id": "cli.071",
+      "from": "cli.test.ts: CLI > usage and routing > shows usage with -h",
+      "kind": "cli",
+      "args": ["-h"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 0,
+        "stdout": "agent-perms — cross-agent permission policy tool\n\nUsage:\n  agent-perms convert [--from <spec>] --to <spec>\n  agent-perms validate [--input <spec>]\n  agent-perms check --tool <name> --input <cmd> [--policy-file <spec>]\n  agent-perms replay --transcript <file> [--policy-file <spec>]\n  agent-perms suggest --transcript <file> [--policy-file <spec>] [--min-count <n>]\n  agent-perms confine --root <dir> [--root <dir>] [--output <file>]\n  agent-perms sync\n\nSpecs: agent name, config file path, or \"-\" for stdin/stdout.\n\n  Format names resolve to default config files:\n    claude-code  →  .claude/settings.json\n    canonical    →  .agents/permissions.json\n    opencode     →  opencode.json\n    kiro         →  .kiro/permissions.json\n    codex        →  codex.toml\n    crush        →  .crush.json\n\nCommands:\n  convert   Convert between agent formats\n  validate  Validate a policy file\n  check     Evaluate a tool call against a policy\n  replay    Count what a policy decides for each call in a session transcript\n  suggest   Propose allow rules for calls a session transcript approved repeatedly\n  confine   Generate rules that confine Read, Edit and Write to directories\n  sync      Detect, merge, and write agent configs (bidirectional)\n  mcp       Serve the MCP sync daemon on stdio\n\nConvert flags:\n  -f, --from, --input, --in <spec>   Source (format, file, or \"-\" for stdin)\n  -t, --to, --output, --out <spec>   Target (format, file, or \"-\" for stdout)\n  -c, --compact                      Output compact JSON\n  -v, --verbose                      Show decode/encode summary on stderr\n\nValidate flags:\n  -i, --input, --in <spec>           Policy file (format, file, or \"-\" for stdin)\n\nCheck flags:\n  --tool <name>                      Tool name (required)\n  --input <cmd>                      Tool input string (required)\n  --policy-file <spec>               Policy file (format, file, or \"-\" for stdin)\n  --cwd, --branch, --remote          Evaluation context\n  --env NAME=VALUE                   Environment variable in the context (repeatable)\n  --depth <n>                        Agents between the call and the top-level agent\n  --actor <name>, --role <name>      Who is making the call and the roles they hold (--role repeats)\n  --explain                          Print how each command was judged, to stderr\n\nReplay flags:\n  --transcript <file>                Session transcript, JSON Lines (or \"-\" for stdin)\n  --policy-file <spec>               Policy file (format, file, or \"-\" for stdin)\n\nSuggest flags:\n  --transcript <file>                Session transcript, JSON Lines (or \"-\" for stdin)\n  --policy-file <spec>               Policy whose rules exclude or already cover calls\n  --min-count <n>                    Approvals a rule must cover (default: 2)\nConfine flags:\n  -r, --root <dir>                   Directory the file tools may reach (repeatable, required)\n  --outside <ask|deny>               Outside the roots: prompt (default) or refuse\n  -o, --output, --out <spec>         Write to a file instead of stdout\n  -c, --compact                      Output compact JSON\n  Confine is a convenience, not a sandbox: only Read, Edit and Write are constrained, and a Bash\n  command can still reach outside the roots. Use the policy's sandbox field to enforce that. The\n  default mode set for --outside applies to every tool with no rule of its own, not only file tools.\n\nSync flags:\n  -d, --working-dir <path>           Starting directory (default: cwd)\n  -u, --up <n|all>                   Ascend n parent directories (default: all)\n  -w, --with <agent>                 Only sync these agents (repeatable)\n  -x, --without <agent>              Sync all except these agents (repeatable)\n  -y, --yes                          Apply without prompting\n  --dry-run                          Show changes only, never write\n  -c, --create                       Create config files that don't exist\n  -v, --verbose                      Show rule provenance\n  -b, --backup                       Write .bak files before overwriting\n  --omp-global                       Also write Oh My Pi's global config (every OMP session reads it)\n\nMcp flags:\n  --permission-prompt                Expose the permission_prompt tool\n\nExamples:\n  agent-perms convert --from claude-code --to canonical\n  agent-perms convert --from .claude/settings.json --to crush\n  agent-perms convert --from claude-code --to -\n  cat settings.json | agent-perms convert --from - --to canonical --output -\n  agent-perms validate --input canonical\n  agent-perms validate --input .agents/permissions.json\n  agent-perms check --tool Bash --input \"git status\" --policy-file canonical\n  agent-perms replay --transcript session.jsonl --policy-file canonical\n  agent-perms suggest --transcript session.jsonl --policy-file canonical\n  agent-perms confine --root . --root ../shared --output .agents/permissions.json\n  agent-perms sync\n  agent-perms sync -y\n  agent-perms sync --dry-run\n  agent-perms sync -w claude-code -w opencode\n  agent-perms sync -x codex\n  agent-perms sync -w claude-code --create\n  agent-perms mcp --permission-prompt\n"
+      }
+    },
+    {
+      "id": "cli.072",
+      "from": "cli.test.ts: CLI > usage and routing > shows usage for unknown command",
+      "kind": "cli",
+      "args": ["bogus"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["unknown command"]
+      }
+    },
+    {
+      "id": "cli.073",
+      "from": "cli.test.ts: CLI > usage and routing > shows usage with no args",
+      "kind": "cli",
+      "args": [],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["agent-perms"]
+      }
+    },
+    {
+      "id": "cli.074",
+      "from": "cli.test.ts: CLI and Oh My Pi's config > sync writes the global config only with --omp-global",
+      "kind": "cli",
+      "args": ["sync", "--working-dir", "$DIR0/project", "--up", "0", "--yes"],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0/agent"
+      },
+      "files": {
+        "$DIR0/agent/config.yml": "model: x\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"}]}"
+      }
+    },
+    {
+      "id": "cli.075",
+      "from": "cli.test.ts: CLI and Oh My Pi's config > sync writes the global config only with --omp-global",
+      "kind": "cli",
+      "args": [
+        "sync",
+        "--working-dir",
+        "$DIR0/project",
+        "--up",
+        "0",
+        "--yes",
+        "--omp-global"
+      ],
+      "cwd": "$DIR1",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0/agent"
+      },
+      "files": {
+        "$DIR0/agent/config.yml": "model: x\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"}]}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/agent/config.yml": "model: x\nbash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n    - match: sudo\n      approval: deny\n    - match: sudo *\n      approval: deny\n",
+        "$DIR0/agent/config.yml.bak": "model: x\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n"
+      }
+    }
+  ]
+}

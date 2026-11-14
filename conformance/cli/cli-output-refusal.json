@@ -1,0 +1,538 @@
+{
+  "cases": [
+    {
+      "id": "cli-output-refusal.001",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > convert refuses an existing .agents/permissions.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "canonical",
+        "--output",
+        "$DIR0/.agents/permissions.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"sandbox\": {\"mode\": \"workspace-write\"}, \"env\": {\"A\": \"1\"}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.002",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > confine refuses an existing .agents/permissions.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "confine",
+        "--root",
+        "$DIR0",
+        "--output",
+        "$DIR0/.agents/permissions.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"sandbox\": {\"mode\": \"workspace-write\"}, \"env\": {\"A\": \"1\"}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.003",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > convert refuses an existing .agents/permissions.local.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "canonical",
+        "--output",
+        "$DIR0/.agents/permissions.local.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.agents/permissions.local.json": "{\"sync\": {\"mode\": \"watch\"}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.004",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > confine refuses an existing .agents/permissions.local.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "confine",
+        "--root",
+        "$DIR0",
+        "--output",
+        "$DIR0/.agents/permissions.local.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.agents/permissions.local.json": "{\"sync\": {\"mode\": \"watch\"}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.005",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > convert refuses an existing .claude/settings.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "claude-code",
+        "--output",
+        "$DIR0/.claude/settings.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.claude/settings.json": "{\"model\": \"opus\", \"permissions\": {\"deny\": [\"Bash(rm:*)\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.006",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > confine refuses an existing .claude/settings.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "confine",
+        "--root",
+        "$DIR0",
+        "--output",
+        "$DIR0/.claude/settings.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.claude/settings.json": "{\"model\": \"opus\", \"permissions\": {\"deny\": [\"Bash(rm:*)\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.007",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > convert refuses an existing .claude/settings.local.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "claude-code",
+        "--output",
+        "$DIR0/.claude/settings.local.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.claude/settings.local.json": "{\"permissions\": {\"deny\": [\"Bash(sudo:*)\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.008",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > confine refuses an existing .claude/settings.local.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "confine",
+        "--root",
+        "$DIR0",
+        "--output",
+        "$DIR0/.claude/settings.local.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.claude/settings.local.json": "{\"permissions\": {\"deny\": [\"Bash(sudo:*)\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.009",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > convert refuses an existing opencode.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "opencode",
+        "--output",
+        "$DIR0/opencode.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/opencode.json": "{\"permission\": {\"bash\": {\"rm *\": \"deny\"}}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.010",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > confine refuses an existing opencode.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": ["confine", "--root", "$DIR0", "--output", "$DIR0/opencode.json"],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/opencode.json": "{\"permission\": {\"bash\": {\"rm *\": \"deny\"}}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.011",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > convert refuses an existing opencode.jsonc, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "opencode",
+        "--output",
+        "$DIR0/opencode.jsonc"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/opencode.jsonc": "{\n  // mine\n  \"permission\": {\"edit\": \"deny\"}\n}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.012",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > confine refuses an existing opencode.jsonc, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "confine",
+        "--root",
+        "$DIR0",
+        "--output",
+        "$DIR0/opencode.jsonc"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/opencode.jsonc": "{\n  // mine\n  \"permission\": {\"edit\": \"deny\"}\n}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.013",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > convert refuses an existing .kiro/permissions.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "kiro",
+        "--output",
+        "$DIR0/.kiro/permissions.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\": {\"shell\": {\"deniedCommands\": [\"\\\\Arm\\\\z\"]}}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.014",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > confine refuses an existing .kiro/permissions.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "confine",
+        "--root",
+        "$DIR0",
+        "--output",
+        "$DIR0/.kiro/permissions.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\": {\"shell\": {\"deniedCommands\": [\"\\\\Arm\\\\z\"]}}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.015",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > convert refuses an existing codex.toml, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "codex",
+        "--output",
+        "$DIR0/codex.toml"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/codex.toml": "approval_policy = \"never\"\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.016",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > confine refuses an existing codex.toml, naming it, and writes nothing",
+      "kind": "cli",
+      "args": ["confine", "--root", "$DIR0", "--output", "$DIR0/codex.toml"],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/codex.toml": "approval_policy = \"never\"\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.017",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > convert refuses an existing .omp/config.yml, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "omp",
+        "--output",
+        "$DIR0/.omp/config.yml"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.omp/config.yml": "# mine\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.018",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > confine refuses an existing .omp/config.yml, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "confine",
+        "--root",
+        "$DIR0",
+        "--output",
+        "$DIR0/.omp/config.yml"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.omp/config.yml": "# mine\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.019",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > convert refuses an existing .crush.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "crush",
+        "--output",
+        "$DIR0/.crush.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.crush.json": "{\"permissions\": {\"allowed_tools\": [\"view\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.020",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > confine refuses an existing .crush.json, naming it, and writes nothing",
+      "kind": "cli",
+      "args": ["confine", "--root", "$DIR0", "--output", "$DIR0/.crush.json"],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.crush.json": "{\"permissions\": {\"allowed_tools\": [\"view\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.021",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > refuses Oh My Pi's global config, found through its agent directory",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "omp",
+        "--output",
+        "$DIR0/omp-home/config.yml"
+      ],
+      "cwd": "$DIR0",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0/omp-home"
+      },
+      "files": {
+        "$DIR0/omp-home/config.yml": "# mine\nmodel: fast\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.022",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > refuses Oh My Pi's global config, found through its agent directory",
+      "kind": "cli",
+      "args": [
+        "confine",
+        "--root",
+        "$DIR0",
+        "--output",
+        "$DIR0/omp-home/config.yml"
+      ],
+      "cwd": "$DIR0",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR0/omp-home"
+      },
+      "files": {
+        "$DIR0/omp-home/config.yml": "# mine\nmodel: fast\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.023",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > refuses a bare format name that resolves to an existing file",
+      "kind": "cli",
+      "args": ["confine", "--root", "$DIR0", "--output", "canonical"],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"env\": {\"A\": \"1\"}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.024",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > refuses another agent's config file than --to names, whether or not it exists",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "opencode",
+        "--output",
+        "$DIR0/.claude/settings.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.025",
+      "from": "cli-output-refusal.test.ts: convert and confine create a config file that does not exist yet > writes a native file wrapped as that agent reads it",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "claude-code",
+        "--output",
+        "$DIR0/.claude/settings.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [\n      \"Read\"\n    ],\n    \"deny\": [],\n    \"ask\": []\n  }\n}\n"
+      }
+    },
+    {
+      "id": "cli-output-refusal.026",
+      "from": "cli-output-refusal.test.ts: convert and confine create a config file that does not exist yet > writes the encoded document whole to a path that is no agent's config file",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "claude-code",
+        "--output",
+        "$DIR0/out.json"
+      ],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/out.json": "{\"model\": \"opus\"}",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/out.json": "{\n  \"allow\": [\n    \"Read\"\n  ],\n  \"deny\": [],\n  \"ask\": []\n}\n"
+      }
+    }
+  ]
+}

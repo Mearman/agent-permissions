@@ -1,0 +1,1296 @@
+{
+  "cases": [
+    {
+      "id": "sync-empty-file.001",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: .claude/settings.json holding \"\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "create"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": ""
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.002",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: .claude/settings.json holding \"\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": ""
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.003",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: .claude/settings.json holding \"  \\n\\t\\n\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "create"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "  \n\t\n"
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.004",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: .claude/settings.json holding \"  \\n\\t\\n\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "  \n\t\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.005",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: .claude/settings.json holding \"﻿\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "create"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": ""
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.006",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: .claude/settings.json holding \"﻿\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": ""
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.007",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: opencode.json holding \"\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "create"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": ""
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.008",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: opencode.json holding \"\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/opencode.json": ""
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.009",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: opencode.json holding \"  \\n\\t\\n\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "create"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": "  \n\t\n"
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.010",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: opencode.json holding \"  \\n\\t\\n\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/opencode.json": "  \n\t\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.011",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: opencode.json holding \"﻿\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "create"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": ""
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.012",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: opencode.json holding \"﻿\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/opencode.json": ""
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.013",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: .kiro/permissions.json holding \"\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "create"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.kiro/permissions.json": ""
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.014",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: .kiro/permissions.json holding \"\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.kiro/permissions.json": ""
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.015",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: .kiro/permissions.json holding \"  \\n\\t\\n\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "create"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.kiro/permissions.json": "  \n\t\n"
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.016",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: .kiro/permissions.json holding \"  \\n\\t\\n\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.kiro/permissions.json": "  \n\t\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.017",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: .kiro/permissions.json holding \"﻿\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "create"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.kiro/permissions.json": ""
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.018",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: .kiro/permissions.json holding \"﻿\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.kiro/permissions.json": ""
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.019",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: .omp/config.yml holding \"\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "update"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.omp/config.yml": ""
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/.omp/config.yml.bak": "",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.020",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: .omp/config.yml holding \"\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.omp/config.yml": ""
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.021",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: .omp/config.yml holding \"  \\n\\t\\n\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "update"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.omp/config.yml": "  \n\t\n"
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/.omp/config.yml.bak": "  \n\t\n",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.022",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: .omp/config.yml holding \"  \\n\\t\\n\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.omp/config.yml": "  \n\t\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.023",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is written as a new document as a target: .omp/config.yml holding \"﻿\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.kiro/permissions.json",
+                "agent": "kiro",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/opencode.json",
+                "agent": "opencode",
+                "kind": "create"
+              },
+              {
+                "path": "$DIR0/.omp/config.yml",
+                "agent": "omp",
+                "kind": "update"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.omp/config.yml": ""
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/.omp/config.yml.bak": "",
+        "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.024",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > contributes nothing, without a warning, as a source: .omp/config.yml holding \"﻿\"",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.omp/config.yml": ""
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-empty-file.025",
+      "from": "sync-empty-file.test.ts: an empty config file has one meaning: no settings > is a canonical file with no settings, which sync fills in",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.agents/permissions.json",
+                "agent": "canonical",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "update"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": " \n",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\n  \"$schema\": \"https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json\",\n  \"rules\": [\n    {\n      \"tool\": \"Bash\",\n      \"pattern\": \"rm:*\",\n      \"tier\": \"deny\"\n    }\n  ]\n}\n",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"allow\":[],\"ask\":[]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    }
+  ]
+}

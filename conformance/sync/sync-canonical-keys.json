@@ -1,0 +1,212 @@
+{
+  "cases": [
+    {
+      "id": "sync-canonical-keys.001",
+      "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > keeps the sync section the daemon reads at startup",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.agents/permissions.json",
+                "agent": "canonical",
+                "kind": "update"
+              },
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "update"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"sync\": {\"mode\": \"watch\", \"backup\": true}}\n",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"sync\": {\"mode\": \"watch\", \"backup\": true}, \"rules\": [{\"tool\":\"Read\",\"tier\":\"allow\"}]}\n",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"],\"deny\":[],\"ask\":[]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-canonical-keys.002",
+      "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > does not refold the user's permissions lists when the merge did not change the rules",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\n  \"permissions\": {\n    \"allow\": [\"Read\"],\n    \"deny\": [\"Bash(rm:*)\"]\n  }\n}\n",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"],\"deny\":[\"Bash(rm:*)\"],\"ask\":[]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-canonical-keys.003",
+      "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > refuses a canonical file in the working directory that is malformed or fails the schema, and leaves it",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.agents/permissions.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "invalid-format"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"permissions\": {\"deny\": [\"Bash(rm:*)\",]}}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"]}}"
+      }
+    },
+    {
+      "id": "sync-canonical-keys.004",
+      "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > refuses a canonical file in the working directory that is malformed or fails the schema, and leaves it",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.agents/permissions.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "undecodable"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\": [{\"tool\": \"Bash\", \"pattern\": \"rm:*\", \"tier\": \"forbid\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"]}}"
+      }
+    },
+    {
+      "id": "sync-canonical-keys.005",
+      "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > refuses a canonical file in the working directory that is not valid JSON",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.agents/permissions.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "invalid-format"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{ nope",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"]}}"
+      }
+    }
+  ]
+}

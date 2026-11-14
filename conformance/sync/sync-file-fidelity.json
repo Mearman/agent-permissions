@@ -1,0 +1,52 @@
+{
+  "cases": [
+    {
+      "id": "sync-file-fidelity.001",
+      "from": "sync-file-fidelity.test.ts: a backup is a faithful copy of its source > has the source's mode and holds its exact bytes",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": true,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "changes": [
+              {
+                "path": "$DIR0/.claude/settings.json",
+                "agent": "claude-code",
+                "kind": "update"
+              }
+            ],
+            "applied": true,
+            "refused": [],
+            "aborted": false
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"env\": {\"TOKEN\": \"secret\"}, \"permissions\": {}}\n"
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\"env\": {\"TOKEN\": \"secret\"}, \"permissions\": {\n  \"allow\": [],\n  \"deny\": [\n    \"Bash(rm:*)\"\n  ],\n  \"ask\": []\n}}\n",
+        "$DIR0/.claude/settings.json.bak": "{\"env\": {\"TOKEN\": \"secret\"}, \"permissions\": {}}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    }
+  ]
+}
