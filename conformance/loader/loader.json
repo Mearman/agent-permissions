@@ -138,9 +138,7 @@
         "checks": [
           {
             "at": ["failures"],
-            "subset": [
-              "$DIR0/.agents/permissions.json: $DIR0/.agents/permissions.json: invalid JSON"
-            ]
+            "subset": ["$DIR0/.agents/permissions.json: invalid JSON"]
           }
         ]
       },
@@ -190,9 +188,7 @@
         "checks": [
           {
             "at": ["failures"],
-            "subset": [
-              "$DIR0/.agents/permissions.local.json: $DIR0/.agents/permissions.local.json: invalid JSON"
-            ]
+            "subset": ["$DIR0/.agents/permissions.local.json: invalid JSON"]
           }
         ]
       },
@@ -218,8 +214,8 @@
           {
             "at": ["failures"],
             "subset": [
-              "$DIR0/.agents/permissions.json: $DIR0/.agents/permissions.json: invalid JSON",
-              "$DIR0/project/.agents/permissions.json: $DIR0/project/.agents/permissions.json: invalid JSON"
+              "$DIR0/.agents/permissions.json: invalid JSON",
+              "$DIR0/project/.agents/permissions.json: invalid JSON"
             ]
           }
         ]
