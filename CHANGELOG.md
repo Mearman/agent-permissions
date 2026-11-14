@@ -1,3 +1,9 @@
+## [7.0.1](https://github.com/ExaDev/agent-permissions/compare/v7.0.0...v7.0.1) (2026-11-14)
+
+### Bug Fixes
+
+* **loader:** name the file once in a load failure ([55b9a7d](https://github.com/ExaDev/agent-permissions/commit/55b9a7de7c10333759ded96664d243847f6f7a6f))
+
 ## [7.0.0](https://github.com/ExaDev/agent-permissions/compare/v6.6.6...v7.0.0) (2026-11-14)
 
 ### ⚠ BREAKING CHANGES
