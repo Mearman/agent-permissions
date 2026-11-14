@@ -750,11 +750,11 @@ export const kiroCodec = z.codec(kiroNative, AgentPermissionPolicy, {
 
       // Bare allow rules (no pattern) → allowedTools
       if (rule.tier === "allow" && rule.pattern === undefined) {
-        if (isKiroMcpRef(rule.tool)) {
-          allowedTools.push(rule.tool);
-        } else if (kiroTool) {
-          allowedTools.push(kiroTool);
-        }
+        // A tool name Kiro does not map is written as it came: decode reads an unknown entry as a
+        // tool of that name, so writing it back keeps a tool a newer Kiro knows.
+        allowedTools.push(
+          isKiroMcpRef(rule.tool) ? rule.tool : (kiroTool ?? rule.tool),
+        );
         continue;
       }
 
@@ -1964,6 +1964,14 @@ function ocFoldsElsewhere(key: string): boolean {
  * key beneath the payload (settings the codec does not model, or a newer agent version's keys)
  * untouched. A key of the native schema the codec skips on decode and never encodes is left out.
  */
+/** Every top-level key of OpenCode's native permission object, for tests that probe each alias. */
+export const OPENCODE_NATIVE_KEYS: readonly string[] = Object.keys(
+  opencodeNativeObject.shape,
+);
+
+/** Every tool name Kiro's `allowedTools` decodes to a canonical tool, for tests that probe each alias. */
+export const KIRO_TOOL_NAMES: readonly string[] = Object.keys(kiroToCanonical);
+
 export const MODELLED_PATHS = {
   "claude-code": Object.keys(claudeCodeNative.shape).map((key) => [key]),
   opencode: Object.keys(opencodeNativeObject.shape)
