@@ -208,6 +208,48 @@ fn check(
                     }
                 }
             }
+            "pattern" => {
+                // Not a regex engine: the only form this recognises is an anchored single-character class, `^[X]` or its negation `^[^X]`, where `X` is one literal character (optionally backslash-escaped). Every schema here uses `pattern` only inside `propertyNames`, to say a key does or does not start with one character, and this refuses any other pattern string outright rather than matching it loosely.
+                let text = value.as_str().ok_or("pattern must be a string")?;
+                let class = text
+                    .strip_prefix('^')
+                    .and_then(|rest| rest.strip_suffix(']'))
+                    .and_then(|rest| rest.strip_prefix('['))
+                    .ok_or_else(|| format!("unsupported pattern {text}"))?;
+                let (negated, class) = match class.strip_prefix('^') {
+                    Some(rest) => (true, rest),
+                    None => (false, class),
+                };
+                let literal = class.strip_prefix('\\').unwrap_or(class);
+                let mut literal_chars = literal.chars();
+                let target = literal_chars
+                    .next()
+                    .ok_or_else(|| format!("unsupported pattern {text}"))?;
+                if literal_chars.next().is_some() {
+                    return Err(format!("unsupported pattern {text}"));
+                }
+                if let Some(text) = instance.as_str()
+                    && text
+                        .chars()
+                        .next()
+                        .is_none_or(|first| negated == (first == target))
+                {
+                    fail!("does not match {value}");
+                }
+            }
+            "propertyNames" => {
+                if let Some(members) = instance.as_object() {
+                    for name in members.keys() {
+                        check(
+                            root,
+                            value,
+                            &Value::String(name.clone()),
+                            &format!("{path}/{name}"),
+                            found,
+                        )?;
+                    }
+                }
+            }
             "anyOf" => {
                 let mut matching = 0;
                 for branch in value.as_array().ok_or("anyOf must be a list")? {
