@@ -204,7 +204,7 @@
               },
               "remote": {
                 "type": "string",
-                "description": "Git remote pattern (glob), matched against the origin as host/path in lower case, so git@github.com:Org/Repo.git and https://github.com/org/repo both match github.com/org/*."
+                "description": "Git remote pattern (glob), matched against the origin as host/path in lower case, so git@github.com:Org/Repo.git and https://github.com/org/repo both match github.com/org/*. A remote that cannot be read without changing which repository it names, or risking a credential in the result, is unknown: a rule that allows for a matching remote does not apply, and a rule that denies or asks for one does."
               },
               "predicate": {
                 "oneOf": [

@@ -68,8 +68,6 @@ void describe("normaliseRemote credentials", () => {
     ["https://github.com/o/r?a=1#SEKRET", "github.com/o/r"],
     ["https://github.com:443?token=SEKRET", "github.com"],
     ["ssh://git@github.com:22/o/r.git?token=SEKRET", "github.com/o/r"],
-    ["https://github.com/o/r%3Ftoken=SEKRET", "github.com/o/r"],
-    ["https://github.com/o/r%23SEKRET", "github.com/o/r"],
     ["git@github.com:o/r.git?token=SEKRET", "github.com/o/r"],
     ["git@github.com:o/r.git#SEKRET", "github.com/o/r"],
     ["user:SEKRET@github.com:o/r.git", "github.com/o/r"],
@@ -108,6 +106,112 @@ void describe("normaliseRemote credentials", () => {
       assert.equal(normaliseRemote(remote), "");
     });
   }
+});
+
+/** Spellings that reach the same repository as `https://github.com/o/r`, and ones that could reach another. */
+const PLAIN = "github.com/o/r";
+const SAME_AS_PLAIN = [
+  "https://github.com/o/r",
+  "https://GitHub.COM/o/r",
+  "https://github.com./o/r",
+  "https://github.com/o/r/",
+  "https://github.com/o/r.git",
+  "https://github.com/o/r.GIT",
+  "https://github.com/o/r.git/",
+  "https://github.com:443/o/r",
+  "https://u:SEKRET@github.com/o/r",
+  "ssh://git@github.com./o/r.git",
+  "git@github.com:o/r.git",
+  "git@github.com.:o/r",
+  "github.com:o/r",
+];
+const UNKNOWN = [
+  // an empty authority on a network scheme, with and without user information in the path
+  "https:///github.com/o/r",
+  "https:///u:SEKRET@github.com/o/r",
+  "https:///SEKRET@github.com/o/r",
+  "ssh:///git:SEKRET@github.com/o/r",
+  "git:///github.com/o/r",
+  "git+ssh:///github.com/o/r",
+  "http:///github.com/o/r",
+  // a path that leaves its owner or names another spelling of the same repository
+  "https://github.com/o/x%23/../../other/r",
+  "https://github.com/o/x%3f/../../other/r",
+  "https://github.com/o/x%2F../../other/r",
+  "https://github.com/o/r%3Ftoken=SEKRET",
+  "https://github.com/o/r%23SEKRET",
+  "https://github.com/o/./r",
+  "https://github.com/o/../o/r",
+  "https://github.com/o//r",
+  "https://github.com//o/r",
+  "https://github.com/o/r/.git",
+  "https://github.com/o/r/./",
+  "https://github.com/o/%2e%2e/o/r",
+  "https://github.com/o/%2E/r",
+  "https://github.com/o%2Fx/r",
+  "https://github.com/o/r%5Cx",
+  "https://github.com/o/r%40x",
+  "https://github.com/o/r%3Ax",
+  "https://github.com/o/r%25",
+  "https://github.com/o/%72",
+  "https://github.com/%6F/r",
+  "https://github.com/o/r%00",
+  "https://github.com/o/r%",
+  "https://github.com/o/r%zz",
+  "https://github.com/o/r\u0001",
+  "https://github.com/o\\r",
+  "https://github.com/o/r@v1",
+  // a host that is spelled another way
+  "https://%67ithub.com/o/r",
+  "https://github.com%2e/o/r",
+  "https://github.com\\@other.example/o/r",
+  "https://github.com../o/r",
+  // the scp-like shorthand, read the same way
+  "git@github.com:o/x%23/../../other/r",
+  "git@github.com:o/./r",
+  "git@github.com:o//r",
+  "git@github.com:o/r/.git",
+  "git@github.com:o/%72",
+  "git@%67ithub.com:o/r",
+];
+
+void describe("normaliseRemote spellings of one repository", () => {
+  for (const remote of SAME_AS_PLAIN) {
+    void it(`reads ${remote} as ${PLAIN}`, () => {
+      assert.equal(normaliseRemote(remote), PLAIN);
+    });
+  }
+
+  for (const remote of UNKNOWN) {
+    void it(`is unknown for ${JSON.stringify(remote)}`, () => {
+      assert.equal(normaliseRemote(remote), "");
+    });
+  }
+
+  void it("keeps an encoded character that has no other spelling", () => {
+    assert.equal(
+      normaliseRemote("https://github.com/o/caf%C3%A9%20x"),
+      "github.com/o/caf%c3%a9%20x",
+    );
+  });
+
+  void it("keeps the leading slash of an absolute scp path, which names another path than a relative one", () => {
+    assert.equal(
+      normaliseRemote("git@host.example:/srv/git/r.git"),
+      "host.example//srv/git/r",
+    );
+    assert.equal(
+      normaliseRemote("git@host.example:srv/git/r.git"),
+      "host.example/srv/git/r",
+    );
+  });
+
+  void it("keeps a file URL path as a local path", () => {
+    assert.equal(
+      normaliseRemote("file:///srv/git/a@b/repo.git"),
+      "/srv/git/a@b/repo",
+    );
+  });
 });
 
 void describe("normaliseRemote local paths", () => {

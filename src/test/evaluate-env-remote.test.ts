@@ -148,6 +148,28 @@ void describe("when.remote", () => {
     }
   });
 
+  void it("does not apply an allow for one owner to a remote whose path leaves that owner", () => {
+    for (const remote of [
+      "https://github.com/exadev/x%23/../../other/repo",
+      "https://github.com/exadev/x%3f/../../other/repo",
+      "https://github.com/exadev/x/../../other/repo",
+      "git@github.com:exadev/x%23/../../other/repo",
+      "https:///github.com/exadev/repo",
+    ]) {
+      assert.equal(
+        evaluate(onOrg, "Bash", "git push origin", { remote }),
+        "ask",
+        remote,
+      );
+    }
+    assert.equal(
+      evaluate(onOrg, "Bash", "git push origin", {
+        remote: "https://github.com/exadev/repo",
+      }),
+      "allow",
+    );
+  });
+
   void it("treats a remote it cannot interpret as unknown: an allow does not apply, an ask or deny does", () => {
     const scoped = (pattern: string, tier: "allow" | "ask" | "deny") =>
       ({
