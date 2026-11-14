@@ -195,6 +195,10 @@
     "validate/schema.json": {
       "cases": 36,
       "skip": []
+    },
+    "watch/loader-watch.json": {
+      "cases": 5,
+      "skip": []
     }
   }
 }
