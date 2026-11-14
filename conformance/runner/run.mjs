@@ -298,11 +298,12 @@ export async function runCase(testCase, target) {
         encoding: "utf8",
         env: { ...process.env, ...mapStrings(testCase.env ?? {}, tree.place) },
       });
-      const { exit, stdout, stdoutJson, stderrIncludes } = testCase.expect;
+      const { exit, stdout, stdoutJson, stderrIncludes, stderrExcludes } = testCase.expect;
       assert.equal(run.status, exit, run.stderr);
       if (stdout !== undefined) assert.equal(tree.back(run.stdout), stdout);
       if (stdoutJson !== undefined) same(plain(tree.back(JSON.parse(run.stdout))), stdoutJson);
       inOrder(tree.back(run.stderr), stderrIncludes ?? []);
+      for (const text of stderrExcludes ?? []) assert.ok(!tree.back(run.stderr).includes(text), `stderr holds ${text}`);
     } else if (kind === "mcp") await mcp(testCase, tree, target);
     else if (kind === "watch") await watch(testCase, tree, target);
     else if (kind === "shell-differential") {

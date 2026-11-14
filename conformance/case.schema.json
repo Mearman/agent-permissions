@@ -850,6 +850,14 @@
                 "type": "string",
                 "minLength": 1
               }
+            },
+            "stderrExcludes": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           },
           "required": ["exit"]
@@ -1093,7 +1101,8 @@
         "seed",
         "markers",
         "minimumSplittableShare",
-        "lines"
+        "lines",
+        "recordedWith"
       ],
       "dependentRequired": {
         "skip": ["reason"],
@@ -1137,6 +1146,21 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "recordedWith": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bash", "platform"],
+          "properties": {
+            "bash": {
+              "type": "string",
+              "minLength": 1
+            },
+            "platform": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         },
         "lines": {
           "type": "array",

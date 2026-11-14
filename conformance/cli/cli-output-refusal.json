@@ -19,7 +19,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.agents/permissions.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"sandbox\": {\"mode\": \"workspace-write\"}, \"env\": {\"A\": \"1\"}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -39,7 +44,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.agents/permissions.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"sandbox\": {\"mode\": \"workspace-write\"}, \"env\": {\"A\": \"1\"}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -61,7 +71,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.agents/permissions.local.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.local.json": "{\"sync\": {\"mode\": \"watch\"}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -81,7 +96,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.agents/permissions.local.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.local.json": "{\"sync\": {\"mode\": \"watch\"}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -103,7 +123,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.claude/settings.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\"model\": \"opus\", \"permissions\": {\"deny\": [\"Bash(rm:*)\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -123,7 +148,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.claude/settings.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{\"model\": \"opus\", \"permissions\": {\"deny\": [\"Bash(rm:*)\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -145,7 +175,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.claude/settings.local.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.local.json": "{\"permissions\": {\"deny\": [\"Bash(sudo:*)\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -165,7 +200,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.claude/settings.local.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.local.json": "{\"permissions\": {\"deny\": [\"Bash(sudo:*)\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -187,7 +227,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/opencode.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/opencode.json": "{\"permission\": {\"bash\": {\"rm *\": \"deny\"}}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -201,7 +246,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/opencode.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/opencode.json": "{\"permission\": {\"bash\": {\"rm *\": \"deny\"}}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -223,7 +273,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/opencode.jsonc", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/opencode.jsonc": "{\n  // mine\n  \"permission\": {\"edit\": \"deny\"}\n}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -243,7 +298,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/opencode.jsonc", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/opencode.jsonc": "{\n  // mine\n  \"permission\": {\"edit\": \"deny\"}\n}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -265,7 +325,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.kiro/permissions.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\": {\"shell\": {\"deniedCommands\": [\"\\\\Arm\\\\z\"]}}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -285,7 +350,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.kiro/permissions.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.kiro/permissions.json": "{\"toolsSettings\": {\"shell\": {\"deniedCommands\": [\"\\\\Arm\\\\z\"]}}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -307,7 +377,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/codex.toml", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/codex.toml": "approval_policy = \"never\"\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -321,7 +396,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/codex.toml", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/codex.toml": "approval_policy = \"never\"\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -343,7 +423,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.omp/config.yml", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.omp/config.yml": "# mine\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -363,7 +448,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.omp/config.yml", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.omp/config.yml": "# mine\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -385,7 +475,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.crush.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.crush.json": "{\"permissions\": {\"allowed_tools\": [\"view\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -399,7 +494,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["$DIR0/.crush.json", "sync"]
+      },
+      "expectFiles": {
+        "$DIR0/.crush.json": "{\"permissions\": {\"allowed_tools\": [\"view\"]}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -424,7 +524,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["config.yml"]
+      },
+      "expectFiles": {
+        "$DIR0/omp-home/config.yml": "# mine\nmodel: fast\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -447,7 +552,12 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["config.yml"]
+      },
+      "expectFiles": {
+        "$DIR0/omp-home/config.yml": "# mine\nmodel: fast\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -462,6 +572,10 @@
       },
       "expect": {
         "exit": 1
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"env\": {\"A\": \"1\"}}\n",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
@@ -475,7 +589,9 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["codex.toml is a directory"],
+        "stderrExcludes": ["already exists"]
       }
     },
     {
@@ -496,7 +612,11 @@
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["settings.json", "claude-code", "opencode"]
+      },
+      "expectFiles": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
     },
     {
