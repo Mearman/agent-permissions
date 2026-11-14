@@ -78,9 +78,10 @@ function contextResolvers(ctx: EvaluationContext): SyncResolvers {
       if (key === "branch") return text(ctx.branch);
       if (key === "actor") return text(ctx.actor);
       if (key === "remote") {
-        return text(
-          ctx.remote === undefined ? undefined : normaliseRemote(ctx.remote),
-        );
+        // A remote that cannot be interpreted normalises to the empty string, which resolves like a remote the context does not carry.
+        const remote =
+          ctx.remote === undefined ? undefined : normaliseRemote(ctx.remote);
+        return text(remote === "" ? undefined : remote);
       }
       if (key.startsWith("env:")) return text(ctx.env?.[key.slice(4)]);
       if (key.startsWith("role:")) {

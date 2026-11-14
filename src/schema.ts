@@ -189,7 +189,7 @@ export const RuleCondition = z
     /** Git remote pattern (glob), matched against the remote as `host/path`, lower case. */
     remote: z.string().meta({
       description:
-        "Git remote pattern (glob), matched against the origin as host/path in lower case, so git@github.com:Org/Repo.git and https://github.com/org/repo both match github.com/org/*.",
+        "Git remote pattern (glob), matched against the origin as host/path in lower case, so git@github.com:Org/Repo.git and https://github.com/org/repo both match github.com/org/*. A remote that cannot be read without changing which repository it names, or risking a credential in the result, is unknown: a rule that allows for a matching remote does not apply, and a rule that denies or asks for one does.",
     }),
 
     /** A trilean predicate tree over the context, for conditions the fields above cannot say: an OR of remotes, or "unless this variable has this value". */

@@ -122,4 +122,104 @@ void describe("when.remote", () => {
   void it("is unknown without a remote, so an allow does not apply", () => {
     assert.equal(evaluate(onOrg, "Bash", "git push origin", {}), "ask");
   });
+
+  void it("matches a local path as the path it is, whatever characters it holds", () => {
+    const onPath: PermissionPolicy = {
+      defaultMode: "restricted",
+      rules: [
+        {
+          tool: "Bash",
+          pattern: "git push:*",
+          tier: "allow",
+          when: { remote: "/srv/git/**" },
+        },
+      ],
+    };
+    for (const remote of [
+      "/srv/git/a@b/repo.git",
+      "/srv/git/my#repo.git",
+      "/srv/git/my?repo.git",
+    ]) {
+      assert.equal(
+        evaluate(onPath, "Bash", "git push origin", { remote }),
+        "allow",
+        remote,
+      );
+    }
+  });
+
+  void it("does not apply an allow for one owner to a remote whose path leaves that owner", () => {
+    for (const remote of [
+      "https://github.com/exadev/x%23/../../other/repo",
+      "https://github.com/exadev/x%3f/../../other/repo",
+      "https://github.com/exadev/x/../../other/repo",
+      "git@github.com:exadev/x%23/../../other/repo",
+      "https:///github.com/exadev/repo",
+    ]) {
+      assert.equal(
+        evaluate(onOrg, "Bash", "git push origin", { remote }),
+        "ask",
+        remote,
+      );
+    }
+    assert.equal(
+      evaluate(onOrg, "Bash", "git push origin", {
+        remote: "https://github.com/exadev/repo",
+      }),
+      "allow",
+    );
+  });
+
+  void it("treats a remote it cannot interpret as unknown: an allow does not apply, an ask or deny does", () => {
+    const scoped = (pattern: string, tier: "allow" | "ask" | "deny") =>
+      ({
+        defaultMode: tier === "deny" ? "autonomous" : "restricted",
+        rules: [
+          {
+            tool: "Bash",
+            pattern: "git push:*",
+            tier,
+            when: { remote: pattern },
+          },
+        ],
+      }) satisfies PermissionPolicy;
+    const askWhenRemote: PermissionPolicy = {
+      defaultMode: "autonomous",
+      rules: [
+        {
+          tool: "Bash",
+          pattern: "git push:*",
+          tier: "ask",
+          when: { remote: "*" },
+        },
+      ],
+    };
+    for (const remote of [
+      "https://user:p/ss@github.com/exadev/agent-perms",
+      "https://github.com\\@SEKRET/exadev/agent-perms",
+      "https://user@",
+    ]) {
+      for (const pattern of ["github.com/exadev/*", "*"]) {
+        assert.equal(
+          evaluate(scoped(pattern, "allow"), "Bash", "git push origin", {
+            remote,
+          }),
+          "ask",
+          `allow ${pattern} ${remote}`,
+        );
+        assert.equal(
+          evaluate(scoped(pattern, "deny"), "Bash", "git push origin", {
+            remote,
+          }),
+          "deny",
+          `deny ${pattern} ${remote}`,
+        );
+      }
+      assert.equal(
+        evaluate(askWhenRemote, "Bash", "git push origin", { remote }),
+        "ask",
+        `ask ${remote}`,
+      );
+    }
+  });
 });

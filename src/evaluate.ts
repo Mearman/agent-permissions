@@ -403,7 +403,12 @@ function remoteCondition(
     if (ctx.remote === undefined) {
       return indeterminate("not-found", "the context has no remote");
     }
-    return definite(matches(normaliseRemote(ctx.remote)));
+    // A remote that cannot be interpreted (the empty string) is unknown, as a predicate's `remote` reference is for it: an allow scoped to a remote does not apply, a deny or ask does.
+    const remote = normaliseRemote(ctx.remote);
+    if (remote === "") {
+      return indeterminate("not-found", "the remote cannot be interpreted");
+    }
+    return definite(matches(remote));
   };
 }
 
