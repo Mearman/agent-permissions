@@ -165,7 +165,7 @@
       "skip": []
     },
     "sync/sync-errors.json": {
-      "cases": 8,
+      "cases": 6,
       "skip": []
     },
     "sync/sync-file-fidelity.json": {
