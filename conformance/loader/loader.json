@@ -80,6 +80,50 @@
     },
     {
       "id": "loader.004",
+      "from": "loader.test.ts: loadPolicy > canonical loading > loads .agents/permissions.json",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "autonomous"
+        },
+        {
+          "at": ["rules"],
+          "present": true
+        },
+        {
+          "at": ["rules", "length"],
+          "equals": 2
+        },
+        {
+          "at": ["rules", 0],
+          "equals": {
+            "tool": "Bash",
+            "pattern": "rm -rf *",
+            "tier": "deny"
+          }
+        },
+        {
+          "at": ["rules", 1],
+          "equals": {
+            "tool": "Bash",
+            "tier": "allow"
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"autonomous\",\"permissions\":{\"deny\":[\"Bash(rm -rf *)\"],\"allow\":[\"Bash(*)\"]}}"
+      }
+    },
+    {
+      "id": "loader.005",
       "from": "loader.test.ts: loadPolicy > canonical loading > fails on invalid JSON in a canonical file instead of dropping its rules",
       "kind": "function",
       "module": "loader",
@@ -105,7 +149,7 @@
       }
     },
     {
-      "id": "loader.005",
+      "id": "loader.006",
       "from": "loader.test.ts: loadPolicy > canonical loading > fails on a schema-invalid canonical file",
       "kind": "function",
       "module": "loader",
@@ -131,7 +175,7 @@
       }
     },
     {
-      "id": "loader.006",
+      "id": "loader.007",
       "from": "loader.test.ts: loadPolicy > canonical loading > fails when a local override is broken, though the committed file is fine",
       "kind": "function",
       "module": "loader",
@@ -158,7 +202,7 @@
       }
     },
     {
-      "id": "loader.007",
+      "id": "loader.008",
       "from": "loader.test.ts: loadPolicy > canonical loading > names every unusable file",
       "kind": "function",
       "module": "loader",
@@ -186,7 +230,83 @@
       }
     },
     {
-      "id": "loader.008",
+      "id": "loader.009",
+      "from": "loader.test.ts: loadPolicy > layer merging > local overrides committed defaultMode",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "autonomous"
+        },
+        {
+          "at": ["rules"],
+          "present": true
+        },
+        {
+          "at": ["rules", "length"],
+          "equals": 1
+        },
+        {
+          "at": ["rules", 0],
+          "equals": {
+            "tool": "Bash",
+            "pattern": "ls",
+            "tier": "allow"
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"permissions\":{\"allow\":[\"Bash(ls)\"]}}",
+        "$DIR0/.agents/permissions.local.json": "{\"defaultMode\":\"autonomous\"}"
+      }
+    },
+    {
+      "id": "loader.010",
+      "from": "loader.test.ts: loadPolicy > layer merging > merges deny rules from both layers",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules"],
+          "present": true
+        },
+        {
+          "at": ["rules"],
+          "present": true
+        },
+        {
+          "at": ["rules", "length"],
+          "equals": 2
+        },
+        {
+          "at": ["rules", 0, "pattern"],
+          "equals": "rm *"
+        },
+        {
+          "at": ["rules", 1, "pattern"],
+          "equals": "curl domain:evil.com"
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"permissions\":{\"deny\":[\"Bash(rm *)\"]}}",
+        "$DIR0/.agents/permissions.local.json": "{\"permissions\":{\"deny\":[\"Bash(curl domain:evil.com)\"]}}"
+      }
+    },
+    {
+      "id": "loader.011",
       "from": "loader.test.ts: loadPolicy > layer merging > merges all three tiers across layers",
       "kind": "function",
       "module": "loader",
@@ -233,7 +353,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "loader.009",
+      "id": "loader.012",
       "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > loads Claude Code settings when with includes claude-code",
       "kind": "function",
       "module": "loader",
@@ -270,7 +390,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "loader.010",
+      "id": "loader.013",
       "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > ignores Claude Code settings when with does not include it",
       "kind": "function",
       "module": "loader",
@@ -292,7 +412,7 @@
       }
     },
     {
-      "id": "loader.011",
+      "id": "loader.014",
       "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > loads OpenCode config when with includes opencode",
       "kind": "function",
       "module": "loader",
@@ -331,7 +451,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "loader.012",
+      "id": "loader.015",
       "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > excludes agent when without lists it",
       "kind": "function",
       "module": "loader",
@@ -353,7 +473,7 @@
       }
     },
     {
-      "id": "loader.013",
+      "id": "loader.016",
       "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > skips codex (TOML not supported)",
       "kind": "function",
       "module": "loader",
@@ -375,7 +495,33 @@
       }
     },
     {
-      "id": "loader.014",
+      "id": "loader.017",
+      "from": "loader.test.ts: loadPolicy > walk-up discovery > walks up to parent directories by default",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0/subproject"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "autonomous"
+        },
+        {
+          "at": ["rules"],
+          "present": true
+        }
+      ],
+      "files": {
+        "$DIR0/subproject/": "",
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"autonomous\",\"permissions\":{\"allow\":[\"Read\"]}}"
+      }
+    },
+    {
+      "id": "loader.018",
       "from": "loader.test.ts: loadPolicy > walk-up discovery > respects up: 0 from outermost canonical file",
       "kind": "function",
       "module": "loader",
@@ -392,11 +538,12 @@
         }
       ],
       "files": {
+        "$DIR0/subproject/": "",
         "$DIR0/.agents/permissions.json": "{\"up\":0,\"defaultMode\":\"autonomous\"}"
       }
     },
     {
-      "id": "loader.015",
+      "id": "loader.019",
       "from": "loader.test.ts: loadPolicy > walk-up discovery > respects up: N limiting parent traversal",
       "kind": "function",
       "module": "loader",
@@ -413,11 +560,46 @@
         }
       ],
       "files": {
+        "$DIR0/a/b/c/": "",
         "$DIR0/.agents/permissions.json": "{\"up\":0,\"defaultMode\":\"autonomous\"}"
       }
     },
     {
-      "id": "loader.016",
+      "id": "loader.020",
+      "from": "loader.test.ts: loadPolicy > walk-up discovery > child overrides parent defaultMode",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0/subproject"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "restricted"
+        },
+        {
+          "at": ["rules"],
+          "present": true
+        },
+        {
+          "at": ["rules", "length"],
+          "equals": 1
+        },
+        {
+          "at": ["rules", 0, "tier"],
+          "equals": "deny"
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"autonomous\",\"permissions\":{\"deny\":[\"Bash(rm *)\"]}}",
+        "$DIR0/subproject/.agents/permissions.json": "{\"defaultMode\":\"restricted\"}"
+      }
+    },
+    {
+      "id": "loader.021",
       "from": "loader.test.ts: loadPolicy > walk-up discovery > merges native configs from parent and child directories",
       "kind": "function",
       "module": "loader",
@@ -448,6 +630,7 @@
         }
       ],
       "files": {
+        "$DIR0/subproject/.agents/": "",
         "$DIR0/.agents/permissions.json": "{\"with\":[\"claude-code\"]}",
         "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm *)\"]}}",
         "$DIR0/subproject/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Bash(git *)\"]}}"
@@ -455,7 +638,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "loader.017",
+      "id": "loader.022",
       "from": "loader.test.ts: loadPolicy > mode mapping > maps bypassPermissions to autonomous",
       "kind": "function",
       "module": "loader",
@@ -476,7 +659,7 @@
       }
     },
     {
-      "id": "loader.018",
+      "id": "loader.023",
       "from": "loader.test.ts: loadPolicy > mode mapping > maps plan to restricted",
       "kind": "function",
       "module": "loader",
@@ -497,7 +680,7 @@
       }
     },
     {
-      "id": "loader.019",
+      "id": "loader.024",
       "from": "loader.test.ts: loadPolicy > with/without mutual exclusivity > schema rejects both with and without",
       "kind": "function",
       "module": "loader",
@@ -521,6 +704,32 @@
       "files": {
         "$DIR0/.agents/permissions.json": "{\"with\":[\"claude-code\"],\"without\":[\"opencode\"]}"
       }
+    },
+    {
+      "id": "loader.025",
+      "from": "loader.test.ts: loadPolicy > provenance > records the file each rule came from",
+      "kind": "layered",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}",
+        "$DIR0/.agents/permissions.local.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
+      },
+      "load": {
+        "cwd": "$DIR0"
+      },
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "rm -rf x",
+          "expect": "deny",
+          "layer": "$DIR0/.agents/permissions.local.json"
+        },
+        {
+          "tool": "Bash",
+          "input": "git status",
+          "expect": "allow",
+          "layer": "$DIR0/.agents/permissions.json"
+        }
+      ]
     }
   ]
 }

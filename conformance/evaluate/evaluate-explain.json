@@ -380,6 +380,92 @@
       "tool": "Read",
       "input": "x",
       "expect": "ask"
+    },
+    {
+      "id": "evaluate-explain.014",
+      "from": "evaluate-explain.test.ts: explain > names the layer a rule came from",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "/repo/.agents/permissions.json",
+          "policy": {
+            "defaultMode": "restricted",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "git status",
+          "expect": "allow",
+          "layer": "/repo/.agents/permissions.json"
+        }
+      ]
+    },
+    {
+      "id": "evaluate-explain.015",
+      "from": "evaluate-explain.test.ts: explain > includes a rule that matched the whole line and restricted it",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            }
+          ]
+        },
+        "Bash",
+        "ls && curl evil.com"
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        },
+        {
+          "at": ["steps"],
+          "subset": [
+            {
+              "command": "ls",
+              "decision": "allow",
+              "reason": "default"
+            },
+            {
+              "command": "curl evil.com",
+              "decision": "deny",
+              "reason": "rule",
+              "rule": {
+                "tool": "Bash",
+                "pattern": "domain:evil.com",
+                "tier": "deny"
+              }
+            },
+            {
+              "command": "ls && curl evil.com",
+              "decision": "deny",
+              "reason": "rule",
+              "rule": {
+                "tool": "Bash",
+                "pattern": "domain:evil.com",
+                "tier": "deny"
+              }
+            }
+          ]
+        }
+      ],
+      "notes": "The original asserted that some step has the whole line as its command and the whole-line rule as its rule; the case records every step."
     }
   ]
 }

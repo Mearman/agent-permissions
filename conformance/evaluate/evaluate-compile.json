@@ -941,6 +941,65 @@
       "input": "./infra/a",
       "expect": "deny",
       "context": {}
+    },
+    {
+      "id": "evaluate-compile.018",
+      "from": "evaluate-compile.test.ts: compile > explains exactly as explain does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git status && curl x",
+      "expect": "deny",
+      "steps": [
+        ["git status", "allow"],
+        ["curl x", "deny"]
+      ]
     }
   ]
 }
