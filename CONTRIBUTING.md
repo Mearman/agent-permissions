@@ -27,6 +27,7 @@ Make the change, run `pnpm check` and `pnpm test`, commit. The pre-push hook run
 | `src/schema.ts`            | The Zod schema — single source of truth for the policy format         |
 | `src/compat/`              | Bidirectional codecs for each supported agent                         |
 | `.github/scripts/`         | CI helper scripts (dependency age gate), unit-tested from `src/test/` |
+| `conformance/`             | The language-neutral corpus of cases and the runner that executes it  |
 | `rust/`                    | The Rust workspace and its `deny.toml` allowlist                      |
 | `scripts/`                 | `rust.sh`, the one place cargo runs, and the guards that check it     |
 | `.github/workflows/ci.yml` | The whole pipeline: audit, check, test matrix, release, publishes     |

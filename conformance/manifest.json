@@ -13,7 +13,7 @@
       "skip": []
     },
     "codec/codec-alias-roundtrip.json": {
-      "cases": 12,
+      "cases": 52,
       "skip": []
     },
     "codec/codecs-fail-closed.json": {
