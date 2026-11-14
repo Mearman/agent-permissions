@@ -592,7 +592,8 @@
         "exit": 1,
         "stderrIncludes": ["codex.toml is a directory"],
         "stderrExcludes": ["already exists"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli-output-refusal.025",

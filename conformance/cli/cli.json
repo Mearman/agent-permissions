@@ -231,7 +231,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["--to is required"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.009",
@@ -245,7 +246,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["unknown --to format"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.010",
@@ -265,7 +267,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["unknown --from format"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.011",
@@ -369,7 +372,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["invalid JSON"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.015",
@@ -515,7 +519,8 @@
       "expect": {
         "exit": 2,
         "stderrIncludes": ["validation errors"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.021",
@@ -532,7 +537,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["invalid JSON"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.022",
@@ -564,7 +570,8 @@
       "expect": {
         "exit": 2,
         "stderrIncludes": ["rules."]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.024",
@@ -666,7 +673,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["Write(./secrets) [deny]"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.028",
@@ -718,7 +726,8 @@
         "exit": 1,
         "stdout": "deny\n",
         "stderrIncludes": ["allow", "git status", "Bash(git:*)"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.030",
@@ -801,7 +810,8 @@
       "expect": {
         "exit": 1,
         "stdout": "deny\n"
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.033",
@@ -854,7 +864,8 @@
       },
       "expect": {
         "exit": 1
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.035",
@@ -881,7 +892,8 @@
         "exit": 1,
         "stdout": "deny\n",
         "stderrIncludes": ["(hidden)"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.036",
@@ -993,7 +1005,8 @@
       "expect": {
         "exit": 1,
         "stdout": "deny\n"
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.040",
@@ -1032,7 +1045,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["--tool is required"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.042",
@@ -1046,7 +1060,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["--input is required"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.043",
@@ -1125,7 +1140,8 @@
       "expect": {
         "exit": 2,
         "stderrIncludes": ["error"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.046",
@@ -1150,7 +1166,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["invalid JSON"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.047",
@@ -1188,7 +1205,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["--transcript is required"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.049",
@@ -1261,7 +1279,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["--min-count must be a positive integer"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.052",
@@ -1308,7 +1327,12 @@
         "$DIR0/.claude/settings.json": "{ not json"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["settings.json"]
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{ not json",
+        "$DIR0/opencode.json": null
       }
     },
     {
@@ -1324,7 +1348,11 @@
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       },
       "expect": {
-        "exit": 1
+        "exit": 1,
+        "stderrIncludes": ["Aborted."]
+      },
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": null
       }
     },
     {
@@ -1379,7 +1407,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["mutually exclusive"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.059",
@@ -1393,7 +1422,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["unknown agent"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.060",
@@ -1407,7 +1437,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["unknown agent"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.061",
@@ -1421,7 +1452,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["--up must be"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.062",
@@ -1962,7 +1994,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["--root is required"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.072",
@@ -1976,7 +2009,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["--outside"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.073",
@@ -2018,7 +2052,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["unknown command"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.076",
@@ -2032,7 +2067,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["agent-perms"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "cli.077",
