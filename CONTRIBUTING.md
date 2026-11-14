@@ -27,8 +27,14 @@ Make the change, run `pnpm check` and `pnpm test`, commit. The pre-push hook run
 | `src/schema.ts`            | The Zod schema — single source of truth for the policy format         |
 | `src/compat/`              | Bidirectional codecs for each supported agent                         |
 | `.github/scripts/`         | CI helper scripts (dependency age gate), unit-tested from `src/test/` |
+| `rust/`                    | The Rust workspace and its `deny.toml` allowlist                      |
+| `scripts/`                 | `rust.sh`, the one place cargo runs, and the guards that check it     |
 | `.github/workflows/ci.yml` | The whole pipeline: audit, check, test matrix, release, publishes     |
 | `spec/examples/`           | Example policies validated against the schema in tests                |
+
+## Rust
+
+The Rust workspace under `rust/` is built and tested by cargo, never through pnpm. Every cargo command runs through `sh scripts/rust.sh <check>` (`fmt`, `clippy`, `test`, `deny`), against the committed `Cargo.lock` and the toolchain `rust/rust-toolchain.toml` pins, and `sh scripts/rust-checks.sh` runs the guards and every check as CI's `Rust` job does. A new crate takes its settings from the workspace (`[lints] workspace = true`, and `edition`, `rust-version` and `license` inherited), and a new dependency is added to `rust/deny.toml` with its reason in the same change; the `cargo-deny` job fails on a crate that is not listed and on a listed crate nothing uses. The pre-push hook runs the Rust checks when the pushed commits touch `rust/`, `conformance/`, `scripts/`, the Rust workflows or the hook itself, and then needs [rustup](https://rustup.rs) and Python 3.9 or later. The `Advisories` workflow reads the RustSec database on a schedule and when the lock file changes, and is not a required check.
 
 ## Pull requests
 
