@@ -48,6 +48,21 @@
       },
       "description": "Files as they must be after the call: their text, or null for none."
     },
+    "faults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "readError": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "enum": ["EIO", "EMFILE", "ENFILE", "ENOMEM"]
+          },
+          "description": "Reads of these paths (under `$DIRn` tokens) fail with these error codes, through the read seam of the call."
+        }
+      },
+      "required": []
+    },
     "check": {
       "type": "object",
       "additionalProperties": false,
@@ -174,6 +189,9 @@
         },
         "expectFiles": {
           "$ref": "#/$defs/expectFiles"
+        },
+        "faults": {
+          "$ref": "#/$defs/faults"
         },
         "checks": {
           "type": "array",
