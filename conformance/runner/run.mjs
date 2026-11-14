@@ -131,10 +131,8 @@ function decoder(refs) {
         return Number(x);
       },
       $bytes: () => Buffer.from(x, "base64"),
-      $signal: () => new AbortController().signal,
       $ref: () => refs[x],
       $map: () => new Map(x.map(([k, val]) => [decode(k), decode(val)])),
-      $returns: () => () => Promise.resolve(decode(x)),
       $reject: () => () => Promise.reject(bad(x)),
       $edit: () => async () => writeFileSync(x.path, x.text),
     }[key];

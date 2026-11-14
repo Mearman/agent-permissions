@@ -9,6 +9,7 @@ import { describe, it } from "node:test";
 
 import {
   compileSchemas,
+  ENCODINGS,
   fileProblems,
   loadCorpus,
   manifestProblems,
@@ -206,6 +207,25 @@ void describe("conformance corpus", () => {
       }
     });
   }
+
+  void it("uses every value encoding the corpus allows in at least one case", () => {
+    const used = new Set<string>();
+    const walk = (value: unknown): void => {
+      if (Array.isArray(value)) value.forEach(walk);
+      else if (typeof value === "object" && value !== null) {
+        for (const [key, member] of Object.entries(value)) {
+          used.add(key);
+          walk(member);
+        }
+      }
+    };
+    for (const file of corpus.files) walk(file.cases);
+    assert.deepEqual(
+      [...ENCODINGS].filter((encoding) => !used.has(encoding)),
+      [],
+      "an encoding no case uses is removed from the loaders and the runner until a case needs it",
+    );
+  });
 
   void it("queues one test per case the loop above registers", () => {
     const expected = corpus.files

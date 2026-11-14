@@ -54,14 +54,12 @@ fn utf16_key(text: &str) -> Vec<u16> {
 
 /// The problems of a corpus file: the schema, then the rules the schema cannot express.
 /// The value encodings a runner decodes: a single-key object whose key is `$` and letters is one of these (the value encodings of an argument, and the `$contains` and `$subset` matchers of an mcp `expect`) or a defect, since a schema without negation cannot say so.
-const ENCODINGS: [&str; 11] = [
+const ENCODINGS: [&str; 9] = [
     "$undefined",
     "$number",
     "$bytes",
-    "$signal",
     "$ref",
     "$map",
-    "$returns",
     "$reject",
     "$edit",
     "$contains",
@@ -85,14 +83,16 @@ fn encoding_problems(value: &Value, id: &str, found: &mut Vec<String>) {
             .for_each(|item| encoding_problems(item, id, found)),
         Value::Object(members) => {
             let keys: Vec<&String> = members.keys().filter(|key| *key != "as").collect();
-            if let [key] = keys
-                .as_slice()
+            // An encoding is the object's single key; a `$` key beside others is refused, so a typo cannot pass as data.
+            for key in keys
                 .iter()
                 .filter(|key| key.as_str() != "$schema" && is_encoding_shape(key))
-                .collect::<Vec<_>>()
-                .as_slice()
             {
-                if !ENCODINGS.contains(&key.as_str()) {
+                if keys.len() > 1 {
+                    found.push(format!(
+                        "{id}: {key} is beside other keys, so is not an encoding"
+                    ));
+                } else if !ENCODINGS.contains(&key.as_str()) {
                     found.push(format!("{id}: {key} is not a value encoding"));
                 } else if key.as_str() == "$number"
                     && !members[key.as_str()]
@@ -107,6 +107,20 @@ fn encoding_problems(value: &Value, id: &str, found: &mut Vec<String>) {
             members
                 .values()
                 .for_each(|item| encoding_problems(item, id, found));
+        }
+        _ => {}
+    }
+}
+
+/// Every object key anywhere inside `value`.
+fn collect_keys(value: &Value, found: &mut BTreeSet<String>) {
+    match value {
+        Value::Array(items) => items.iter().for_each(|item| collect_keys(item, found)),
+        Value::Object(members) => {
+            for (key, member) in members {
+                found.insert(key.clone());
+                collect_keys(member, found);
+            }
         }
         _ => {}
     }
@@ -410,6 +424,18 @@ fn main() -> ExitCode {
     check_corpus_pairs(&schemas, &mut failures);
     let (files, problems) = check_corpus(&root, &schemas);
     failures.extend(problems);
+    // An encoding no case uses is removed from the loaders and the runner until a case needs it.
+    let mut used = BTreeSet::new();
+    for file in &files {
+        if let Ok(document) = read_json(&root.join(&file.name)) {
+            collect_keys(&document, &mut used);
+        }
+    }
+    for encoding in ENCODINGS {
+        if !used.contains(encoding) {
+            failures.push(format!("no case uses the value encoding {encoding}"));
+        }
+    }
     let total: usize = files.iter().map(|file| file.case_count).sum();
     let skipped_marked: usize = files.iter().map(|file| file.rust_skip_ids.len()).sum();
     for file in &files {
