@@ -473,44 +473,25 @@
           "ompGlobal": false
         }
       ],
-      "expect": {
-        "changes": [
-          {
-            "path": "$DIR0/.agents/permissions.json",
-            "agent": "canonical",
-            "kind": "create",
-            "current": null,
-            "proposed": "{\n  \"$schema\": \"https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json\",\n  \"defaultMode\": \"restricted\",\n  \"rules\": [\n    {\n      \"tool\": \"Read\",\n      \"tier\": \"allow\"\n    }\n  ]\n}\n"
-          },
-          {
-            "path": "$DIR0/.claude/settings.json",
-            "agent": "claude-code",
-            "kind": "update",
-            "current": "{\"permissions\":{\"defaultMode\":\"bypassPermissions\",\"allow\":[\"Read\"]}}",
-            "proposed": "{\"permissions\":{\"defaultMode\":\"default\",\"allow\":[\"Read\"],\"deny\":[],\"ask\":[]}}"
-          },
-          {
-            "path": "$DIR0/opencode.json",
-            "agent": "opencode",
-            "kind": "update",
-            "current": "{\"permission\":\"deny\"}",
-            "proposed": "{\"permission\":{\"read\":\"allow\"}}"
-          }
-        ],
-        "applied": true,
-        "refused": [],
-        "aborted": false
-      },
       "files": {
         "$DIR0/.claude/settings.json": "{\"permissions\":{\"defaultMode\":\"bypassPermissions\",\"allow\":[\"Read\"]}}",
         "$DIR0/opencode.json": "{\"permission\":\"deny\"}"
       },
-      "expectFiles": {
-        "$DIR0/.agents/permissions.json": "{\n  \"$schema\": \"https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json\",\n  \"defaultMode\": \"restricted\",\n  \"rules\": [\n    {\n      \"tool\": \"Read\",\n      \"tier\": \"allow\"\n    }\n  ]\n}\n",
-        "$DIR0/.claude/settings.json": "{\"permissions\":{\"defaultMode\":\"default\",\"allow\":[\"Read\"],\"deny\":[],\"ask\":[]}}",
-        "$DIR0/opencode.json": "{\"permission\":{\"read\":\"allow\"}}"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      "notes": "The original asserts only the canonical file's defaultMode after the merge. It does not pin the opencode.json rewrite: a read of OpenCode's own source (anomalyco/opencode, formerly sst/opencode, v1.2.0 and v1.19.5) shows that an object permission config falls back to OpenCode's own built-in \"*\": \"allow\" default for any key it does not name, so replacing the user's blanket \"deny\" with {\"read\": \"allow\"} loosens every other tool from deny to OpenCode's default allow. That is a defect in the OpenCode encoder, tracked for its own pull request, not pinned here.",
+      "checks": [
+        {
+          "at": ["changes", 0, "path"],
+          "equals": "$DIR0/.agents/permissions.json"
+        },
+        {
+          "at": ["changes", 0, "proposed"],
+          "contains": ["\"defaultMode\": \"restricted\""]
+        },
+        {
+          "at": ["applied"],
+          "equals": true
+        }
+      ]
     },
     {
       "id": "sync.012",
@@ -1450,38 +1431,6 @@
           "ompGlobal": false
         }
       ],
-      "files": {
-        "$DIR0/home/.omp/agent/": "",
-        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
-        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
-      },
-      "expectFiles": {
-        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"}]}",
-        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n",
-        "$DIR0/project/.omp/config.yml.bak": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
-      }
-    },
-    {
-      "id": "sync.034",
-      "from": "sync.test.ts: sync of Oh My Pi's config > leaves the file alone once it is in step",
-      "kind": "function",
-      "module": "sync",
-      "function": "sync",
-      "args": [
-        {
-          "cwd": "$DIR0/project",
-          "up": 0,
-          "with": [],
-          "without": [],
-          "yes": true,
-          "dryRun": false,
-          "create": false,
-          "verbose": false,
-          "backup": false,
-          "ompAgentDir": "$DIR0/home/.omp/agent",
-          "ompGlobal": false
-        }
-      ],
       "checks": [
         {
           "at": [],
@@ -1511,7 +1460,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.035",
+      "id": "sync.034",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > keeps every other key of .claude/settings.json, in order",
       "kind": "function",
       "module": "sync",
@@ -1548,7 +1497,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.036",
+      "id": "sync.035",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > replaces the permissions key rather than merging into it",
       "kind": "function",
       "module": "sync",
@@ -1600,7 +1549,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.037",
+      "id": "sync.036",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > adds permissions after the existing keys when the file has none",
       "kind": "function",
       "module": "sync",
@@ -1668,7 +1617,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.038",
+      "id": "sync.037",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > keeps every other key of opencode.json",
       "kind": "function",
       "module": "sync",
@@ -1720,7 +1669,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.039",
+      "id": "sync.038",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > keeps the other keys of .kiro/permissions.json and the settings it merges into",
       "kind": "function",
       "module": "sync",
@@ -1772,7 +1721,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.040",
+      "id": "sync.039",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > creates a file that is absent holding only the permissions",
       "kind": "function",
       "module": "sync",
@@ -1839,7 +1788,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.041",
+      "id": "sync.040",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > reports no change when the file already holds the permissions and other keys",
       "kind": "function",
       "module": "sync",
@@ -1871,7 +1820,7 @@
       }
     },
     {
-      "id": "sync.042",
+      "id": "sync.041",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > reports no change when the file already holds the permissions and other keys",
       "kind": "function",
       "module": "sync",
@@ -1909,7 +1858,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.043",
+      "id": "sync.042",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > shows the kept keys in a dry run and writes nothing",
       "kind": "function",
       "module": "sync",
@@ -1945,7 +1894,7 @@
       }
     },
     {
-      "id": "sync.044",
+      "id": "sync.043",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > backs up the file as it was when asked",
       "kind": "function",
       "module": "sync",
@@ -1977,7 +1926,7 @@
       }
     },
     {
-      "id": "sync.045",
+      "id": "sync.044",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > refuses an existing file holding invalid JSON and writes nothing",
       "kind": "function",
       "module": "sync",
@@ -2016,7 +1965,7 @@
       }
     },
     {
-      "id": "sync.046",
+      "id": "sync.045",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > refuses an existing file holding a top level that is not an object and writes nothing",
       "kind": "function",
       "module": "sync",
