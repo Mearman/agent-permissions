@@ -1,3 +1,5 @@
+# git hands the pushed refs to this hook on stdin, and a command below may read it, so it is taken first.
+refs=$(cat)
 pnpm run validate
 # actionlint gates CI workflows; warn-and-continue when the binary is missing locally (CI always runs it), so contributors without it are not blocked.
 if command -v actionlint >/dev/null 2>&1; then
@@ -5,3 +7,5 @@ if command -v actionlint >/dev/null 2>&1; then
 else
   echo "note: actionlint not installed - workflow YAML not linted locally (brew install actionlint)"
 fi
+# The Rust workspace is outside turbo, so its checks (the same script CI's rust job runs) follow, and only when the pushed commits touch something they cover.
+printf '%s\n' "$refs" | sh scripts/pre-push-rust.sh

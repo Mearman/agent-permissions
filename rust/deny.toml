@@ -1,0 +1,50 @@
+# The allowlist the cargo-deny check enforces in CI. A crate that is not listed under [bans] allow fails the check,
+# so adding a dependency is a reviewed change to this file, with the reason it is needed. The workspace's own
+# crates are listed too, since cargo-deny applies the allowlist to every crate in the graph.
+#
+# The list is exactly the crates in the dependency graph: cargo-deny has no option to fail on an allowed crate that
+# nothing uses, so scripts/check-deny-allowlist.py compares the two in CI. A crate is added in the change that
+# first depends on it, and removed in the change that drops it.
+
+[graph]
+all-features = true
+
+[advisories]
+# A published advisory against any crate in the graph fails the check. There is no ignore list: an advisory is
+# fixed by updating or replacing the crate, or recorded here with its id and a reason.
+ignore = []
+
+[licenses]
+# Only permissive licences, so nothing in the graph restricts how the crates are redistributed. A licence that no
+# crate in the graph uses fails the check, so this list is the set in use.
+unused-allowed-license = "deny"
+allow = ["MIT"]
+
+[bans]
+multiple-versions = "deny"
+# A workspace crate depends on a sibling by path, which the wildcard check would otherwise reject.
+wildcards = "deny"
+allow-wildcard-paths = true
+
+allow = [
+    { crate = "agent-perms-conformance", reason = "Loads the conformance corpus and checks it against its format." },
+    { crate = "serde_json", reason = "Reads the JSON the corpus and its manifest are written in." },
+    { crate = "serde_core", reason = "The serialisation traits serde_json is written against." },
+    { crate = "itoa", reason = "serde_json formats integers with it." },
+    { crate = "memchr", reason = "serde_json scans strings with it." },
+    { crate = "zmij", reason = "serde_json formats floating point numbers with it." },
+]
+
+# The wasm-bindgen family generates FFI, so only the binding crate may depend on it and no library crate can pull it in.
+deny = [
+    { crate = "wasm-bindgen", wrappers = ["agent-perms-wasm"], reason = "Generated JavaScript bindings, reserved for the binding crate." },
+    { crate = "js-sys", wrappers = ["agent-perms-wasm"], reason = "JavaScript built-ins for the binding crate." },
+    { crate = "wasm-bindgen-futures", wrappers = ["agent-perms-wasm"], reason = "Promise interop for the binding crate." },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# The trilean crates are git dependencies pinned by revision, and no other git source is allowed.
+allow-git = ["https://github.com/ExaDev/trilean"]

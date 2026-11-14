@@ -57,3 +57,22 @@ updates:
       prefix: ci(deps)
     cooldown:
       default-days: 7
+
+  # The Rust workspace's lock file and its toolchain pin, with the same release-age cooldown the npm entry uses. The cargo-deny version the workflows install is outside both ecosystems, and scripts/check-tool-pins.py checks it against the same cooldown on a schedule.
+  - package-ecosystem: cargo
+    directory: /rust
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: build(deps)
+
+  - package-ecosystem: rust-toolchain
+    directory: /rust
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: build(deps)
