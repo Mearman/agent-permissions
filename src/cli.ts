@@ -612,7 +612,9 @@ async function confineCommand(args: string[]): Promise<void> {
     await writeNativeConfig(
       nativeFormat,
       outputPath,
-      convert("canonical", nativeFormat, policy).output,
+      nativeFormat === "canonical"
+        ? policy
+        : convert("canonical", nativeFormat, policy).output,
     );
   } else if (outputPath) {
     await writeJsonFile(outputPath, jsonStr);

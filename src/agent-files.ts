@@ -46,6 +46,24 @@ import { type Format } from "./api.ts";
 // File mapping
 // ---------------------------------------------------------------------------
 
+/**
+ * The top-level keys of the canonical file that a tool writing a policy owns, exactly what a merge
+ * or an encoding produces. Every other key (`ceiling`, `with`, `without`, `up`, `sync`, `$schema`
+ * of an existing file, and any the schema gains) is the user's and is never rewritten.
+ */
+export const CANONICAL_OWNED_KEYS: readonly string[] = [
+  "defaultMode",
+  "rules",
+  "permissions",
+  "sandbox",
+  "network",
+  "profiles",
+  "activeProfile",
+  "delegation",
+  "roles",
+  "env",
+];
+
 /** A path of object keys from the top level of a JSON document. */
 export type JsonPath = readonly string[];
 
@@ -171,13 +189,15 @@ export function configFormatOfPath(path: string): Format | undefined {
 }
 
 /**
- * The agent whose config file a path is when that file holds other settings beside the
- * permissions and can be edited in place: the JSON agents and Oh My Pi. Anything else is a file
- * written whole.
+ * The format whose config file a path is when that file holds other settings beside the
+ * permissions and can be edited in place: the JSON agents, Oh My Pi and the canonical file. Anything
+ * else is a file written whole.
  */
-export function nativeFormatOfPath(path: string): AgentId | undefined {
+export function nativeFormatOfPath(
+  path: string,
+): AgentId | "canonical" | undefined {
   const format = configFormatOfPath(path);
-  if (format === undefined || format === "canonical") return undefined;
+  if (format === undefined || format === "canonical") return format;
   return AGENT_FILES[format].modelled !== undefined || format === "omp"
     ? format
     : undefined;
@@ -718,6 +738,15 @@ export function renderNativeConfig(
     return editOmpConfig(
       current === null || isBlank(current) ? null : current,
       OmpEncoded.parse(encoded),
+    );
+  }
+  if (format === "canonical") {
+    return editJsonConfig(
+      current,
+      encoded,
+      CANONICAL_OWNED_KEYS.map((key) => [key]),
+      false,
+      source,
     );
   }
   const def = AGENT_FILES[format];
