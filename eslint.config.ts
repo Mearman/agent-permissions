@@ -85,6 +85,7 @@ export default defineConfig(
         Buffer: "readonly",
         AbortController: "readonly",
         setTimeout: "readonly",
+        clearTimeout: "readonly",
       },
     },
     rules: {

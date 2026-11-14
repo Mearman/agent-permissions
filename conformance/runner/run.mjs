@@ -11,11 +11,6 @@ const QUIET_MS = 600;
 const is = (value) => value !== null && typeof value === "object";
 const same = (a, b, unordered) => assert.deepStrictEqual(unordered ? [...a].sort() : a, unordered ? [...b].sort() : b);
 
-/**
- * @typedef {{ id: string, from: string, kind: string, skip?: "ts" | "rust", [field: string]: unknown }} Case
- * @typedef {{ lib: Record<string, object>, cli?: string[] }} Target
- */
-
 function plain(value) {
   if (Array.isArray(value)) return value.map(plain);
   if (!is(value)) {
@@ -41,6 +36,7 @@ const mapStrings = (v, f) =>
 const walk = (v, path) => path.reduce((at, key) => (key === "length" && (Array.isArray(at) || typeof at === "string") ? at.length : at?.[key]), v);
 const bad = (code) => Object.assign(new Error(`${code}: injected`), { code });
 
+/** @param {string} text @param {string[]} fragments */
 const inOrder = (text, fragments) => {
   let from = 0;
   for (const fragment of fragments) {
@@ -49,6 +45,7 @@ const inOrder = (text, fragments) => {
     from = at + fragment.length;
   }
 };
+const excludes = (text, list) => (list ?? []).forEach((t) => assert.ok(!text.includes(t), `holds ${t}`));
 
 const subset = (actual, expected, at = "") => {
   if (!is(expected)) return assert.equal(actual, expected, at);
@@ -99,20 +96,41 @@ function directories(testCase) {
         n.endsWith("/") ? readdirSync(place(n)).sort().join("\n") : existsSync(place(n)) ? back(readFileSync(place(n), "utf8")) : null,
       ]),
     );
-  return { dirs, place, put, back, files, done: () => dirs.forEach((p) => rmSync(p, { recursive: true, force: true })) };
+  // A sorted "path=<base64 bytes>" list of every file under every $DIRn, for expectNothingWritten.
+  const snapshot = () => {
+    const found = [];
+    const walk = (root, relative) => {
+      for (const entry of readdirSync(join(root, relative), { withFileTypes: true })) {
+        const next = relative === "" ? entry.name : `${relative}/${entry.name}`;
+        if (entry.isDirectory()) walk(root, next);
+        else found.push(`${next}=${readFileSync(join(root, next)).toString("base64")}`);
+      }
+    };
+    for (const root of dirs) walk(root, "");
+    return found.sort();
+  };
+  return { dirs, place, put, back, files, snapshot, done: () => dirs.forEach((p) => rmSync(p, { recursive: true, force: true })) };
 }
+
+/** The strings `$number` accepts: a plain JSON number already decodes without this form, so only the values JSON cannot spell are listed here. */
+const NUMBER_FORMS = new Set(["-0", "Infinity", "-Infinity", "NaN"]);
 
 function decoder(refs) {
   const decode = (v) => {
     if (Array.isArray(v)) return v.map(decode);
     if (!is(v)) return v;
-    const [key] = Object.keys(v);
-    const one = Object.keys(v).filter((k) => k !== "as").length === 1;
-    if (!one || !key.startsWith("$")) return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, decode(x)]));
+    const keys = Object.keys(v).filter((k) => k !== "as");
+    const key = keys[0];
+    if (keys.length !== 1 || key === undefined || !key.startsWith("$")) {
+      return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, decode(x)]));
+    }
     const x = v[key];
-    const value = {
+    const forms = {
       $undefined: () => undefined,
-      $number: () => Number(x),
+      $number: () => {
+        if (!NUMBER_FORMS.has(x)) throw new Error(`$number: "${x}" is not one of ${[...NUMBER_FORMS].join(", ")}`);
+        return Number(x);
+      },
       $bytes: () => Buffer.from(x, "base64"),
       $signal: () => new AbortController().signal,
       $ref: () => refs[x],
@@ -121,7 +139,9 @@ function decoder(refs) {
       $reject: () => () => Promise.reject(bad(x)),
       $edit: () => async () => writeFileSync(x.path, x.text),
       $readError: () => async (path) => (x[path] ? Promise.reject(bad(x[path])) : readFile(path)),
-    }[key]();
+    }[key];
+    if (forms === undefined) throw new Error(`${key}: not one of the value encodings this runner knows`);
+    const value = forms();
     if (v.as !== undefined) refs[v.as] = value;
     return value;
   };
@@ -161,7 +181,7 @@ async function step(target, s, tree, decode) {
     for (const check of s.checks ?? []) verify(result, check, s.unordered, tree.back);
   }
   inOrder(text, s.stderr?.includes ?? []);
-  for (const absent of s.stderr?.absent ?? []) assert.ok(!text.includes(absent), `stderr holds ${absent}`);
+  excludes(text, s.stderr?.absent);
 }
 
 function decide(lib, policy, c, back) {
@@ -179,6 +199,9 @@ function decide(lib, policy, c, back) {
     );
 }
 
+// A port whose server stays alive but answers nothing must fail its case, not hang the run.
+const MCP_WAIT_TIMEOUT_MS = 10_000;
+
 function process_(command, argv, options) {
   const child = spawn(command, argv, options);
   let out = "";
@@ -191,7 +214,9 @@ function process_(command, argv, options) {
   child.on("close", () => ((ended = true), poke()));
   const until = (ready, what) =>
     new Promise((resolve, reject) => {
-      const check = () => (ready() ? resolve() : ended ? reject(new Error(`ended before ${what}`)) : waiters.push(check));
+      const timer = setTimeout(() => reject(new Error(`timed out waiting for ${what}`)), MCP_WAIT_TIMEOUT_MS);
+      const done = (fn) => (clearTimeout(timer), fn());
+      const check = () => (ready() ? done(resolve) : ended ? done(() => reject(new Error(`ended before ${what}`))) : waiters.push(check));
       check();
     });
   return { child, until, out: () => out, err: () => err, ended: () => ended };
@@ -253,13 +278,11 @@ async function watch(tc, tree, { lib }) {
   }
 }
 
-/**
- * Runs one case against a target, throwing on the first difference.
- * @param {Case} testCase @param {Target} target @returns {Promise<void>}
- */
+// Runs one case against a target, throwing on the first difference.
 export async function runCase(testCase, target) {
   const tree = directories(testCase);
   const { lib } = target;
+  const before = testCase.expectNothingWritten ? tree.snapshot() : undefined;
   try {
     const kind = testCase.kind;
     if (kind === "function" || kind === "steps") {
@@ -303,7 +326,7 @@ export async function runCase(testCase, target) {
       if (stdout !== undefined) assert.equal(tree.back(run.stdout), stdout);
       if (stdoutJson !== undefined) same(plain(tree.back(JSON.parse(run.stdout))), stdoutJson);
       inOrder(tree.back(run.stderr), stderrIncludes ?? []);
-      for (const text of stderrExcludes ?? []) assert.ok(!tree.back(run.stderr).includes(text), `stderr holds ${text}`);
+      excludes(tree.back(run.stderr), stderrExcludes);
     } else if (kind === "mcp") await mcp(testCase, tree, target);
     else if (kind === "watch") await watch(testCase, tree, target);
     else if (kind === "shell-differential") {
@@ -320,6 +343,7 @@ export async function runCase(testCase, target) {
       assert.ok(splittable / testCase.lines.length >= testCase.minimumSplittableShare, `only ${splittable} lines were splittable`);
     }
     if (testCase.expectFiles !== undefined) same(tree.files(testCase.expectFiles), testCase.expectFiles);
+    if (before !== undefined) same(tree.snapshot(), before);
   } finally {
     tree.done();
   }
