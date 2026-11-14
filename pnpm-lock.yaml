@@ -16,7 +16,7 @@ importers:
         version: 3.3.1
       trilean:
         specifier: ^1.7.0
-        version: 1.7.0
+        version: 1.13.0
       yaml:
         specifier: ^2.9.0
         version: 2.9.1
@@ -3103,13 +3103,14 @@ packages:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
 
-  trilean-regex@1.0.3:
-    resolution: {integrity: sha512-6i+FYT0udFlu8sR4suack6FDnYhkgrUeUk2LC16Zj28zhtPeJJTiHtoHDqmsEMUYJMrkKHZ32CBguyHV87JS8A==}
+  trilean-regex@1.0.16:
+    resolution: {integrity: sha512-SGsS1IUYIuy7i6c8d5BItYqNpjdbcyP+TBbEE983V6bGGujVo7+GTiVeZkLo5T3Dh7dXMk4hIG5awgPM/Zjrlg==}
     engines: {node: '>=20'}
 
-  trilean@1.7.0:
-    resolution: {integrity: sha512-IHLKNtrvobtD3mCcesUS9JvnJVR2IKBUSXmeq7sZBwoEonqe95VZt1a6bWac3r4iU7Wy0BJKt0q8K/Py4ThCeg==}
+  trilean@1.13.0:
+    resolution: {integrity: sha512-3Fi6s3bfq/PpgQCIkbhRdxf00q/ur8tQ1LZIslMxou+1PrGiCPPBeNx5VpVdbvm38FVDQg9hupd4pRGz4+KH/w==}
     engines: {node: '>=20'}
+    hasBin: true
 
   ts-algebra@2.0.0:
     resolution: {integrity: sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==}
@@ -6446,11 +6447,11 @@ snapshots:
 
   tree-kill@1.2.2: {}
 
-  trilean-regex@1.0.3: {}
+  trilean-regex@1.0.16: {}
 
-  trilean@1.7.0:
+  trilean@1.13.0:
     dependencies:
-      trilean-regex: 1.0.3
+      trilean-regex: 1.0.16
       zod: 4.6.7
 
   ts-algebra@2.0.0: {}
