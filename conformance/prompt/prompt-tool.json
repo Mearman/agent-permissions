@@ -125,6 +125,508 @@
           }
         ]
       }
+    },
+    {
+      "id": "prompt-tool.009",
+      "from": "prompt-tool.test.ts: createPermissionPrompt > allows a call the policy allows, echoing its input",
+      "kind": "prompt",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./.env",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "allow",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "root": "/work/project",
+      "request": {
+        "tool_name": "Bash",
+        "input": {
+          "command": "git status",
+          "description": "status"
+        }
+      },
+      "expect": {
+        "behavior": "allow",
+        "updatedInput": {
+          "command": "git status",
+          "description": "status"
+        }
+      }
+    },
+    {
+      "id": "prompt-tool.010",
+      "from": "prompt-tool.test.ts: createPermissionPrompt > denies a call the policy denies, naming the rule",
+      "kind": "prompt",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./.env",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "allow",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "root": "/work/project",
+      "request": {
+        "tool_name": "Bash",
+        "input": {
+          "command": "sudo rm -rf /"
+        }
+      },
+      "expect": {
+        "behavior": "deny",
+        "messageIncludes": ["sudo rm -rf /", "Bash(sudo:*) [deny]"]
+      }
+    },
+    {
+      "id": "prompt-tool.011",
+      "from": "prompt-tool.test.ts: createPermissionPrompt > denies a file the policy denies by its root-relative path",
+      "kind": "prompt",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./.env",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "allow",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "root": "/work/project",
+      "request": {
+        "tool_name": "Read",
+        "input": {
+          "file_path": "/work/project/.env"
+        }
+      },
+      "expect": {
+        "behavior": "deny"
+      }
+    },
+    {
+      "id": "prompt-tool.012",
+      "from": "prompt-tool.test.ts: createPermissionPrompt > applies a file rule written as an absolute path",
+      "kind": "prompt",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Edit",
+            "pattern": "/work/project/*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "root": "/work/project",
+      "request": {
+        "tool_name": "Edit",
+        "input": {
+          "file_path": "/work/project/src/a.ts"
+        }
+      },
+      "expect": {
+        "behavior": "allow",
+        "updatedInput": {
+          "file_path": "/work/project/src/a.ts"
+        }
+      }
+    },
+    {
+      "id": "prompt-tool.013",
+      "from": "prompt-tool.test.ts: createPermissionPrompt > lets a rule on either path form deny what the other allows",
+      "kind": "prompt",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "pattern": "/work/project/*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "root": "/work/project",
+      "request": {
+        "tool_name": "Read",
+        "input": {
+          "file_path": "/work/project/secrets/key"
+        }
+      },
+      "expect": {
+        "behavior": "deny",
+        "messageIncludes": ["./secrets/key (Read(./secrets/*) [deny])"]
+      }
+    },
+    {
+      "id": "prompt-tool.014",
+      "from": "prompt-tool.test.ts: createPermissionPrompt > denies a call whose subject field is missing",
+      "kind": "prompt",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./.env",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "allow",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "root": "/work/project",
+      "request": {
+        "tool_name": "Bash",
+        "input": {
+          "description": "no command"
+        }
+      },
+      "expect": {
+        "behavior": "deny",
+        "messageIncludes": ["command"]
+      }
+    },
+    {
+      "id": "prompt-tool.015",
+      "from": "prompt-tool.test.ts: createPermissionPrompt > never lets an unknown condition allow a call",
+      "kind": "prompt",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./.env",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "allow",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "root": "/work/project",
+      "request": {
+        "tool_name": "Bash",
+        "input": {
+          "command": "npm publish --tag next"
+        }
+      },
+      "expect": {
+        "behavior": "deny"
+      }
+    },
+    {
+      "id": "prompt-tool.016",
+      "from": "prompt-tool.test.ts: createPermissionPrompt > denies an ask decision when the host has no approval handler",
+      "kind": "prompt",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./.env",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "allow",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "root": "/work/project",
+      "request": {
+        "tool_name": "Bash",
+        "input": {
+          "command": "git push origin main"
+        }
+      },
+      "expect": {
+        "behavior": "deny",
+        "messageIncludes": ["approval", "Bash(git push:*) [ask]"]
+      }
+    },
+    {
+      "id": "prompt-tool.017",
+      "from": "prompt-tool.test.ts: createPermissionPrompt > hands an ask decision to the host and returns its verdict",
+      "kind": "prompt",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./.env",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "allow",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "root": "/work/project",
+      "request": {
+        "tool_name": "Bash",
+        "input": {
+          "command": "git push origin main"
+        },
+        "tool_use_id": "toolu_1"
+      },
+      "expect": {
+        "behavior": "allow",
+        "updatedInput": {
+          "command": "git push origin feature"
+        }
+      },
+      "approval": {
+        "behavior": "allow",
+        "updatedInput": {
+          "command": "git push origin feature"
+        }
+      },
+      "asked": ["Bash git push origin main ask"]
+    },
+    {
+      "id": "prompt-tool.018",
+      "from": "prompt-tool.test.ts: createPermissionPrompt > does not consult the host for a call the policy settles",
+      "kind": "prompt",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./.env",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "allow",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "root": "/work/project",
+      "request": {
+        "tool_name": "Bash",
+        "input": {
+          "command": "git status"
+        }
+      },
+      "expect": {
+        "behavior": "allow",
+        "updatedInput": {
+          "command": "git status"
+        }
+      },
+      "approval": {
+        "behavior": "deny",
+        "message": "no"
+      },
+      "asked": []
     }
   ]
 }
