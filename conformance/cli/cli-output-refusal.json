@@ -22,6 +22,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.agents/permissions.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.agents/permissions.json": "{\"sandbox\": {\"mode\": \"workspace-write\"}, \"env\": {\"A\": \"1\"}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -47,6 +48,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.agents/permissions.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.agents/permissions.json": "{\"sandbox\": {\"mode\": \"workspace-write\"}, \"env\": {\"A\": \"1\"}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -74,6 +76,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.agents/permissions.local.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.agents/permissions.local.json": "{\"sync\": {\"mode\": \"watch\"}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -99,6 +102,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.agents/permissions.local.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.agents/permissions.local.json": "{\"sync\": {\"mode\": \"watch\"}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -126,6 +130,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.claude/settings.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.claude/settings.json": "{\"model\": \"opus\", \"permissions\": {\"deny\": [\"Bash(rm:*)\"]}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -151,6 +156,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.claude/settings.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.claude/settings.json": "{\"model\": \"opus\", \"permissions\": {\"deny\": [\"Bash(rm:*)\"]}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -178,6 +184,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.claude/settings.local.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.claude/settings.local.json": "{\"permissions\": {\"deny\": [\"Bash(sudo:*)\"]}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -203,6 +210,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.claude/settings.local.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.claude/settings.local.json": "{\"permissions\": {\"deny\": [\"Bash(sudo:*)\"]}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -230,6 +238,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/opencode.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/opencode.json": "{\"permission\": {\"bash\": {\"rm *\": \"deny\"}}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -249,6 +258,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/opencode.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/opencode.json": "{\"permission\": {\"bash\": {\"rm *\": \"deny\"}}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -276,6 +286,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/opencode.jsonc", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/opencode.jsonc": "{\n  // mine\n  \"permission\": {\"edit\": \"deny\"}\n}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -301,6 +312,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/opencode.jsonc", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/opencode.jsonc": "{\n  // mine\n  \"permission\": {\"edit\": \"deny\"}\n}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -328,6 +340,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.kiro/permissions.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.kiro/permissions.json": "{\"toolsSettings\": {\"shell\": {\"deniedCommands\": [\"\\\\Arm\\\\z\"]}}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -353,6 +366,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.kiro/permissions.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.kiro/permissions.json": "{\"toolsSettings\": {\"shell\": {\"deniedCommands\": [\"\\\\Arm\\\\z\"]}}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -380,6 +394,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/codex.toml", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/codex.toml": "approval_policy = \"never\"\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -399,6 +414,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/codex.toml", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/codex.toml": "approval_policy = \"never\"\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -426,6 +442,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.omp/config.yml", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.omp/config.yml": "# mine\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -451,6 +468,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.omp/config.yml", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.omp/config.yml": "# mine\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -478,6 +496,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.crush.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.crush.json": "{\"permissions\": {\"allowed_tools\": [\"view\"]}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -497,6 +516,7 @@
         "exit": 1,
         "stderrIncludes": ["$DIR0/.crush.json", "sync"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.crush.json": "{\"permissions\": {\"allowed_tools\": [\"view\"]}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -527,6 +547,7 @@
         "exit": 1,
         "stderrIncludes": ["config.yml"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/omp-home/config.yml": "# mine\nmodel: fast\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -555,6 +576,7 @@
         "exit": 1,
         "stderrIncludes": ["config.yml"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/omp-home/config.yml": "# mine\nmodel: fast\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -573,6 +595,7 @@
       "expect": {
         "exit": 1
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/.agents/permissions.json": "{\"env\": {\"A\": \"1\"}}\n",
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
@@ -616,6 +639,7 @@
         "exit": 1,
         "stderrIncludes": ["settings.json", "claude-code", "opencode"]
       },
+      "expectNothingWritten": true,
       "expectFiles": {
         "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
       }
