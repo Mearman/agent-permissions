@@ -10,8 +10,8 @@ license = "MIT"
 repository = "https://github.com/ExaDev/agent-permissions"
 
 [workspace.dependencies]
-# Only the standard library feature is needed (an `Error` that implements `std::error::Error`); the default feature set is that one feature, so it is stated.
-serde_json = { version = "1", default-features = false, features = ["std"] }
+# std (an `Error` that implements `std::error::Error`) is the only default feature needed, so it is named explicitly rather than relied on. float_roundtrip is not a default feature: without it, serde_json can read a float literal one unit in the last place away from what JSON.parse gives (test/float_roundtrip.rs), which would make this Rust side disagree with the TypeScript one at exactly the kind of numeric boundary a corpus case can carry.
+serde_json = { version = "1", default-features = false, features = ["std", "float_roundtrip"] }
 
 [workspace.lints.rust]
 # Binding crates that need wasm-bindgen's generated FFI relax this in their own manifest, not here.
