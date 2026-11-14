@@ -462,7 +462,7 @@
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm\",\"tier\":\"deny\"}]}",
         "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"shell\":{\"deniedCommands\":[\"\\\\Arm\\\\z\"]}}}"
       },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      "notes": "The original asserts facts derived from the result; this case records the whole result. Kiro's deniedCommands and web_fetch.blocked take regex (the codec's own comment states this), so the command text is wrapped in \\A...\\z anchors on write; this is the intended encoding, not a loosening, per src/compat/codecs.ts addKiroAnchors and the comment above the Kiro import block."
     },
     {
       "id": "sync-roundtrip.011",
@@ -690,7 +690,7 @@
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"WebFetch\",\"pattern\":\"url:rm\",\"tier\":\"deny\"}]}",
         "$DIR0/.kiro/permissions.json": "{\"toolsSettings\":{\"web_fetch\":{\"blocked\":[\"\\\\Arm\\\\z\"]}}}"
       },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      "notes": "The original asserts facts derived from the result; this case records the whole result. Kiro's deniedCommands and web_fetch.blocked take regex (the codec's own comment states this), so the command text is wrapped in \\A...\\z anchors on write; this is the intended encoding, not a loosening, per src/compat/codecs.ts addKiroAnchors and the comment above the Kiro import block."
     },
     {
       "id": "sync-roundtrip.016",
