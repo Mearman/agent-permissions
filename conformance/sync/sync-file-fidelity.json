@@ -21,23 +21,20 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "update"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"env\": {\"TOKEN\": \"secret\"}, \"permissions\": {}}\n",
+            "proposed": "{\"env\": {\"TOKEN\": \"secret\"}, \"permissions\": {\n  \"allow\": [],\n  \"deny\": [\n    \"Bash(rm:*)\"\n  ],\n  \"ask\": []\n}}\n"
           }
-        }
-      ],
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.claude/settings.json": "{\"env\": {\"TOKEN\": \"secret\"}, \"permissions\": {}}\n"
@@ -47,6 +44,167 @@
         "$DIR0/.claude/settings.json.bak": "{\"env\": {\"TOKEN\": \"secret\"}, \"permissions\": {}}\n"
       },
       "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-file-fidelity.002",
+      "from": "sync-file-fidelity.test.ts: a file is read as bytes > refuses a target that is not valid UTF-8, naming it and saying so, and leaves it alone",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/opencode.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "not-utf8"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": {
+          "$bytes": "ewogIC8vIGNhZukKICAicGVybWlzc2lvbiI6IHt9Cn0K"
+        }
+      }
+    },
+    {
+      "id": "sync-file-fidelity.003",
+      "from": "sync-file-fidelity.test.ts: the temporary file > is removed when the rename fails",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeFileAtomic",
+      "args": [
+        "$DIR0/a.json",
+        "{}\n",
+        "{}\n",
+        {
+          "renameFile": {
+            "$reject": "EIO"
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/a.json": "{}\n"
+      },
+      "expectFiles": {
+        "$DIR0/a.json": "{}\n",
+        "$DIR0/": ".agents\na.json"
+      },
+      "throws": {
+        "message": ["EIO"]
+      }
+    },
+    {
+      "id": "sync-file-fidelity.004",
+      "from": "sync-file-fidelity.test.ts: a file that cannot be replaced by a rename > is written in place when the rename reports it busy or on another device",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeFileAtomic",
+      "args": [
+        "$DIR0/a.json",
+        "{\"a\": 2}\n",
+        "{\"a\": 1}\n",
+        {
+          "renameFile": {
+            "$reject": "EBUSY"
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/a.json": "{\"a\": 1}\n"
+      },
+      "expectFiles": {
+        "$DIR0/a.json": "{\"a\": 2}\n",
+        "$DIR0/": ".agents\na.json"
+      },
+      "expectUndefined": true,
+      "notes": "The rename fails with EBUSY; the original ran both codes in one test."
+    },
+    {
+      "id": "sync-file-fidelity.005",
+      "from": "sync-file-fidelity.test.ts: a file that cannot be replaced by a rename > is written in place when the rename reports it busy or on another device",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeFileAtomic",
+      "args": [
+        "$DIR0/a.json",
+        "{\"a\": 2}\n",
+        "{\"a\": 1}\n",
+        {
+          "renameFile": {
+            "$reject": "EXDEV"
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/a.json": "{\"a\": 1}\n"
+      },
+      "expectFiles": {
+        "$DIR0/a.json": "{\"a\": 2}\n",
+        "$DIR0/": ".agents\na.json"
+      },
+      "expectUndefined": true,
+      "notes": "The rename fails with EXDEV; the original ran both codes in one test."
+    },
+    {
+      "id": "sync-file-fidelity.006",
+      "from": "sync-file-fidelity.test.ts: a file owned by another user > is refused, leaving the file and no temporary file, when the owner cannot be kept",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeFileAtomic",
+      "args": [
+        "$DIR0/a.json",
+        "{\"a\": 2}\n",
+        "{\"a\": 1}\n",
+        {
+          "uid": {
+            "$number": "0"
+          },
+          "chownFile": {
+            "$reject": "EPERM"
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/a.json": "{\"a\": 1}\n"
+      },
+      "expectFiles": {
+        "$DIR0/a.json": "{\"a\": 1}\n",
+        "$DIR0/": ".agents\na.json"
+      },
+      "throws": {
+        "message": ["$DIR0/a.json: "],
+        "checks": [
+          {
+            "at": ["reason"],
+            "equals": "owner"
+          }
+        ]
+      },
+      "notes": "The process's user id is given as 0 and the runner never runs as root, so it differs from the owner of the file the runner made."
     }
   ]
 }

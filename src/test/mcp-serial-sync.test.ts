@@ -1,9 +1,8 @@
-import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { after, describe, it } from "node:test";
 import { createSerialRunner, syncInBackground } from "../mcp.ts";
-import { writeFileAtomic } from "../agent-files.ts";
 import { cleanup, denyRm, project, put } from "./native-config-fixture.ts";
 
 after(cleanup);
@@ -81,23 +80,5 @@ void describe("one sync is in flight at a time", () => {
       await readFile(join(cwd, ".claude", "settings.json"), "utf-8"),
       /Bash\(rm:\*\)/u,
     );
-  });
-});
-
-void describe("the file is checked again immediately before the rename", () => {
-  void it("refuses to replace a file that changed after the temporary file was written", async () => {
-    const cwd = await project({});
-    const path = await put(cwd, "a.json", '{"a": 1}\n');
-
-    await assert.rejects(
-      writeFileAtomic(path, '{"a": 2}\n', '{"a": 1}\n', {
-        afterTemporaryWritten: async () => {
-          await put(cwd, "a.json", '{"a": 3}\n');
-        },
-      }),
-      /changed since it was read/u,
-    );
-
-    assert.equal(await readFile(path, "utf-8"), '{"a": 3}\n');
   });
 });

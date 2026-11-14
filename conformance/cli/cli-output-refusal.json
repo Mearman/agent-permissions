@@ -466,6 +466,20 @@
     },
     {
       "id": "cli-output-refusal.024",
+      "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > says a directory at the output path is a directory",
+      "kind": "cli",
+      "args": ["confine", "--root", "$DIR0", "--output", "$DIR0/codex.toml"],
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/codex.toml/": "",
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+      },
+      "expect": {
+        "exit": 1
+      }
+    },
+    {
+      "id": "cli-output-refusal.025",
       "from": "cli-output-refusal.test.ts: convert and confine create config files and refuse to overwrite one > refuses another agent's config file than --to names, whether or not it exists",
       "kind": "cli",
       "args": [
@@ -486,7 +500,7 @@
       }
     },
     {
-      "id": "cli-output-refusal.025",
+      "id": "cli-output-refusal.026",
       "from": "cli-output-refusal.test.ts: convert and confine create a config file that does not exist yet > writes a native file wrapped as that agent reads it",
       "kind": "cli",
       "args": [
@@ -510,7 +524,7 @@
       }
     },
     {
-      "id": "cli-output-refusal.026",
+      "id": "cli-output-refusal.027",
       "from": "cli-output-refusal.test.ts: convert and confine create a config file that does not exist yet > writes the encoded document whole to a path that is no agent's config file",
       "kind": "cli",
       "args": [
@@ -533,6 +547,26 @@
       "expectFiles": {
         "$DIR0/out.json": "{\n  \"allow\": [\n    \"Read\"\n  ],\n  \"deny\": [],\n  \"ask\": []\n}\n"
       }
+    },
+    {
+      "id": "cli-output-refusal.028",
+      "from": "cli-output-refusal.test.ts: convert and confine create a config file that does not exist yet > writes a canonical policy",
+      "kind": "cli",
+      "args": [
+        "confine",
+        "--root",
+        "$DIR0",
+        "--output",
+        "$DIR0/.agents/permissions.json"
+      ],
+      "cwd": "$DIR0",
+      "expect": {
+        "exit": 0
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\n  \"defaultMode\": \"restricted\",\n  \"rules\": [\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"$DIR0\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"$DIR0/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"$DIR0\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"$DIR0/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"$DIR0\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"$DIR0/*\",\n      \"tier\": \"allow\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Read\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Edit\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"../*\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"*/..\",\n      \"tier\": \"deny\"\n    },\n    {\n      \"tool\": \"Write\",\n      \"pattern\": \"*/../*\",\n      \"tier\": \"deny\"\n    }\n  ]\n}\n"
+      },
+      "notes": "The original asserted that the file holds rules; the case pins the whole file, for a directory reached without a symbolic link, which is what the CLI's own working directory is."
     }
   ]
 }

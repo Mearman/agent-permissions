@@ -2,6 +2,110 @@
   "cases": [
     {
       "id": "sync-canonical-keys.001",
+      "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > leaves each unowned key's text identical when the merge changes the rules (with)",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\n    \"$schema\":   \"https://example.com/schema.json\",\n    \"ceiling\":   true,\n    \"with\":   [\"claude-code\", \"opencode\"],\n    \"up\":   3,\n    \"sync\":   {\"mode\": \"watch\",   \"backup\": true},\n    \"rules\": []\n}\n",
+            "proposed": "{\n    \"$schema\":   \"https://example.com/schema.json\",\n    \"ceiling\":   true,\n    \"with\":   [\"claude-code\", \"opencode\"],\n    \"up\":   3,\n    \"sync\":   {\"mode\": \"watch\",   \"backup\": true},\n    \"rules\": [\n        {\n            \"tool\": \"Bash\",\n            \"pattern\": \"rm:*\",\n            \"tier\": \"deny\"\n        }\n    ]\n}\n"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"]}}",
+            "proposed": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"allow\":[],\"ask\":[]}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\n    \"$schema\":   \"https://example.com/schema.json\",\n    \"ceiling\":   true,\n    \"with\":   [\"claude-code\", \"opencode\"],\n    \"up\":   3,\n    \"sync\":   {\"mode\": \"watch\",   \"backup\": true},\n    \"rules\": []\n}\n",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\n    \"$schema\":   \"https://example.com/schema.json\",\n    \"ceiling\":   true,\n    \"with\":   [\"claude-code\", \"opencode\"],\n    \"up\":   3,\n    \"sync\":   {\"mode\": \"watch\",   \"backup\": true},\n    \"rules\": [\n        {\n            \"tool\": \"Bash\",\n            \"pattern\": \"rm:*\",\n            \"tier\": \"deny\"\n        }\n    ]\n}\n",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"allow\":[],\"ask\":[]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-canonical-keys.002",
+      "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > leaves each unowned key's text identical when the merge changes the rules (without)",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\n    \"$schema\":   \"https://example.com/schema.json\",\n    \"ceiling\":   true,\n    \"without\":   [\"codex\"],\n    \"up\":   3,\n    \"sync\":   {\"mode\": \"watch\",   \"backup\": true},\n    \"rules\": []\n}\n",
+            "proposed": "{\n    \"$schema\":   \"https://example.com/schema.json\",\n    \"ceiling\":   true,\n    \"without\":   [\"codex\"],\n    \"up\":   3,\n    \"sync\":   {\"mode\": \"watch\",   \"backup\": true},\n    \"rules\": [\n        {\n            \"tool\": \"Bash\",\n            \"pattern\": \"rm:*\",\n            \"tier\": \"deny\"\n        }\n    ]\n}\n"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "update",
+            "current": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"]}}",
+            "proposed": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"allow\":[],\"ask\":[]}}"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\n    \"$schema\":   \"https://example.com/schema.json\",\n    \"ceiling\":   true,\n    \"without\":   [\"codex\"],\n    \"up\":   3,\n    \"sync\":   {\"mode\": \"watch\",   \"backup\": true},\n    \"rules\": []\n}\n",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\n    \"$schema\":   \"https://example.com/schema.json\",\n    \"ceiling\":   true,\n    \"without\":   [\"codex\"],\n    \"up\":   3,\n    \"sync\":   {\"mode\": \"watch\",   \"backup\": true},\n    \"rules\": [\n        {\n            \"tool\": \"Bash\",\n            \"pattern\": \"rm:*\",\n            \"tier\": \"deny\"\n        }\n    ]\n}\n",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"allow\":[],\"ask\":[]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-canonical-keys.003",
       "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > keeps the sync section the daemon reads at startup",
       "kind": "function",
       "module": "sync",
@@ -54,7 +158,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync-canonical-keys.002",
+      "id": "sync-canonical-keys.004",
       "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > does not refold the user's permissions lists when the merge did not change the rules",
       "kind": "function",
       "module": "sync",
@@ -92,7 +196,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync-canonical-keys.003",
+      "id": "sync-canonical-keys.005",
       "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > refuses a canonical file in the working directory that is malformed or fails the schema, and leaves it",
       "kind": "function",
       "module": "sync",
@@ -131,7 +235,7 @@
       }
     },
     {
-      "id": "sync-canonical-keys.004",
+      "id": "sync-canonical-keys.006",
       "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > refuses a canonical file in the working directory that is malformed or fails the schema, and leaves it",
       "kind": "function",
       "module": "sync",
@@ -170,7 +274,7 @@
       }
     },
     {
-      "id": "sync-canonical-keys.005",
+      "id": "sync-canonical-keys.007",
       "from": "sync-canonical-keys.test.ts: the canonical file keeps every key sync does not own > refuses a canonical file in the working directory that is not valid JSON",
       "kind": "function",
       "module": "sync",

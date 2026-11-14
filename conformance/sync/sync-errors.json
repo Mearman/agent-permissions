@@ -119,6 +119,86 @@
     },
     {
       "id": "sync-errors.004",
+      "from": "sync-errors.test.ts: sync rejects with a typed error that names the file and the reason > for a file that is not valid UTF-8",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/opencode.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "not-utf8"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": {
+          "$bytes": "e+l9"
+        }
+      }
+    },
+    {
+      "id": "sync-errors.005",
+      "from": "sync-errors.test.ts: sync rejects with a typed error that names the file and the reason > for a path that cannot be read",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "unreadable"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.claude/settings.json/": "",
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
+      }
+    },
+    {
+      "id": "sync-errors.006",
       "from": "sync-errors.test.ts: sync rejects with a typed error that names the file and the reason > for a canonical file that is not valid JSON",
       "kind": "function",
       "module": "sync",
@@ -157,7 +237,7 @@
       }
     },
     {
-      "id": "sync-errors.005",
+      "id": "sync-errors.007",
       "from": "recorded: sync src/sync.ts (a source whose read fails with EIO is refused as unreadable and nothing is written)",
       "kind": "function",
       "module": "sync",
@@ -204,7 +284,7 @@
       }
     },
     {
-      "id": "sync-errors.006",
+      "id": "sync-errors.008",
       "from": "recorded: sync src/sync.ts (a source whose read fails with EMFILE is refused as unreadable and nothing is written)",
       "kind": "function",
       "module": "sync",

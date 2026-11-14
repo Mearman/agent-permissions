@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "id": "mcp-serial-sync.001",
+      "from": "mcp-serial-sync.test.ts: the file is checked again immediately before the rename > refuses to replace a file that changed after the temporary file was written",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeFileAtomic",
+      "args": [
+        "$DIR0/a.json",
+        "{\"a\": 2}\n",
+        "{\"a\": 1}\n",
+        {
+          "afterTemporaryWritten": {
+            "$edit": {
+              "path": "$DIR0/a.json",
+              "text": "{\"a\": 3}\n"
+            }
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/a.json": "{\"a\": 1}\n"
+      },
+      "throws": {
+        "message": ["changed since it was read"]
+      },
+      "expectFiles": {
+        "$DIR0/a.json": "{\"a\": 3}\n"
+      },
+      "notes": "The file is edited by the seam that runs once the temporary file is written, which is the concurrent edit the original made."
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  chmod,
   link,
   lstat,
   mkdir,
@@ -7,7 +8,6 @@ import {
   readFile,
   stat,
   symlink,
-  writeFile,
 } from "node:fs/promises";
 import { join } from "node:path";
 import { after, describe, it } from "node:test";
@@ -28,60 +28,41 @@ async function temporaries(directory: string): Promise<string[]> {
   return (await readdir(directory)).filter((name) => name.endsWith(".tmp"));
 }
 
-void describe("a file is read as bytes", () => {
-  void it("refuses a target that is not valid UTF-8, naming it and saying so, and leaves it alone", async () => {
-    const cwd = await project({ rules: [denyRm] });
-    const path = join(cwd, "opencode.json");
-    const bytes = Buffer.concat([
-      Buffer.from("{\n  // caf"),
-      Buffer.from([0xe9]),
-      Buffer.from('\n  "permission": {}\n}\n'),
-    ]);
-    await writeFile(path, bytes);
-
-    await assert.rejects(
-      sync(options(cwd)),
-      /opencode\.json: .*not valid UTF-8/u,
-    );
-
-    assert.deepEqual(await readFile(path), bytes);
-  });
-});
-
 void describe("the temporary file", () => {
-  void it("is removed when the rename fails", async () => {
+  void it("is never created with a wider mode than the file it replaces", async () => {
     const cwd = await project({});
-    const path = await put(cwd, "a.json", "{}\n");
-
-    await assert.rejects(
-      writeFileAtomic(path, "{}\n", "{}\n", {
-        renameFile: () =>
-          Promise.reject(Object.assign(new Error("boom"), { code: "EIO" })),
-      }),
-      /EIO/u,
-    );
-
-    assert.deepEqual(await temporaries(cwd), []);
-    assert.equal(await readFile(path, "utf-8"), "{}\n");
+    const path = await put(cwd, "secret.json", "{}\n");
+    await chmod(path, 0o600);
+    const previous = process.umask(0);
+    try {
+      const modes = new Set<number>();
+      const state = { finished: false };
+      const write = writeFileAtomic(
+        path,
+        "x".repeat(64 * 1024 * 1024),
+        "{}\n",
+      ).finally(() => {
+        state.finished = true;
+      });
+      while (!state.finished) {
+        for (const name of await temporaries(cwd)) {
+          try {
+            modes.add((await stat(join(cwd, name))).mode & 0o777);
+          } catch {
+            // The file was renamed away between the listing and the stat.
+          }
+        }
+      }
+      await write;
+      assert.ok(modes.size > 0, "the temporary file was observed");
+      assert.deepEqual([...modes], [0o600]);
+    } finally {
+      process.umask(previous);
+    }
   });
 });
 
 void describe("a file that cannot be replaced by a rename", () => {
-  void it("is written in place when the rename reports it busy or on another device", async () => {
-    for (const code of ["EBUSY", "EXDEV"]) {
-      const cwd = await project({});
-      const path = await put(cwd, "a.json", '{"a": 1}\n');
-
-      await writeFileAtomic(path, '{"a": 2}\n', '{"a": 1}\n', {
-        renameFile: () =>
-          Promise.reject(Object.assign(new Error(code), { code })),
-      });
-
-      assert.equal(await readFile(path, "utf-8"), '{"a": 2}\n', code);
-      assert.deepEqual(await temporaries(cwd), [], code);
-    }
-  });
-
   void it("is written in place when it is hard linked, so the other name sees the change", async () => {
     const cwd = await project({ rules: [denyRm] });
     const path = await put(cwd, ".claude/settings.json", '{"model": "opus"}\n');
@@ -128,29 +109,5 @@ void describe("a file owned by another user", () => {
 
     assert.deepEqual(calls, [[info.uid, info.gid]]);
     assert.equal(await readFile(path, "utf-8"), '{"a": 2}\n');
-  });
-
-  void it("is refused, leaving the file and no temporary file, when the owner cannot be kept", async () => {
-    const cwd = await project({});
-    const path = await put(cwd, "a.json", '{"a": 1}\n');
-    const info = await stat(path);
-
-    await assert.rejects(
-      writeFileAtomic(path, '{"a": 2}\n', '{"a": 1}\n', {
-        uid: info.uid + 1,
-        chownFile: () =>
-          Promise.reject(
-            Object.assign(new Error("not permitted"), { code: "EPERM" }),
-          ),
-      }),
-      (error: unknown) =>
-        error instanceof Error &&
-        "reason" in error &&
-        error.reason === "owner" &&
-        error.message.startsWith(`${path}: `),
-    );
-
-    assert.equal(await readFile(path, "utf-8"), '{"a": 1}\n');
-    assert.deepEqual(await temporaries(cwd), []);
   });
 });

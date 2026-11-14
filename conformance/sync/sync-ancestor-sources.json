@@ -2,6 +2,127 @@
   "cases": [
     {
       "id": "sync-ancestor-sources.001",
+      "from": "sync-ancestor-sources.test.ts: a source that sync would not write never stops it > skips an ancestor's undecodable settings with a warning naming the file and the reason, and still writes",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0/app",
+          "up": {
+            "$number": "Infinity"
+          },
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "stderr": {
+        "includes": ["warning: ", "$DIR0/.claude/settings.json", "allow"]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":\"Read\"}}",
+        "$DIR0/app/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/app/.claude/settings.json": "{\"model\": \"x\"}\n"
+      },
+      "expectFiles": {
+        "$DIR0/app/.claude/settings.json": "{\"model\": \"x\", \"permissions\": {\"allow\":[],\"deny\":[\"Bash(rm:*)\"],\"ask\":[]}}\n",
+        "$DIR0/app/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/app/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/app/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "id": "sync-ancestor-sources.002",
+      "from": "sync-ancestor-sources.test.ts: a source that sync would not write never stops it > skips an ancestor's file that is not valid UTF-8",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0/app",
+          "up": {
+            "$number": "Infinity"
+          },
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "stderr": {
+        "includes": ["warning: ", "opencode.json", "not valid UTF-8"]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/app/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": {
+          "$bytes": "e+l9"
+        }
+      },
+      "expectFiles": {
+        "$DIR0/app/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/app/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/app/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/app/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "id": "sync-ancestor-sources.003",
+      "from": "sync-ancestor-sources.test.ts: a source that sync would not write never stops it > still stops for the same undecodable file in the directory it writes",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0/app",
+          "up": {
+            "$number": "Infinity"
+          },
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/app/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "undecodable"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/app/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/app/.claude/settings.json": "{\"permissions\":{\"allow\":\"Read\"}}"
+      }
+    },
+    {
+      "id": "sync-ancestor-sources.004",
       "from": "sync-ancestor-sources.test.ts: a source that sync would not write never stops it > skips Oh My Pi's global config unless it is to be written",
       "kind": "function",
       "module": "sync",
@@ -21,23 +142,177 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "includes": ["warning: ", "config.yml"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{}",
         "$DIR0/app/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/omp-home/config.yml": "bash: [unclosed\n"
       },
       "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-ancestor-sources.005",
+      "from": "sync-ancestor-sources.test.ts: a source that sync would not write never stops it > skips Oh My Pi's global config unless it is to be written",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0/app",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR0/omp-home",
+          "ompGlobal": true
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/omp-home/config.yml"
+          },
+          {
+            "at": ["reason"],
+            "subset": "invalid-format"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/app/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/omp-home/config.yml": "bash: [unclosed\n"
+      }
+    },
+    {
+      "id": "sync-ancestor-sources.006",
+      "from": "sync-ancestor-sources.test.ts: a warning about a source is reported once per change of that file > repeats only when the file's content changes",
+      "kind": "steps",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/app/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":\"Read\"}}"
+      },
+      "steps": [
+        {
+          "module": "sync",
+          "function": "sync",
+          "args": [
+            {
+              "cwd": "$DIR0/app",
+              "up": {
+                "$number": "Infinity"
+              },
+              "with": [],
+              "without": [],
+              "yes": true,
+              "dryRun": false,
+              "create": false,
+              "verbose": false,
+              "backup": false,
+              "ompAgentDir": "$DIR1/no-omp-agent",
+              "ompGlobal": false,
+              "warned": {
+                "$map": [],
+                "as": "warned"
+              }
+            }
+          ],
+          "stderr": {
+            "includes": ["warning: ", "$DIR0/.claude/settings.json"]
+          },
+          "checks": [
+            {
+              "at": ["applied"],
+              "present": true
+            }
+          ]
+        },
+        {
+          "module": "sync",
+          "function": "sync",
+          "args": [
+            {
+              "cwd": "$DIR0/app",
+              "up": {
+                "$number": "Infinity"
+              },
+              "with": [],
+              "without": [],
+              "yes": true,
+              "dryRun": false,
+              "create": false,
+              "verbose": false,
+              "backup": false,
+              "ompAgentDir": "$DIR1/no-omp-agent",
+              "ompGlobal": false,
+              "warned": {
+                "$ref": "warned"
+              }
+            }
+          ],
+          "stderr": {
+            "absent": ["warning: "]
+          },
+          "checks": [
+            {
+              "at": ["applied"],
+              "present": true
+            }
+          ]
+        },
+        {
+          "module": "sync",
+          "function": "sync",
+          "files": {
+            "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":7}}"
+          },
+          "args": [
+            {
+              "cwd": "$DIR0/app",
+              "up": {
+                "$number": "Infinity"
+              },
+              "with": [],
+              "without": [],
+              "yes": true,
+              "dryRun": false,
+              "create": false,
+              "verbose": false,
+              "backup": false,
+              "ompAgentDir": "$DIR1/no-omp-agent",
+              "ompGlobal": false,
+              "warned": {
+                "$ref": "warned"
+              }
+            }
+          ],
+          "stderr": {
+            "includes": ["warning: ", "$DIR0/.claude/settings.json"]
+          },
+          "checks": [
+            {
+              "at": ["applied"],
+              "present": true
+            }
+          ]
+        }
+      ],
+      "notes": "Three syncs share one record of what was warned about; the settings file is changed before the third."
     }
   ]
 }

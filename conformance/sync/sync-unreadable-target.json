@@ -1,0 +1,43 @@
+{
+  "cases": [
+    {
+      "id": "sync-unreadable-target.001",
+      "from": "sync-unreadable-target.test.ts: a target that cannot be read stops the sync before any write > refuses a directory at the path of a native config, writing nothing",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "throws": {
+        "name": "SyncRefusedError",
+        "checks": [
+          {
+            "at": ["path"],
+            "subset": "$DIR0/.claude/settings.json"
+          },
+          {
+            "at": ["reason"],
+            "subset": "unreadable"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.claude/settings.json/": "",
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
+      }
+    }
+  ]
+}
