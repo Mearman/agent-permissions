@@ -47,8 +47,7 @@ import { type Format } from "./api.ts";
 // ---------------------------------------------------------------------------
 
 /**
- * The top-level keys of the canonical file that a tool writing a policy owns, exactly what a merge
- * or an encoding produces. Every other key (`ceiling`, `with`, `without`, `up`, `sync`, `$schema`
+ * The top-level keys of the canonical file that `sync` owns, exactly what its merge produces. Every other key (`ceiling`, `with`, `without`, `up`, `sync`, `$schema`
  * of an existing file, and any the schema gains) is the user's and is never rewritten.
  */
 export const CANONICAL_OWNED_KEYS: readonly string[] = [
@@ -71,7 +70,7 @@ export type JsonPath = readonly string[];
 export interface AgentFileDef {
   /** Relative path to the main config file. */
   name: string;
-  /** Relative path to the local override file (read-only, never written). */
+  /** Relative path to the local override file: read as a source, and never written by sync. */
   localName?: string;
   /**
    * Extract the permissions payload from a parsed native config. Returns undefined if the config
@@ -190,31 +189,15 @@ export function configFormatOfPath(path: string): Format | undefined {
 
 /**
  * The format whose config file a path is when that file holds other settings beside the
- * permissions and can be edited in place: the JSON agents, Oh My Pi and the canonical file. Anything
- * else is a file written whole.
+ * permissions and can be edited in place: the JSON agents and Oh My Pi. Anything else (the canonical
+ * file, Codex's and Crush's files) is a file written whole.
  */
-export function nativeFormatOfPath(
-  path: string,
-): AgentId | "canonical" | undefined {
+export function nativeFormatOfPath(path: string): AgentId | undefined {
   const format = configFormatOfPath(path);
-  if (format === undefined || format === "canonical") return format;
+  if (format === undefined || format === "canonical") return undefined;
   return AGENT_FILES[format].modelled !== undefined || format === "omp"
     ? format
     : undefined;
-}
-
-/**
- * The agent whose own config file a path is when that file has no permissions-only edit (Codex's
- * TOML, Crush's file), so an existing one cannot be written without losing its other settings.
- */
-export function opaqueFormatOfPath(
-  path: string,
-): "codex" | "crush" | undefined {
-  const normalised = path.split(sep).join("/");
-  for (const format of ["codex", "crush"] as const) {
-    if (normalised.endsWith(`/${AGENT_FILES[format].name}`)) return format;
-  }
-  return undefined;
 }
 
 /** Get the default file name for a format. */
@@ -738,15 +721,6 @@ export function renderNativeConfig(
     return editOmpConfig(
       current === null || isBlank(current) ? null : current,
       OmpEncoded.parse(encoded),
-    );
-  }
-  if (format === "canonical") {
-    return editJsonConfig(
-      current,
-      encoded,
-      CANONICAL_OWNED_KEYS.map((key) => [key]),
-      false,
-      source,
     );
   }
   const def = AGENT_FILES[format];

@@ -12,6 +12,7 @@
 import { parseArgs } from "node:util";
 import { dirname, resolve, join } from "node:path";
 import { existsSync } from "node:fs";
+import { lstat } from "node:fs/promises";
 import {
   convert,
   validate as validateApi,
@@ -35,7 +36,7 @@ import {
   findDefaultFile,
   nativeConfigPath,
   nativeFormatOfPath,
-  opaqueFormatOfPath,
+  writeFileAtomic,
   writeNativeConfig,
   readInput,
   parseAgentFile,
@@ -88,15 +89,51 @@ function resolveOutputSpec(spec: string | undefined): string | undefined {
   return resolve(spec);
 }
 /**
- * Exit with an error when an output path is an existing Codex or Crush config file: neither has an
- * edit that keeps its other settings, so writing it would replace them.
+ * Write a policy or an agent's config as the output of `convert` or `confine`. These commands
+ * create files: an existing policy or agent config file is refused, because merging a conversion
+ * or a confinement into it would replace settings it holds that the new policy lacks, and `sync`
+ * is the command that updates existing files. Oh My Pi's config is the exception kept from before:
+ * its two keys are edited in place.
+ *
+ * @param path Absolute output path.
+ * @param format The format the output is encoded as, when the command names one.
+ * @param encode The encoding, before it is wrapped as the agent's file; called only once the output
+ *   is known to be writable, since an agent that cannot express the policy fails there.
+ * @param whole The encoding as a document, written to a path that is no config file.
  */
-function refuseExistingOpaqueConfig(path: string): void {
-  const format = opaqueFormatOfPath(path);
-  if (format !== undefined && existsSync(path)) {
+async function writeConfigOutput(
+  path: string,
+  format: Format | undefined,
+  encode: () => unknown,
+  whole: string,
+): Promise<void> {
+  const pathFormat = configFormatOfPath(path);
+  const info = await lstat(path).catch(() => undefined);
+  if (info?.isDirectory() === true) error(`${path} is a directory`);
+  if (pathFormat === undefined) {
+    await writeJsonFile(path, whole);
+    return;
+  }
+  if (format !== undefined && pathFormat !== format) {
     error(
-      `${path} already exists and holds other ${format} settings that a write would replace; write to a new path and merge by hand`,
+      `${path} is ${pathFormat}'s config file, and the output is ${format}; writing it would replace ${pathFormat}'s settings with ${format}'s`,
     );
+  }
+  if (info !== undefined) {
+    if (pathFormat === "omp") {
+      await writeNativeConfig(pathFormat, path, encode());
+      return;
+    }
+    error(
+      `${path} already exists: convert and confine create files and do not overwrite an existing policy or agent config file; use sync to update existing files`,
+    );
+  }
+  const wrapped = nativeFormatOfPath(path);
+  if (wrapped !== undefined) {
+    // A new agent config file is written wrapped as the agent reads it.
+    await writeNativeConfig(wrapped, path, encode());
+  } else {
+    await writeFileAtomic(path, whole, null);
   }
 }
 
@@ -196,20 +233,12 @@ async function convertCommand(args: string[]): Promise<void> {
     );
 
     if (outputPath) {
-      const pathFormat = configFormatOfPath(outputPath);
-      if (pathFormat !== undefined && pathFormat !== toFormat) {
-        error(
-          `${outputPath} is ${pathFormat}'s config file, and --to is ${toFormat}; writing it would replace ${pathFormat}'s settings with ${toFormat}'s`,
-        );
-      }
-      refuseExistingOpaqueConfig(outputPath);
-      if (nativeFormatOfPath(outputPath) === toFormat) {
-        // A native config holds the user's other settings, so the encoding is merged into it by the
-        // writer sync uses. The encoding is the bare permissions payload, which the writer wraps.
-        await writeNativeConfig(toFormat, outputPath, result.output);
-      } else {
-        await writeJsonFile(outputPath, jsonStr);
-      }
+      await writeConfigOutput(
+        outputPath,
+        toFormat,
+        () => result.output,
+        jsonStr,
+      );
       for (const companion of result.companions) {
         await writeJsonFile(
           join(dirname(outputPath), companion.path),
@@ -604,20 +633,17 @@ async function confineCommand(args: string[]): Promise<void> {
   const outputSpec = firstString(values.output, values.out);
   const outputPath =
     outputSpec === undefined ? undefined : resolveOutputSpec(outputSpec);
-  if (outputPath) refuseExistingOpaqueConfig(outputPath);
-  const nativeFormat =
-    outputPath === undefined ? undefined : nativeFormatOfPath(outputPath);
-  if (outputPath && nativeFormat !== undefined) {
-    // The policy is written as that agent's native config, merged into the file by sync's writer.
-    await writeNativeConfig(
-      nativeFormat,
+  if (outputPath) {
+    const nativeFormat = nativeFormatOfPath(outputPath);
+    await writeConfigOutput(
       outputPath,
-      nativeFormat === "canonical"
-        ? policy
-        : convert("canonical", nativeFormat, policy).output,
+      undefined,
+      () =>
+        nativeFormat === undefined
+          ? policy
+          : convert("canonical", nativeFormat, policy).output,
+      jsonStr,
     );
-  } else if (outputPath) {
-    await writeJsonFile(outputPath, jsonStr);
   } else {
     process.stdout.write(jsonStr);
   }
