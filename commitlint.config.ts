@@ -21,6 +21,7 @@ const config: UserConfig = {
         "cli",
         "sync",
         "mcp",
+        "remote",
         "agent-files",
         "pkg",
         "build",
