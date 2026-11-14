@@ -112,6 +112,14 @@
       "cases": 25,
       "skip": []
     },
+    "mcp/mcp-background-sync.json": {
+      "cases": 1,
+      "skip": []
+    },
+    "mcp/mcp-prompt-tool.json": {
+      "cases": 6,
+      "skip": []
+    },
     "profiles/profiles.json": {
       "cases": 11,
       "skip": []

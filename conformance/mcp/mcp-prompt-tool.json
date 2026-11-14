@@ -1,0 +1,392 @@
+{
+  "cases": [
+    {
+      "id": "mcp-prompt-tool.001",
+      "from": "mcp-prompt-tool.test.ts: MCP permission-prompt tool > is not exposed unless the prompt mode is on",
+      "kind": "mcp",
+      "args": [],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"sudo:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
+      },
+      "exchange": [
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+              "protocolVersion": "2025-06-18",
+              "capabilities": {},
+              "clientInfo": {
+                "name": "test-host",
+                "version": "0.0.0"
+              }
+            }
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+              "protocolVersion": "$any",
+              "capabilities": {},
+              "serverInfo": "$any",
+              "instructions": "$any"
+            }
+          }
+        }
+      ],
+      "notes": "Without the prompt mode the server advertises no tools."
+    },
+    {
+      "id": "mcp-prompt-tool.002",
+      "from": "mcp-prompt-tool.test.ts: MCP permission-prompt tool > is exposed as permission_prompt when the prompt mode is on",
+      "kind": "mcp",
+      "args": ["--permission-prompt"],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"sudo:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
+      },
+      "exchange": [
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+              "protocolVersion": "2025-06-18",
+              "capabilities": {},
+              "clientInfo": {
+                "name": "test-host",
+                "version": "0.0.0"
+              }
+            }
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+              "protocolVersion": "$any",
+              "capabilities": {
+                "tools": {
+                  "listChanged": true
+                }
+              },
+              "serverInfo": "$any",
+              "instructions": "$any"
+            }
+          }
+        },
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          }
+        },
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/list"
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "result": {
+              "tools": [
+                {
+                  "$subset": {
+                    "name": "permission_prompt"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mcp-prompt-tool.003",
+      "from": "mcp-prompt-tool.test.ts: MCP permission-prompt tool > answers an allowed call with an allow result echoing the input",
+      "kind": "mcp",
+      "args": ["--permission-prompt"],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"sudo:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
+      },
+      "exchange": [
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+              "protocolVersion": "2025-06-18",
+              "capabilities": {},
+              "clientInfo": {
+                "name": "test-host",
+                "version": "0.0.0"
+              }
+            }
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+              "protocolVersion": "$any",
+              "capabilities": {
+                "tools": {
+                  "listChanged": true
+                }
+              },
+              "serverInfo": "$any",
+              "instructions": "$any"
+            }
+          }
+        },
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          }
+        },
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "permission_prompt",
+              "arguments": {
+                "tool_name": "Bash",
+                "input": {
+                  "command": "git status"
+                },
+                "tool_use_id": "toolu_1"
+              }
+            }
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "{\"behavior\":\"allow\",\"updatedInput\":{\"command\":\"git status\"}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mcp-prompt-tool.004",
+      "from": "mcp-prompt-tool.test.ts: MCP permission-prompt tool > answers a denied call with a deny result and a message",
+      "kind": "mcp",
+      "args": ["--permission-prompt"],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"sudo:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
+      },
+      "exchange": [
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+              "protocolVersion": "2025-06-18",
+              "capabilities": {},
+              "clientInfo": {
+                "name": "test-host",
+                "version": "0.0.0"
+              }
+            }
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+              "protocolVersion": "$any",
+              "capabilities": {
+                "tools": {
+                  "listChanged": true
+                }
+              },
+              "serverInfo": "$any",
+              "instructions": "$any"
+            }
+          }
+        },
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          }
+        },
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "permission_prompt",
+              "arguments": {
+                "tool_name": "Bash",
+                "input": {
+                  "command": "sudo ls"
+                }
+              }
+            }
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": {
+                    "$contains": [
+                      "\"behavior\":\"deny\"",
+                      "\"message\":\"",
+                      "Bash(sudo:*) [deny]"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mcp-prompt-tool.005",
+      "from": "mcp-prompt-tool.test.ts: MCP permission-prompt tool > is served over stdio by `agent-perms mcp --permission-prompt`",
+      "kind": "mcp",
+      "args": ["--permission-prompt"],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"sudo:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
+      },
+      "exchange": [
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+              "protocolVersion": "2025-06-18",
+              "capabilities": {},
+              "clientInfo": {
+                "name": "test-host",
+                "version": "0.0.0"
+              }
+            }
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+              "protocolVersion": "$any",
+              "capabilities": {
+                "tools": {
+                  "listChanged": true
+                }
+              },
+              "serverInfo": "$any",
+              "instructions": "$any"
+            }
+          }
+        },
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          }
+        },
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "permission_prompt",
+              "arguments": {
+                "tool_name": "Bash",
+                "input": {
+                  "command": "git log"
+                }
+              }
+            }
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "{\"behavior\":\"allow\",\"updatedInput\":{\"command\":\"git log\"}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mcp-prompt-tool.006",
+      "from": "mcp-prompt-tool.test.ts: MCP permission-prompt tool > is not served by `agent-perms mcp` without the flag",
+      "kind": "mcp",
+      "args": [],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"sudo:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
+      },
+      "exchange": [
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+              "protocolVersion": "2025-06-18",
+              "capabilities": {},
+              "clientInfo": {
+                "name": "test-host",
+                "version": "0.0.0"
+              }
+            }
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+              "protocolVersion": "$any",
+              "capabilities": {},
+              "serverInfo": "$any",
+              "instructions": "$any"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
