@@ -1,0 +1,8 @@
+{
+  "files": {
+    "x/a.json": {
+      "cases": 2,
+      "skip": []
+    }
+  }
+}

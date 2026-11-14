@@ -1,0 +1,298 @@
+{
+  "cases": [
+    {
+      "id": "profiles.001",
+      "from": "profiles.test.ts: resolveProfiles > puts a parent's rules before the profile's own",
+      "kind": "function",
+      "module": "profiles",
+      "function": "resolveProfiles",
+      "args": [
+        {
+          "base": {
+            "deny": ["Bash(sudo:*)"],
+            "allow": ["Read"]
+          },
+          "dev": {
+            "extends": ["base"],
+            "allow": ["Bash(npm:*)"],
+            "deny": ["Bash(rm:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["dev"],
+          "equals": {
+            "deny": ["Bash(sudo:*)", "Bash(rm:*)"],
+            "allow": ["Read", "Bash(npm:*)"]
+          }
+        },
+        {
+          "at": ["base"],
+          "equals": {
+            "deny": ["Bash(sudo:*)"],
+            "allow": ["Read"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "profiles.002",
+      "from": "profiles.test.ts: resolveProfiles > takes several parents in the order given, without repeats",
+      "kind": "function",
+      "module": "profiles",
+      "function": "resolveProfiles",
+      "args": [
+        {
+          "a": {
+            "deny": ["Bash(a:*)"]
+          },
+          "b": {
+            "extends": ["a"],
+            "deny": ["Bash(b:*)"]
+          },
+          "c": {
+            "extends": ["a"],
+            "deny": ["Bash(c:*)"]
+          },
+          "d": {
+            "extends": ["b", "c"],
+            "deny": ["Bash(d:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["d", "deny"],
+          "equals": ["Bash(a:*)", "Bash(b:*)", "Bash(c:*)", "Bash(d:*)"]
+        }
+      ]
+    },
+    {
+      "id": "profiles.003",
+      "from": "profiles.test.ts: resolveProfiles > lets the profile's own default mode win over its parents'",
+      "kind": "function",
+      "module": "profiles",
+      "function": "resolveProfiles",
+      "args": [
+        {
+          "base": {
+            "defaultMode": "restricted"
+          },
+          "loose": {
+            "extends": ["base"],
+            "defaultMode": "autonomous"
+          },
+          "inherit": {
+            "extends": ["base"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["loose", "defaultMode"],
+          "equals": "autonomous"
+        },
+        {
+          "at": ["inherit", "defaultMode"],
+          "equals": "restricted"
+        }
+      ]
+    },
+    {
+      "id": "profiles.004",
+      "from": "profiles.test.ts: resolveProfiles > never returns the extends list",
+      "kind": "function",
+      "module": "profiles",
+      "function": "resolveProfiles",
+      "args": [
+        {
+          "base": {
+            "deny": ["Bash(sudo:*)"]
+          },
+          "dev": {
+            "extends": ["base"]
+          }
+        }
+      ],
+      "expect": {
+        "base": {
+          "deny": ["Bash(sudo:*)"]
+        },
+        "dev": {
+          "deny": ["Bash(sudo:*)"]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "profiles.005",
+      "from": "profiles.test.ts: resolveProfiles > refuses a cycle and names it",
+      "kind": "function",
+      "module": "profiles",
+      "function": "resolveProfiles",
+      "args": [
+        {
+          "a": {
+            "extends": ["b"]
+          },
+          "b": {
+            "extends": ["a"]
+          }
+        }
+      ],
+      "throws": {
+        "message": ["a -> b -> a"]
+      }
+    },
+    {
+      "id": "profiles.006",
+      "from": "profiles.test.ts: resolveProfiles > refuses a parent that does not exist",
+      "kind": "function",
+      "module": "profiles",
+      "function": "resolveProfiles",
+      "args": [
+        {
+          "dev": {
+            "extends": ["missing"]
+          }
+        }
+      ],
+      "throws": {
+        "message": ["missing"]
+      }
+    },
+    {
+      "id": "profiles.007",
+      "from": "profiles.test.ts: extends in the schema > accepts a profile extending another",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "profiles": {
+            "base": {
+              "deny": ["Bash(sudo:*)"]
+            },
+            "dev": {
+              "extends": ["base"]
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "profiles.008",
+      "from": "profiles.test.ts: extends in the schema > rejects a parent that does not exist and a cycle",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "profiles": {
+            "dev": {
+              "extends": ["missing"]
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "profiles.009",
+      "from": "profiles.test.ts: extends in the schema > rejects a parent that does not exist and a cycle",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "profiles": {
+            "a": {
+              "extends": ["b"]
+            },
+            "b": {
+              "extends": ["a"]
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "profiles.010",
+      "from": "profiles.test.ts: extends in the schema > rejects a parent that does not exist and a cycle",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "profiles": {
+            "a": {
+              "extends": ["a"]
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "profiles.011",
+      "from": "profiles.test.ts: extends in the Codex codec > gives an extending profile its parents' restrictions",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "profiles": {
+            "base": {
+              "deny": ["Read(./secrets)"]
+            },
+            "dev": {
+              "extends": ["base"],
+              "deny": ["WebFetch(domain:evil.com)"]
+            }
+          },
+          "activeProfile": "dev"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions", "dev"],
+          "equals": {
+            "filesystem": {
+              ":workspace_roots": {
+                "secrets": "deny"
+              }
+            },
+            "network": {
+              "domains": {
+                "evil.com": "deny"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

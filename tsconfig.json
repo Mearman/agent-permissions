@@ -12,6 +12,7 @@
     "incremental": true,
     "types": ["node"],
     "noEmit": true,
+    "allowJs": true,
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true,

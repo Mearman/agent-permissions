@@ -1,0 +1,2415 @@
+{
+  "cases": [
+    {
+      "id": "shell-differential.001",
+      "from": "shell-differential.test.ts: splitShellCommand against bash > lists every command bash runs, or declines the line",
+      "kind": "shell-differential",
+      "seed": 20260929,
+      "markers": ["m0", "m1", "m2", "m3", "m4"],
+      "minimumSplittableShare": 0.25,
+      "lines": [
+        {
+          "line": "echo \"a $(echo $[ 1 + 1 ]; m4) b\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo `echo $(:)` # m2",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo `echo a\\;m1`; fi",
+          "ran": []
+        },
+        {
+          "line": "echo `echo \"a $(echo a\\&\\&m3) b\"`",
+          "ran": []
+        },
+        {
+          "line": "echo $[ 1 + 1 ]; m2",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo ${X:-$(m2 &> /dev/null)} | echo $'a;m3' || m1 # m1",
+          "ran": ["m2"]
+        },
+        {
+          "line": "m1 >| /dev/null",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"a $(echo '$(m4)'; m1 arg) b\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "cat <(echo \"a $(echo `echo 'a;m4'`) b\")",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$({ echo `:`; })}",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(cat <<< $(m4)) b\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo `if true; then m1 > /dev/null; fi`",
+          "ran": ["m1"]
+        },
+        {
+          "line": "(cat <<< $(m0))&&for i in 1; do m0 >/dev/null&m1; done",
+          "ran": ["m0", "m1"]
+        },
+        {
+          "line": "cat <({ echo 'a;m4'; })||echo \"a $(if true; then m1 2>&1; fi) b\"",
+          "ran": []
+        },
+        {
+          "line": "echo `m4 >/dev/null&m2` || echo `echo \"a;m1\"`",
+          "ran": ["m2", "m4"]
+        },
+        {
+          "line": "(test -n $(m4))",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo '$(m2)'; FOO=1 m0",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo `echo ${X:-$(echo \"$(m0)\")}`",
+          "ran": ["m0"]
+        },
+        {
+          "line": "{ cat <<< $(m0); }",
+          "ran": ["m0"]
+        },
+        {
+          "line": "(echo a\\;m1)",
+          "ran": []
+        },
+        {
+          "line": "echo $(cat <<< $(m1))",
+          "ran": ["m1"]
+        },
+        {
+          "line": "if true; then echo \"$(m4 &> /dev/null)\"; fi",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo `echo ${X:-$(m3\necho a\\;m0)}`",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo `echo ${X:-$(m2 >/dev/null&m3)}`",
+          "ran": ["m2", "m3"]
+        },
+        {
+          "line": "echo \"$(FOO=1 m1)\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo `(echo $[ 1 + 1 ]; m0)`",
+          "ran": ["m0"]
+        },
+        {
+          "line": "{ :; }",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(m3 2>&1 & echo \"a;m3\")}",
+          "ran": ["m3"]
+        },
+        {
+          "line": "{ echo 'a;m1'; }",
+          "ran": []
+        },
+        {
+          "line": "cat <(echo \"$(m0 2>&1)\")",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $(m1 >/dev/null&m2)",
+          "ran": ["m1", "m2"]
+        },
+        {
+          "line": "echo \"$(m3 >| /dev/null)\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "m0 2>&1 & m3 2>&1",
+          "ran": ["m0", "m3"]
+        },
+        {
+          "line": "cat <(echo $[ 1 + 1 ]; m2)",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a $(echo $[ 1 + 1 ]; m0) b\"",
+          "ran": ["m0"]
+        },
+        {
+          "line": "if true; then echo $\"a;m0\"; fi",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(echo '$(m0)'; echo $\"a;m1\" | echo $'a;m3')}",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo `echo ${#X} $# a#b; m0`)\" # m0",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"a $(echo a\\&\\&m3) b\"",
+          "ran": []
+        },
+        {
+          "line": "echo $(m4 &> /dev/null)",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo \"a $(m4 | m3 >| /dev/null) b\"",
+          "ran": ["m3", "m4"]
+        },
+        {
+          "line": "echo a\\;m1",
+          "ran": []
+        },
+        {
+          "line": "(for i in 1; do test -n $(m1) # m0; done)",
+          "ran": []
+        },
+        {
+          "line": "echo \"$((m4) # m3)\"",
+          "ran": []
+        },
+        {
+          "line": "cat <(echo \"a $(m1 >| /dev/null) b\")",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"a $(echo '\\'; m3) b\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"a $(echo $\"a;m2\") b\"",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo \"$(echo '$(m3)'; m2 arg)\")\"",
+          "ran": ["m2"]
+        },
+        {
+          "line": "for i in 1; do echo '$(m3)'; echo '\\'; m0;echo '$(m2)'; m2 2>&1; done",
+          "ran": ["m0", "m2"]
+        },
+        {
+          "line": "cat <(m3 2>&1) # m1",
+          "ran": ["m3"]
+        },
+        {
+          "line": "{ echo \"\\$(m2)\"; }",
+          "ran": []
+        },
+        {
+          "line": "echo `cat <(m3 > /dev/null)`",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"a $(m4 >&2) b\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo ${X:-$(cat <<< $(m3))}",
+          "ran": ["m3"]
+        },
+        {
+          "line": "m4 arg",
+          "ran": ["m4"]
+        },
+        {
+          "line": "m0 || FOO=1 m0||echo \\$(m4) # m2",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo \"a;m1\"; fi",
+          "ran": []
+        },
+        {
+          "line": "m4\nm0 > /dev/null||echo `echo m2`",
+          "ran": ["m0", "m4"]
+        },
+        {
+          "line": "echo `echo 'a;m4'`",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$((echo `m0 >/dev/null&m0`))}",
+          "ran": ["m0"]
+        },
+        {
+          "line": "(m1 > /dev/null)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "(echo \"a $(echo a\\;m1) b\") # m4",
+          "ran": []
+        },
+        {
+          "line": "echo '\\'; m4",
+          "ran": ["m4"]
+        },
+        {
+          "line": "{ echo \"a;m3\"; }",
+          "ran": []
+        },
+        {
+          "line": "m2 >&2 # m2",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo '$(m3)'; m0 2>&1",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo `for i in 1; do echo \\$(m4); done`",
+          "ran": ["m4"]
+        },
+        {
+          "line": "(m3 >/dev/null&m0)",
+          "ran": ["m0", "m3"]
+        },
+        {
+          "line": "m0",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo ${X:-$(m1 > /dev/null)}",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo `(m0)`",
+          "ran": ["m0"]
+        },
+        {
+          "line": "cat <(((m0 &> /dev/null)))",
+          "ran": []
+        },
+        {
+          "line": "(for i in 1; do m2 arg; done)",
+          "ran": ["m2"]
+        },
+        {
+          "line": "if true; then { echo $(test -n $(m0)); }; fi",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo '$(m3)'; { m1 >| /dev/null; }",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo $(cat <((m2)))",
+          "ran": ["m2"]
+        },
+        {
+          "line": "((m0 >| /dev/null))",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(cat <<< $(m1)) b\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo ${X:-$(cat <(echo \"\\$(m0)\") # m1)}",
+          "ran": []
+        },
+        {
+          "line": "cat <(cat <(echo m1\necho \\$(m4)))",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $({ for i in 1; do m4 >&2; done; }) b\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "(echo `(m3)`)",
+          "ran": ["m3"]
+        },
+        {
+          "line": "m0\ncat <<< $(m2)",
+          "ran": ["m0", "m2"]
+        },
+        {
+          "line": "cat <({ echo m4; })",
+          "ran": []
+        },
+        {
+          "line": "cat <(test -n $(m0))",
+          "ran": ["m0"]
+        },
+        {
+          "line": "(echo \"$(echo \"$(m2)\")\")",
+          "ran": ["m2"]
+        },
+        {
+          "line": "(echo $(echo a\\;m2))\n(m2 > /dev/null)",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo $(echo \"a $(echo a\\;m0 | m2) b\")",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a $(echo \"a $(echo \"a;m3\") b\") b\" # m1",
+          "ran": []
+        },
+        {
+          "line": "cat <({ if true; then m0; fi; })",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"$(m4 >&2)\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "cat <(m1)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "m0 > /dev/null # m3",
+          "ran": ["m0"]
+        },
+        {
+          "line": "cat <((echo \"$(m1 > /dev/null)\"))",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo ${X:-$(echo $(m4))} # m1",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo '$(m1)'; echo '$(m0)'; m2 &> /dev/null",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo $[ 1 + 1 ]; m4",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo '$(m1)'; { m2 >/dev/null&m3; }",
+          "ran": ["m2", "m3"]
+        },
+        {
+          "line": "echo $(for i in 1; do cat <(echo '\\'; m3); done)",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"$(cat <<< $(m1))\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo '$(m0)'; cat <(cat <(echo a\\;m1))",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do echo $'a;m2'; done",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(m4)}",
+          "ran": ["m4"]
+        },
+        {
+          "line": "(:)",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo '$(m0)'; echo `echo ${#X} $# a#b; m1`; fi",
+          "ran": ["m1"]
+        },
+        {
+          "line": "(echo \"\\$(m4)\")",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(for i in 1; do (echo \"\\$(m4)\"); done)}",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m0)'; echo \"a $(m3) b\" # m4",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo $(cat <(m2))",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo $(echo '$(m2)'; echo \"\\$(m3)\")",
+          "ran": []
+        },
+        {
+          "line": "echo a\\&\\&m0",
+          "ran": []
+        },
+        {
+          "line": "((echo m4))",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo `echo \"\\$(m3)\";m4 >| /dev/null`)",
+          "ran": ["m3", "m4"]
+        },
+        {
+          "line": "if true; then echo '\\'; m3; fi",
+          "ran": ["m3"]
+        },
+        {
+          "line": "({ echo a\\&\\&m1; })",
+          "ran": []
+        },
+        {
+          "line": "{ echo a\\;m1; }",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(echo \"a $(cat <<< $(m2)) b\")}",
+          "ran": ["m2"]
+        },
+        {
+          "line": "if true; then if true; then cat <<< $(m2); fi; fi # m0",
+          "ran": ["m2"]
+        },
+        {
+          "line": "{ { m3 > /dev/null; }; }",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo '$(m0)'; echo $[ 1 + 1 ]; m1",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo ${X:-$(echo \"a $(echo $'a;m1') b\")}",
+          "ran": []
+        },
+        {
+          "line": "if true; then m4; fi # m4",
+          "ran": ["m4"]
+        },
+        {
+          "line": "(echo ${X:-$(m1 arg)} # m0)",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo \"a $(m1 2>&1) b\")",
+          "ran": ["m1"]
+        },
+        {
+          "line": "(echo `m2 >/dev/null&m1`)",
+          "ran": ["m1", "m2"]
+        },
+        {
+          "line": "(echo $(echo \\$(m0)))",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(({ m4 >/dev/null&m1; }))}",
+          "ran": []
+        },
+        {
+          "line": "echo `m3 >/dev/null&m3`",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo `echo \\$(m0)`",
+          "ran": ["m0"]
+        },
+        {
+          "line": "{ echo ${#X} $# a#b; m0; }",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo ${X:-$(echo ${#X} $# a#b; m2)}",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo `echo $'a;m2'`",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$((m4 >/dev/null&m1))}",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo `echo \"a;m3\" || m3 2>&1`)\"",
+          "ran": []
+        },
+        {
+          "line": "echo '\\'; m0",
+          "ran": ["m0"]
+        },
+        {
+          "line": "{ echo $\"a;m4\"; }",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(echo ${#X} $# a#b; m2) b\"",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo '$(m3)'; m0 &> /dev/null",
+          "ran": ["m0"]
+        },
+        {
+          "line": "for i in 1; do for i in 1; do for i in 1; do m2 > /dev/null; done; done; done",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"$(cat <<< $(m3))\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"$(echo $[ 1 + 1 ]; m2)\"",
+          "ran": ["m2"]
+        },
+        {
+          "line": "if true; then echo '$(m3)'; echo '$(m3)'; echo \\$(m1); fi",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m0)'; m3 >| /dev/null",
+          "ran": ["m3"]
+        },
+        {
+          "line": "if true; then echo `m0 arg`; fi",
+          "ran": ["m0"]
+        },
+        {
+          "line": "for i in 1; do (echo '$(m1)'; m4); done",
+          "ran": ["m4"]
+        },
+        {
+          "line": "cat <(if true; then { echo a\\&\\&m3; }; fi)",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m4)'; echo ${#X} $# a#b; m0 # m0",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"$(for i in 1; do m2 2>&1; done)\"",
+          "ran": ["m2"]
+        },
+        {
+          "line": "{ echo ${X:-$(m0 >&2)} && if true; then FOO=1 m3; fi; }",
+          "ran": ["m0", "m3"]
+        },
+        {
+          "line": "for i in 1; do echo \"$(echo ${#X} $# a#b; m4)\"; done",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo $(if true; then echo '$(m0)'; echo m4; fi)",
+          "ran": []
+        },
+        {
+          "line": "echo `echo $(m1 arg)`",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo `echo $(echo $\"a;m0\")`)\"",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(if true; then m1; fi)\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": ": # m4",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(m3 >| /dev/null)\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "{ if true; then echo `m0 &> /dev/null`; fi; }",
+          "ran": ["m0"]
+        },
+        {
+          "line": "if true; then if true; then echo \"a;m2\"; fi; fi",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo \"a $(cat <(echo \"\\$(m2)\")) b\")\"",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo `echo '$(m0)'; m3 &> /dev/null`)\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"$(if true; then m4 >| /dev/null; fi)\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "cat <(cat <<< $(m0))",
+          "ran": ["m0"]
+        },
+        {
+          "line": "(echo \"\\$(m1)\")",
+          "ran": []
+        },
+        {
+          "line": "(m3 arg)",
+          "ran": ["m3"]
+        },
+        {
+          "line": "if true; then echo '$(m1)'; if true; then echo $\"a;m4\"; fi; fi",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(echo \"\\$(m4)\")}",
+          "ran": []
+        },
+        {
+          "line": "echo a\\;m0",
+          "ran": []
+        },
+        {
+          "line": "echo $(m3 &> /dev/null)",
+          "ran": ["m3"]
+        },
+        {
+          "line": "{ echo '$(m4)'; m3; }",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo $(echo m1)",
+          "ran": []
+        },
+        {
+          "line": "{ echo \"a;m1\"; }",
+          "ran": []
+        },
+        {
+          "line": "echo `for i in 1; do m1; done || m1 >/dev/null&m1||echo $'a;m1'`",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo `echo ${#X} $# a#b; m0`",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $(echo \\$(m0))",
+          "ran": []
+        },
+        {
+          "line": "if true; then { echo \"a;m4\"; }; fi",
+          "ran": []
+        },
+        {
+          "line": "(echo \\$(m0) ; echo $\"a;m4\")",
+          "ran": []
+        },
+        {
+          "line": "cat <(echo a\\&\\&m1)",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(echo ${X:-$(echo $[ 1 + 1 ]; m2)}) b\"",
+          "ran": ["m2"]
+        },
+        {
+          "line": "cat <(m3 >| /dev/null)",
+          "ran": ["m3"]
+        },
+        {
+          "line": "{ m2; }",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a;m0\"",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(echo $(echo $'a;m3')) b\"",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo `echo $\"a;m3\"`)",
+          "ran": []
+        },
+        {
+          "line": "(echo '\\'; m1)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo $\"a;m0\")\"",
+          "ran": []
+        },
+        {
+          "line": "if true; then m4; fi",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo '\\'; m4&&m1 >&2",
+          "ran": ["m1", "m4"]
+        },
+        {
+          "line": "echo \"$(echo \"a;m4\")\"",
+          "ran": []
+        },
+        {
+          "line": "(echo `echo m3`)",
+          "ran": []
+        },
+        {
+          "line": "m4 &> /dev/null",
+          "ran": ["m4"]
+        },
+        {
+          "line": "for i in 1; do echo $(echo 'a;m4'); done",
+          "ran": []
+        },
+        {
+          "line": "echo `echo $'a;m3'`",
+          "ran": []
+        },
+        {
+          "line": "m1 arg",
+          "ran": ["m1"]
+        },
+        {
+          "line": ":",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo \"a $(m4 >/dev/null&m2) b\")\"",
+          "ran": ["m2", "m4"]
+        },
+        {
+          "line": "if true; then { echo \"a $(echo m1) b\"; }; fi",
+          "ran": []
+        },
+        {
+          "line": "echo $'a;m3'",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo '$(m4)'; m4 arg || m0 >&2; fi",
+          "ran": ["m4"]
+        },
+        {
+          "line": "if true; then cat <<< $(m1); fi",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo `cat <(echo \"$(m3 >| /dev/null)\")`",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"a $(echo \"\\$(m0)\") b\"",
+          "ran": []
+        },
+        {
+          "line": "echo $(if true; then if true; then test -n $(m0); fi; fi)",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo ${X:-$({ m2; })}",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a $(echo \"\\$(m4)\") b\"",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m2)'; (echo '$(m1)'; test -n $(m1))",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo ${X:-$(echo \"a;m0\")})\"",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do echo 'a;m1' # m4; done",
+          "ran": []
+        },
+        {
+          "line": "FOO=1 m4 # m4",
+          "ran": ["m4"]
+        },
+        {
+          "line": "cat <(echo \\$(m4))",
+          "ran": []
+        },
+        {
+          "line": "echo $(for i in 1; do echo a\\&\\&m1; done)",
+          "ran": []
+        },
+        {
+          "line": "if true; then (echo \"a $(m1 >/dev/null&m1) b\"); fi",
+          "ran": ["m1"]
+        },
+        {
+          "line": "for i in 1; do echo a\\;m0; done",
+          "ran": []
+        },
+        {
+          "line": "echo $(m4 &> /dev/null) # m3",
+          "ran": ["m4"]
+        },
+        {
+          "line": "for i in 1; do echo `m0`; done",
+          "ran": ["m0"]
+        },
+        {
+          "line": "m1 2>&1",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo ${X:-$(echo `m3 > /dev/null`)})\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"$(m1 2>&1)\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo '$(m4)'; echo ${X:-$(echo '\\'; m3)}",
+          "ran": ["m3"]
+        },
+        {
+          "line": "if true; then echo ${X:-$(m2 2>&1)}; fi",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a $(if true; then (echo a\\&\\&m4); fi) b\"",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m3)'; m1",
+          "ran": ["m1"]
+        },
+        {
+          "line": "m4 > /dev/null",
+          "ran": ["m4"]
+        },
+        {
+          "line": "{ cat <<< $(m2); }",
+          "ran": ["m2"]
+        },
+        {
+          "line": "cat <(echo '$(m1)'; FOO=1 m2) # m1",
+          "ran": ["m2"]
+        },
+        {
+          "line": "if true; then (m2 > /dev/null); fi",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo $(m4 >&2)",
+          "ran": ["m4"]
+        },
+        {
+          "line": "m4 || (echo \"a $(m4) b\")",
+          "ran": ["m4"]
+        },
+        {
+          "line": "{ echo $(m2 >&2); }",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo ${X:-$((echo $\"a;m3\" # m2))}",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(m0)} # m4",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"$(m3 2>&1)\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo '$(m0)'; echo 'a;m2'",
+          "ran": []
+        },
+        {
+          "line": "cat <(m4 2>&1)",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo \"$(echo '\\'; m2)\" # m3 ; m1 # m1 # m4",
+          "ran": ["m2"]
+        },
+        {
+          "line": "cat <(echo $(m0 >/dev/null&m3))",
+          "ran": ["m0", "m3"]
+        },
+        {
+          "line": "echo '$(m3)'; (echo $'a;m1')",
+          "ran": []
+        },
+        {
+          "line": "(echo $\"a;m2\")",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(cat <<< $(m3))\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo $(echo \"a $(cat <(m2 > /dev/null)) b\")",
+          "ran": ["m2"]
+        },
+        {
+          "line": "m1 >/dev/null&m2",
+          "ran": ["m1", "m2"]
+        },
+        {
+          "line": "m3 >/dev/null&m2",
+          "ran": ["m2", "m3"]
+        },
+        {
+          "line": "echo '$(m4)'; :",
+          "ran": []
+        },
+        {
+          "line": "echo $({ echo \"a $(echo a\\&\\&m1) b\"; })",
+          "ran": []
+        },
+        {
+          "line": "echo $(for i in 1; do cat <(m2 > /dev/null); done)",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a $(m3) b\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo '$(m4)'; if true; then { echo '\\'; m3; }; fi",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"$(m3 >/dev/null&m0)\"",
+          "ran": ["m0", "m3"]
+        },
+        {
+          "line": "cat <(echo 'a;m3')",
+          "ran": []
+        },
+        {
+          "line": "{ { echo $(echo 'a;m4'); }; }",
+          "ran": []
+        },
+        {
+          "line": "cat <(m4)",
+          "ran": ["m4"]
+        },
+        {
+          "line": "if true; then echo `m0 # m4`; fi",
+          "ran": ["m0"]
+        },
+        {
+          "line": "if true; then echo m3; fi",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(echo $(echo \\$(m1) |& m3 > /dev/null))}",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m2)'; echo `echo '$(m4)'; m4`",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo $(echo '$(m1)'; { test -n $(m1); })",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"a $(if true; then FOO=1 m1; fi) b\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo `{ m0 > /dev/null; }`",
+          "ran": ["m0"]
+        },
+        {
+          "line": "(echo a\\;m2 # m2)",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do m2 >/dev/null&m2 ; m1 >/dev/null&m3; done",
+          "ran": ["m1", "m2", "m3"]
+        },
+        {
+          "line": "m3 >/dev/null&m2",
+          "ran": ["m2", "m3"]
+        },
+        {
+          "line": "for i in 1; do (m3); done",
+          "ran": ["m3"]
+        },
+        {
+          "line": "m2 # m0",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a $(echo '$(m4)'; m1 &> /dev/null) b\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo $(m2 2>&1 & m3 >| /dev/null)",
+          "ran": ["m2", "m3"]
+        },
+        {
+          "line": "echo `m2 2>&1`",
+          "ran": ["m2"]
+        },
+        {
+          "line": "{ m3; }",
+          "ran": ["m3"]
+        },
+        {
+          "line": "cat <(echo \"$(echo ${X:-$(m4 arg)})\")",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo ${X:-$(m4 >/dev/null&m0)}",
+          "ran": ["m0", "m4"]
+        },
+        {
+          "line": "echo \"$(echo ${X:-$(echo '\\'; m3)})\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo ${X:-$(echo m2)}",
+          "ran": []
+        },
+        {
+          "line": "m2 # m4",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo '\\'; m4 ; m3 >&2 # m2&&for i in 1; do { echo \"\\$(m2)\"; }; done",
+          "ran": ["m3", "m4"]
+        },
+        {
+          "line": "{ echo a\\&\\&m3; }",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(echo \\$(m4))}",
+          "ran": []
+        },
+        {
+          "line": "(echo 'a;m3')",
+          "ran": []
+        },
+        {
+          "line": "(echo '$(m0)'; echo `m2 >/dev/null&m3`)",
+          "ran": ["m2", "m3"]
+        },
+        {
+          "line": "echo ${X:-$(echo '$(m4)'; if true; then m4 &> /dev/null; fi)}",
+          "ran": ["m4"]
+        },
+        {
+          "line": "for i in 1; do echo \"$(m0 >&2)\"; done",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo `FOO=1 m3`",
+          "ran": ["m3"]
+        },
+        {
+          "line": "({ echo ${X:-$(echo $\"a;m3\")}; })",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo $({ m1 >| /dev/null; }))",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo a\\&\\&m4 |& echo '\\'; m4",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo $(m2)",
+          "ran": ["m2"]
+        },
+        {
+          "line": "cat <(cat <(m4 # m1))",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m4)'; cat <(:)",
+          "ran": []
+        },
+        {
+          "line": "{ echo \"a $(echo 'a;m0') b\"; }",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo $\"a;m3\"||:)",
+          "ran": []
+        },
+        {
+          "line": "echo \"\\$(m3)\"",
+          "ran": []
+        },
+        {
+          "line": "echo `{ echo \"$(m4 >/dev/null&m0)\"; }`",
+          "ran": ["m0", "m4"]
+        },
+        {
+          "line": "echo $\"a;m3\"",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$((echo $\"a;m0\" # m4))}",
+          "ran": []
+        },
+        {
+          "line": "cat <(echo `cat <(echo m0)`)",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo \"$(test -n $(m3))\" # m4)\"",
+          "ran": []
+        },
+        {
+          "line": "(cat <(m3)) ; for i in 1; do for i in 1; do echo '\\'; m2; done; done",
+          "ran": ["m2", "m3"]
+        },
+        {
+          "line": "cat <(echo a\\&\\&m1)",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m0)'; echo ${X:-$(echo a\\&\\&m3 # m1)}",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do echo '$(m1)'; echo $(m3); done",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"a $(echo `m2`) b\"",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo '$(m1)'; if true; then (echo \"\\$(m0)\"); fi",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo $\"a;m3\")\"",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(m1 >| /dev/null&&echo 'a;m1')\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "((echo ${#X} $# a#b; m0))&&echo $(if true; then echo 'a;m1'; fi)",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo $(echo $(m0)); fi",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \\$(m4)",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(m3 > /dev/null)}",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo `echo 'a;m4'` # m4",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do echo ${X:-$(m2 >&2)}; done",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a $(echo $(echo \\$(m3))) b\"",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(echo \"$(echo \"\\$(m2)\")\") b\"",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$((for i in 1; do echo \"a;m2\"; done))}",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m1)'; (m1 >| /dev/null)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo ${X:-$(echo '\\'; m4)}",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo 'a;m0'",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(echo 'a;m2')}",
+          "ran": []
+        },
+        {
+          "line": "echo \"\\$(m1)\" |& echo \\$(m0)",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo '\\'; m2; fi",
+          "ran": ["m2"]
+        },
+        {
+          "line": "test -n $(m0) # m4",
+          "ran": ["m0"]
+        },
+        {
+          "line": "for i in 1; do echo ${X:-$(cat <(:))}; done",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m2)'; m4 2>&1",
+          "ran": ["m4"]
+        },
+        {
+          "line": "{ for i in 1; do echo ${X:-$(echo ${#X} $# a#b; m0)}; done; }",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"a $(echo a\\;m4) b\"",
+          "ran": []
+        },
+        {
+          "line": "cat <(m1 2>&1)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo ${X:-$(for i in 1; do :; done)}",
+          "ran": []
+        },
+        {
+          "line": "{ m2; }",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"$(echo \"a $(if true; then test -n $(m1); fi) b\")\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "{ m2; }",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"$(m2 &> /dev/null;echo $'a;m1')\"",
+          "ran": ["m2"]
+        },
+        {
+          "line": "if true; then echo $(echo m0); fi",
+          "ran": []
+        },
+        {
+          "line": "if true; then for i in 1; do echo m1; done; fi",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m4)'; (echo `FOO=1 m1`)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo `echo \"$(echo ${X:-$(echo $\"a;m3\")})\"`",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo ${#X} $# a#b; m2 ; m0; fi",
+          "ran": ["m0", "m2"]
+        },
+        {
+          "line": "echo '$(m1)'; echo \"$(m1 >| /dev/null)\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "cat <(echo \\$(m0))",
+          "ran": []
+        },
+        {
+          "line": "{ m0 arg; }",
+          "ran": ["m0"]
+        },
+        {
+          "line": "(echo $'a;m2')",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo '$(m0)'; echo \"\\$(m3)\"; fi",
+          "ran": []
+        },
+        {
+          "line": "m3 &> /dev/null # m4",
+          "ran": ["m3"]
+        },
+        {
+          "line": "{ { :; }; }",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo $(echo $(echo ${#X} $# a#b; m1)); fi",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo $\"a;m2\")\"",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(echo \"$(echo `echo $\"a;m2\"`)\")}",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m3)'; echo '$(m4)'; echo \\$(m2)",
+          "ran": []
+        },
+        {
+          "line": "echo `m1 # m1 # m4`",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"a $(echo $'a;m3') b\"",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do echo $(echo \"\\$(m1)\"); done # m2",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(echo `echo '$(m1)'; m3`)}",
+          "ran": ["m3"]
+        },
+        {
+          "line": "if true; then echo m2; fi",
+          "ran": []
+        },
+        {
+          "line": "cat <((echo a\\;m1))",
+          "ran": []
+        },
+        {
+          "line": "cat <(echo \"a $((echo \"a;m4\")) b\")",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo '$(m3)'; echo ${#X} $# a#b; m0; fi # m2",
+          "ran": ["m0"]
+        },
+        {
+          "line": "({ m4 >/dev/null&m2; })",
+          "ran": ["m2", "m4"]
+        },
+        {
+          "line": "cat <({ m2 >/dev/null&m4; } # m3)",
+          "ran": []
+        },
+        {
+          "line": "echo `echo $(echo '$(m4)'; m0)`",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $(echo ${X:-$(m4 >| /dev/null)})",
+          "ran": ["m4"]
+        },
+        {
+          "line": "for i in 1; do echo ${X:-$((m4 >| /dev/null))}; done",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do echo '\\'; m2; done | echo \"a;m2\" || m4 &> /dev/null",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a $({ echo 'a;m1'; }) b\"",
+          "ran": []
+        },
+        {
+          "line": "cat <((m2))",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo `echo \"a $(echo '\\'; m2) b\"`",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo $(echo \"\\$(m1)\")",
+          "ran": []
+        },
+        {
+          "line": "(echo \"a $(echo \"$(cat <<< $(m4))\") b\")",
+          "ran": ["m4"]
+        },
+        {
+          "line": "(echo ${X:-$(echo \"\\$(m3)\")})",
+          "ran": []
+        },
+        {
+          "line": "echo `{ echo \\$(m1); }`",
+          "ran": ["m1"]
+        },
+        {
+          "line": "{ echo \"$(echo '$(m2)'; m2 arg)\"; }",
+          "ran": ["m2"]
+        },
+        {
+          "line": "if true; then echo $(m3 >| /dev/null); fi",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo '$(m1)'; (echo '$(m3)'; echo ${#X} $# a#b; m3)",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo $(m1)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo ${#X} $# a#b; m3)\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "cat <(for i in 1; do echo $[ 1 + 1 ]; m0; done)",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"$(m2 >/dev/null&m0)\"",
+          "ran": ["m0", "m2"]
+        },
+        {
+          "line": "echo \"$(echo \"a $(echo \"a;m0\") b\")\" # m0",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do echo ${X:-$(m3 &> /dev/null)}; done",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo '$(m4)'; echo $(echo \"$(echo $\"a;m0\")\")",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do cat <(echo \"$(m0 >/dev/null&m1)\"); done",
+          "ran": ["m0", "m1"]
+        },
+        {
+          "line": "echo \"$(m4 >/dev/null&m0)\"",
+          "ran": ["m0", "m4"]
+        },
+        {
+          "line": "(test -n $(m0))",
+          "ran": ["m0"]
+        },
+        {
+          "line": "for i in 1; do for i in 1; do echo '\\'; m0; done & echo ${X:-$(echo '\\'; m2)}; done",
+          "ran": ["m0", "m2"]
+        },
+        {
+          "line": "m3",
+          "ran": ["m3"]
+        },
+        {
+          "line": "for i in 1; do m0 arg || echo a\\&\\&m1; done",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $[ 1 + 1 ]; m4",
+          "ran": ["m4"]
+        },
+        {
+          "line": "{ cat <(echo $'a;m1'); }",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m3)'; echo $(m0 >/dev/null&m3)",
+          "ran": ["m0", "m3"]
+        },
+        {
+          "line": "m0 >&2",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $'a;m0' # m2",
+          "ran": []
+        },
+        {
+          "line": "cat <(m4)",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo \"a $(echo $(cat <<< $(m4))) b\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "m4",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo $(cat <(echo $[ 1 + 1 ]; m4)||echo '$(m3)'; echo \\$(m4))",
+          "ran": []
+        },
+        {
+          "line": "cat <({ cat <<< $(m1); })",
+          "ran": ["m1"]
+        },
+        {
+          "line": "for i in 1; do echo $(echo \"$(m2 > /dev/null)\"); done",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo `echo $[ 1 + 1 ]; m1`",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo $(echo `echo \\$(m2)`)",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo ${X:-$(echo $(echo \"a $(echo a\\&\\&m4) b\"))}",
+          "ran": []
+        },
+        {
+          "line": "cat <(cat <({ m1; }))",
+          "ran": ["m1"]
+        },
+        {
+          "line": "for i in 1; do { echo '$(m3)'; echo $[ 1 + 1 ]; m2; }; done",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a;m0\";echo a\\&\\&m2",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do m1; done",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo $(echo m2))\"",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo `{ echo \"a;m1\"; }`)",
+          "ran": []
+        },
+        {
+          "line": "echo `m2 &> /dev/null`",
+          "ran": ["m2"]
+        },
+        {
+          "line": "{ echo '\\'; m3||m2 2>&1; }",
+          "ran": ["m3"]
+        },
+        {
+          "line": "for i in 1; do for i in 1; do echo $'a;m0'; done; done||cat <(echo \"a $(m2) b\")",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(echo m2)}",
+          "ran": []
+        },
+        {
+          "line": "cat <(echo `echo $(echo $[ 1 + 1 ]; m0)`)",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $(echo \"$(m4 >/dev/null&m4)\") & if true; then echo ${#X} $# a#b; m0; fi",
+          "ran": ["m0", "m4"]
+        },
+        {
+          "line": "(cat <(echo '\\'; m2))",
+          "ran": ["m2"]
+        },
+        {
+          "line": "{ m0 2>&1; }",
+          "ran": ["m0"]
+        },
+        {
+          "line": "if true; then echo ${#X} $# a#b; m3; fi",
+          "ran": ["m3"]
+        },
+        {
+          "line": "if true; then test -n $(m4); fi",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo $(:)\necho \\$(m4)&&m2",
+          "ran": []
+        },
+        {
+          "line": "{ echo a\\&\\&m3; }",
+          "ran": []
+        },
+        {
+          "line": "echo `echo '\\'; m1`",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"a $(m2) b\"",
+          "ran": ["m2"]
+        },
+        {
+          "line": "cat <(cat <<< $(m1))",
+          "ran": ["m1"]
+        },
+        {
+          "line": "if true; then echo $(for i in 1; do echo \"a;m1\"; done); fi",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo \\$(m4))\"",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo \"a $(echo '\\'; m0) b\"; fi",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo '$(m4)'; echo `(echo a\\&\\&m1)`",
+          "ran": []
+        },
+        {
+          "line": "{ cat <(echo 'a;m3'); }",
+          "ran": []
+        },
+        {
+          "line": "echo `echo m4`",
+          "ran": []
+        },
+        {
+          "line": "echo a\\;m1 || m0",
+          "ran": []
+        },
+        {
+          "line": "{ echo \"a $(echo '$(m3)'; cat <<< $(m2)) b\"; }",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo '$(m2)'; if true; then m1 2>&1; fi || echo $[ 1 + 1 ]; m3 && echo ${#X} $# a#b; m1;echo `m4`",
+          "ran": ["m1", "m3", "m4"]
+        },
+        {
+          "line": "m1",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"a $(m1 2>&1) b\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo $(echo ${#X} $# a#b; m0)",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"a $(echo $[ 1 + 1 ]; m3) b\"",
+          "ran": ["m3"]
+        },
+        {
+          "line": "cat <(m1)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo ${X:-$(echo $\"a;m3\")}",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(m3 > /dev/null) b\" # m4",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo ${X:-$(echo m4)}",
+          "ran": []
+        },
+        {
+          "line": "cat <(echo $(echo '\\'; m4))",
+          "ran": ["m4"]
+        },
+        {
+          "line": "{ FOO=1 m4; } # m1",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo ${X:-$(FOO=1 m0)}",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo '$(m1)'; echo \"$(echo \"$(m1 2>&1)\")\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "for i in 1; do { (echo \"a;m3\"); }; done",
+          "ran": []
+        },
+        {
+          "line": "{ echo \"a;m3\"; }",
+          "ran": []
+        },
+        {
+          "line": "m2",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo ${#X} $# a#b; m2",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo $(cat <(echo \"a;m1\"))",
+          "ran": []
+        },
+        {
+          "line": "{ echo \\$(m1); }",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo '$(m4)'; m0 > /dev/null) | cat <(echo '\\'; m4)",
+          "ran": ["m0", "m4"]
+        },
+        {
+          "line": "echo $(if true; then if true; then m4 &> /dev/null; fi; fi)",
+          "ran": ["m4"]
+        },
+        {
+          "line": "(echo '$(m2)'; :)",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo '$(m0)'; echo a\\;m0)\"",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo '\\'; m1)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo $[ 1 + 1 ]; m1)\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "(echo $'a;m4')",
+          "ran": []
+        },
+        {
+          "line": "echo 'a;m0'",
+          "ran": []
+        },
+        {
+          "line": "echo m4",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo `echo \"$(echo \\$(m0))\"`)",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"$(m3 # m1)\"",
+          "ran": []
+        },
+        {
+          "line": "(echo $'a;m0')",
+          "ran": []
+        },
+        {
+          "line": "(m2 arg)",
+          "ran": ["m2"]
+        },
+        {
+          "line": "({ m2 >| /dev/null; })",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo ${X:-$(m1 >&2)}",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo ${X:-$(echo '\\'; m1)})\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "(echo '$(m3)'; echo a\\;m2 # m0)",
+          "ran": []
+        },
+        {
+          "line": "echo $'a;m4';m1 >/dev/null&m3",
+          "ran": ["m1", "m3"]
+        },
+        {
+          "line": "echo '$(m1)'; if true; then cat <<< $(m3); fi",
+          "ran": ["m3"]
+        },
+        {
+          "line": "{ echo ${X:-$(m2 >/dev/null&m3)} # m2; }",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo \"\\$(m4)\")\"",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m3)'; echo '$(m1)'; cat <<< $(m1)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo '$(m3)'; echo $[ 1 + 1 ]; m2",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"$(if true; then m4 &> /dev/null & m4 >| /dev/null; fi)\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo $(echo `test -n $(m2)`)",
+          "ran": ["m2"]
+        },
+        {
+          "line": "if true; then echo a\\;m4; fi",
+          "ran": []
+        },
+        {
+          "line": "if true; then if true; then m2; fi; fi",
+          "ran": ["m2"]
+        },
+        {
+          "line": "cat <({ m1 >&2 # m0; })",
+          "ran": []
+        },
+        {
+          "line": "echo `echo \"a $(m4 >| /dev/null) b\" # m4`",
+          "ran": ["m4"]
+        },
+        {
+          "line": "if true; then if true; then if true; then m3 arg; fi; fi; fi",
+          "ran": ["m3"]
+        },
+        {
+          "line": "for i in 1; do echo $(echo \"a;m0\"); done",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m1)'; echo \"$(echo $'a;m1')\"",
+          "ran": []
+        },
+        {
+          "line": "((FOO=1 m4))",
+          "ran": []
+        },
+        {
+          "line": "{ echo $(echo \"a $(echo ${#X} $# a#b; m0) b\"); }",
+          "ran": ["m0"]
+        },
+        {
+          "line": "(echo \"$(echo $(echo ${#X} $# a#b; m4))\")",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo 'a;m2' # m0",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo \"$(FOO=1 m4)\"; fi",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo 'a;m2' |& m0 > /dev/null",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"a $(test -n $(m0)) b\"&&echo \"a $(m3 >| /dev/null) b\"",
+          "ran": ["m0", "m3"]
+        },
+        {
+          "line": "echo ${#X} $# a#b; m3 |& FOO=1 m2",
+          "ran": ["m2", "m3"]
+        },
+        {
+          "line": "(echo 'a;m1')",
+          "ran": []
+        },
+        {
+          "line": "echo `m4 2>&1`",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo $(echo a\\;m2) # m0",
+          "ran": []
+        },
+        {
+          "line": "echo a\\&\\&m4 |& :",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do cat <(echo \"$(m4 > /dev/null)\"); done",
+          "ran": ["m4"]
+        },
+        {
+          "line": "if true; then echo '$(m1)'; test -n $(m4);test -n $(m2); fi",
+          "ran": ["m2", "m4"]
+        },
+        {
+          "line": "echo \"a $(echo '\\'; m4 & for i in 1; do FOO=1 m0; done) b\"",
+          "ran": ["m0", "m4"]
+        },
+        {
+          "line": "echo `if true; then echo \"$(m3 2>&1)\"; fi`",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo ${X:-$(m0)}",
+          "ran": ["m0"]
+        },
+        {
+          "line": "for i in 1; do echo `echo '\\'; m0`; done",
+          "ran": ["m0"]
+        },
+        {
+          "line": "if true; then echo `echo $(m3)`; fi",
+          "ran": ["m3"]
+        },
+        {
+          "line": "if true; then m1 >| /dev/null; fi",
+          "ran": ["m1"]
+        },
+        {
+          "line": "({ m2 >| /dev/null; })",
+          "ran": ["m2"]
+        },
+        {
+          "line": "cat <(m2) # m0",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"$(echo \\$(m3) # m1)\"",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(m4 2>&1) b\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo \"$(echo a\\&\\&m4)\"",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(m0 arg)}",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo ${X:-$(echo \"$(echo '$(m0)'; echo \"\\$(m2)\")\")}",
+          "ran": []
+        },
+        {
+          "line": "test -n $(m4) # m0",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo '$(m4)'; if true; then echo '$(m1)'; m1 arg; fi",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo `echo a\\;m2 ; echo 'a;m0'`",
+          "ran": []
+        },
+        {
+          "line": "{ { m1 arg; }; }",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo \"\\$(m4)\")\" # m1",
+          "ran": []
+        },
+        {
+          "line": "if true; then cat <(cat <<< $(m0)); fi",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $\"a;m4\" # m2",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m0)'; (echo $\"a;m4\")",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m4)'; cat <<< $(m4)",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo '$(m4)'; m1",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo ${X:-$(for i in 1; do echo $\"a;m3\"; done)}",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m4)'; echo \"\\$(m4)\"",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo \"a $(if true; then m3 &> /dev/null; fi) b\"; fi",
+          "ran": ["m3"]
+        },
+        {
+          "line": "if true; then echo a\\&\\&m1; fi",
+          "ran": []
+        },
+        {
+          "line": "cat <(test -n $(m1))",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo ${X:-$(m0)}",
+          "ran": ["m0"]
+        },
+        {
+          "line": "(for i in 1; do cat <<< $(m0); done)",
+          "ran": ["m0"]
+        },
+        {
+          "line": "(echo ${X:-$(cat <(echo a\\;m1))})",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo m4) # m1",
+          "ran": []
+        },
+        {
+          "line": "cat <(for i in 1; do for i in 1; do m3 >/dev/null&m2; done; done)",
+          "ran": ["m2", "m3"]
+        },
+        {
+          "line": "for i in 1; do echo $(echo $'a;m2' || echo \"\\$(m1)\"); done",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do { echo \"$(echo \"a;m0\")\"; }; done",
+          "ran": []
+        },
+        {
+          "line": "{ if true; then echo `cat <<< $(m0)`; fi; }",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo '$(m2)'; cat <(m1 > /dev/null)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "for i in 1; do echo a\\&\\&m4; done # m4",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(m1) b\"",
+          "ran": ["m1"]
+        },
+        {
+          "line": "if true; then echo $(echo '$(m3)'; echo $'a;m1'); fi",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m4)'; echo `cat <(m1)`",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo \"$(echo ${X:-$(cat <(m4 arg))})\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo $(echo \"a;m0\") # m0",
+          "ran": []
+        },
+        {
+          "line": "m2",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a $(echo \"a;m0\") b\"",
+          "ran": []
+        },
+        {
+          "line": "FOO=1 m0",
+          "ran": ["m0"]
+        },
+        {
+          "line": "cat <(cat <<< $(m4))",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo $[ 1 + 1 ]; m4",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo '$(m4)'; echo '$(m1)'; echo m3",
+          "ran": []
+        },
+        {
+          "line": "(echo \"a $(echo \\$(m4)) b\")",
+          "ran": []
+        },
+        {
+          "line": "cat <<< $(m0)",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"a;m0\"",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo '\\'; m0)\"",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo '$(m4)'; echo a\\&\\&m1 # m3 & echo $(m3 >| /dev/null)",
+          "ran": []
+        },
+        {
+          "line": "echo \"$(echo \"a $(m4 >| /dev/null) b\" # m0)\"",
+          "ran": []
+        },
+        {
+          "line": "for i in 1; do { m0; }; done",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $(echo `echo $(m4 &> /dev/null)`)",
+          "ran": ["m4"]
+        },
+        {
+          "line": "for i in 1; do echo $\"a;m1\" # m3; done",
+          "ran": []
+        },
+        {
+          "line": "{ ((echo '\\'; m1)); }",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo \"a $(echo $'a;m0') b\"; fi",
+          "ran": []
+        },
+        {
+          "line": "echo ${X:-$(cat <(m4))}",
+          "ran": ["m4"]
+        },
+        {
+          "line": "for i in 1; do (echo '\\'; m3); done",
+          "ran": ["m3"]
+        },
+        {
+          "line": "m4 >&2 # m3 # m2",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo '$(m2)'; echo a\\&\\&m2",
+          "ran": []
+        },
+        {
+          "line": "cat <(if true; then m0 arg; fi)",
+          "ran": ["m0"]
+        },
+        {
+          "line": "{ m0 >| /dev/null; }",
+          "ran": ["m0"]
+        },
+        {
+          "line": "cat <(m1)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo `cat <(echo m2)`",
+          "ran": []
+        },
+        {
+          "line": "(cat <<< $(m3))",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"$(m0)\"",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $((for i in 1; do echo a\\&\\&m1; done))",
+          "ran": []
+        },
+        {
+          "line": "if true; then echo a\\;m0; fi",
+          "ran": []
+        },
+        {
+          "line": "m2 2>&1 # m4",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo \"a $({ echo $(test -n $(m0)); }) b\"",
+          "ran": ["m0"]
+        },
+        {
+          "line": "m1",
+          "ran": ["m1"]
+        },
+        {
+          "line": "if true; then echo `m4 2>&1||m2`; fi",
+          "ran": ["m4"]
+        },
+        {
+          "line": "cat <(echo $'a;m1') # m1",
+          "ran": []
+        },
+        {
+          "line": "{ echo $'a;m3' # m4; }",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m0)'; echo `echo \\$(m3)` # m2",
+          "ran": ["m3"]
+        },
+        {
+          "line": "if true; then echo \"a $(echo $[ 1 + 1 ]; m3) b\"; fi # m2",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo '\\'; m0",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $'a;m3'\necho \\$(m0)",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(cat <(echo $[ 1 + 1 ]; m0)) b\"",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo '$(m1)'; echo \\$(m0) # m3",
+          "ran": []
+        },
+        {
+          "line": "echo $(echo '$(m0)'; m2)",
+          "ran": ["m2"]
+        },
+        {
+          "line": "echo ${X:-$(cat <(m1))}",
+          "ran": ["m1"]
+        },
+        {
+          "line": "cat <(echo `m1`)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "m4 >/dev/null&m1",
+          "ran": ["m1", "m4"]
+        },
+        {
+          "line": "{ echo \"$(test -n $(m4))\"; }",
+          "ran": ["m4"]
+        },
+        {
+          "line": "for i in 1; do m1 >/dev/null&m0 ; m4; done",
+          "ran": ["m0", "m1", "m4"]
+        },
+        {
+          "line": "cat <(echo ${X:-$(echo $'a;m3')})",
+          "ran": []
+        },
+        {
+          "line": "cat <(echo ${X:-$(m0 2>&1)}) | echo '$(m3)'; :",
+          "ran": ["m0"]
+        },
+        {
+          "line": "for i in 1; do cat <<< $(m1); done",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo '$(m0)'; { echo a\\;m3; }",
+          "ran": []
+        },
+        {
+          "line": "echo '$(m4)'; { echo \"$(m2 >/dev/null&m3)\"; }",
+          "ran": ["m2", "m3"]
+        },
+        {
+          "line": "cat <(echo '$(m0)'; echo $\"a;m0\" || echo $[ 1 + 1 ]; m1)",
+          "ran": ["m1"]
+        },
+        {
+          "line": "echo '$(m0)'; echo ${X:-$(cat <(echo $'a;m4'))}",
+          "ran": []
+        },
+        {
+          "line": "echo $(for i in 1; do m0 >&2; done)",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo $(:)",
+          "ran": []
+        },
+        {
+          "line": "cat <(echo m3)",
+          "ran": []
+        },
+        {
+          "line": "({ echo $\"a;m3\"; })",
+          "ran": []
+        },
+        {
+          "line": "cat <({ if true; then echo a\\;m4; fi; })",
+          "ran": []
+        },
+        {
+          "line": "echo \"a $(m0) b\"",
+          "ran": ["m0"]
+        },
+        {
+          "line": "if true; then echo ${#X} $# a#b; m1; fi # m0",
+          "ran": ["m1"]
+        },
+        {
+          "line": "for i in 1; do m4; done",
+          "ran": ["m4"]
+        },
+        {
+          "line": "(echo ${X:-$(echo '$(m1)'; m2)})",
+          "ran": ["m2"]
+        },
+        {
+          "line": "if true; then if true; then echo `test -n $(m3)`; fi; fi",
+          "ran": ["m3"]
+        },
+        {
+          "line": "{ cat <(m0); }",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo \"a $(echo ${X:-$(m0 &> /dev/null)}) b\"",
+          "ran": ["m0"]
+        },
+        {
+          "line": "echo `{ m3 2>&1; }`",
+          "ran": ["m3"]
+        },
+        {
+          "line": "echo \"a $(for i in 1; do m4 >&2; done) b\"",
+          "ran": ["m4"]
+        },
+        {
+          "line": "echo `m4 arg`",
+          "ran": ["m4"]
+        }
+      ],
+      "notes": "The lines are what the original test's generator makes from the seed, and each ran in bash with marker functions that record their own names; the property is that every marker bash ran is a command word of the splitter's output, or the splitter declines the line."
+    }
+  ]
+}
