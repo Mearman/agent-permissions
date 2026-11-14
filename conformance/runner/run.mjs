@@ -1,6 +1,6 @@
 // Runs one conformance case against a target that maps module names to the exports under test. No policy logic lives here (conformance/README.md).
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { spawn, spawnSync } from "node:child_process";
@@ -59,10 +59,12 @@ const subset = (actual, expected, at = "") => {
 
 const verify = (root, check, unordered, back) => {
   const raw = walk(root, check.at);
-  const value = "subset" in check ? back(raw) : back(plain(raw));
-  if ("absent" in check) assert.equal(value, undefined);
+  const value = "present" in check ? raw : "subset" in check ? back(raw) : back(plain(raw));
+  if ("present" in check) assert.ok(raw !== undefined && raw !== null, "absent");
+  else if ("absent" in check) assert.equal(value, undefined);
   else if ("equals" in check) same(value, check.equals, unordered);
   else if ("contains" in check) inOrder(value, check.contains);
+  else if ("excludes" in check) for (const text of check.excludes) assert.ok(!value.includes(text), `holds ${text}`);
   else if ("subset" in check) subset(value, check.subset);
   else assert.notDeepStrictEqual(value, check.notEquals);
 };
@@ -70,23 +72,33 @@ const verify = (root, check, unordered, back) => {
 const matches = (a, e) =>
   e === "$any"
     ? true
-    : is(e)
-      ? is(a) && Object.keys(e).length === Object.keys(a).length && Object.keys(e).every((k) => matches(a[k], e[k]))
-      : a === e;
+    : is(e) && e.$contains
+      ? typeof a === "string" && (inOrder(a, e.$contains), true)
+      : is(e) && e.$subset
+        ? is(a) && Object.keys(e.$subset).every((k) => matches(a[k], e.$subset[k]))
+        : is(e)
+          ? is(a) && Object.keys(e).length === Object.keys(a).length && Object.keys(e).every((k) => matches(a[k], e[k]))
+          : a === e;
 
 function directories(testCase) {
   const dirs = [];
   for (const [, n] of JSON.stringify(testCase).matchAll(TOKEN)) dirs[n] ??= realpathSync(mkdtempSync(join(tmpdir(), "conformance-")));
   const place = (text) => text.replace(TOKEN, (_, n) => dirs[n]);
   const put = (name, text) => {
-    mkdirSync(dirname(place(name)), { recursive: true });
+    mkdirSync(name.endsWith("/") ? place(name) : dirname(place(name)), { recursive: true });
+    if (name.endsWith("/")) return;
     if (text === null) rmSync(place(name), { force: true });
     else writeFileSync(place(name), text.$bytes === undefined ? place(text) : Buffer.from(text.$bytes, "base64"));
   };
   for (const [name, text] of Object.entries(testCase.files ?? {})) put(name, text);
   const back = (v) => mapStrings(v, (t) => dirs.reduce((at, path, n) => at.split(path).join(`$DIR${n}`), t));
   const files = (expected) =>
-    Object.fromEntries(Object.keys(expected ?? {}).map((n) => [n, existsSync(place(n)) ? back(readFileSync(place(n), "utf8")) : null]));
+    Object.fromEntries(
+      Object.keys(expected ?? {}).map((n) => [
+        n,
+        n.endsWith("/") ? readdirSync(place(n)).sort().join("\n") : existsSync(place(n)) ? back(readFileSync(place(n), "utf8")) : null,
+      ]),
+    );
   return { dirs, place, put, back, files, done: () => dirs.forEach((p) => rmSync(p, { recursive: true, force: true })) };
 }
 
@@ -130,16 +142,17 @@ async function call({ lib }, { module, function: name, args }, argv) {
 }
 
 async function step(target, s, tree, decode) {
+  if (s.files) for (const [name, text] of Object.entries(s.files)) tree.put(name, text);
   const written = [];
   const real = process.stderr.write;
   process.stderr.write = (chunk) => (written.push(String(chunk)), true);
   const run = await call(target, s, decode(mapStrings(s.args ?? [], tree.place))).finally(() => (process.stderr.write = real));
   const { result, error } = run;
-  const text = written.join("");
+  const text = tree.back(written.join(""));
   if (s.throws !== undefined) {
     assert.ok(error !== undefined, "expected a throw");
     if (s.throws.name !== undefined) assert.equal(error.name, s.throws.name);
-    inOrder(error.message, s.throws.message ?? []);
+    inOrder(tree.back(error.message), s.throws.message ?? []);
     for (const check of s.throws.checks ?? []) verify(error, check, false, tree.back);
   } else {
     if (error !== undefined) throw error;
@@ -159,6 +172,11 @@ function decide(lib, policy, c, back) {
   assert.equal(explained.decision, c.expect, "explain");
   assert.equal(compile(policy).evaluate(...args), c.expect, "compile");
   if (c.layer !== undefined) assert.equal(back(explained.steps[0].layer), c.layer, "layer");
+  for (const e of c.steps ? [explained, compile(policy).explain(...args)] : [])
+    same(
+      e.steps.map((s) => [s.command, s.decision]),
+      c.steps,
+    );
 }
 
 function process_(command, argv, options) {
@@ -179,7 +197,7 @@ function process_(command, argv, options) {
   return { child, until, out: () => out, err: () => err, ended: () => ended };
 }
 
-const lineAt = (text, n) => (text.endsWith("\n") || text.split("\n").length > n + 1 ? text.split("\n")[n] : undefined);
+const lineAt = (text, n) => text.split("\n").slice(0, -1)[n];
 
 async function mcp(tc, tree, target) {
   const [command, ...flags] = target.cli;
@@ -254,6 +272,7 @@ export async function runCase(testCase, target) {
     else if (kind === "layered") {
       const load = testCase.load && { ...testCase.load, cwd: tree.place(testCase.load.cwd) };
       const policy = testCase.layers ? lib.loader.mergeLayerPolicies(testCase.layers) : await lib.loader.loadPolicy(load);
+      if (testCase.expectPolicy) subset(policy, testCase.expectPolicy);
       for (const c of testCase.calls) decide(lib, policy, c, tree.back);
     } else if (kind === "prompt") {
       const asked = [];
