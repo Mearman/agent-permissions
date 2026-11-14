@@ -1,0 +1,276 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-dedupe.001",
+      "from": "evaluate-dedupe.test.ts: deduplicateRules > keeps rules that share a tool and pattern but differ in their condition",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "deduplicateRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "deny",
+            "when": {
+              "cwd": "./infra/*"
+            }
+          }
+        ]
+      ],
+      "expect": [
+        {
+          "tool": "Bash",
+          "pattern": "npm run *",
+          "tier": "allow",
+          "when": {
+            "cwd": "./packages/*"
+          }
+        },
+        {
+          "tool": "Bash",
+          "pattern": "npm run *",
+          "tier": "deny",
+          "when": {
+            "cwd": "./infra/*"
+          }
+        }
+      ]
+    },
+    {
+      "id": "evaluate-dedupe.002",
+      "from": "evaluate-dedupe.test.ts: deduplicateRules > does not change what a policy decides",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "deny",
+            "when": {
+              "cwd": "./infra/*"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run build",
+      "expect": "allow",
+      "context": {
+        "cwd": "./packages/a"
+      }
+    },
+    {
+      "id": "evaluate-dedupe.003",
+      "from": "evaluate-dedupe.test.ts: deduplicateRules > does not change what a policy decides",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "deny",
+            "when": {
+              "cwd": "./infra/*"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run build",
+      "expect": "deny",
+      "context": {
+        "cwd": "./infra/a"
+      }
+    },
+    {
+      "id": "evaluate-dedupe.004",
+      "from": "evaluate-dedupe.test.ts: deduplicateRules > does not change what a policy decides",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "deny",
+            "when": {
+              "cwd": "./infra/*"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run build",
+      "expect": "ask",
+      "context": {
+        "cwd": "./other"
+      }
+    },
+    {
+      "id": "evaluate-dedupe.005",
+      "from": "evaluate-dedupe.test.ts: deduplicateRules > keeps the stricter tier when the condition is the same",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "deduplicateRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      ],
+      "expect": [
+        {
+          "tool": "Bash",
+          "pattern": "npm run *",
+          "tier": "deny",
+          "when": {
+            "cwd": "./packages/*"
+          }
+        }
+      ]
+    },
+    {
+      "id": "evaluate-dedupe.006",
+      "from": "evaluate-dedupe.test.ts: deduplicateRules > keeps the stricter tier when the condition is the same",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "deduplicateRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      ],
+      "expect": [
+        {
+          "tool": "Bash",
+          "pattern": "npm run *",
+          "tier": "deny",
+          "when": {
+            "cwd": "./packages/*"
+          }
+        }
+      ]
+    },
+    {
+      "id": "evaluate-dedupe.007",
+      "from": "evaluate-dedupe.test.ts: deduplicateRules > treats an unconditional rule and a conditional one as different",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "deduplicateRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      ],
+      "expect": [
+        {
+          "tool": "Bash",
+          "pattern": "npm run *",
+          "tier": "allow"
+        },
+        {
+          "tool": "Bash",
+          "pattern": "npm run *",
+          "tier": "allow",
+          "when": {
+            "cwd": "./packages/*"
+          }
+        }
+      ]
+    },
+    {
+      "id": "evaluate-dedupe.008",
+      "from": "evaluate-dedupe.test.ts: ruleKey > does not depend on the order of condition keys",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "ruleKey",
+      "args": [
+        {
+          "tool": "Bash",
+          "tier": "allow",
+          "when": {
+            "branch": "main",
+            "cwd": "./a"
+          }
+        }
+      ],
+      "expect": "[\"Bash\",\"\",[[\"branch\",\"main\"],[\"cwd\",\"./a\"]],false]"
+    }
+  ]
+}

@@ -1,0 +1,3227 @@
+{
+  "cases": [
+    {
+      "id": "compat.001",
+      "from": "compat.test.ts: claudeCodeCodec > decode (Claude Code → canonical) > maps allow/deny/ask arrays to rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.decode",
+      "args": [
+        {
+          "allow": ["Bash(git status)", "Read"],
+          "deny": ["Bash(sudo:*)"],
+          "ask": ["Bash(git push:*)"]
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.002",
+      "from": "compat.test.ts: claudeCodeCodec > decode (Claude Code → canonical) > maps defaultMode to top-level",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.decode",
+      "args": [
+        {
+          "defaultMode": "dontAsk",
+          "allow": ["Read"]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "dontAsk"
+        }
+      ]
+    },
+    {
+      "id": "compat.003",
+      "from": "compat.test.ts: claudeCodeCodec > decode (Claude Code → canonical) > maps additionalDirectories",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.decode",
+      "args": [
+        {
+          "additionalDirectories": ["../shared-libs/"]
+        }
+      ],
+      "expect": {
+        "permissions": {
+          "additionalDirectories": ["../shared-libs/"]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.004",
+      "from": "compat.test.ts: claudeCodeCodec > decode (Claude Code → canonical) > decodes real settings.json permissions block",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.decode",
+      "args": [
+        {
+          "allow": [
+            "Bash(du:*)",
+            "Bash(python3:*)",
+            "Bash(claude plugin:*)",
+            "Bash(*rm* -rf */cache/*)"
+          ],
+          "deny": ["Bash(*rm* /)", "Bash(sudo *rm*)", "Bash(git add -A*)"],
+          "ask": ["Bash(*rm\\* -r*)", "Write(eslint.config.ts)"],
+          "defaultMode": "dontAsk"
+        }
+      ],
+      "expect": {
+        "defaultMode": "dontAsk",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "*rm* /",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "sudo *rm*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git add -A*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*rm\\* -r*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Write",
+            "pattern": "eslint.config.ts",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "du:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "python3:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "claude plugin:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*rm* -rf */cache/*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.005",
+      "from": "compat.test.ts: claudeCodeCodec > encode (canonical → Claude Code) > encodes rules to allow/deny/ask arrays",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask"
+            }
+          ],
+          "defaultMode": "dontAsk"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allow"],
+          "equals": ["Bash(git status)", "Read"]
+        },
+        {
+          "at": ["deny"],
+          "equals": ["Bash(sudo:*)"]
+        },
+        {
+          "at": ["ask"],
+          "equals": ["Bash(git push:*)"]
+        },
+        {
+          "at": ["defaultMode"],
+          "equals": "dontAsk"
+        }
+      ]
+    },
+    {
+      "id": "compat.006",
+      "from": "compat.test.ts: claudeCodeCodec > encode (canonical → Claude Code) > also reads from permissions arrays for backwards compat",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(git status)", "Read"],
+            "deny": ["Bash(sudo:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allow"],
+          "equals": ["Bash(git status)", "Read"]
+        },
+        {
+          "at": ["deny"],
+          "equals": ["Bash(sudo:*)"]
+        }
+      ]
+    },
+    {
+      "id": "compat.007",
+      "from": "compat.test.ts: claudeCodeCodec > encode (canonical → Claude Code) > places defaultMode in permissions block (Claude Code placement)",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ],
+          "defaultMode": "plan"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "plan"
+        }
+      ]
+    },
+    {
+      "id": "compat.008",
+      "from": "compat.test.ts: claudeCodeCodec > round-trip (native → canonical → native) > preserves allow/deny/ask/defaultMode through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.decode",
+      "args": [
+        {
+          "allow": ["Bash(git status)", "Read", "Bash(npm run test:*)"],
+          "deny": ["Bash(sudo:*)", "Bash(rm -rf /)"],
+          "ask": ["Bash(git push:*)"],
+          "defaultMode": "dontAsk"
+        }
+      ],
+      "expect": {
+        "defaultMode": "dontAsk",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "rm -rf /",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          },
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run test:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.009",
+      "from": "compat.test.ts: claudeCodeCodec > round-trip (native → canonical → native) > preserves additionalDirectories through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.decode",
+      "args": [
+        {
+          "allow": ["Read"],
+          "deny": [],
+          "ask": [],
+          "additionalDirectories": ["../shared-libs/", "/tmp/cache"]
+        }
+      ],
+      "expect": {
+        "permissions": {
+          "additionalDirectories": ["../shared-libs/", "/tmp/cache"]
+        },
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.010",
+      "from": "compat.test.ts: claudeCodeCodec > round-trip (native → canonical → native) > preserves real settings.json through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.decode",
+      "args": [
+        {
+          "allow": [
+            "Bash(du:*)",
+            "Bash(python3:*)",
+            "Bash(claude plugin:*)",
+            "Bash(*rm* -rf */cache/*)"
+          ],
+          "deny": ["Bash(*rm* /)", "Bash(sudo *rm*)", "Bash(git add -A*)"],
+          "ask": ["Bash(*rm\\* -r*)", "Write(eslint.config.ts)"],
+          "defaultMode": "dontAsk"
+        }
+      ],
+      "expect": {
+        "defaultMode": "dontAsk",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "*rm* /",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "sudo *rm*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git add -A*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*rm\\* -r*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Write",
+            "pattern": "eslint.config.ts",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "du:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "python3:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "claude plugin:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*rm* -rf */cache/*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.011",
+      "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > converts 'allow' shorthand to autonomous mode",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.decode",
+      "args": ["allow"],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "autonomous"
+        }
+      ]
+    },
+    {
+      "id": "compat.012",
+      "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > converts 'deny' shorthand to restricted mode",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.decode",
+      "args": ["deny"],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "restricted"
+        }
+      ]
+    },
+    {
+      "id": "compat.013",
+      "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > converts granular bash rules to canonical rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.decode",
+      "args": [
+        {
+          "bash": {
+            "*": "ask",
+            "git *": "allow",
+            "rm *": "deny"
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "rm *",
+            "tier": "deny"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.014",
+      "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > converts shorthand tool actions to canonical bare tool rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.decode",
+      "args": [
+        {
+          "edit": "deny",
+          "read": "allow",
+          "bash": "ask"
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Edit",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "tier": "ask"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.015",
+      "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > maps external_directory to sandbox.writableRoots",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.decode",
+      "args": [
+        {
+          "external_directory": {
+            "~/projects/lib": "allow"
+          }
+        }
+      ],
+      "expect": {
+        "permissions": {
+          "additionalDirectories": ["~/projects/lib"]
+        },
+        "sandbox": {
+          "writableRoots": ["~/projects/lib"]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.016",
+      "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > converts Markdown-defined agent permissions",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.decode",
+      "args": [
+        {
+          "edit": "deny",
+          "bash": {
+            "git diff": "allow",
+            "git log*": "allow",
+            "*": "ask"
+          },
+          "webfetch": "deny"
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Edit",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git diff",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git log*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "ask"
+          },
+          {
+            "tool": "WebFetch",
+            "tier": "deny"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.017",
+      "from": "compat.test.ts: opencodeCodec > encode (canonical → OpenCode) > simplifies bare tool names to shorthand",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Edit",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["edit"],
+          "equals": "deny"
+        },
+        {
+          "at": ["read"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "compat.018",
+      "from": "compat.test.ts: opencodeCodec > round-trip (native → canonical → native) > preserves granular bash rules through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.decode",
+      "args": [
+        {
+          "read": "allow",
+          "edit": "deny",
+          "bash": {
+            "*": "ask",
+            "git *": "allow",
+            "rm *": "deny"
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Edit",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "rm *",
+            "tier": "deny"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.019",
+      "from": "compat.test.ts: opencodeCodec > round-trip (native → canonical → native) > preserves shorthand action through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.decode",
+      "args": ["allow"],
+      "expect": {
+        "defaultMode": "autonomous"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.020",
+      "from": "compat.test.ts: opencodeCodec > round-trip (native → canonical → native) > preserves mixed shorthand + granular rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.decode",
+      "args": [
+        {
+          "edit": "deny",
+          "bash": {
+            "git diff": "allow",
+            "git log*": "allow",
+            "*": "ask"
+          },
+          "webfetch": "deny"
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Edit",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git diff",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git log*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "ask"
+          },
+          {
+            "tool": "WebFetch",
+            "tier": "deny"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.021",
+      "from": "compat.test.ts: opencodeCodec > round-trip (native → canonical → native) > preserves external_directory through full cycle via sandbox",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.decode",
+      "args": [
+        {
+          "bash": {
+            "*": "ask"
+          },
+          "external_directory": {
+            "~/projects/lib": "allow",
+            "/tmp/cache": "allow"
+          }
+        }
+      ],
+      "expect": {
+        "permissions": {
+          "additionalDirectories": ["~/projects/lib", "/tmp/cache"]
+        },
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "ask"
+          }
+        ],
+        "sandbox": {
+          "writableRoots": ["~/projects/lib", "/tmp/cache"]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.022",
+      "from": "compat.test.ts: opencodeCodec > round-trip (native → canonical → native) > preserves external_directory through full cycle via sandbox",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.encode",
+      "args": [
+        {
+          "permissions": {
+            "additionalDirectories": ["~/projects/lib", "/tmp/cache"]
+          },
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "*",
+              "tier": "ask"
+            }
+          ],
+          "sandbox": {
+            "writableRoots": ["~/projects/lib", "/tmp/cache"]
+          }
+        }
+      ],
+      "expect": {
+        "bash": "ask",
+        "external_directory": {
+          "~/projects/lib": "allow",
+          "/tmp/cache": "allow"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.023",
+      "from": "compat.test.ts: crushCodec > decode (Crush → canonical) > maps lowercase tool names to canonical PascalCase rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.decode",
+      "args": [
+        {
+          "allowed_tools": ["view", "glob", "grep", "edit", "bash"]
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "Glob",
+            "tier": "allow"
+          },
+          {
+            "tool": "Grep",
+            "tier": "allow"
+          },
+          {
+            "tool": "Edit",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.024",
+      "from": "compat.test.ts: crushCodec > decode (Crush → canonical) > passes through unknown tool names as-is",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.decode",
+      "args": [
+        {
+          "allowed_tools": ["mcp_context7_get-library-doc"]
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "mcp_context7_get-library-doc",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.025",
+      "from": "compat.test.ts: crushCodec > encode (canonical → Crush) > maps canonical rules to Crush lowercase",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Grep",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowed_tools"],
+          "equals": ["view", "grep", "bash"]
+        }
+      ]
+    },
+    {
+      "id": "compat.026",
+      "from": "compat.test.ts: crushCodec > encode (canonical → Crush) > skips rules with patterns (Crush has no pattern syntax)",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowed_tools"],
+          "equals": ["view"]
+        }
+      ]
+    },
+    {
+      "id": "compat.027",
+      "from": "compat.test.ts: crushCodec > encode (canonical → Crush) > refuses a deny-only policy instead of writing an empty allowlist",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "crush"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "sudo:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "compat.028",
+      "from": "compat.test.ts: crushCodec > round-trip (native → canonical → native) > preserves bare tool names through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Glob",
+              "tier": "allow"
+            },
+            {
+              "tool": "Grep",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowed_tools"],
+          "equals": ["view", "glob", "grep", "edit", "bash"]
+        }
+      ]
+    },
+    {
+      "id": "compat.029",
+      "from": "compat.test.ts: crushCodec > round-trip (native → canonical → native) > preserves MCP tools through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "tier": "allow"
+            },
+            {
+              "tool": "mcp_context7_get-library-doc",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "allowed_tools": ["view", "bash"]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.030",
+      "from": "compat.test.ts: crushCodec > round-trip (native → canonical → native) > round-trip is lossy for pattern rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowed_tools"],
+          "equals": ["view"]
+        }
+      ]
+    },
+    {
+      "id": "compat.031",
+      "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps approval_policy 'untrusted' to restricted mode",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "untrusted"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "restricted"
+        }
+      ]
+    },
+    {
+      "id": "compat.032",
+      "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps approval_policy 'never' to autonomous mode",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "never"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "autonomous"
+        }
+      ]
+    },
+    {
+      "id": "compat.033",
+      "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps approval_policy 'on-request' to standard mode",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "on-request"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "standard"
+        }
+      ]
+    },
+    {
+      "id": "compat.034",
+      "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps sandbox_mode 'read-only' to readonly mode",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "sandbox_mode": "read-only"
+        }
+      ],
+      "expect": {
+        "defaultMode": "readonly",
+        "rules": [
+          {
+            "tool": "Write",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "tier": "deny"
+          }
+        ],
+        "sandbox": {
+          "mode": "readonly"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.035",
+      "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps sandbox_mode 'danger-full-access' to autonomous",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "sandbox_mode": "danger-full-access"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "autonomous"
+        }
+      ]
+    },
+    {
+      "id": "compat.036",
+      "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps sandbox_workspace_write.writable_roots to sandbox.writableRoots",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "sandbox_workspace_write": {
+            "writable_roots": ["/tmp/build-cache", "../shared-libs"]
+          }
+        }
+      ],
+      "expect": {
+        "sandbox": {
+          "writableRoots": ["/tmp/build-cache", "../shared-libs"]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.037",
+      "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > converts granular filesystem rules to path-based deny rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": {
+                "/etc/config": "read",
+                "/secrets": "none"
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "expect": {
+        "activeProfile": "default",
+        "rules": [
+          {
+            "tool": "Write",
+            "pattern": "/etc/config",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/etc/config/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/etc/config",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/etc/config/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          }
+        ],
+        "profiles": {
+          "default": {
+            "allow": [],
+            "deny": [
+              "Write(/etc/config)",
+              "Write(/etc/config/**)",
+              "Edit(/etc/config)",
+              "Edit(/etc/config/**)",
+              "Read(/secrets)",
+              "Read(/secrets/**)",
+              "Write(/secrets)",
+              "Write(/secrets/**)",
+              "Edit(/secrets)",
+              "Edit(/secrets/**)"
+            ]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.038",
+      "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > converts network domain rules to WebFetch rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "network": {
+                "domains": {
+                  "api.example.com": "allow",
+                  "evil.com": "deny"
+                }
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "expect": {
+        "activeProfile": "default",
+        "rules": [
+          {
+            "tool": "WebFetch",
+            "pattern": "domain:api.example.com",
+            "tier": "allow"
+          },
+          {
+            "tool": "WebFetch",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          }
+        ],
+        "profiles": {
+          "default": {
+            "allow": ["WebFetch(domain:api.example.com)"],
+            "deny": ["WebFetch(domain:evil.com)"]
+          }
+        },
+        "network": {
+          "domains": {
+            "api.example.com": "allow",
+            "evil.com": "deny"
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.039",
+      "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > uses all profiles when default_permissions is unset",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "safe": {
+              "filesystem": {
+                "/srv": "read"
+              }
+            },
+            "open": {
+              "filesystem": {
+                "/srv": "write"
+              }
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Write",
+            "pattern": "/srv",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/srv/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/srv",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/srv/**",
+            "tier": "deny"
+          }
+        ],
+        "profiles": {
+          "safe": {
+            "allow": [],
+            "deny": [
+              "Write(/srv)",
+              "Write(/srv/**)",
+              "Edit(/srv)",
+              "Edit(/srv/**)"
+            ]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.040",
+      "from": "compat.test.ts: codexCodec > encode (canonical → Codex) > maps defaultMode to approval_policy + sandbox_mode",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["approval_policy"],
+          "equals": "on-request"
+        },
+        {
+          "at": ["sandbox_mode"],
+          "equals": "workspace-write"
+        }
+      ]
+    },
+    {
+      "id": "compat.041",
+      "from": "compat.test.ts: codexCodec > encode (canonical → Codex) > maps autonomous to never + danger-full-access",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["approval_policy"],
+          "equals": "never"
+        },
+        {
+          "at": ["sandbox_mode"],
+          "equals": "danger-full-access"
+        }
+      ]
+    },
+    {
+      "id": "compat.042",
+      "from": "compat.test.ts: codexCodec > encode (canonical → Codex) > maps readonly to untrusted + read-only",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "restricted"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["approval_policy"],
+          "equals": "untrusted"
+        },
+        {
+          "at": ["sandbox_mode"],
+          "equals": "workspace-write"
+        }
+      ]
+    },
+    {
+      "id": "compat.043",
+      "from": "compat.test.ts: codexCodec > encode (canonical → Codex) > maps sandbox.writableRoots to writable_roots",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "sandbox": {
+            "writableRoots": ["/tmp/build-cache"]
+          }
+        }
+      ],
+      "expect": {
+        "sandbox_workspace_write": {
+          "writable_roots": ["/tmp/build-cache"]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.044",
+      "from": "compat.test.ts: codexCodec > encode (canonical → Codex) > converts deny rules to filesystem + network profile",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:api.example.com",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "default_permissions": "default",
+        "permissions": {
+          "default": {
+            "filesystem": {
+              ":workspace_roots": {
+                "secrets": "deny"
+              }
+            },
+            "network": {
+              "domains": {
+                "evil.com": "deny",
+                "api.example.com": "allow"
+              }
+            }
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.045",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves approval_policy + sandbox_mode through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "sandbox": {
+            "mode": "workspace-write"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["approval_policy"],
+          "equals": "on-request"
+        },
+        {
+          "at": ["sandbox_mode"],
+          "equals": "workspace-write"
+        }
+      ]
+    },
+    {
+      "id": "compat.046",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves autonomous mode through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "never",
+          "sandbox_mode": "danger-full-access"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "autonomous"
+        }
+      ]
+    },
+    {
+      "id": "compat.047",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves autonomous mode through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "sandbox": {
+            "mode": "full-access"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["approval_policy"],
+          "equals": "never"
+        },
+        {
+          "at": ["sandbox_mode"],
+          "equals": "danger-full-access"
+        }
+      ]
+    },
+    {
+      "id": "compat.048",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves writable_roots through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "on-request",
+          "sandbox_workspace_write": {
+            "writable_roots": ["/tmp/build-cache", "../shared-libs"]
+          }
+        }
+      ],
+      "expect": {
+        "defaultMode": "standard",
+        "sandbox": {
+          "writableRoots": ["/tmp/build-cache", "../shared-libs"]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.049",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves writable_roots through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "sandbox": {
+            "writableRoots": ["/tmp/build-cache", "../shared-libs"]
+          }
+        }
+      ],
+      "expect": {
+        "approval_policy": "on-request",
+        "sandbox_workspace_write": {
+          "writable_roots": ["/tmp/build-cache", "../shared-libs"]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.050",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves filesystem granular rules through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "activeProfile": "default",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/etc/config",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/etc/config/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/etc/config",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/etc/config/**",
+              "tier": "deny"
+            }
+          ],
+          "profiles": {
+            "default": {
+              "allow": [],
+              "deny": [
+                "Read(/secrets)",
+                "Read(/secrets/**)",
+                "Write(/secrets)",
+                "Write(/secrets/**)",
+                "Edit(/secrets)",
+                "Edit(/secrets/**)",
+                "Write(/etc/config)",
+                "Write(/etc/config/**)",
+                "Edit(/etc/config)",
+                "Edit(/etc/config/**)"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "approval_policy": "on-request",
+        "sandbox_mode": "workspace-write",
+        "default_permissions": "default",
+        "permissions": {
+          "default": {
+            "filesystem": {
+              "/secrets": "deny",
+              "/etc/config": "read"
+            }
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.051",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves filesystem granular rules through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "on-request",
+          "permissions": {
+            "default": {
+              "filesystem": {
+                "/secrets": "none",
+                "/etc/config": "read"
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "expect": {
+        "defaultMode": "standard",
+        "activeProfile": "default",
+        "rules": [
+          {
+            "tool": "Read",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/etc/config",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/etc/config/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/etc/config",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/etc/config/**",
+            "tier": "deny"
+          }
+        ],
+        "profiles": {
+          "default": {
+            "allow": [],
+            "deny": [
+              "Read(/secrets)",
+              "Read(/secrets/**)",
+              "Write(/secrets)",
+              "Write(/secrets/**)",
+              "Edit(/secrets)",
+              "Edit(/secrets/**)",
+              "Write(/etc/config)",
+              "Write(/etc/config/**)",
+              "Edit(/etc/config)",
+              "Edit(/etc/config/**)"
+            ]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.052",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves network domain rules through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "activeProfile": "default",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:api.example.com",
+              "tier": "allow"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            }
+          ],
+          "profiles": {
+            "default": {
+              "allow": ["WebFetch(domain:api.example.com)"],
+              "deny": ["WebFetch(domain:evil.com)"]
+            }
+          },
+          "network": {
+            "domains": {
+              "api.example.com": "allow",
+              "evil.com": "deny"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "approval_policy": "on-request",
+        "sandbox_mode": "workspace-write",
+        "default_permissions": "default",
+        "permissions": {
+          "default": {
+            "network": {
+              "domains": {
+                "api.example.com": "allow",
+                "evil.com": "deny"
+              }
+            }
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.053",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves network domain rules through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "on-request",
+          "permissions": {
+            "default": {
+              "network": {
+                "domains": {
+                  "api.example.com": "allow",
+                  "evil.com": "deny"
+                }
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "expect": {
+        "defaultMode": "standard",
+        "activeProfile": "default",
+        "rules": [
+          {
+            "tool": "WebFetch",
+            "pattern": "domain:api.example.com",
+            "tier": "allow"
+          },
+          {
+            "tool": "WebFetch",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          }
+        ],
+        "profiles": {
+          "default": {
+            "allow": ["WebFetch(domain:api.example.com)"],
+            "deny": ["WebFetch(domain:evil.com)"]
+          }
+        },
+        "network": {
+          "domains": {
+            "api.example.com": "allow",
+            "evil.com": "deny"
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.054",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > encodes the mode of a policy whose only Bash rules are allow rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ],
+          "defaultMode": "standard"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["approval_policy"],
+          "equals": "on-request"
+        },
+        {
+          "at": ["sandbox_mode"],
+          "equals": "workspace-write"
+        }
+      ]
+    },
+    {
+      "id": "compat.055",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > refuses a Bash deny rule rather than dropping it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ],
+          "defaultMode": "standard"
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "sudo:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "compat.056",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > round-trip is lossy for sandbox_mode read-only",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "untrusted",
+          "sandbox_mode": "read-only"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "readonly"
+        }
+      ]
+    },
+    {
+      "id": "compat.057",
+      "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > round-trip is lossy for sandbox_mode read-only",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "readonly",
+          "rules": [
+            {
+              "tool": "Write",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "tier": "deny"
+            }
+          ],
+          "sandbox": {
+            "mode": "readonly"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["sandbox_mode"],
+          "equals": "read-only"
+        },
+        {
+          "at": ["approval_policy"],
+          "equals": "untrusted"
+        }
+      ]
+    },
+    {
+      "id": "compat.058",
+      "from": "compat.test.ts: codexCodec > sandbox round-trip > preserves full sandbox config through cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "on-request",
+          "sandbox_mode": "workspace-write",
+          "sandbox_workspace_write": {
+            "writable_roots": ["/tmp/cache"],
+            "network_access": false
+          }
+        }
+      ],
+      "expect": {
+        "defaultMode": "standard",
+        "sandbox": {
+          "mode": "workspace-write",
+          "writableRoots": ["/tmp/cache"],
+          "networkAccess": false
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.059",
+      "from": "compat.test.ts: codexCodec > sandbox round-trip > preserves full sandbox config through cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "sandbox": {
+            "mode": "workspace-write",
+            "writableRoots": ["/tmp/cache"],
+            "networkAccess": false
+          }
+        }
+      ],
+      "expect": {
+        "approval_policy": "on-request",
+        "sandbox_mode": "workspace-write",
+        "sandbox_workspace_write": {
+          "writable_roots": ["/tmp/cache"],
+          "network_access": false
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.060",
+      "from": "compat.test.ts: codexCodec > sandbox round-trip > preserves danger-full-access sandbox through cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "never",
+          "sandbox_mode": "danger-full-access"
+        }
+      ],
+      "expect": {
+        "defaultMode": "autonomous",
+        "sandbox": {
+          "mode": "full-access"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.061",
+      "from": "compat.test.ts: codexCodec > sandbox round-trip > preserves danger-full-access sandbox through cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "sandbox": {
+            "mode": "full-access"
+          }
+        }
+      ],
+      "expect": {
+        "approval_policy": "never",
+        "sandbox_mode": "danger-full-access"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.062",
+      "from": "compat.test.ts: codexCodec > named profiles round-trip > preserves named profiles through cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "on-request",
+          "permissions": {
+            "strict": {
+              "filesystem": {
+                "/secrets": "none"
+              }
+            },
+            "relaxed": {
+              "filesystem": {
+                "/secrets": "write",
+                "/config": "read"
+              }
+            }
+          },
+          "default_permissions": "strict"
+        }
+      ],
+      "expect": {
+        "defaultMode": "standard",
+        "activeProfile": "strict",
+        "rules": [
+          {
+            "tool": "Read",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          }
+        ],
+        "profiles": {
+          "strict": {
+            "allow": [],
+            "deny": [
+              "Read(/secrets)",
+              "Read(/secrets/**)",
+              "Write(/secrets)",
+              "Write(/secrets/**)",
+              "Edit(/secrets)",
+              "Edit(/secrets/**)"
+            ]
+          },
+          "relaxed": {
+            "allow": [],
+            "deny": [
+              "Write(/config)",
+              "Write(/config/**)",
+              "Edit(/config)",
+              "Edit(/config/**)"
+            ]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.063",
+      "from": "compat.test.ts: codexCodec > named profiles round-trip > preserves named profiles through cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "activeProfile": "strict",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/secrets/**",
+              "tier": "deny"
+            }
+          ],
+          "profiles": {
+            "strict": {
+              "allow": [],
+              "deny": [
+                "Read(/secrets)",
+                "Read(/secrets/**)",
+                "Write(/secrets)",
+                "Write(/secrets/**)",
+                "Edit(/secrets)",
+                "Edit(/secrets/**)"
+              ]
+            },
+            "relaxed": {
+              "allow": [],
+              "deny": [
+                "Write(/config)",
+                "Write(/config/**)",
+                "Edit(/config)",
+                "Edit(/config/**)"
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "approval_policy": "on-request",
+        "sandbox_mode": "workspace-write",
+        "default_permissions": "strict",
+        "permissions": {
+          "strict": {
+            "filesystem": {
+              "/secrets": "deny"
+            }
+          },
+          "relaxed": {
+            "filesystem": {
+              "/secrets": "deny",
+              "/config": "read"
+            }
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.064",
+      "from": "compat.test.ts: codexCodec > network round-trip > preserves network domains through cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "approval_policy": "on-request",
+          "permissions": {
+            "default": {
+              "network": {
+                "domains": {
+                  "api.example.com": "allow",
+                  "evil.com": "deny"
+                }
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "expect": {
+        "defaultMode": "standard",
+        "activeProfile": "default",
+        "rules": [
+          {
+            "tool": "WebFetch",
+            "pattern": "domain:api.example.com",
+            "tier": "allow"
+          },
+          {
+            "tool": "WebFetch",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          }
+        ],
+        "profiles": {
+          "default": {
+            "allow": ["WebFetch(domain:api.example.com)"],
+            "deny": ["WebFetch(domain:evil.com)"]
+          }
+        },
+        "network": {
+          "domains": {
+            "api.example.com": "allow",
+            "evil.com": "deny"
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.065",
+      "from": "compat.test.ts: codexCodec > network round-trip > preserves network domains through cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "activeProfile": "default",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:api.example.com",
+              "tier": "allow"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            }
+          ],
+          "profiles": {
+            "default": {
+              "allow": ["WebFetch(domain:api.example.com)"],
+              "deny": ["WebFetch(domain:evil.com)"]
+            }
+          },
+          "network": {
+            "domains": {
+              "api.example.com": "allow",
+              "evil.com": "deny"
+            }
+          }
+        }
+      ],
+      "expect": {
+        "approval_policy": "on-request",
+        "sandbox_mode": "workspace-write",
+        "default_permissions": "default",
+        "permissions": {
+          "default": {
+            "network": {
+              "domains": {
+                "api.example.com": "allow",
+                "evil.com": "deny"
+              }
+            }
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.066",
+      "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps allowedTools to allow rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "allowedTools": ["read", "@git", "@git/git_status", "shell"]
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "@git",
+            "tier": "allow"
+          },
+          {
+            "tool": "@git/git_status",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.067",
+      "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps shell deniedCommands to deny Bash rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "shell": {
+              "deniedCommands": ["\\Arm -rf .*\\z"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "rm -rf .*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.068",
+      "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps shell allowedCommands to allow Bash rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "shell": {
+              "allowedCommands": ["\\Agit status\\z"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.069",
+      "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps denyByDefault to restricted mode",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "shell": {
+              "denyByDefault": true
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "restricted"
+        }
+      ]
+    },
+    {
+      "id": "compat.070",
+      "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps write deniedPaths to deny Write rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "write": {
+              "deniedPaths": ["./secrets/**", ".env"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Write",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": ".env",
+            "tier": "deny"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.071",
+      "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps read allowedPaths to allow Read rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "read": {
+              "allowedPaths": ["~/projects"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Read",
+            "pattern": "~/projects",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.072",
+      "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps aws allowedServices/deniedServices",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "aws": {
+              "allowedServices": ["s3", "lambda"],
+              "deniedServices": ["eks"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Aws",
+            "pattern": "service:eks",
+            "tier": "deny"
+          },
+          {
+            "tool": "Aws",
+            "pattern": "service:s3",
+            "tier": "allow"
+          },
+          {
+            "tool": "Aws",
+            "pattern": "service:lambda",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.073",
+      "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps web_fetch trusted/blocked to WebFetch rules",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "web_fetch": {
+              "trusted": [".*docs\\.aws\\.amazon\\.com.*"],
+              "blocked": [".*pastebin\\.com.*"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "WebFetch",
+            "pattern": "url:.*pastebin\\.com.*",
+            "tier": "deny"
+          },
+          {
+            "tool": "WebFetch",
+            "pattern": "url:.*docs\\.aws\\.amazon\\.com.*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.074",
+      "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > decodes a full agent config",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "allowedTools": ["read", "@git/git_status"],
+          "toolsSettings": {
+            "shell": {
+              "allowedCommands": ["\\Agit status\\z", "\\Agit fetch\\z"],
+              "deniedCommands": ["\\Arm -rf .*\\z"],
+              "autoAllowReadonly": true,
+              "denyByDefault": false
+            },
+            "write": {
+              "allowedPaths": ["src/**", "tests/**"],
+              "deniedPaths": ["./secrets"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "@git/git_status",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "rm -rf .*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git fetch",
+            "tier": "allow"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "Write",
+            "pattern": "tests/**",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.075",
+      "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes bare allow rules to allowedTools",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "tier": "allow"
+            },
+            {
+              "tool": "@git",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["read", "shell", "@git"]
+        }
+      ]
+    },
+    {
+      "id": "compat.076",
+      "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes Bash deny rules to shell.deniedCommands",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm -rf .*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "toolsSettings": {
+          "shell": {
+            "deniedCommands": ["\\Arm -rf .*\\z"]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.077",
+      "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes Write path rules to write settings",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "src/**",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./secrets",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "toolsSettings": {
+          "write": {
+            "allowedPaths": ["src/**"],
+            "deniedPaths": ["./secrets"]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.078",
+      "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes Aws service rules to aws settings",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Aws",
+              "pattern": "service:s3",
+              "tier": "allow"
+            },
+            {
+              "tool": "Aws",
+              "pattern": "service:eks",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "toolsSettings": {
+          "aws": {
+            "allowedServices": ["s3"],
+            "deniedServices": ["eks"]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.079",
+      "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes WebFetch domain rules to web_fetch settings",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "pattern": "url:.*docs.aws.amazon.com.*",
+              "tier": "allow"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "url:.*evil.com.*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "toolsSettings": {
+          "web_fetch": {
+            "trusted": ["\\A.*docs.aws.amazon.com.*\\z"],
+            "blocked": ["\\A.*evil.com.*\\z"]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.080",
+      "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes restricted mode to denyByDefault",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "defaultMode": "restricted"
+        }
+      ],
+      "expect": {
+        "toolsSettings": {
+          "shell": {
+            "denyByDefault": true
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.081",
+      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves allowedTools through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "tier": "allow"
+            },
+            {
+              "tool": "@git",
+              "tier": "allow"
+            },
+            {
+              "tool": "@git/git_status",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "allowedTools": ["read", "shell", "@git", "@git/git_status"]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.082",
+      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves shell commands through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm -rf .*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "toolsSettings": {
+          "shell": {
+            "allowedCommands": ["\\Agit status\\z"],
+            "deniedCommands": ["\\Arm -rf .*\\z"]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.083",
+      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves shell commands through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "shell": {
+              "allowedCommands": ["\\Agit status\\z"],
+              "deniedCommands": ["\\Arm -rf .*\\z"],
+              "autoAllowReadonly": true,
+              "denyByDefault": false
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "rm -rf .*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.084",
+      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves write paths through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "src/**",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "tests/**",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "toolsSettings": {
+          "write": {
+            "allowedPaths": ["src/**", "tests/**"],
+            "deniedPaths": ["./secrets"]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.085",
+      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves write paths through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "write": {
+              "allowedPaths": ["src/**", "tests/**"],
+              "deniedPaths": ["./secrets"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Write",
+            "pattern": "./secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "Write",
+            "pattern": "tests/**",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.086",
+      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves AWS services through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Aws",
+              "pattern": "service:eks",
+              "tier": "deny"
+            },
+            {
+              "tool": "Aws",
+              "pattern": "service:s3",
+              "tier": "allow"
+            },
+            {
+              "tool": "Aws",
+              "pattern": "service:lambda",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "toolsSettings": {
+          "aws": {
+            "allowedServices": ["s3", "lambda"],
+            "deniedServices": ["eks"]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.087",
+      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves AWS services through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "aws": {
+              "allowedServices": ["s3", "lambda"],
+              "deniedServices": ["eks"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Aws",
+            "pattern": "service:eks",
+            "tier": "deny"
+          },
+          {
+            "tool": "Aws",
+            "pattern": "service:s3",
+            "tier": "allow"
+          },
+          {
+            "tool": "Aws",
+            "pattern": "service:lambda",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.088",
+      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves web_fetch patterns through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "pattern": "url:.*pastebin\\.com.*",
+              "tier": "deny"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "url:.*docs\\.aws\\.amazon\\.com.*",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "toolsSettings": {
+          "web_fetch": {
+            "trusted": ["\\A.*docs\\.aws\\.amazon\\.com.*\\z"],
+            "blocked": ["\\A.*pastebin\\.com.*\\z"]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.089",
+      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves web_fetch patterns through full cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "toolsSettings": {
+            "web_fetch": {
+              "trusted": [".*docs\\.aws\\.amazon\\.com.*"],
+              "blocked": [".*pastebin\\.com.*"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "WebFetch",
+            "pattern": "url:.*pastebin\\.com.*",
+            "tier": "deny"
+          },
+          {
+            "tool": "WebFetch",
+            "pattern": "url:.*docs\\.aws\\.amazon\\.com.*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.090",
+      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves full agent config through cycle",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.decode",
+      "args": [
+        {
+          "allowedTools": ["read", "@git/git_status"],
+          "toolsSettings": {
+            "shell": {
+              "allowedCommands": ["\\Agit status\\z"],
+              "deniedCommands": ["\\Arm -rf .*\\z"]
+            },
+            "write": {
+              "allowedPaths": ["src/**"],
+              "deniedPaths": ["./secrets"]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow"
+          },
+          {
+            "tool": "@git/git_status",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "rm -rf .*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "src/**",
+            "tier": "allow"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    }
+  ]
+}

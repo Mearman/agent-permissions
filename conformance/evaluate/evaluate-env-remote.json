@@ -1,0 +1,339 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-env-remote.001",
+      "from": "evaluate-env-remote.test.ts: when.env > applies when every named variable has the given value",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "env": {
+                "CI": "true"
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "allow",
+      "context": {
+        "env": {
+          "CI": "true"
+        }
+      }
+    },
+    {
+      "id": "evaluate-env-remote.002",
+      "from": "evaluate-env-remote.test.ts: when.env > does not apply when a variable has another value",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "env": {
+                "CI": "true"
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "ask",
+      "context": {
+        "env": {
+          "CI": "false"
+        }
+      }
+    },
+    {
+      "id": "evaluate-env-remote.003",
+      "from": "evaluate-env-remote.test.ts: when.env > is unknown when the variable is unset, so an allow does not apply",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "env": {
+                "CI": "true"
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "ask",
+      "context": {
+        "env": {}
+      }
+    },
+    {
+      "id": "evaluate-env-remote.004",
+      "from": "evaluate-env-remote.test.ts: when.env > is unknown when the variable is unset, so an allow does not apply",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "env": {
+                "CI": "true"
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "ask",
+      "context": {}
+    },
+    {
+      "id": "evaluate-env-remote.005",
+      "from": "evaluate-env-remote.test.ts: when.env > is unknown when unset, so a deny still applies",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "env": {
+                "CI": "true"
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "deny",
+      "context": {}
+    },
+    {
+      "id": "evaluate-env-remote.006",
+      "from": "evaluate-env-remote.test.ts: when.env > is unknown when unset, so a deny still applies",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "env": {
+                "CI": "true"
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "allow",
+      "context": {
+        "env": {
+          "CI": "false"
+        }
+      }
+    },
+    {
+      "id": "evaluate-env-remote.007",
+      "from": "evaluate-env-remote.test.ts: when.env > requires all named variables, and a known mismatch settles it",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "env": {
+                "CI": "true",
+                "STAGE": "prod"
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy x",
+      "expect": "deny",
+      "context": {
+        "env": {
+          "CI": "true",
+          "STAGE": "prod"
+        }
+      }
+    },
+    {
+      "id": "evaluate-env-remote.008",
+      "from": "evaluate-env-remote.test.ts: when.env > requires all named variables, and a known mismatch settles it",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "env": {
+                "CI": "true",
+                "STAGE": "prod"
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy x",
+      "expect": "ask",
+      "context": {
+        "env": {
+          "CI": "false"
+        }
+      }
+    },
+    {
+      "id": "evaluate-env-remote.009",
+      "from": "evaluate-env-remote.test.ts: when.remote > matches the normalised remote whatever form it is written in",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "allow",
+            "when": {
+              "remote": "github.com/exadev/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "allow",
+      "context": {
+        "remote": "git@github.com:ExaDev/agent-perms.git"
+      }
+    },
+    {
+      "id": "evaluate-env-remote.010",
+      "from": "evaluate-env-remote.test.ts: when.remote > matches the normalised remote whatever form it is written in",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "allow",
+            "when": {
+              "remote": "github.com/exadev/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "allow",
+      "context": {
+        "remote": "https://github.com/exadev/agent-perms"
+      }
+    },
+    {
+      "id": "evaluate-env-remote.011",
+      "from": "evaluate-env-remote.test.ts: when.remote > matches the normalised remote whatever form it is written in",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "allow",
+            "when": {
+              "remote": "github.com/exadev/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "allow",
+      "context": {
+        "remote": "ssh://git@github.com/ExaDev/agent-perms.git"
+      }
+    },
+    {
+      "id": "evaluate-env-remote.012",
+      "from": "evaluate-env-remote.test.ts: when.remote > does not match another owner",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "allow",
+            "when": {
+              "remote": "github.com/exadev/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "ask",
+      "context": {
+        "remote": "git@github.com:other/agent-perms.git"
+      }
+    },
+    {
+      "id": "evaluate-env-remote.013",
+      "from": "evaluate-env-remote.test.ts: when.remote > is unknown without a remote, so an allow does not apply",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "allow",
+            "when": {
+              "remote": "github.com/exadev/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "ask",
+      "context": {}
+    }
+  ]
+}

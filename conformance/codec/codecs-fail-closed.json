@@ -1,0 +1,779 @@
+{
+  "cases": [
+    {
+      "id": "codecs-fail-closed.001",
+      "from": "codecs-fail-closed.test.ts: dontAsk is a deny, not an allow > denies what no rule covers, as Claude Code's dontAsk does",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "mapMode",
+      "args": ["dontAsk"],
+      "expect": "readonly"
+    },
+    {
+      "id": "codecs-fail-closed.002",
+      "from": "codecs-fail-closed.test.ts: dontAsk is a deny, not an allow > denies what no rule covers, as Claude Code's dontAsk does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "readonly",
+        "rules": []
+      },
+      "tool": "Bash",
+      "input": "ls",
+      "expect": "deny"
+    },
+    {
+      "id": "codecs-fail-closed.003",
+      "from": "codecs-fail-closed.test.ts: dontAsk is a deny, not an allow > denies what no rule covers, as Claude Code's dontAsk does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "readonly",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "ls",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "ls",
+      "expect": "allow"
+    },
+    {
+      "id": "codecs-fail-closed.004",
+      "from": "codecs-fail-closed.test.ts: dontAsk is a deny, not an allow > is the most restrictive mode when modes are merged",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "mostRestrictiveMode",
+      "args": ["dontAsk", "standard"],
+      "expect": "dontAsk"
+    },
+    {
+      "id": "codecs-fail-closed.005",
+      "from": "codecs-fail-closed.test.ts: dontAsk is a deny, not an allow > is the most restrictive mode when modes are merged",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "mostRestrictiveMode",
+      "args": ["standard", "dontAsk"],
+      "expect": "dontAsk"
+    },
+    {
+      "id": "codecs-fail-closed.006",
+      "from": "codecs-fail-closed.test.ts: dontAsk is a deny, not an allow > is not written to Codex as a mode that never asks",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "defaultMode": "dontAsk"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["approval_policy"],
+          "notEquals": "never"
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.007",
+      "from": "codecs-fail-closed.test.ts: claude-code encode > leaves out an allow limited by a condition, which would otherwise apply everywhere",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm run *",
+              "tier": "allow",
+              "when": {
+                "cwd": "./packages/*"
+              }
+            }
+          ]
+        }
+      ],
+      "expect": {}
+    },
+    {
+      "id": "codecs-fail-closed.008",
+      "from": "codecs-fail-closed.test.ts: claude-code encode > keeps a conditional deny or ask, applying it unconditionally, which is stricter",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny",
+              "when": {
+                "branch": "main"
+              }
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask",
+              "when": {
+                "env": {
+                  "CI": "1"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["deny"],
+          "equals": ["Bash(rm:*)"]
+        },
+        {
+          "at": ["ask"],
+          "equals": ["Bash(git push:*)"]
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.009",
+      "from": "codecs-fail-closed.test.ts: claude-code encode > leaves out an allow limited by a predicate and writes a deny or ask without it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "deploy:*",
+              "tier": "allow",
+              "when": {
+                "predicate": {
+                  "kind": "not",
+                  "operand": {
+                    "kind": "textCompare",
+                    "op": "equals",
+                    "left": {
+                      "kind": "reference",
+                      "key": "env:STAGE"
+                    },
+                    "right": {
+                      "kind": "textLiteral",
+                      "value": "prod"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny",
+              "when": {
+                "predicate": {
+                  "kind": "not",
+                  "operand": {
+                    "kind": "textCompare",
+                    "op": "equals",
+                    "left": {
+                      "kind": "reference",
+                      "key": "env:STAGE"
+                    },
+                    "right": {
+                      "kind": "textLiteral",
+                      "value": "prod"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allow"],
+          "equals": []
+        },
+        {
+          "at": ["deny"],
+          "equals": ["Bash(rm:*)"]
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.010",
+      "from": "codecs-fail-closed.test.ts: claude-code encode > writes a mode Claude Code has no name for as the closest one that is not looser",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "defaultMode": "readonly"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "dontAsk"
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.011",
+      "from": "codecs-fail-closed.test.ts: claude-code encode > writes a mode Claude Code has no name for as the closest one that is not looser",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "defaultMode": "restricted"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "default"
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.012",
+      "from": "codecs-fail-closed.test.ts: claude-code encode > writes a mode Claude Code has no name for as the closest one that is not looser",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "defaultMode": "standard"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "default"
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.013",
+      "from": "codecs-fail-closed.test.ts: claude-code encode > writes none for a mode that asks for nothing",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "defaultMode": "autonomous"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "absent": true
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.014",
+      "from": "codecs-fail-closed.test.ts: claude-code encode > keeps the modes it already names",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "defaultMode": "plan"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "plan"
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.015",
+      "from": "codecs-fail-closed.test.ts: claude-code encode > keeps the modes it already names",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "claudeCodeCodec.encode",
+      "args": [
+        {
+          "defaultMode": "dontAsk"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "dontAsk"
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.016",
+      "from": "codecs-fail-closed.test.ts: crush encode > refuses a deny or ask, since Crush has only an allowlist",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "crush"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codecs-fail-closed.017",
+      "from": "codecs-fail-closed.test.ts: crush encode > refuses a deny or ask, since Crush has only an allowlist",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./x",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "crush"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./x",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codecs-fail-closed.018",
+      "from": "codecs-fail-closed.test.ts: crush encode > lists every refused rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./a",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "crush"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "tier": "deny"
+                }
+              },
+              {
+                "rule": {
+                  "tool": "Write",
+                  "pattern": "./a",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codecs-fail-closed.019",
+      "from": "codecs-fail-closed.test.ts: crush encode > still writes a bare allow and leaves out a patterned one",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "crushCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "allowed_tools": ["view"]
+      }
+    },
+    {
+      "id": "codecs-fail-closed.020",
+      "from": "codecs-fail-closed.test.ts: opencode encode > refuses a deny or ask for a tool it has no name for, and leaves out an allow",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "mcp__github__x",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "opencode"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "mcp__github__x",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codecs-fail-closed.021",
+      "from": "codecs-fail-closed.test.ts: opencode encode > refuses a deny or ask for a tool it has no name for, and leaves out an allow",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "NotebookEdit",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "opencode"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "NotebookEdit",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codecs-fail-closed.022",
+      "from": "codecs-fail-closed.test.ts: opencode encode > keeps the stricter tier when two rules share a pattern",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["bash"],
+          "equals": {
+            "git push *": "deny"
+          }
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.023",
+      "from": "codecs-fail-closed.test.ts: opencode encode > keeps the stricter tier when two rules share a pattern",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["bash"],
+          "equals": {
+            "git push *": "deny"
+          }
+        }
+      ]
+    },
+    {
+      "id": "codecs-fail-closed.024",
+      "from": "codecs-fail-closed.test.ts: kiro encode > refuses an ask, which Kiro has no setting for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "kiro"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codecs-fail-closed.025",
+      "from": "codecs-fail-closed.test.ts: kiro encode > refuses a deny with no pattern and a deny for a tool it has no setting for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "kiro"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codecs-fail-closed.026",
+      "from": "codecs-fail-closed.test.ts: kiro encode > refuses a deny with no pattern and a deny for a tool it has no setting for",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Grep",
+              "pattern": "x",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "kiro"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Grep",
+                  "pattern": "x",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codecs-fail-closed.027",
+      "from": "codecs-fail-closed.test.ts: kiro encode > still writes a patterned deny it can express",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "kiroCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["toolsSettings", "read", "deniedPaths"],
+          "equals": ["./secrets"]
+        }
+      ]
+    }
+  ]
+}

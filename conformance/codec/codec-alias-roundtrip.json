@@ -1,0 +1,280 @@
+{
+  "cases": [
+    {
+      "id": "codec-alias-roundtrip.001",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry read is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["read"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.002",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry write is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["write"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.003",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry shell is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["shell"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.004",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry aws is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Aws",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["aws"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.005",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry glob is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Glob",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["glob"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.006",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry grep is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Grep",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["grep"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.007",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry web_search is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "WebSearch",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["web_search"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.008",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry web_fetch is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["web_fetch"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.009",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry code is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Code",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["code"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.010",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry delegate is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Delegate",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["delegate"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.011",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry subagent is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Agent",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["subagent"]
+        }
+      ]
+    },
+    {
+      "id": "codec-alias-roundtrip.012",
+      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry unknown_tool is written back",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "unknown_tool",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["allowedTools"],
+          "equals": ["unknown_tool"]
+        }
+      ]
+    }
+  ]
+}

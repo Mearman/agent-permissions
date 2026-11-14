@@ -1,13 +1,11 @@
 /** The permission-prompt handler judges a host's tool call against the policy and answers in the host's result shape. */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 
 import type { PermissionPolicy } from "../evaluate.ts";
 import {
   createPermissionPrompt,
-  promptToolContent,
-  toolSubjects,
   type AskHandler,
   type PermissionPromptResult,
 } from "../prompt-tool.ts";
@@ -39,56 +37,6 @@ const prompt = (onAsk?: AskHandler) =>
   });
 
 const signal = new AbortController().signal;
-
-void describe("toolSubjects", () => {
-  void it("judges a shell call by its command", () => {
-    assert.deepEqual(toolSubjects("Bash", { command: "git status" }, root), [
-      "git status",
-    ]);
-  });
-
-  void it("judges a file inside the root by its absolute and root-relative paths", () => {
-    assert.deepEqual(
-      toolSubjects("Read", { file_path: "/work/project/src/a.ts" }, root),
-      ["/work/project/src/a.ts", "./src/a.ts"],
-    );
-  });
-
-  void it("resolves a file path before judging it", () => {
-    assert.deepEqual(
-      toolSubjects(
-        "Read",
-        { file_path: "/work/project/src/../../secret" },
-        root,
-      ),
-      ["/work/secret"],
-    );
-  });
-
-  void it("judges a file outside the root by its absolute path alone", () => {
-    assert.deepEqual(toolSubjects("Read", { file_path: "/etc/hosts" }, root), [
-      "/etc/hosts",
-    ]);
-  });
-
-  void it("judges a fetch by its URL", () => {
-    assert.deepEqual(
-      toolSubjects("WebFetch", { url: "https://example.com/a" }, root),
-      ["https://example.com/a"],
-    );
-  });
-
-  void it("judges a tool with no subject field by its name alone", () => {
-    assert.deepEqual(
-      toolSubjects("mcp__github__list_prs", { owner: "o" }, root),
-      [""],
-    );
-  });
-
-  void it("has no subject when the field the tool is judged by is missing", () => {
-    assert.equal(toolSubjects("Bash", { description: "x" }, root), undefined);
-  });
-});
 
 void describe("createPermissionPrompt", () => {
   void it("allows a call the policy allows, echoing its input", async () => {
@@ -215,14 +163,5 @@ void describe("createPermissionPrompt", () => {
     );
     assert.equal(result.behavior, "allow");
     assert.equal(asked, false);
-  });
-});
-
-void describe("promptToolContent", () => {
-  void it("wraps the result as one JSON text block", () => {
-    const result: PermissionPromptResult = { behavior: "deny", message: "no" };
-    assert.deepEqual(promptToolContent(result), {
-      content: [{ type: "text", text: '{"behavior":"deny","message":"no"}' }],
-    });
   });
 });

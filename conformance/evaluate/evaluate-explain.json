@@ -1,0 +1,385 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-explain.001",
+      "from": "evaluate-explain.test.ts: explain > names the rule that decided",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            }
+          ]
+        },
+        "Bash",
+        "git status"
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        },
+        {
+          "at": ["steps"],
+          "equals": [
+            {
+              "command": "git status",
+              "decision": "allow",
+              "reason": "rule",
+              "rule": {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "evaluate-explain.002",
+      "from": "evaluate-explain.test.ts: explain > reports the default mode when no rule matched",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            }
+          ]
+        },
+        "Bash",
+        "ls"
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "ask"
+        },
+        {
+          "at": ["steps"],
+          "equals": [
+            {
+              "command": "ls",
+              "decision": "ask",
+              "reason": "default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "evaluate-explain.003",
+      "from": "evaluate-explain.test.ts: explain > gives one step per command of a shell line",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "curl:*",
+              "tier": "deny"
+            }
+          ]
+        },
+        "Bash",
+        "git status && curl x"
+      ],
+      "expect": {
+        "decision": "deny",
+        "steps": [
+          {
+            "command": "git status",
+            "decision": "allow",
+            "reason": "rule",
+            "rule": {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            }
+          },
+          {
+            "command": "curl x",
+            "decision": "deny",
+            "reason": "rule",
+            "rule": {
+              "tool": "Bash",
+              "pattern": "curl:*",
+              "tier": "deny"
+            }
+          }
+        ],
+        "hidden": false
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-explain.004",
+      "from": "evaluate-explain.test.ts: explain > marks a line it cannot split",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            }
+          ]
+        },
+        "Bash",
+        "git status # more"
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "ask"
+        },
+        {
+          "at": ["steps"],
+          "equals": [
+            {
+              "command": "git status # more",
+              "decision": "ask",
+              "reason": "unsplittable",
+              "rule": {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "evaluate-explain.005",
+      "from": "evaluate-explain.test.ts: explain > agrees with evaluate on every input",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git status",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-explain.006",
+      "from": "evaluate-explain.test.ts: explain > agrees with evaluate on every input",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "curl x",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-explain.007",
+      "from": "evaluate-explain.test.ts: explain > agrees with evaluate on every input",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git status && curl x",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-explain.008",
+      "from": "evaluate-explain.test.ts: explain > agrees with evaluate on every input",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git status; git diff",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-explain.009",
+      "from": "evaluate-explain.test.ts: explain > agrees with evaluate on every input",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "ls",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-explain.010",
+      "from": "evaluate-explain.test.ts: explain > agrees with evaluate on every input",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "(git status)",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-explain.011",
+      "from": "evaluate-explain.test.ts: explain > agrees with evaluate on every input",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "echo $(curl x)",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-explain.012",
+      "from": "evaluate-explain.test.ts: explain > agrees with evaluate on every input",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-explain.013",
+      "from": "evaluate-explain.test.ts: explain > agrees with evaluate on every input",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "Read",
+      "input": "x",
+      "expect": "ask"
+    }
+  ]
+}

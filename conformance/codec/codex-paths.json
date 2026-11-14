@@ -1,0 +1,1186 @@
+{
+  "cases": [
+    {
+      "id": "codex-paths.001",
+      "from": "codex-paths.test.ts: codex codec encodes path rules where Codex reads them > puts a ./ path under :workspace_roots, not at the filesystem root",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions", "default", "filesystem"],
+          "equals": {
+            ":workspace_roots": {
+              "secrets": "deny"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.002",
+      "from": "codex-paths.test.ts: codex codec encodes path rules where Codex reads them > gives a denied write read access under :workspace_roots",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "./dist",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "./dist",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions", "default", "filesystem"],
+          "equals": {
+            ":workspace_roots": {
+              "dist": "read"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.003",
+      "from": "codex-paths.test.ts: codex codec encodes path rules where Codex reads them > keeps an absolute path as an absolute key",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/etc/passwd",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions", "default", "filesystem"],
+          "equals": {
+            "/etc/passwd": "deny"
+          }
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.004",
+      "from": "codex-paths.test.ts: codex codec encodes path rules where Codex reads them > writes a trailing wildcard as the subtree Codex protects",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./build/*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/var/private/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions", "default", "filesystem"],
+          "equals": {
+            ":workspace_roots": {
+              "secrets": "deny",
+              "build": "read"
+            },
+            "/var/private": "deny"
+          }
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.005",
+      "from": "codex-paths.test.ts: codex codec encodes path rules where Codex reads them > writes the workspace itself as the . subpath",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "./**",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions", "default", "filesystem"],
+          "equals": {
+            ":workspace_roots": {
+              ".": "read"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.006",
+      "from": "codex-paths.test.ts: codex codec encodes path rules where Codex reads them > never lets a nested path loosen a denied ancestor",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./private/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./private/notes",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/srv/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/srv/keys",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/srv/keys/public",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions", "default", "filesystem"],
+          "equals": {
+            ":workspace_roots": {
+              "private": "deny",
+              "private/notes": "deny"
+            },
+            "/srv": "read",
+            "/srv/keys": "deny",
+            "/srv/keys/public": "deny"
+          }
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.007",
+      "from": "codex-paths.test.ts: codex codec encodes path rules where Codex reads them > carries workspace paths into every named profile",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            }
+          ],
+          "profiles": {
+            "dev": {
+              "deny": ["Write(./dist)"]
+            }
+          },
+          "activeProfile": "dev"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions"],
+          "equals": {
+            "dev": {
+              "filesystem": {
+                ":workspace_roots": {
+                  "secrets": "deny",
+                  "dist": "read"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.008",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses a wildcard before the last segment",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./**/*.env",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./**/*.env",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.009",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses a wildcard inside a name",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets/*.pem",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./secrets/*.pem",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.010",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses a home-relative path, which the policy does not expand",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "~/.ssh",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "~/.ssh",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.011",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses a bare relative path",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "secrets",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "secrets",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.012",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses a path leaving the workspace",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./../shared",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./../shared",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.013",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses a path with a . segment",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./a/./b",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./a/./b",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.014",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses an empty segment",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./a//b",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./a//b",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.015",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses a character Codex reads as a glob",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./file[1]",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./file[1]",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.016",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses a ? Codex reads as a glob",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/tmp/a?b",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "/tmp/a?b",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.017",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses a literal asterisk",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./a\\*b",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./a\\*b",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.018",
+      "from": "codex-paths.test.ts: codex codec refuses paths Codex cannot express faithfully > refuses a string prefix",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secret:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./secret:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-paths.019",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > reads :workspace_roots subpaths as ./ paths and their subtrees",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": {
+                ":workspace_roots": {
+                  ".": "write",
+                  "secrets": "deny",
+                  "docs": "read"
+                }
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules"],
+          "equals": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "./secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "./secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./docs",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./docs/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "./docs",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "./docs/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.020",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > keeps an absolute key absolute",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": {
+                "/etc/config": "read"
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules"],
+          "equals": [
+            {
+              "tool": "Write",
+              "pattern": "/etc/config",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/etc/config/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/etc/config",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/etc/config/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.021",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > reads the legacy none as deny",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": {
+                "/secrets": "none"
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "expect": {
+        "activeProfile": "default",
+        "rules": [
+          {
+            "tool": "Read",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Read",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/secrets",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "/secrets/**",
+            "tier": "deny"
+          }
+        ],
+        "profiles": {
+          "default": {
+            "allow": [],
+            "deny": [
+              "Read(/secrets)",
+              "Read(/secrets/**)",
+              "Write(/secrets)",
+              "Write(/secrets/**)",
+              "Edit(/secrets)",
+              "Edit(/secrets/**)"
+            ]
+          }
+        }
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "codex-paths.022",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > escapes a backslash so the path stays literal",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": {
+                "/a\\b": "deny"
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules", 0, "pattern"],
+          "equals": "/a\\\\b"
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.023",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > ignores a write grant it has no restriction to derive from",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": {
+                ":root": "write",
+                "~/code": "write"
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["rules"],
+          "absent": true
+        }
+      ]
+    },
+    {
+      "id": "codex-paths.024",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > fails on a home-relative restriction instead of guessing its location",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": {
+                "~/.ssh": "deny"
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "throws": {}
+    },
+    {
+      "id": "codex-paths.025",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > fails on a special root restriction instead of guessing its location",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": {
+                ":minimal": "read"
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "throws": {}
+    },
+    {
+      "id": "codex-paths.026",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > fails on a glob restriction instead of guessing its location",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": {
+                "/tmp/*.env": "deny"
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "throws": {}
+    },
+    {
+      "id": "codex-paths.027",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > fails on a workspace glob restriction instead of guessing its location",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": {
+                ":workspace_roots": {
+                  "**/*.env": "deny"
+                }
+              }
+            }
+          },
+          "default_permissions": "default"
+        }
+      ],
+      "throws": {}
+    },
+    {
+      "id": "codex-paths.028",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > rejects a whole-profile access string, which Codex does not accept",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.decode",
+      "args": [
+        {
+          "permissions": {
+            "default": {
+              "filesystem": "read"
+            }
+          }
+        }
+      ],
+      "throws": {}
+    },
+    {
+      "id": "codex-paths.029",
+      "from": "codex-paths.test.ts: codex codec decodes Codex path entries > round-trips a workspace and an absolute entry unchanged",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "activeProfile": "default",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "./secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "./secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./docs",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./docs/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "./docs",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "./docs/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/etc/config",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/etc/config/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/etc/config",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/etc/config/**",
+              "tier": "deny"
+            }
+          ],
+          "profiles": {
+            "default": {
+              "allow": [],
+              "deny": [
+                "Read(./secrets)",
+                "Read(./secrets/**)",
+                "Write(./secrets)",
+                "Write(./secrets/**)",
+                "Edit(./secrets)",
+                "Edit(./secrets/**)",
+                "Write(./docs)",
+                "Write(./docs/**)",
+                "Edit(./docs)",
+                "Edit(./docs/**)",
+                "Write(/etc/config)",
+                "Write(/etc/config/**)",
+                "Edit(/etc/config)",
+                "Edit(/etc/config/**)"
+              ]
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions", "default"],
+          "equals": {
+            "filesystem": {
+              ":workspace_roots": {
+                "secrets": "deny",
+                "docs": "read"
+              },
+              "/etc/config": "read"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

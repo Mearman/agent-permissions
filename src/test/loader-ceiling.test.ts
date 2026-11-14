@@ -1,10 +1,10 @@
 /** A ceiling layer bounds what deeper layers can allow; deeper layers can still only add restrictions. */
 
-import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { after, describe, it } from "node:test";
 
 import { evaluate } from "../evaluate.ts";
 import { loadPolicy, mergeLayerPolicies, type PolicyLayer } from "../loader.ts";
@@ -186,23 +186,6 @@ void describe("ceiling layers", () => {
     assert.equal(policy.defaultMode, "restricted");
     assert.equal(evaluate(policy, "Read", "./a"), "ask");
   });
-
-  void it("let a deeper layer tighten the default mode", () => {
-    const policy = mergeLayerPolicies(
-      layers(["org", org], ["repo", { defaultMode: "readonly" }]),
-    );
-    assert.equal(policy.defaultMode, "readonly");
-  });
-
-  void it("leave the default mode to the innermost layer when nothing is a ceiling", () => {
-    const policy = mergeLayerPolicies(
-      layers(
-        ["user", { defaultMode: "restricted" }],
-        ["repo", { defaultMode: "autonomous" }],
-      ),
-    );
-    assert.equal(policy.defaultMode, "autonomous");
-  });
 });
 
 void describe("ceiling in files", () => {
@@ -233,18 +216,5 @@ void describe("ceiling in files", () => {
     const policy = await loadPolicy({ cwd: inner });
     assert.equal(evaluate(policy, "Bash", "git status"), "allow");
     assert.equal(evaluate(policy, "Bash", "npm run build"), "ask");
-  });
-});
-
-void describe("ceiling in the schema", () => {
-  void it("is a boolean", () => {
-    assert.equal(
-      AgentPermissionPolicy.safeParse({ ceiling: true }).success,
-      true,
-    );
-    assert.equal(
-      AgentPermissionPolicy.safeParse({ ceiling: "yes" }).success,
-      false,
-    );
   });
 });

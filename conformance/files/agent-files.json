@@ -1,0 +1,734 @@
+{
+  "cases": [
+    {
+      "id": "agent-files.001",
+      "from": "agent-files.test.ts: agent-files > Result helpers > ok() creates a success result",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "ok",
+      "args": [42],
+      "expect": {
+        "ok": true,
+        "value": 42
+      }
+    },
+    {
+      "id": "agent-files.002",
+      "from": "agent-files.test.ts: agent-files > Result helpers > fail() creates a failure result",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "fail",
+      "args": ["something broke"],
+      "expect": {
+        "ok": false,
+        "error": "something broke"
+      }
+    },
+    {
+      "id": "agent-files.003",
+      "from": "agent-files.test.ts: agent-files > parseJson > parses valid JSON",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "parseJson",
+      "args": ["{\"key\": \"value\"}", "test"],
+      "checks": [
+        {
+          "at": ["value"],
+          "equals": {
+            "key": "value"
+          }
+        }
+      ]
+    },
+    {
+      "id": "agent-files.004",
+      "from": "agent-files.test.ts: agent-files > parseJson > parses arrays",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "parseJson",
+      "args": ["[1, 2, 3]", "test"],
+      "checks": [
+        {
+          "at": ["value"],
+          "equals": [1, 2, 3]
+        }
+      ]
+    },
+    {
+      "id": "agent-files.005",
+      "from": "agent-files.test.ts: agent-files > parseJson > parses primitives",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "parseJson",
+      "args": ["\"hello\"", "test"],
+      "checks": [
+        {
+          "at": ["value"],
+          "equals": "hello"
+        }
+      ]
+    },
+    {
+      "id": "agent-files.006",
+      "from": "agent-files.test.ts: agent-files > parseJson > returns failure for invalid JSON",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "parseJson",
+      "args": ["{not json}", "source.json"],
+      "expect": {
+        "ok": false,
+        "error": "source.json: invalid JSON"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "agent-files.007",
+      "from": "agent-files.test.ts: agent-files > parseJson > returns failure for empty string",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "parseJson",
+      "args": ["", "test"],
+      "checks": [
+        {
+          "at": ["ok"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "agent-files.008",
+      "from": "agent-files.test.ts: agent-files > parseJson > includes source in error message",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "parseJson",
+      "args": ["!!!", "my-config.json"],
+      "expect": {
+        "ok": false,
+        "error": "my-config.json: invalid JSON"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "agent-files.009",
+      "from": "agent-files.test.ts: agent-files > validatePolicy > validates a minimal canonical policy",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "validatePolicy",
+      "args": [{}],
+      "checks": [
+        {
+          "at": ["value"],
+          "equals": {}
+        }
+      ]
+    },
+    {
+      "id": "agent-files.010",
+      "from": "agent-files.test.ts: agent-files > validatePolicy > validates a policy with defaultMode",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "validatePolicy",
+      "args": [
+        {
+          "defaultMode": "standard"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["ok"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "agent-files.011",
+      "from": "agent-files.test.ts: agent-files > validatePolicy > validates a policy with rules",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "validatePolicy",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["value", "rules", "length"],
+          "equals": 1
+        }
+      ]
+    },
+    {
+      "id": "agent-files.012",
+      "from": "agent-files.test.ts: agent-files > validatePolicy > returns structured errors for invalid tier",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "validatePolicy",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "invalid_tier"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "error": "validation failed: rules.0.tier: Invalid option: expected one of \"allow\"|\"deny\"|\"ask\"",
+        "errors": [
+          {
+            "path": "rules.0.tier",
+            "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "agent-files.013",
+      "from": "agent-files.test.ts: agent-files > validatePolicy > returns error for wrong rule shape",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "validatePolicy",
+      "args": [
+        {
+          "rules": [
+            {
+              "notTool": "Bash"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "error": "validation failed: rules.0.tool: Invalid input: expected string, received undefined, rules.0.tier: Invalid option: expected one of \"allow\"|\"deny\"|\"ask\", rules.0: Unrecognized key: \"notTool\"",
+        "errors": [
+          {
+            "path": "rules.0.tool",
+            "message": "Invalid input: expected string, received undefined"
+          },
+          {
+            "path": "rules.0.tier",
+            "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+          },
+          {
+            "path": "rules.0",
+            "message": "Unrecognized key: \"notTool\""
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "agent-files.014",
+      "from": "agent-files.test.ts: agent-files > validatePolicy > validates policy with permissions compat",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "validatePolicy",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Read"],
+            "deny": ["Bash(rm -rf /)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["ok"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "agent-files.015",
+      "from": "agent-files.test.ts: agent-files > validatePolicy > rejects non-object input",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "validatePolicy",
+      "args": ["not an object"],
+      "checks": [
+        {
+          "at": ["ok"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "agent-files.016",
+      "from": "agent-files.test.ts: agent-files > validatePolicy > rejects null input",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "validatePolicy",
+      "args": [null],
+      "checks": [
+        {
+          "at": ["ok"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "agent-files.017",
+      "from": "agent-files.test.ts: agent-files > decodeNative > fails for format with no extract (codex)",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "decodeNative",
+      "args": [
+        "codex",
+        {
+          "some": "data"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "error": "codex: no extract defined for this format",
+        "errors": []
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "agent-files.018",
+      "from": "agent-files.test.ts: agent-files > decodeNative > fails for format with no extract (crush)",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "decodeNative",
+      "args": [
+        "crush",
+        {
+          "allowed_tools": []
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "error": "crush: no extract defined for this format",
+        "errors": []
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "agent-files.019",
+      "from": "agent-files.test.ts: agent-files > decodeNative > fails when config has no permissions payload",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "decodeNative",
+      "args": [
+        "claude-code",
+        {
+          "other": "data"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "error": "claude-code: no permissions payload found in config",
+        "errors": []
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "agent-files.020",
+      "from": "agent-files.test.ts: agent-files > decodeNative > fails when permissions payload is null",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "decodeNative",
+      "args": [
+        "claude-code",
+        {
+          "permissions": null
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "error": "claude-code: no permissions payload found in config",
+        "errors": []
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "agent-files.021",
+      "from": "agent-files.test.ts: agent-files > decodeNative > decodes Claude Code config successfully",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "decodeNative",
+      "args": [
+        "claude-code",
+        {
+          "permissions": {
+            "allow": ["Read"],
+            "deny": ["Bash(rm -rf /)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["value", "rules", "length"],
+          "equals": 2
+        }
+      ]
+    },
+    {
+      "id": "agent-files.022",
+      "from": "agent-files.test.ts: agent-files > decodeNative > decodes OpenCode config successfully",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "decodeNative",
+      "args": [
+        "opencode",
+        {
+          "permission": {
+            "bash": "allow",
+            "read": "deny"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["value", "rules", "length"],
+          "equals": 2
+        }
+      ]
+    },
+    {
+      "id": "agent-files.023",
+      "from": "agent-files.test.ts: agent-files > decodeNative > decodes Kiro config successfully (passthrough extract)",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "decodeNative",
+      "args": [
+        "kiro",
+        {
+          "allowedTools": ["Read"]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["ok"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "agent-files.024",
+      "from": "agent-files.test.ts: agent-files > decodeNative > fails when raw is not an object for claude-code",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "decodeNative",
+      "args": ["claude-code", "not an object"],
+      "expect": {
+        "ok": false,
+        "error": "claude-code: no permissions payload found in config",
+        "errors": []
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "agent-files.025",
+      "from": "agent-files.test.ts: agent-files > decodeNative > fails when raw is null for claude-code",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "decodeNative",
+      "args": ["claude-code", null],
+      "checks": [
+        {
+          "at": ["ok"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "agent-files.026",
+      "from": "agent-files.test.ts: agent-files > defaultFileName > returns path for canonical",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "defaultFileName",
+      "args": ["canonical"],
+      "expect": ".agents/permissions.json"
+    },
+    {
+      "id": "agent-files.027",
+      "from": "agent-files.test.ts: agent-files > defaultFileName > returns path for claude-code",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "defaultFileName",
+      "args": ["claude-code"],
+      "expect": ".claude/settings.json"
+    },
+    {
+      "id": "agent-files.028",
+      "from": "agent-files.test.ts: agent-files > defaultFileName > returns path for opencode",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "defaultFileName",
+      "args": ["opencode"],
+      "expect": "opencode.json"
+    },
+    {
+      "id": "agent-files.029",
+      "from": "agent-files.test.ts: agent-files > defaultFileName > returns path for codex",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "defaultFileName",
+      "args": ["codex"],
+      "expect": "codex.toml"
+    },
+    {
+      "id": "agent-files.030",
+      "from": "agent-files.test.ts: agent-files > defaultFileName > returns path for kiro",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "defaultFileName",
+      "args": ["kiro"],
+      "expect": ".kiro/permissions.json"
+    },
+    {
+      "id": "agent-files.031",
+      "from": "agent-files.test.ts: agent-files > defaultFileName > returns path for crush",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "defaultFileName",
+      "args": ["crush"],
+      "expect": ".crush.json"
+    },
+    {
+      "id": "agent-files.032",
+      "from": "agent-files.test.ts: Oh My Pi config files > is found as the project's .omp/config.yml",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "defaultFileName",
+      "args": ["omp"],
+      "expect": ".omp/config.yml"
+    },
+    {
+      "id": "agent-files.033",
+      "from": "agent-files.test.ts: Oh My Pi config files > decodes a project config",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "decodeNative",
+      "args": [
+        "omp",
+        {
+          "tools": {
+            "approvalMode": "always-ask"
+          },
+          "bash": {
+            "patterns": [
+              {
+                "match": "rm *",
+                "approval": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["value", "defaultMode"],
+          "equals": "standard"
+        },
+        {
+          "at": ["value", "rules"],
+          "equals": [
+            {
+              "tool": "Bash",
+              "pattern": "rm *",
+              "tier": "deny"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "agent-files.034",
+      "from": "agent-files.test.ts: Oh My Pi config files > changes only bash.patterns and tools.approvalMode, keeping comments and other keys",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "editOmpConfig",
+      "args": [
+        "# my settings\nmodel: fast # the quick one\ntools:\n  approval:\n    bash: prompt\nbash:\n  allowCompoundCommands: true\n  patterns:\n    - match: old\n      approval: allow\n",
+        {
+          "bash": {
+            "patterns": [
+              {
+                "match": "rm *",
+                "approval": "deny"
+              }
+            ]
+          },
+          "tools": {
+            "approvalMode": "always-ask"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "contains": ["# my settings"]
+        },
+        {
+          "at": [],
+          "contains": ["model: fast # the quick one"]
+        }
+      ]
+    },
+    {
+      "id": "agent-files.035",
+      "from": "agent-files.test.ts: Oh My Pi config files > changes only bash.patterns and tools.approvalMode, keeping comments and other keys",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "parseAgentFile",
+      "args": [
+        "omp",
+        "# my settings\nmodel: fast # the quick one\ntools:\n  approval:\n    bash: prompt\n  approvalMode: always-ask\nbash:\n  allowCompoundCommands: true\n  patterns:\n    - match: rm *\n      approval: deny\n",
+        "x.yml"
+      ],
+      "checks": [
+        {
+          "at": ["value"],
+          "equals": {
+            "model": "fast",
+            "tools": {
+              "approval": {
+                "bash": "prompt"
+              },
+              "approvalMode": "always-ask"
+            },
+            "bash": {
+              "allowCompoundCommands": true,
+              "patterns": [
+                {
+                  "match": "rm *",
+                  "approval": "deny"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "agent-files.036",
+      "from": "agent-files.test.ts: Oh My Pi config files > leaves an approval mode in place when the policy sets none",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "parseAgentFile",
+      "args": ["omp", "tools:\n  approvalMode: always-ask\n", "x.yml"],
+      "checks": [
+        {
+          "at": ["value"],
+          "equals": {
+            "tools": {
+              "approvalMode": "always-ask"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "agent-files.037",
+      "from": "agent-files.test.ts: Oh My Pi config files > removes bash.patterns when the policy has no Bash rule",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "parseAgentFile",
+      "args": [
+        "omp",
+        "# my settings\nmodel: fast # the quick one\ntools:\n  approval:\n    bash: prompt\nbash:\n  allowCompoundCommands: true\n",
+        "x.yml"
+      ],
+      "checks": [
+        {
+          "at": ["value"],
+          "equals": {
+            "model": "fast",
+            "tools": {
+              "approval": {
+                "bash": "prompt"
+              }
+            },
+            "bash": {
+              "allowCompoundCommands": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "agent-files.038",
+      "from": "agent-files.test.ts: Oh My Pi config files > starts a new file when there is none",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "parseAgentFile",
+      "args": [
+        "omp",
+        "bash:\n  patterns:\n    - match: rm *\n      approval: deny\n",
+        "x.yml"
+      ],
+      "checks": [
+        {
+          "at": ["value"],
+          "equals": {
+            "bash": {
+              "patterns": [
+                {
+                  "match": "rm *",
+                  "approval": "deny"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "agent-files.039",
+      "from": "agent-files.test.ts: Oh My Pi config files > refuses a file that is not a YAML mapping instead of replacing it",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "editOmpConfig",
+      "args": ["model: [unclosed\n", {}],
+      "throws": {
+        "message": ["YAML"]
+      }
+    },
+    {
+      "id": "agent-files.040",
+      "from": "agent-files.test.ts: Oh My Pi config files > refuses a file that is not a YAML mapping instead of replacing it",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "editOmpConfig",
+      "args": ["- a list\n", {}],
+      "throws": {
+        "message": ["mapping"]
+      }
+    },
+    {
+      "id": "agent-files.041",
+      "from": "agent-files.test.ts: Oh My Pi config files > takes the agent directory from PI_CODING_AGENT_DIR, else under the home directory",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "ompAgentDir",
+      "args": [
+        {
+          "PI_CODING_AGENT_DIR": "/somewhere/agent"
+        },
+        "/home/me"
+      ],
+      "expect": "/somewhere/agent"
+    },
+    {
+      "id": "agent-files.042",
+      "from": "agent-files.test.ts: Oh My Pi config files > takes the agent directory from PI_CODING_AGENT_DIR, else under the home directory",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "ompAgentDir",
+      "args": [{}, "/home/me"],
+      "expect": "/home/me/.omp/agent"
+    }
+  ]
+}

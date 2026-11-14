@@ -1,0 +1,584 @@
+{
+  "cases": [
+    {
+      "id": "codex-fail-closed.001",
+      "from": "codex-fail-closed.test.ts: codex codec refuses rules it cannot enforce > refuses a command deny rule instead of dropping it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-fail-closed.002",
+      "from": "codex-fail-closed.test.ts: codex codec refuses rules it cannot enforce > refuses a command ask rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-fail-closed.003",
+      "from": "codex-fail-closed.test.ts: codex codec refuses rules it cannot enforce > refuses a deny rule for a tool it has no equivalent of",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "mcp__github__create_issue",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "mcp__github__create_issue",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-fail-closed.004",
+      "from": "codex-fail-closed.test.ts: codex codec refuses rules it cannot enforce > refuses an ask rule on a path, which Codex can only allow, read or deny",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "./src/**",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Write",
+                  "pattern": "./src/**",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-fail-closed.005",
+      "from": "codex-fail-closed.test.ts: codex codec refuses rules it cannot enforce > refuses an ask rule on a domain, which Codex can only allow or deny",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:example.com",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "WebFetch",
+                  "pattern": "domain:example.com",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-fail-closed.006",
+      "from": "codex-fail-closed.test.ts: codex codec refuses rules it cannot enforce > refuses a tool-wide file deny, which Codex only takes per path",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Write",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-fail-closed.007",
+      "from": "codex-fail-closed.test.ts: codex codec refuses rules it cannot enforce > refuses an otherwise representable deny rule that carries a condition",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets/**",
+              "tier": "deny",
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./secrets/**",
+                  "tier": "deny",
+                  "when": {
+                    "branch": "main"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-fail-closed.008",
+      "from": "codex-fail-closed.test.ts: codex codec refuses rules it cannot enforce > lists every refused rule, not only the first",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "./ok",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny"
+                }
+              },
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-fail-closed.009",
+      "from": "codex-fail-closed.test.ts: codex codec refuses rules it cannot enforce > refuses a rule inside a named profile and names the profile",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "profiles": {
+            "strict": {
+              "deny": ["Bash(rm:*)"]
+            }
+          },
+          "activeProfile": "strict"
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-fail-closed.010",
+      "from": "codex-fail-closed.test.ts: codex codec refuses rules it cannot enforce > refuses through the zod encode as well",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-fail-closed.011",
+      "from": "codex-fail-closed.test.ts: codex codec still converts what it can enforce > keeps a path deny as filesystem access",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./dist",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "permissions": {
+          "default": {
+            "filesystem": {
+              ":workspace_roots": {
+                "secrets": "deny",
+                "dist": "read"
+              }
+            }
+          }
+        },
+        "default_permissions": "default"
+      }
+    },
+    {
+      "id": "codex-fail-closed.012",
+      "from": "codex-fail-closed.test.ts: codex codec still converts what it can enforce > keeps a domain deny and allow",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:good.com",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "permissions": {
+          "default": {
+            "network": {
+              "domains": {
+                "evil.com": "deny",
+                "good.com": "allow"
+              }
+            }
+          }
+        },
+        "default_permissions": "default"
+      }
+    },
+    {
+      "id": "codex-fail-closed.013",
+      "from": "codex-fail-closed.test.ts: codex codec still converts what it can enforce > drops an allow rule, since fewer allows can only be stricter",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {}
+    },
+    {
+      "id": "codex-fail-closed.014",
+      "from": "codex-fail-closed.test.ts: codex codec still converts what it can enforce > keeps a top-level path deny in every named profile",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "codexCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            }
+          ],
+          "profiles": {
+            "dev": {
+              "allow": ["WebFetch(domain:good.com)"]
+            }
+          },
+          "activeProfile": "dev"
+        }
+      ],
+      "expect": {
+        "permissions": {
+          "dev": {
+            "filesystem": {
+              ":workspace_roots": {
+                "secrets": "deny"
+              }
+            },
+            "network": {
+              "domains": {
+                "good.com": "allow"
+              }
+            }
+          }
+        },
+        "default_permissions": "dev"
+      }
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "cases": [
+    {
+      "id": "prompt-tool.001",
+      "from": "prompt-tool.test.ts: toolSubjects > judges a shell call by its command",
+      "kind": "function",
+      "module": "prompt-tool",
+      "function": "toolSubjects",
+      "args": [
+        "Bash",
+        {
+          "command": "git status"
+        },
+        "/work/project"
+      ],
+      "expect": ["git status"]
+    },
+    {
+      "id": "prompt-tool.002",
+      "from": "prompt-tool.test.ts: toolSubjects > judges a file inside the root by its absolute and root-relative paths",
+      "kind": "function",
+      "module": "prompt-tool",
+      "function": "toolSubjects",
+      "args": [
+        "Read",
+        {
+          "file_path": "/work/project/src/a.ts"
+        },
+        "/work/project"
+      ],
+      "expect": ["/work/project/src/a.ts", "./src/a.ts"]
+    },
+    {
+      "id": "prompt-tool.003",
+      "from": "prompt-tool.test.ts: toolSubjects > resolves a file path before judging it",
+      "kind": "function",
+      "module": "prompt-tool",
+      "function": "toolSubjects",
+      "args": [
+        "Read",
+        {
+          "file_path": "/work/project/src/../../secret"
+        },
+        "/work/project"
+      ],
+      "expect": ["/work/secret"]
+    },
+    {
+      "id": "prompt-tool.004",
+      "from": "prompt-tool.test.ts: toolSubjects > judges a file outside the root by its absolute path alone",
+      "kind": "function",
+      "module": "prompt-tool",
+      "function": "toolSubjects",
+      "args": [
+        "Read",
+        {
+          "file_path": "/etc/hosts"
+        },
+        "/work/project"
+      ],
+      "expect": ["/etc/hosts"]
+    },
+    {
+      "id": "prompt-tool.005",
+      "from": "prompt-tool.test.ts: toolSubjects > judges a fetch by its URL",
+      "kind": "function",
+      "module": "prompt-tool",
+      "function": "toolSubjects",
+      "args": [
+        "WebFetch",
+        {
+          "url": "https://example.com/a"
+        },
+        "/work/project"
+      ],
+      "expect": ["https://example.com/a"]
+    },
+    {
+      "id": "prompt-tool.006",
+      "from": "prompt-tool.test.ts: toolSubjects > judges a tool with no subject field by its name alone",
+      "kind": "function",
+      "module": "prompt-tool",
+      "function": "toolSubjects",
+      "args": [
+        "mcp__github__list_prs",
+        {
+          "owner": "o"
+        },
+        "/work/project"
+      ],
+      "expect": [""]
+    },
+    {
+      "id": "prompt-tool.007",
+      "from": "prompt-tool.test.ts: toolSubjects > has no subject when the field the tool is judged by is missing",
+      "kind": "function",
+      "module": "prompt-tool",
+      "function": "toolSubjects",
+      "args": [
+        "Bash",
+        {
+          "description": "x"
+        },
+        "/work/project"
+      ],
+      "expectUndefined": true
+    },
+    {
+      "id": "prompt-tool.008",
+      "from": "prompt-tool.test.ts: promptToolContent > wraps the result as one JSON text block",
+      "kind": "function",
+      "module": "prompt-tool",
+      "function": "promptToolContent",
+      "args": [
+        {
+          "behavior": "deny",
+          "message": "no"
+        }
+      ],
+      "expect": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"behavior\":\"deny\",\"message\":\"no\"}"
+          }
+        ]
+      }
+    }
+  ]
+}

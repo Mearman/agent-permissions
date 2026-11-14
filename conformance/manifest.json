@@ -1,11 +1,115 @@
 {
   "files": {
+    "api/api.json": {
+      "cases": 46,
+      "skip": []
+    },
+    "codec/codec-alias-roundtrip.json": {
+      "cases": 12,
+      "skip": []
+    },
+    "codec/codecs-fail-closed.json": {
+      "cases": 27,
+      "skip": []
+    },
+    "codec/codex-execpolicy.json": {
+      "cases": 20,
+      "skip": []
+    },
+    "codec/codex-fail-closed.json": {
+      "cases": 14,
+      "skip": []
+    },
+    "codec/codex-paths.json": {
+      "cases": 29,
+      "skip": []
+    },
+    "codec/compat.json": {
+      "cases": 90,
+      "skip": []
+    },
+    "codec/omp-codec.json": {
+      "cases": 181,
+      "skip": []
+    },
+    "confine/confine.json": {
+      "cases": 67,
+      "skip": []
+    },
+    "evaluate/evaluate-advanced.json": {
+      "cases": 42,
+      "skip": []
+    },
+    "evaluate/evaluate-compile.json": {
+      "cases": 17,
+      "skip": []
+    },
+    "evaluate/evaluate-compound.json": {
+      "cases": 26,
+      "skip": []
+    },
+    "evaluate/evaluate-dedupe.json": {
+      "cases": 8,
+      "skip": []
+    },
+    "evaluate/evaluate-delegation.json": {
+      "cases": 17,
+      "skip": []
+    },
+    "evaluate/evaluate-env-remote.json": {
+      "cases": 13,
+      "skip": []
+    },
+    "evaluate/evaluate-explain.json": {
+      "cases": 13,
+      "skip": []
+    },
+    "evaluate/evaluate-hidden.json": {
+      "cases": 26,
+      "skip": []
+    },
+    "evaluate/evaluate-predicate.json": {
+      "cases": 24,
+      "skip": []
+    },
+    "evaluate/evaluate-principals.json": {
+      "cases": 55,
+      "skip": []
+    },
+    "evaluate/evaluate-trilean-patterns.json": {
+      "cases": 25,
+      "skip": []
+    },
+    "evaluate/evaluate-unknown-context.json": {
+      "cases": 8,
+      "skip": []
+    },
+    "evaluate/evaluate.json": {
+      "cases": 37,
+      "skip": []
+    },
+    "files/agent-files.json": {
+      "cases": 42,
+      "skip": []
+    },
+    "loader/loader-ceiling.json": {
+      "cases": 4,
+      "skip": []
+    },
     "profiles/profiles.json": {
       "cases": 11,
       "skip": []
     },
+    "prompt/prompt-tool.json": {
+      "cases": 8,
+      "skip": []
+    },
     "remote/remote.json": {
       "cases": 26,
+      "skip": []
+    },
+    "replay/replay.json": {
+      "cases": 20,
       "skip": []
     },
     "shell/differential-20260929.json": {
@@ -14,6 +118,14 @@
     },
     "shell/shell.json": {
       "cases": 44,
+      "skip": []
+    },
+    "validate/claude-code-compat.json": {
+      "cases": 53,
+      "skip": []
+    },
+    "validate/schema.json": {
+      "cases": 36,
       "skip": []
     }
   }

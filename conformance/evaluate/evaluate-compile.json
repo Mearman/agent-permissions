@@ -1,0 +1,946 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-compile.001",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git status",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-compile.002",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin main",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-compile.003",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git status && curl x",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-compile.004",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "npm run build",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-compile.005",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "echo $(curl x)",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-compile.006",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git status # more",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-compile.007",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-compile.008",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "ls",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-compile.009",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Read",
+      "input": "./secrets/key",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-compile.010",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Read",
+      "input": "./src/a.ts",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-compile.011",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Write",
+      "input": "./src/a.ts",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-compile.012",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Write",
+      "input": "./dist/a.ts",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-compile.013",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "mcp__github__create_issue",
+      "input": "",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-compile.014",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "mcp__other__tool",
+      "input": "",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-compile.015",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Edit",
+      "input": "./infra/a",
+      "expect": "deny",
+      "context": {
+        "cwd": "./packages/x"
+      }
+    },
+    {
+      "id": "evaluate-compile.016",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Edit",
+      "input": "./infra/a",
+      "expect": "ask",
+      "context": {
+        "cwd": "./other"
+      }
+    },
+    {
+      "id": "evaluate-compile.017",
+      "from": "evaluate-compile.test.ts: compile > decides exactly as evaluate does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Read",
+            "pattern": "./secrets/**",
+            "tier": "deny"
+          },
+          {
+            "tool": "Write",
+            "pattern": "./src/**",
+            "tier": "allow"
+          },
+          {
+            "tool": "mcp__github__*",
+            "tier": "ask"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "./infra/*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "Edit",
+      "input": "./infra/a",
+      "expect": "deny",
+      "context": {}
+    }
+  ]
+}
