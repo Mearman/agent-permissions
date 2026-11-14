@@ -105,7 +105,7 @@
       "skip": []
     },
     "loader/loader.json": {
-      "cases": 25,
+      "cases": 28,
       "skip": []
     },
     "mcp/mcp-background-sync.json": {
