@@ -728,6 +728,69 @@
           "layer": "$DIR0/.agents/permissions.json"
         }
       ]
+    },
+    {
+      "id": "loader.026",
+      "from": "loader.test.ts: loadPolicy > canonical loading > names the file once in the failure for invalid JSON in a canonical file",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [{ "cwd": "$DIR0" }],
+      "throws": {
+        "name": "PolicyLoadError",
+        "checks": [
+          { "at": ["failures", "length"], "equals": 1 },
+          {
+            "at": ["failures", 0],
+            "equals": "$DIR0/.agents/permissions.json: invalid JSON"
+          }
+        ]
+      },
+      "files": { "$DIR0/.agents/permissions.json": "{ nope" }
+    },
+    {
+      "id": "loader.027",
+      "from": "loader.test.ts: loadPolicy > canonical loading > names the file once in the failure for invalid JSON in a native config",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [{ "cwd": "$DIR0" }],
+      "throws": {
+        "name": "PolicyLoadError",
+        "checks": [
+          { "at": ["failures", "length"], "equals": 1 },
+          {
+            "at": ["failures", 0],
+            "equals": "$DIR0/.claude/settings.json: invalid JSON"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"with\":[\"claude-code\"]}",
+        "$DIR0/.claude/settings.json": "{ nope"
+      }
+    },
+    {
+      "id": "loader.028",
+      "from": "loader.test.ts: loadPolicy > canonical loading > names the file once when a native config is strict JSON holding a comment",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [{ "cwd": "$DIR0" }],
+      "throws": {
+        "name": "PolicyLoadError",
+        "checks": [
+          { "at": ["failures", "length"], "equals": 1 },
+          {
+            "at": ["failures", 0],
+            "equals": "$DIR0/.claude/settings.json: comments and trailing commas are not valid here, because the agent reads this file as strict JSON"
+          }
+        ]
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"with\":[\"claude-code\"]}",
+        "$DIR0/.claude/settings.json": "{ /* a comment */ \"model\": \"opus\" }"
+      }
     }
   ]
 }
