@@ -9,14 +9,15 @@
  * `github.com/org/repo`. A local path keeps its leading slash. Already-normalised input is returned
  * unchanged.
  *
- * Credentials are dropped so a token embedded in a URL never reaches a comparison, a log or a trace.
+ * Credentials are dropped so a token embedded in a URL never reaches a comparison, a log or a trace:
+ * the user information, and the query and fragment of a URL, where a token can also be passed.
  */
 export function normaliseRemote(remote: string): string {
   let rest = remote.trim();
 
   const scheme = /^[a-z][a-z0-9+.-]*:\/\//i.exec(rest);
   if (scheme) {
-    rest = rest.slice(scheme[0].length);
+    rest = rest.slice(scheme[0].length).replace(/[?#].*$/s, "");
     // scheme://[credentials@]host[:port]/path
     const slash = rest.indexOf("/");
     const authority = slash === -1 ? rest : rest.slice(0, slash);

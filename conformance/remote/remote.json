@@ -233,6 +233,139 @@
       "function": "normaliseRemote",
       "args": ["/srv/git/repo"],
       "expect": "/srv/git/repo"
+    },
+    {
+      "id": "remote.027",
+      "from": "remote.test.ts: normaliseRemote > never keeps a credential",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["https://user:secret@github.com/o/r.git"],
+      "checks": [
+        {
+          "at": [],
+          "excludes": ["secret"]
+        },
+        {
+          "at": [],
+          "equals": "github.com/o/r"
+        }
+      ],
+      "notes": "The original asserted this for one URL with a password. This case has a password in the user information, and asserts that nothing of the credential is left in the result."
+    },
+    {
+      "id": "remote.028",
+      "from": "remote.test.ts: normaliseRemote > never keeps a credential",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["https://secret@github.com/o/r.git"],
+      "checks": [
+        {
+          "at": [],
+          "excludes": ["secret"]
+        },
+        {
+          "at": [],
+          "equals": "github.com/o/r"
+        }
+      ],
+      "notes": "The original asserted this for one URL with a password. This case has a token as the whole user information, and asserts that nothing of the credential is left in the result."
+    },
+    {
+      "id": "remote.029",
+      "from": "remote.test.ts: normaliseRemote > never keeps a credential",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["ssh://git:secret@github.com:22/o/r.git"],
+      "checks": [
+        {
+          "at": [],
+          "excludes": ["secret"]
+        },
+        {
+          "at": [],
+          "equals": "github.com/o/r"
+        }
+      ],
+      "notes": "The original asserted this for one URL with a password. This case has a password with a port, and asserts that nothing of the credential is left in the result."
+    },
+    {
+      "id": "remote.030",
+      "from": "remote.test.ts: normaliseRemote > never keeps a credential",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["https://github.com/o/r.git?token=secret"],
+      "checks": [
+        {
+          "at": [],
+          "excludes": ["secret"]
+        },
+        {
+          "at": [],
+          "equals": "github.com/o/r"
+        }
+      ],
+      "notes": "The original asserted this for one URL with a password. This case has a token in the query, and asserts that nothing of the credential is left in the result."
+    },
+    {
+      "id": "remote.031",
+      "from": "remote.test.ts: normaliseRemote > never keeps a credential",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["ssh://git@github.com:22/o/r.git?token=secret"],
+      "checks": [
+        {
+          "at": [],
+          "excludes": ["secret"]
+        },
+        {
+          "at": [],
+          "equals": "github.com/o/r"
+        }
+      ],
+      "notes": "The original asserted this for one URL with a password. This case has a token in the query of a remote with credentials and a port, and asserts that nothing of the credential is left in the result."
+    },
+    {
+      "id": "remote.032",
+      "from": "remote.test.ts: normaliseRemote > never keeps a credential",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["https://github.com/o/r.git#secret"],
+      "checks": [
+        {
+          "at": [],
+          "excludes": ["secret"]
+        },
+        {
+          "at": [],
+          "equals": "github.com/o/r"
+        }
+      ],
+      "notes": "The original asserted this for one URL with a password. This case has a token in the fragment, and asserts that nothing of the credential is left in the result."
+    },
+    {
+      "id": "remote.033",
+      "from": "remote.test.ts: normaliseRemote > never keeps a credential",
+      "kind": "function",
+      "module": "remote",
+      "function": "normaliseRemote",
+      "args": ["https://user%2Fname:secret@github.com/o/r"],
+      "checks": [
+        {
+          "at": [],
+          "excludes": ["secret"]
+        },
+        {
+          "at": [],
+          "equals": "github.com/o/r"
+        }
+      ],
+      "notes": "The original asserted this for one URL with a password. This case has a password with a path-like username, and asserts that nothing of the credential is left in the result."
     }
   ]
 }
