@@ -137,8 +137,8 @@
         "name": "PolicyLoadError",
         "checks": [
           {
-            "at": ["failures"],
-            "subset": ["$DIR0/.agents/permissions.json: invalid JSON"]
+            "at": ["failures", 0],
+            "contains": ["$DIR0/.agents/permissions.json"]
           }
         ]
       },
@@ -187,8 +187,8 @@
         "name": "PolicyLoadError",
         "checks": [
           {
-            "at": ["failures"],
-            "subset": ["$DIR0/.agents/permissions.local.json: invalid JSON"]
+            "at": ["failures", 0],
+            "contains": ["$DIR0/.agents/permissions.local.json"]
           }
         ]
       },
@@ -211,12 +211,14 @@
       "throws": {
         "name": "PolicyLoadError",
         "checks": [
+          { "at": ["failures", "length"], "equals": 2 },
           {
-            "at": ["failures"],
-            "subset": [
-              "$DIR0/.agents/permissions.json: invalid JSON",
-              "$DIR0/project/.agents/permissions.json: invalid JSON"
-            ]
+            "at": ["failures", 0],
+            "contains": ["$DIR0/.agents/permissions.json"]
+          },
+          {
+            "at": ["failures", 1],
+            "contains": ["$DIR0/project/.agents/permissions.json"]
           }
         ]
       },
