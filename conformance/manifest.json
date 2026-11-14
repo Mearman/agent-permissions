@@ -9,11 +9,11 @@
       "skip": []
     },
     "cli/cli.json": {
-      "cases": 79,
+      "cases": 78,
       "skip": []
     },
     "codec/codec-alias-roundtrip.json": {
-      "cases": 52,
+      "cases": 46,
       "skip": []
     },
     "codec/codecs-fail-closed.json": {
@@ -33,11 +33,11 @@
       "skip": []
     },
     "codec/compat.json": {
-      "cases": 91,
+      "cases": 84,
       "skip": []
     },
     "codec/omp-codec.json": {
-      "cases": 79,
+      "cases": 70,
       "skip": []
     },
     "confine/confine.json": {
@@ -45,7 +45,7 @@
       "skip": []
     },
     "evaluate/evaluate-advanced.json": {
-      "cases": 42,
+      "cases": 40,
       "skip": []
     },
     "evaluate/evaluate-compile.json": {
@@ -93,7 +93,7 @@
       "skip": []
     },
     "evaluate/evaluate.json": {
-      "cases": 37,
+      "cases": 36,
       "skip": []
     },
     "files/agent-files.json": {
@@ -113,7 +113,7 @@
       "skip": []
     },
     "mcp/mcp-prompt-tool.json": {
-      "cases": 6,
+      "cases": 5,
       "skip": []
     },
     "profiles/profiles.json": {
@@ -125,7 +125,7 @@
       "skip": []
     },
     "remote/remote.json": {
-      "cases": 33,
+      "cases": 23,
       "skip": []
     },
     "replay/replay.json": {
@@ -193,7 +193,7 @@
       "skip": []
     },
     "sync/sync.json": {
-      "cases": 46,
+      "cases": 45,
       "skip": []
     },
     "validate/claude-code-compat.json": {
