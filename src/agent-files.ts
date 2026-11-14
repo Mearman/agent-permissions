@@ -887,6 +887,10 @@ export interface WriteFileOptions {
   mode?: number;
   /** The rename that puts the temporary file in place; `fs.rename` unless a test replaces it. */
   renameFile?: (from: string, to: string) => Promise<void>;
+  /** The process's user id; `process.getuid()` unless a test injects one to exercise the owner branch. */
+  uid?: number;
+  /** The call that gives the temporary file its owner; `fs.chown` unless a test replaces it. */
+  chownFile?: (path: string, uid: number, gid: number) => Promise<void>;
   /** Runs once the temporary file is written, before the final check; for tests of that check. */
   afterTemporaryWritten?: () => Promise<void>;
 }
@@ -953,10 +957,14 @@ async function replaceFile(
   try {
     await writeFile(temporary, content, { flag: "wx", mode: mode ?? 0o666 });
     if (mode !== undefined) await chmod(temporary, mode);
-    const uid = process.getuid?.();
+    const uid = options.uid ?? process.getuid?.();
     if (existing !== undefined && uid !== undefined && existing.uid !== uid) {
       try {
-        await chown(temporary, existing.uid, existing.gid);
+        await (options.chownFile ?? chown)(
+          temporary,
+          existing.uid,
+          existing.gid,
+        );
       } catch (error) {
         throw new SyncRefusedError(
           path,
