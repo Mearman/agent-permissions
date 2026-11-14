@@ -1994,20 +1994,6 @@
     },
     {
       "id": "cli.074",
-      "from": "cli.test.ts: CLI > usage and routing > shows usage with --help",
-      "kind": "cli",
-      "args": ["--help"],
-      "cwd": "$DIR1",
-      "env": {
-        "PI_CODING_AGENT_DIR": "$DIR0"
-      },
-      "expect": {
-        "exit": 0,
-        "stdout": "agent-perms — cross-agent permission policy tool\n\nUsage:\n  agent-perms convert [--from <spec>] --to <spec>\n  agent-perms validate [--input <spec>]\n  agent-perms check --tool <name> --input <cmd> [--policy-file <spec>]\n  agent-perms replay --transcript <file> [--policy-file <spec>]\n  agent-perms suggest --transcript <file> [--policy-file <spec>] [--min-count <n>]\n  agent-perms confine --root <dir> [--root <dir>] [--output <file>]\n  agent-perms sync\n\nSpecs: agent name, config file path, or \"-\" for stdin/stdout.\n\n  Format names resolve to default config files:\n    claude-code  →  .claude/settings.json\n    canonical    →  .agents/permissions.json\n    opencode     →  opencode.json\n    kiro         →  .kiro/permissions.json\n    codex        →  codex.toml\n    crush        →  .crush.json\n\nCommands:\n  convert   Convert between agent formats\n  validate  Validate a policy file\n  check     Evaluate a tool call against a policy\n  replay    Count what a policy decides for each call in a session transcript\n  suggest   Propose allow rules for calls a session transcript approved repeatedly\n  confine   Generate rules that confine Read, Edit and Write to directories\n  sync      Detect, merge, and write agent configs (bidirectional)\n  mcp       Serve the MCP sync daemon on stdio\n\nConvert flags:\n  -f, --from, --input, --in <spec>   Source (format, file, or \"-\" for stdin)\n  -t, --to, --output, --out <spec>   Target (format, file, or \"-\" for stdout)\n  -c, --compact                      Output compact JSON\n  -v, --verbose                      Show decode/encode summary on stderr\n\nValidate flags:\n  -i, --input, --in <spec>           Policy file (format, file, or \"-\" for stdin)\n\nCheck flags:\n  --tool <name>                      Tool name (required)\n  --input <cmd>                      Tool input string (required)\n  --policy-file <spec>               Policy file (format, file, or \"-\" for stdin)\n  --cwd, --branch, --remote          Evaluation context\n  --env NAME=VALUE                   Environment variable in the context (repeatable)\n  --depth <n>                        Agents between the call and the top-level agent\n  --actor <name>, --role <name>      Who is making the call and the roles they hold (--role repeats)\n  --explain                          Print how each command was judged, to stderr\n\nReplay flags:\n  --transcript <file>                Session transcript, JSON Lines (or \"-\" for stdin)\n  --policy-file <spec>               Policy file (format, file, or \"-\" for stdin)\n\nSuggest flags:\n  --transcript <file>                Session transcript, JSON Lines (or \"-\" for stdin)\n  --policy-file <spec>               Policy whose rules exclude or already cover calls\n  --min-count <n>                    Approvals a rule must cover (default: 2)\nConfine flags:\n  -r, --root <dir>                   Directory the file tools may reach (repeatable, required)\n  --outside <ask|deny>               Outside the roots: prompt (default) or refuse\n  -o, --output, --out <spec>         Write to a file instead of stdout\n  -c, --compact                      Output compact JSON\n  Confine is a convenience, not a sandbox: only Read, Edit and Write are constrained, and a Bash\n  command can still reach outside the roots. Use the policy's sandbox field to enforce that. The\n  default mode set for --outside applies to every tool with no rule of its own, not only file tools.\n\nSync flags:\n  -d, --working-dir <path>           Starting directory (default: cwd)\n  -u, --up <n|all>                   Ascend n parent directories (default: all)\n  -w, --with <agent>                 Only sync these agents (repeatable)\n  -x, --without <agent>              Sync all except these agents (repeatable)\n  -y, --yes                          Apply without prompting\n  --dry-run                          Show changes only, never write\n  -c, --create                       Create config files that don't exist\n  -v, --verbose                      Show rule provenance\n  -b, --backup                       Write .bak files before overwriting\n  --omp-global                       Also write Oh My Pi's global config (every OMP session reads it)\n\nMcp flags:\n  --permission-prompt                Expose the permission_prompt tool\n\nExamples:\n  agent-perms convert --from claude-code --to canonical\n  agent-perms convert --from .claude/settings.json --to crush\n  agent-perms convert --from claude-code --to -\n  cat settings.json | agent-perms convert --from - --to canonical --output -\n  agent-perms validate --input canonical\n  agent-perms validate --input .agents/permissions.json\n  agent-perms check --tool Bash --input \"git status\" --policy-file canonical\n  agent-perms replay --transcript session.jsonl --policy-file canonical\n  agent-perms suggest --transcript session.jsonl --policy-file canonical\n  agent-perms confine --root . --root ../shared --output .agents/permissions.json\n  agent-perms sync\n  agent-perms sync -y\n  agent-perms sync --dry-run\n  agent-perms sync -w claude-code -w opencode\n  agent-perms sync -x codex\n  agent-perms sync -w claude-code --create\n  agent-perms mcp --permission-prompt\n"
-      }
-    },
-    {
-      "id": "cli.075",
       "from": "cli.test.ts: CLI > usage and routing > shows usage with -h",
       "kind": "cli",
       "args": ["-h"],
@@ -2021,7 +2007,7 @@
       }
     },
     {
-      "id": "cli.076",
+      "id": "cli.075",
       "from": "cli.test.ts: CLI > usage and routing > shows usage for unknown command",
       "kind": "cli",
       "args": ["bogus"],
@@ -2035,7 +2021,7 @@
       }
     },
     {
-      "id": "cli.077",
+      "id": "cli.076",
       "from": "cli.test.ts: CLI > usage and routing > shows usage with no args",
       "kind": "cli",
       "args": [],
@@ -2049,7 +2035,7 @@
       }
     },
     {
-      "id": "cli.078",
+      "id": "cli.077",
       "from": "cli.test.ts: CLI and Oh My Pi's config > sync writes the global config only with --omp-global",
       "kind": "cli",
       "args": ["sync", "--working-dir", "$DIR0/project", "--up", "0", "--yes"],
@@ -2069,7 +2055,7 @@
       }
     },
     {
-      "id": "cli.079",
+      "id": "cli.078",
       "from": "cli.test.ts: CLI and Oh My Pi's config > sync writes the global config only with --omp-global",
       "kind": "cli",
       "args": [

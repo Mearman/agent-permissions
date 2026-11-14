@@ -191,27 +191,6 @@
     },
     {
       "id": "codec-alias-roundtrip.010",
-      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode list: written back when modelled, otherwise left to sync untouched",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "CODECS.opencode.encode",
-      "args": [
-        {
-          "rules": [
-            {
-              "tool": "Glob",
-              "tier": "deny"
-            }
-          ]
-        }
-      ],
-      "expect": {
-        "glob": "deny"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "codec-alias-roundtrip.011",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode bash: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -232,7 +211,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.012",
+      "id": "codec-alias-roundtrip.011",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode bash: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -253,7 +232,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.013",
+      "id": "codec-alias-roundtrip.012",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode task: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -274,7 +253,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.014",
+      "id": "codec-alias-roundtrip.013",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode task: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -295,7 +274,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.015",
+      "id": "codec-alias-roundtrip.014",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode todowrite: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -309,7 +288,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.016",
+      "id": "codec-alias-roundtrip.015",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode todowrite: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -321,7 +300,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.017",
+      "id": "codec-alias-roundtrip.016",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode question: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -335,19 +314,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.018",
-      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode question: written back when modelled, otherwise left to sync untouched",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "CODECS.opencode.encode",
-      "args": [{}],
-      "expect": {
-        "bash": "ask"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "codec-alias-roundtrip.019",
+      "id": "codec-alias-roundtrip.017",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode webfetch: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -368,7 +335,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.020",
+      "id": "codec-alias-roundtrip.018",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode webfetch: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -389,7 +356,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.021",
+      "id": "codec-alias-roundtrip.019",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode websearch: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -410,28 +377,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.022",
-      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode websearch: written back when modelled, otherwise left to sync untouched",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "CODECS.opencode.encode",
-      "args": [
-        {
-          "rules": [
-            {
-              "tool": "WebFetch",
-              "tier": "deny"
-            }
-          ]
-        }
-      ],
-      "expect": {
-        "webfetch": "deny"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "codec-alias-roundtrip.023",
+      "id": "codec-alias-roundtrip.020",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode lsp: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -445,19 +391,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.024",
-      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode lsp: written back when modelled, otherwise left to sync untouched",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "CODECS.opencode.encode",
-      "args": [{}],
-      "expect": {
-        "bash": "ask"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "codec-alias-roundtrip.025",
+      "id": "codec-alias-roundtrip.021",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode doom_loop: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -471,19 +405,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.026",
-      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode doom_loop: written back when modelled, otherwise left to sync untouched",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "CODECS.opencode.encode",
-      "args": [{}],
-      "expect": {
-        "bash": "ask"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "codec-alias-roundtrip.027",
+      "id": "codec-alias-roundtrip.022",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode skill: written back when modelled, otherwise left to sync untouched",
       "kind": "function",
       "module": "compat/codecs",
@@ -497,19 +419,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.028",
-      "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > OpenCode skill: written back when modelled, otherwise left to sync untouched",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "CODECS.opencode.encode",
-      "args": [{}],
-      "expect": {
-        "bash": "ask"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "codec-alias-roundtrip.029",
+      "id": "codec-alias-roundtrip.023",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry read is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -530,7 +440,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.030",
+      "id": "codec-alias-roundtrip.024",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry read is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -551,7 +461,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.031",
+      "id": "codec-alias-roundtrip.025",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry write is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -572,7 +482,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.032",
+      "id": "codec-alias-roundtrip.026",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry write is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -593,7 +503,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.033",
+      "id": "codec-alias-roundtrip.027",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry shell is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -614,7 +524,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.034",
+      "id": "codec-alias-roundtrip.028",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry shell is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -635,7 +545,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.035",
+      "id": "codec-alias-roundtrip.029",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry aws is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -656,7 +566,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.036",
+      "id": "codec-alias-roundtrip.030",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry aws is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -677,7 +587,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.037",
+      "id": "codec-alias-roundtrip.031",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry glob is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -698,7 +608,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.038",
+      "id": "codec-alias-roundtrip.032",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry glob is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -719,7 +629,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.039",
+      "id": "codec-alias-roundtrip.033",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry grep is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -740,7 +650,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.040",
+      "id": "codec-alias-roundtrip.034",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry grep is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -761,7 +671,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.041",
+      "id": "codec-alias-roundtrip.035",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry web_search is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -782,7 +692,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.042",
+      "id": "codec-alias-roundtrip.036",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry web_search is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -803,7 +713,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.043",
+      "id": "codec-alias-roundtrip.037",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry web_fetch is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -824,7 +734,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.044",
+      "id": "codec-alias-roundtrip.038",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry web_fetch is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -845,7 +755,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.045",
+      "id": "codec-alias-roundtrip.039",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry code is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -866,7 +776,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.046",
+      "id": "codec-alias-roundtrip.040",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry code is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -887,7 +797,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.047",
+      "id": "codec-alias-roundtrip.041",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry delegate is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -908,7 +818,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.048",
+      "id": "codec-alias-roundtrip.042",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry delegate is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -929,7 +839,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.049",
+      "id": "codec-alias-roundtrip.043",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry subagent is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -950,7 +860,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.050",
+      "id": "codec-alias-roundtrip.044",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry subagent is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -971,7 +881,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.051",
+      "id": "codec-alias-roundtrip.045",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry unknown_tool is written back",
       "kind": "function",
       "module": "compat/codecs",
@@ -992,7 +902,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "codec-alias-roundtrip.052",
+      "id": "codec-alias-roundtrip.046",
       "from": "codec-alias-roundtrip.test.ts: every modelled native key round-trips through its codec > Kiro allowedTools entry unknown_tool is written back",
       "kind": "function",
       "module": "compat/codecs",

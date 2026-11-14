@@ -132,8 +132,8 @@
       "kind": "function",
       "module": "remote",
       "function": "normaliseRemote",
-      "args": ["github.com/exadev/agent-perms"],
-      "expect": "github.com/exadev/agent-perms"
+      "args": ["example.com/o/r"],
+      "expect": "example.com/o/r"
     },
     {
       "id": "remote.016",
@@ -141,101 +141,11 @@
       "kind": "function",
       "module": "remote",
       "function": "normaliseRemote",
-      "args": ["github.com/exadev/agent-perms"],
-      "expect": "github.com/exadev/agent-perms"
+      "args": ["/srv/git/repo"],
+      "expect": "/srv/git/repo"
     },
     {
       "id": "remote.017",
-      "from": "remote.test.ts: normaliseRemote > is idempotent",
-      "kind": "function",
-      "module": "remote",
-      "function": "normaliseRemote",
-      "args": ["github.com/exadev/agent-perms"],
-      "expect": "github.com/exadev/agent-perms"
-    },
-    {
-      "id": "remote.018",
-      "from": "remote.test.ts: normaliseRemote > is idempotent",
-      "kind": "function",
-      "module": "remote",
-      "function": "normaliseRemote",
-      "args": ["github.com/exadev/agent-perms"],
-      "expect": "github.com/exadev/agent-perms"
-    },
-    {
-      "id": "remote.019",
-      "from": "remote.test.ts: normaliseRemote > is idempotent",
-      "kind": "function",
-      "module": "remote",
-      "function": "normaliseRemote",
-      "args": ["github.com/exadev/agent-perms"],
-      "expect": "github.com/exadev/agent-perms"
-    },
-    {
-      "id": "remote.020",
-      "from": "remote.test.ts: normaliseRemote > is idempotent",
-      "kind": "function",
-      "module": "remote",
-      "function": "normaliseRemote",
-      "args": ["github.com/o/r"],
-      "expect": "github.com/o/r"
-    },
-    {
-      "id": "remote.021",
-      "from": "remote.test.ts: normaliseRemote > is idempotent",
-      "kind": "function",
-      "module": "remote",
-      "function": "normaliseRemote",
-      "args": ["github.com/o/r"],
-      "expect": "github.com/o/r"
-    },
-    {
-      "id": "remote.022",
-      "from": "remote.test.ts: normaliseRemote > is idempotent",
-      "kind": "function",
-      "module": "remote",
-      "function": "normaliseRemote",
-      "args": ["example.com/o/r"],
-      "expect": "example.com/o/r"
-    },
-    {
-      "id": "remote.023",
-      "from": "remote.test.ts: normaliseRemote > is idempotent",
-      "kind": "function",
-      "module": "remote",
-      "function": "normaliseRemote",
-      "args": ["github.com/o/r"],
-      "expect": "github.com/o/r"
-    },
-    {
-      "id": "remote.024",
-      "from": "remote.test.ts: normaliseRemote > is idempotent",
-      "kind": "function",
-      "module": "remote",
-      "function": "normaliseRemote",
-      "args": ["github.com/o/r"],
-      "expect": "github.com/o/r"
-    },
-    {
-      "id": "remote.025",
-      "from": "remote.test.ts: normaliseRemote > is idempotent",
-      "kind": "function",
-      "module": "remote",
-      "function": "normaliseRemote",
-      "args": ["/srv/git/repo"],
-      "expect": "/srv/git/repo"
-    },
-    {
-      "id": "remote.026",
-      "from": "remote.test.ts: normaliseRemote > is idempotent",
-      "kind": "function",
-      "module": "remote",
-      "function": "normaliseRemote",
-      "args": ["/srv/git/repo"],
-      "expect": "/srv/git/repo"
-    },
-    {
-      "id": "remote.027",
       "from": "remote.test.ts: normaliseRemote > never keeps a credential",
       "kind": "function",
       "module": "remote",
@@ -254,7 +164,7 @@
       "notes": "The original asserted this for one URL with a password. This case has a password in the user information, and asserts that nothing of the credential is left in the result."
     },
     {
-      "id": "remote.028",
+      "id": "remote.018",
       "from": "remote.test.ts: normaliseRemote > never keeps a credential",
       "kind": "function",
       "module": "remote",
@@ -273,7 +183,7 @@
       "notes": "The original asserted this for one URL with a password. This case has a token as the whole user information, and asserts that nothing of the credential is left in the result."
     },
     {
-      "id": "remote.029",
+      "id": "remote.019",
       "from": "remote.test.ts: normaliseRemote > never keeps a credential",
       "kind": "function",
       "module": "remote",
@@ -292,7 +202,7 @@
       "notes": "The original asserted this for one URL with a password. This case has a password with a port, and asserts that nothing of the credential is left in the result."
     },
     {
-      "id": "remote.030",
+      "id": "remote.020",
       "from": "remote.test.ts: normaliseRemote > never keeps a credential",
       "kind": "function",
       "module": "remote",
@@ -311,7 +221,7 @@
       "notes": "The original asserted this for one URL with a password. This case has a token in the query, and asserts that nothing of the credential is left in the result."
     },
     {
-      "id": "remote.031",
+      "id": "remote.021",
       "from": "remote.test.ts: normaliseRemote > never keeps a credential",
       "kind": "function",
       "module": "remote",
@@ -330,7 +240,7 @@
       "notes": "The original asserted this for one URL with a password. This case has a token in the query of a remote with credentials and a port, and asserts that nothing of the credential is left in the result."
     },
     {
-      "id": "remote.032",
+      "id": "remote.022",
       "from": "remote.test.ts: normaliseRemote > never keeps a credential",
       "kind": "function",
       "module": "remote",
@@ -349,7 +259,7 @@
       "notes": "The original asserted this for one URL with a password. This case has a token in the fragment, and asserts that nothing of the credential is left in the result."
     },
     {
-      "id": "remote.033",
+      "id": "remote.023",
       "from": "remote.test.ts: normaliseRemote > never keeps a credential",
       "kind": "function",
       "module": "remote",

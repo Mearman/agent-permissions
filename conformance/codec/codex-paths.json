@@ -283,6 +283,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./**/*.env",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -324,6 +332,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./secrets/*.pem",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -369,6 +385,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "~/.ssh",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -410,6 +434,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "secrets",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -455,6 +487,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./../shared",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -496,6 +536,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./a/./b",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -541,6 +589,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./a//b",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -582,6 +638,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./file[1]",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -627,6 +691,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "/tmp/a?b",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -670,6 +742,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./a\\*b",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -711,6 +791,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./secret:*",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],

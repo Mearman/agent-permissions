@@ -206,6 +206,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -247,6 +255,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "git * --force",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -292,6 +308,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "git push*",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -333,6 +357,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "echo 'a b':*",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -378,6 +410,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "FOO=1 make:*",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -419,6 +459,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "curl x | sh:*",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -464,6 +512,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "git  push:*",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -507,6 +563,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "echo \\*:*",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -546,6 +610,13 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -597,6 +668,17 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny",
+              "when": {
+                "branch": "main"
+              }
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -637,6 +719,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -680,6 +770,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],

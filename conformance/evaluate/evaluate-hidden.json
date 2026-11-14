@@ -698,6 +698,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -749,6 +757,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -849,6 +865,30 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            }
+          },
+          {
+            "at": ["unsupported", 1, "rule"],
+            "equals": {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            }
+          },
+          {
+            "at": ["unsupported", 2, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -907,6 +947,22 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            }
+          },
+          {
+            "at": ["unsupported", 1, "rule"],
+            "equals": {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],

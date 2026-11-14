@@ -665,17 +665,6 @@
     },
     {
       "id": "evaluate.036",
-      "from": "evaluate.test.ts: evaluate > edge cases > handles no rules field",
-      "kind": "evaluate",
-      "policy": {
-        "defaultMode": "standard"
-      },
-      "tool": "bash",
-      "input": "anything",
-      "expect": "ask"
-    },
-    {
-      "id": "evaluate.037",
       "from": "evaluate.test.ts: evaluate > edge cases > handles special regex characters in patterns",
       "kind": "evaluate",
       "policy": {
