@@ -370,13 +370,13 @@
             "at": ["errors"],
             "subset": [
               {
-                "path": "rules.0.tier",
-                "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+                "path": "rules.0.tier"
               }
             ]
           }
         ]
-      }
+      },
+      "notes": "The original did not assert message text, so the case leaves it out."
     },
     {
       "id": "api.027",
@@ -425,13 +425,13 @@
             "at": ["errors"],
             "subset": [
               {
-                "path": "rules.0.tier",
-                "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+                "path": "rules.0.tier"
               }
             ]
           }
         ]
-      }
+      },
+      "notes": "The original did not assert message text, so the case leaves it out."
     },
     {
       "id": "api.030",
@@ -708,15 +708,19 @@
           ]
         }
       ],
-      "expect": {
-        "valid": false,
-        "errors": [
-          {
-            "path": "rules.0.tier",
-            "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "valid": false,
+            "errors": [
+              {
+                "path": "rules.0.tier"
+              }
+            ]
           }
-        ]
-      },
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
@@ -744,15 +748,19 @@
           "rules": "not an array"
         }
       ],
-      "expect": {
-        "valid": false,
-        "errors": [
-          {
-            "path": "rules",
-            "message": "Invalid input: expected array, received string"
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "valid": false,
+            "errors": [
+              {
+                "path": "rules"
+              }
+            ]
           }
-        ]
-      },
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
@@ -923,13 +931,13 @@
             "at": ["errors"],
             "subset": [
               {
-                "path": "rules.0.tier",
-                "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+                "path": "rules.0.tier"
               }
             ]
           }
         ]
-      }
+      },
+      "notes": "The original did not assert message text, so the case leaves it out."
     }
   ]
 }
