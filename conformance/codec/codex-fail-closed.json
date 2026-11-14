@@ -433,7 +433,8 @@
             "at": ["settings"],
             "subset": []
           }
-        ]
+        ],
+        "message": ["Bash(rm:*)", "Bash(git push:*)"]
       }
     },
     {
@@ -482,6 +483,10 @@
           {
             "at": ["settings"],
             "subset": []
+          },
+          {
+            "at": ["unsupported", 0, "reason"],
+            "contains": ["strict"]
           }
         ]
       }

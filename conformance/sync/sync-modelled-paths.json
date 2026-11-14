@@ -388,7 +388,8 @@
             "at": ["reason"],
             "subset": "undecodable"
           }
-        ]
+        ],
+        "message": ["settings.json", "permissions"]
       },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
@@ -427,7 +428,8 @@
             "at": ["reason"],
             "subset": "undecodable"
           }
-        ]
+        ],
+        "message": ["settings.json", "permissions"]
       },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
