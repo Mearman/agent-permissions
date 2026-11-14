@@ -1410,6 +1410,101 @@ void describe("CLI", () => {
 
   // =========================================================================
   void describe("confine", () => {
+    void describe("--output to an existing config file", () => {
+      /** A project directory with the files confine is pointed at. */
+      async function confineTo(
+        path: string,
+        existing: string,
+      ): Promise<{
+        cwd: string;
+        file: string;
+        result: { exitCode: number; stderr: string };
+      }> {
+        const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+        dirs.push(cwd);
+        const file = join(cwd, path);
+        await mkdir(join(file, ".."), { recursive: true });
+        await writeFile(file, existing);
+        const result = await run(
+          ["confine", "--root", cwd, "--output", file],
+          undefined,
+          undefined,
+          cwd,
+        );
+        return { cwd, file, result };
+      }
+
+      void it("keeps every schema key a canonical file holds that confine does not produce", async () => {
+        const existing =
+          '{\n  "$schema": "https://example.com/s.json",\n  "ceiling": true,\n  "without": ["codex"],\n  "up": 2,\n  "sync": {"mode": "watch"}\n}\n';
+        const { file, result } = await confineTo(
+          ".agents/permissions.json",
+          existing,
+        );
+        assert.equal(result.exitCode, 0, result.stderr);
+        const text = await readFile(file, "utf-8");
+        for (const line of existing.split("\n").slice(1, -2)) {
+          assert.ok(text.includes(line.replace(/,$/u, "")), line);
+        }
+        assert.match(text, /"rules"/u);
+      });
+
+      void it("keeps the other keys of an existing .claude/settings.json", async () => {
+        const { file, result } = await confineTo(
+          ".claude/settings.json",
+          '{"model": "opus", "hooks": {"a": 1}}\n',
+        );
+        assert.equal(result.exitCode, 0, result.stderr);
+        const text = await readFile(file, "utf-8");
+        assert.match(text, /"model": "opus"/u);
+        assert.match(text, /"hooks": \{"a": 1\}/u);
+        assert.match(text, /"permissions"/u);
+      });
+
+      void it("edits an existing opencode.jsonc in place, keeping its comments", async () => {
+        const { file, result } = await confineTo(
+          "opencode.jsonc",
+          '{\n  // mine\n  "model": "x"\n}\n',
+        );
+        assert.equal(result.exitCode, 0, result.stderr);
+        const text = await readFile(file, "utf-8");
+        assert.ok(text.includes("// mine"));
+        assert.match(text, /"permission"/u);
+      });
+
+      void it("refuses an existing codex.toml and leaves it", async () => {
+        const { file, result } = await confineTo("codex.toml", "other = 1\n");
+        assert.equal(result.exitCode, 1);
+        assert.match(result.stderr, /codex\.toml/u);
+        assert.equal(await readFile(file, "utf-8"), "other = 1\n");
+      });
+
+      void it("merges convert --to canonical into an existing canonical file the same way", async () => {
+        const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
+        dirs.push(cwd);
+        await mkdir(join(cwd, ".agents"), { recursive: true });
+        const target = join(cwd, ".agents", "permissions.json");
+        await writeFile(target, '{"sync": {"mode": "watch"}}\n');
+        await writeFile(
+          join(cwd, "policy.json"),
+          JSON.stringify({ rules: [{ tool: "Read", tier: "allow" }] }),
+        );
+        const result = await run([
+          "convert",
+          "--from",
+          join(cwd, "policy.json"),
+          "--to",
+          "canonical",
+          "--output",
+          target,
+        ]);
+        assert.equal(result.exitCode, 0, result.stderr);
+        const text = await readFile(target, "utf-8");
+        assert.match(text, /"sync": \{"mode": "watch"\}/u);
+        assert.match(text, /"rules"/u);
+      });
+    });
+
     void it("merges into the live settings file a bare format name resolves to", async () => {
       const cwd = await mkdtemp(join(tmpdir(), "cli-test-"));
       dirs.push(cwd);

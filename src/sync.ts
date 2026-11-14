@@ -42,6 +42,7 @@ import {
 } from "./evaluate.ts";
 import {
   AGENT_FILES,
+  CANONICAL_OWNED_KEYS,
   assertUnchanged,
   decodeNative,
   editJsonConfig,
@@ -469,18 +470,7 @@ interface WriteTarget {
  * other key (`$schema` of an existing file, `ceiling`, `with`, `without`, `up`, `sync`, and any the
  * schema gains) is the user's and is never rewritten.
  */
-export const SYNC_OWNED_KEYS: readonly string[] = [
-  "defaultMode",
-  "rules",
-  "permissions",
-  "sandbox",
-  "network",
-  "profiles",
-  "activeProfile",
-  "delegation",
-  "roles",
-  "env",
-];
+export const SYNC_OWNED_KEYS: readonly string[] = CANONICAL_OWNED_KEYS;
 
 const SCHEMA_URL =
   "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json";
