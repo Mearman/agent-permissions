@@ -17,5 +17,9 @@ path = "tests/conformance/main.rs"
 # A plain main that prints the failing case ids, rather than libtest, so a corpus failure names the case.
 harness = false
 
+[[test]]
+name = "float_roundtrip"
+path = "tests/float_roundtrip.rs"
+
 [lints]
 workspace = true
