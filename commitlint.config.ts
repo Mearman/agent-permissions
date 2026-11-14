@@ -22,6 +22,7 @@ const config: UserConfig = {
         "sync",
         "mcp",
         "remote",
+        "rust",
         "agent-files",
         "pkg",
         "build",
