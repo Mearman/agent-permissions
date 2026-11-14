@@ -23,12 +23,13 @@ after(async () => {
 function run(
   cwd: string,
   args: string[],
+  env: Record<string, string> = {},
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     execFile(
       "node",
       ["--experimental-strip-types", CLI, ...args],
-      { cwd },
+      { cwd, env: { ...process.env, ...env } },
       (error, stdout, stderr) => {
         const exitCode =
           error !== null && typeof error.code === "number" ? error.code : 0;
@@ -96,6 +97,11 @@ const EXISTING: [string, string, string][] = [
     '{"toolsSettings": {"shell": {"deniedCommands": ["\\\\Arm\\\\z"]}}}\n',
   ],
   ["codex.toml", "codex", 'approval_policy = "never"\n'],
+  [
+    ".omp/config.yml",
+    "omp",
+    "# mine\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+  ],
   [".crush.json", "crush", '{"permissions": {"allowed_tools": ["view"]}}\n'],
 ];
 
@@ -143,6 +149,34 @@ void describe("convert and confine create config files and refuse to overwrite o
       assert.deepEqual(await snapshot(cwd), before);
     });
   }
+
+  void it("refuses Oh My Pi's global config, found through its agent directory", async () => {
+    const cwd = await project();
+    const agentDir = join(cwd, "omp-home");
+    await mkdir(agentDir);
+    const text = "# mine\nmodel: fast\n";
+    await writeFile(join(agentDir, "config.yml"), text);
+    const before = await snapshot(cwd);
+
+    for (const args of [
+      [
+        "convert",
+        "--from",
+        join(cwd, "policy.json"),
+        "--to",
+        "omp",
+        "--output",
+        join(agentDir, "config.yml"),
+      ],
+      ["confine", "--root", cwd, "--output", join(agentDir, "config.yml")],
+    ]) {
+      const result = await run(cwd, args, { PI_CODING_AGENT_DIR: agentDir });
+
+      assert.equal(result.exitCode, 1, result.stderr);
+      assert.ok(result.stderr.includes("config.yml"), result.stderr);
+      assert.deepEqual(await snapshot(cwd), before);
+    }
+  });
 
   void it("refuses a bare format name that resolves to an existing file", async () => {
     const cwd = await project();
