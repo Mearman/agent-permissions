@@ -1,0 +1,148 @@
+{
+  "cases": [
+    {
+      "id": "loader-watch.001",
+      "from": "loader-watch.test.ts: watchPolicy > reports the new policy when a layer file changes",
+      "kind": "watch",
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
+      },
+      "steps": [
+        {
+          "reports": [
+            {
+              "decisions": [["Bash", "git status", "allow"]]
+            }
+          ]
+        },
+        {
+          "files": {
+            "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"git push:*\",\"tier\":\"deny\"}]}"
+          },
+          "reports": [
+            {
+              "decisions": [["Bash", "git push origin", "deny"]]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loader-watch.002",
+      "from": "loader-watch.test.ts: watchPolicy > reports a layer file created after the watch began, in a new directory",
+      "kind": "watch",
+      "cwd": "$DIR0",
+      "files": {},
+      "steps": [
+        {
+          "reports": [
+            {
+              "decisions": []
+            }
+          ]
+        },
+        {
+          "files": {
+            "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
+          },
+          "reports": [
+            {
+              "decisions": [["Bash", "rm x", "deny"]]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loader-watch.003",
+      "from": "loader-watch.test.ts: watchPolicy > stays quiet when a change leaves the policy as it was",
+      "kind": "watch",
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
+      },
+      "steps": [
+        {
+          "reports": [
+            {
+              "decisions": [["Bash", "git status", "allow"]]
+            }
+          ]
+        },
+        {
+          "files": {
+            "$DIR0/.agents/notes.txt": "unrelated",
+            "$DIR0/.agents/permissions.json": "{\n    \"rules\": [\n        {\n            \"tool\": \"Bash\",\n            \"pattern\": \"git:*\",\n            \"tier\": \"allow\"\n        }\n    ]\n}"
+          },
+          "reports": []
+        }
+      ]
+    },
+    {
+      "id": "loader-watch.004",
+      "from": "loader-watch.test.ts: watchPolicy > reports a file it cannot read, and does not report a policy without it",
+      "kind": "watch",
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
+      },
+      "steps": [
+        {
+          "reports": [
+            {
+              "decisions": [["Bash", "rm x", "deny"]]
+            }
+          ]
+        },
+        {
+          "files": {
+            "$DIR0/.agents/permissions.json": "{ not json"
+          },
+          "reports": [
+            {
+              "error": {
+                "message": ["permissions.json"]
+              }
+            }
+          ]
+        },
+        {
+          "files": {
+            "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"ask\"}]}"
+          },
+          "reports": [
+            {
+              "decisions": [["Bash", "rm x", "ask"]]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loader-watch.005",
+      "from": "loader-watch.test.ts: watchPolicy > stops reporting once closed",
+      "kind": "watch",
+      "cwd": "$DIR0",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
+      },
+      "steps": [
+        {
+          "reports": [
+            {
+              "decisions": [["Bash", "git status", "allow"]]
+            }
+          ]
+        },
+        {
+          "close": true,
+          "files": {
+            "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
+          },
+          "reports": []
+        }
+      ]
+    }
+  ]
+}
