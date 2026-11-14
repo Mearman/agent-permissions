@@ -784,93 +784,204 @@
       }
     },
     "cli": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "$ref": "#/$defs/id"
-        },
-        "from": {
-          "$ref": "#/$defs/from"
-        },
-        "skip": {
-          "enum": ["ts", "rust"]
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 1
-        },
-        "notes": {
-          "type": "string",
-          "minLength": 1
-        },
-        "files": {
-          "$ref": "#/$defs/files"
-        },
-        "expectFiles": {
-          "$ref": "#/$defs/expectFiles"
-        },
-        "args": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "stdin": {
-          "type": "string"
-        },
-        "env": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "cwd": {
-          "type": "string",
-          "minLength": 1
-        },
-        "expect": {
+      "oneOf": [
+        {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "exit": {
-              "type": "integer",
-              "minimum": 0
+            "id": {
+              "$ref": "#/$defs/id"
             },
-            "stdout": {
+            "from": {
+              "$ref": "#/$defs/from"
+            },
+            "skip": {
+              "enum": ["ts", "rust"]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            },
+            "notes": {
+              "type": "string",
+              "minLength": 1
+            },
+            "files": {
+              "$ref": "#/$defs/files"
+            },
+            "expectFiles": {
+              "$ref": "#/$defs/expectFiles"
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "stdin": {
               "type": "string"
             },
-            "stdoutJson": {
-              "description": "any JSON value"
-            },
-            "stderrIncludes": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "string",
-                "minLength": 1
+            "env": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
               }
             },
-            "stderrExcludes": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "string",
-                "minLength": 1
-              }
+            "cwd": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expect": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "exit": {
+                  "const": 0
+                },
+                "stdout": {
+                  "type": "string"
+                },
+                "stdoutJson": {
+                  "description": "any JSON value"
+                },
+                "stderrIncludes": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "stderrExcludes": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": ["exit"]
+            },
+            "kind": {
+              "const": "cli"
             }
           },
-          "required": ["exit"]
+          "required": ["id", "from", "kind", "args", "expect"],
+          "dependentRequired": {
+            "skip": ["reason"],
+            "reason": ["skip"]
+          }
         },
-        "kind": {
-          "const": "cli"
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "from": {
+              "$ref": "#/$defs/from"
+            },
+            "skip": {
+              "enum": ["ts", "rust"]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            },
+            "notes": {
+              "type": "string",
+              "minLength": 1
+            },
+            "files": {
+              "$ref": "#/$defs/files"
+            },
+            "expectFiles": {
+              "$ref": "#/$defs/expectFiles"
+            },
+            "expectNothingWritten": {
+              "const": true
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "stdin": {
+              "type": "string"
+            },
+            "env": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "cwd": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expect": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "exit": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "stdout": {
+                  "type": "string"
+                },
+                "stdoutJson": {
+                  "description": "any JSON value"
+                },
+                "stderrIncludes": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "stderrExcludes": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": ["exit"]
+            },
+            "kind": {
+              "const": "cli"
+            }
+          },
+          "required": ["id", "from", "kind", "args", "expect"],
+          "dependentRequired": {
+            "skip": ["reason"],
+            "reason": ["skip"]
+          },
+          "anyOf": [
+            {
+              "type": "object",
+              "required": ["expectFiles"],
+              "properties": {
+                "expectFiles": {}
+              }
+            },
+            {
+              "type": "object",
+              "required": ["expectNothingWritten"],
+              "properties": {
+                "expectNothingWritten": {}
+              }
+            }
+          ]
         }
-      },
-      "required": ["id", "from", "kind", "args", "expect"],
-      "dependentRequired": {
-        "skip": ["reason"],
-        "reason": ["skip"]
-      }
+      ]
     },
     "mcp": {
       "type": "object",

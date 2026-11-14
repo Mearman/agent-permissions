@@ -1,0 +1,16 @@
+{
+  "cases": [
+    {
+      "id": "a.001",
+      "from": "a.test.ts: d > t",
+      "kind": "cli",
+      "args": [
+        "x"
+      ],
+      "expect": {
+        "exit": 1
+      },
+      "expectNothingWritten": true
+    }
+  ]
+}

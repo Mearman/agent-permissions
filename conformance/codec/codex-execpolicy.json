@@ -892,7 +892,8 @@
       "expect": {
         "exit": 1,
         "stderrIncludes": ["rules/agent-perms.rules"]
-      }
+      },
+      "expectNothingWritten": true
     },
     {
       "id": "codex-execpolicy.023",
