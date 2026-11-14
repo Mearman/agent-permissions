@@ -88,12 +88,35 @@ function resolveOutputSpec(spec: string | undefined): string | undefined {
   }
   return resolve(spec);
 }
+/** Oh My Pi's global config files, which live in its agent directory rather than a project. */
+function isOmpGlobalConfig(path: string): boolean {
+  const directory = defaultOmpAgentDir();
+  return ["config.yml", "config.yaml"].some(
+    (name) => resolve(join(directory, name)) === resolve(path),
+  );
+}
+
+/** The format whose config file an output path is: by its name, or Oh My Pi's global config. */
+function configFormatOfOutput(path: string): Format | undefined {
+  return (
+    configFormatOfPath(path) ?? (isOmpGlobalConfig(path) ? "omp" : undefined)
+  );
+}
+
+/** The agent whose config file an output path is, when it is one written wrapped as the agent reads it. */
+function nativeFormatOfOutput(
+  path: string,
+): ReturnType<typeof nativeFormatOfPath> {
+  return (
+    nativeFormatOfPath(path) ?? (isOmpGlobalConfig(path) ? "omp" : undefined)
+  );
+}
+
 /**
  * Write a policy or an agent's config as the output of `convert` or `confine`. These commands
  * create files: an existing policy or agent config file is refused, because merging a conversion
  * or a confinement into it would replace settings it holds that the new policy lacks, and `sync`
- * is the command that updates existing files. Oh My Pi's config is the exception kept from before:
- * its two keys are edited in place.
+ * is the command that updates existing files, Oh My Pi's config included.
  *
  * @param path Absolute output path.
  * @param format The format the output is encoded as, when the command names one.
@@ -107,7 +130,7 @@ async function writeConfigOutput(
   encode: () => unknown,
   whole: string,
 ): Promise<void> {
-  const pathFormat = configFormatOfPath(path);
+  const pathFormat = configFormatOfOutput(path);
   const info = await lstat(path).catch(() => undefined);
   if (info?.isDirectory() === true) error(`${path} is a directory`);
   if (pathFormat === undefined) {
@@ -120,15 +143,11 @@ async function writeConfigOutput(
     );
   }
   if (info !== undefined) {
-    if (pathFormat === "omp") {
-      await writeNativeConfig(pathFormat, path, encode());
-      return;
-    }
     error(
       `${path} already exists: convert and confine create files and do not overwrite an existing policy or agent config file; use sync to update existing files`,
     );
   }
-  const wrapped = nativeFormatOfPath(path);
+  const wrapped = nativeFormatOfOutput(path);
   if (wrapped !== undefined) {
     // A new agent config file is written wrapped as the agent reads it.
     await writeNativeConfig(wrapped, path, encode());
@@ -634,7 +653,7 @@ async function confineCommand(args: string[]): Promise<void> {
   const outputPath =
     outputSpec === undefined ? undefined : resolveOutputSpec(outputSpec);
   if (outputPath) {
-    const nativeFormat = nativeFormatOfPath(outputPath);
+    const nativeFormat = nativeFormatOfOutput(outputPath);
     await writeConfigOutput(
       outputPath,
       undefined,

@@ -1423,25 +1423,4 @@ void describe("CLI and Oh My Pi's config", () => {
     assert.match(written, /match: rm \*/u);
     assert.equal(existsSync(join(agentDir, "config.yml.bak")), true);
   });
-
-  void it("convert edits an existing config in place", async () => {
-    const { cwd } = await project();
-    const target = join(cwd, ".omp", "config.yml");
-    await mkdir(join(cwd, ".omp"));
-    await writeFile(target, "# keep me\nmodel: y\n");
-
-    const result = await run([
-      "convert",
-      "--from",
-      join(cwd, ".agents", "permissions.json"),
-      "--to",
-      target,
-    ]);
-
-    assert.equal(result.exitCode, 0, result.stderr);
-    const written = await readFile(target, "utf-8");
-    assert.match(written, /# keep me/u);
-    assert.match(written, /^model: y$/mu);
-    assert.match(written, /match: rm \*/u);
-  });
 });
