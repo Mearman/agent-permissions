@@ -1,0 +1,919 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-hidden.001",
+      "from": "evaluate-hidden.test.ts: hidden on a rule > is accepted on a deny rule",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "evaluate-hidden.002",
+      "from": "evaluate-hidden.test.ts: hidden on a rule > is rejected on an allow or ask rule, where it would mean nothing",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "allow",
+              "hidden": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-hidden.003",
+      "from": "evaluate-hidden.test.ts: hidden on a rule > is rejected on an allow or ask rule, where it would mean nothing",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "ask",
+              "hidden": true
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-hidden.004",
+      "from": "evaluate-hidden.test.ts: hidden on a rule > is rejected when it is not true",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": false
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-hidden.005",
+      "from": "evaluate-hidden.test.ts: hidden deny rules > refuse the call as a plain deny does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny",
+            "hidden": true
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "sudo ls",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-hidden.006",
+      "from": "evaluate-hidden.test.ts: hidden deny rules > refuse the call as a plain deny does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny",
+            "hidden": true
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "ls",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-hidden.007",
+      "from": "evaluate-hidden.test.ts: hidden deny rules > report the call as hidden, and a plain deny is not",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny",
+              "hidden": true
+            }
+          ]
+        },
+        "Bash",
+        "sudo ls"
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        },
+        {
+          "at": ["hidden"],
+          "equals": true
+        },
+        {
+          "at": ["steps", 0, "rule"],
+          "equals": {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny",
+            "hidden": true
+          }
+        },
+        {
+          "at": ["steps", 0, "hidden"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "evaluate-hidden.008",
+      "from": "evaluate-hidden.test.ts: hidden deny rules > report the call as hidden, and a plain deny is not",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ]
+        },
+        "Bash",
+        "sudo ls"
+      ],
+      "checks": [
+        {
+          "at": ["hidden"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-hidden.009",
+      "from": "evaluate-hidden.test.ts: hidden deny rules > are reported even when a plain deny listed earlier matches too",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny",
+              "hidden": true
+            }
+          ]
+        },
+        "Bash",
+        "sudo ls"
+      ],
+      "checks": [
+        {
+          "at": ["hidden"],
+          "equals": true
+        },
+        {
+          "at": ["steps", 0, "rule"],
+          "equals": {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny",
+            "hidden": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "evaluate-hidden.010",
+      "from": "evaluate-hidden.test.ts: hidden deny rules > survive deduplication next to a plain deny with the same pattern",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "deduplicateRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "sudo:*",
+            "tier": "deny",
+            "hidden": true
+          }
+        ]
+      ],
+      "expect": [
+        {
+          "tool": "Bash",
+          "pattern": "sudo:*",
+          "tier": "deny"
+        },
+        {
+          "tool": "Bash",
+          "pattern": "sudo:*",
+          "tier": "deny",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "evaluate-hidden.011",
+      "from": "evaluate-hidden.test.ts: tool visibility > hides a tool named by a hidden rule with no pattern",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "isToolVisible",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "mcp__github__*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Write",
+              "tier": "deny"
+            }
+          ]
+        },
+        "WebFetch"
+      ],
+      "expect": false
+    },
+    {
+      "id": "evaluate-hidden.012",
+      "from": "evaluate-hidden.test.ts: tool visibility > hides a tool named by a hidden rule with no pattern",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "isToolVisible",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "mcp__github__*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Write",
+              "tier": "deny"
+            }
+          ]
+        },
+        "webfetch"
+      ],
+      "expect": false
+    },
+    {
+      "id": "evaluate-hidden.013",
+      "from": "evaluate-hidden.test.ts: tool visibility > hides a tool named by a hidden rule with no pattern",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "isToolVisible",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "mcp__github__*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Write",
+              "tier": "deny"
+            }
+          ]
+        },
+        "mcp__github__create_issue"
+      ],
+      "expect": false
+    },
+    {
+      "id": "evaluate-hidden.014",
+      "from": "evaluate-hidden.test.ts: tool visibility > leaves a tool visible when only some of its inputs are hidden or it is merely denied",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "isToolVisible",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "mcp__github__*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Write",
+              "tier": "deny"
+            }
+          ]
+        },
+        "Bash"
+      ],
+      "expect": true
+    },
+    {
+      "id": "evaluate-hidden.015",
+      "from": "evaluate-hidden.test.ts: tool visibility > leaves a tool visible when only some of its inputs are hidden or it is merely denied",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "isToolVisible",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "mcp__github__*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Write",
+              "tier": "deny"
+            }
+          ]
+        },
+        "Write"
+      ],
+      "expect": true
+    },
+    {
+      "id": "evaluate-hidden.016",
+      "from": "evaluate-hidden.test.ts: tool visibility > leaves a tool visible when only some of its inputs are hidden or it is merely denied",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "isToolVisible",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "mcp__github__*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Write",
+              "tier": "deny"
+            }
+          ]
+        },
+        "Read"
+      ],
+      "expect": true
+    },
+    {
+      "id": "evaluate-hidden.017",
+      "from": "evaluate-hidden.test.ts: tool visibility > filters a tool list",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "visibleTools",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "mcp__github__*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny",
+              "hidden": true
+            },
+            {
+              "tool": "Write",
+              "tier": "deny"
+            }
+          ]
+        },
+        ["Bash", "WebFetch", "mcp__github__x", "Read"]
+      ],
+      "expect": ["Bash", "Read"]
+    },
+    {
+      "id": "evaluate-hidden.018",
+      "from": "evaluate-hidden.test.ts: tool visibility > hides a conditional tool when the condition holds or is unknown",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "isToolVisible",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true,
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        },
+        "WebFetch",
+        {
+          "branch": "main"
+        }
+      ],
+      "expect": false
+    },
+    {
+      "id": "evaluate-hidden.019",
+      "from": "evaluate-hidden.test.ts: tool visibility > hides a conditional tool when the condition holds or is unknown",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "isToolVisible",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true,
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        },
+        "WebFetch",
+        {
+          "branch": "dev"
+        }
+      ],
+      "expect": true
+    },
+    {
+      "id": "evaluate-hidden.020",
+      "from": "evaluate-hidden.test.ts: tool visibility > hides a conditional tool when the condition holds or is unknown",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "isToolVisible",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "WebFetch",
+              "tier": "deny",
+              "hidden": true,
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        },
+        "WebFetch",
+        {}
+      ],
+      "expect": false
+    },
+    {
+      "id": "evaluate-hidden.021",
+      "from": "evaluate-hidden.test.ts: hidden deny rules in codecs > are written as the plain deny they refuse as, by every codec",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.claude-code.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "allow": [],
+        "deny": [
+          "Read(./secrets)",
+          "WebFetch(domain:evil.com)",
+          "Bash(sudo:*)"
+        ],
+        "ask": []
+      }
+    },
+    {
+      "id": "evaluate-hidden.022",
+      "from": "evaluate-hidden.test.ts: hidden deny rules in codecs > are written as the plain deny they refuse as, by every codec",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.codex.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "sudo:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-hidden.023",
+      "from": "evaluate-hidden.test.ts: hidden deny rules in codecs > are written as the plain deny they refuse as, by every codec",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "kiro"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "WebFetch",
+                  "pattern": "domain:evil.com",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-hidden.024",
+      "from": "evaluate-hidden.test.ts: hidden deny rules in codecs > are written as the plain deny they refuse as, by every codec",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.opencode.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "ZodError"
+      }
+    },
+    {
+      "id": "evaluate-hidden.025",
+      "from": "evaluate-hidden.test.ts: hidden deny rules in codecs > are written as the plain deny they refuse as, by every codec",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.crush.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "crush"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./secrets",
+                  "tier": "deny"
+                }
+              },
+              {
+                "rule": {
+                  "tool": "WebFetch",
+                  "pattern": "domain:evil.com",
+                  "tier": "deny"
+                }
+              },
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "sudo:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-hidden.026",
+      "from": "evaluate-hidden.test.ts: hidden deny rules in codecs > are written as the plain deny they refuse as, by every codec",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.omp.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "./secrets",
+              "tier": "deny"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:evil.com",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Read",
+                  "pattern": "./secrets",
+                  "tier": "deny"
+                }
+              },
+              {
+                "rule": {
+                  "tool": "WebFetch",
+                  "pattern": "domain:evil.com",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    }
+  ]
+}

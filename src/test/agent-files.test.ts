@@ -3,52 +3,17 @@
  * findDefaultFile, defaultFileName.
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it } from "node:test";
 
 import {
-  parseJson,
-  validatePolicy,
-  decodeNative,
-  writeJsonFile,
   findDefaultFile,
-  defaultFileName,
-  editOmpConfig,
-  ompAgentDir,
   ompGlobalConfigPath,
-  parseAgentFile,
-  ok,
-  fail,
-  type Result,
+  writeJsonFile,
 } from "../agent-files.ts";
-
-/** Extract value from a Result, asserting it's ok. */
-function unwrap<T>(result: Result<T>): T {
-  if (!result.ok) {
-    throw new Error(`expected ok result, got: ${JSON.stringify(result)}`);
-  }
-  return result.value;
-}
-
-/** Extract error from a Result, asserting it's not ok. */
-function unwrapErr<T>(result: Result<T>): string {
-  if (result.ok) {
-    throw new Error(`expected error result, got: ${JSON.stringify(result)}`);
-  }
-  return result.error;
-}
-
-/** Type guard for ValidateResult ok branch with errors array. */
-function isErr(result: ReturnType<typeof validatePolicy>): result is {
-  ok: false;
-  error: string;
-  errors: { path: string; message: string }[];
-} {
-  return !result.ok;
-}
 
 void describe("agent-files", () => {
   const dirs: string[] = [];
@@ -68,199 +33,6 @@ void describe("agent-files", () => {
         /* already gone */
       }
     }
-  });
-
-  // -------------------------------------------------------------------------
-  void describe("Result helpers", () => {
-    void it("ok() creates a success result", () => {
-      const result = ok(42);
-      assert.deepStrictEqual(result, { ok: true, value: 42 });
-    });
-
-    void it("fail() creates a failure result", () => {
-      const result: Result<number> = fail("something broke");
-      assert.deepStrictEqual(result, { ok: false, error: "something broke" });
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  void describe("parseJson", () => {
-    void it("parses valid JSON", () => {
-      const result = parseJson('{"key": "value"}', "test");
-      assert.deepStrictEqual(unwrap(result), { key: "value" });
-    });
-
-    void it("parses arrays", () => {
-      const result = parseJson("[1, 2, 3]", "test");
-      assert.deepStrictEqual(unwrap(result), [1, 2, 3]);
-    });
-
-    void it("parses primitives", () => {
-      const result = parseJson('"hello"', "test");
-      assert.strictEqual(unwrap(result), "hello");
-    });
-
-    void it("returns failure for invalid JSON", () => {
-      const err = unwrapErr(parseJson("{not json}", "source.json"));
-      assert.ok(err.includes("source.json"));
-      assert.ok(err.includes("invalid JSON"));
-    });
-
-    void it("returns failure for empty string", () => {
-      assert.strictEqual(parseJson("", "test").ok, false);
-    });
-
-    void it("includes source in error message", () => {
-      const err = unwrapErr(parseJson("!!!", "my-config.json"));
-      assert.ok(err.startsWith("my-config.json"));
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  void describe("validatePolicy", () => {
-    void it("validates a minimal canonical policy", () => {
-      assert.deepStrictEqual(unwrap(validatePolicy({})), {});
-    });
-
-    void it("validates a policy with defaultMode", () => {
-      assert.strictEqual(validatePolicy({ defaultMode: "standard" }).ok, true);
-    });
-
-    void it("validates a policy with rules", () => {
-      const policy = unwrap(
-        validatePolicy({ rules: [{ tool: "Bash", tier: "deny" }] }),
-      );
-      assert.strictEqual(policy.rules?.length, 1);
-    });
-
-    void it("returns structured errors for invalid tier", () => {
-      const result = validatePolicy({
-        rules: [{ tool: "Bash", tier: "invalid_tier" }],
-      });
-      assert.strictEqual(result.ok, false);
-      assert.ok(isErr(result));
-      assert.ok(result.errors.length > 0);
-      assert.ok(result.error.includes("validation failed"));
-      for (const e of result.errors) {
-        assert.ok(typeof e.path === "string");
-        assert.ok(typeof e.message === "string");
-      }
-    });
-
-    void it("returns error for wrong rule shape", () => {
-      const result = validatePolicy({ rules: [{ notTool: "Bash" }] });
-      assert.strictEqual(result.ok, false);
-      assert.ok(isErr(result));
-      assert.ok(result.errors.length > 0);
-    });
-
-    void it("validates policy with permissions compat", () => {
-      assert.strictEqual(
-        validatePolicy({
-          permissions: { allow: ["Read"], deny: ["Bash(rm -rf /)"] },
-        }).ok,
-        true,
-      );
-    });
-
-    void it("rejects non-object input", () => {
-      assert.strictEqual(validatePolicy("not an object").ok, false);
-    });
-
-    void it("rejects null input", () => {
-      assert.strictEqual(validatePolicy(null).ok, false);
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  void describe("decodeNative", () => {
-    void it("fails for format with no extract (codex)", () => {
-      const err = unwrapErr(decodeNative("codex", { some: "data" }));
-      assert.ok(err.includes("codex"));
-      assert.ok(err.includes("no extract"));
-    });
-
-    void it("fails for format with no extract (crush)", () => {
-      const err = unwrapErr(decodeNative("crush", { allowed_tools: [] }));
-      assert.ok(err.includes("crush"));
-    });
-
-    void it("fails when config has no permissions payload", () => {
-      const err = unwrapErr(decodeNative("claude-code", { other: "data" }));
-      assert.ok(err.includes("no permissions payload"));
-    });
-
-    void it("fails when permissions payload is null", () => {
-      const err = unwrapErr(decodeNative("claude-code", { permissions: null }));
-      assert.ok(err.includes("no permissions payload"));
-    });
-
-    void it("decodes Claude Code config successfully", () => {
-      const policy = unwrap(
-        decodeNative("claude-code", {
-          permissions: { allow: ["Read"], deny: ["Bash(rm -rf /)"] },
-        }),
-      );
-      assert.strictEqual(policy.rules?.length, 2);
-    });
-
-    void it("decodes OpenCode config successfully", () => {
-      const policy = unwrap(
-        decodeNative("opencode", {
-          permission: { bash: "allow", read: "deny" },
-        }),
-      );
-      assert.strictEqual(policy.rules?.length, 2);
-    });
-
-    void it("decodes Kiro config successfully (passthrough extract)", () => {
-      assert.strictEqual(
-        decodeNative("kiro", { allowedTools: ["Read"] }).ok,
-        true,
-      );
-    });
-
-    void it("fails when raw is not an object for claude-code", () => {
-      const err = unwrapErr(decodeNative("claude-code", "not an object"));
-      assert.ok(err.includes("no permissions payload"));
-    });
-
-    void it("fails when raw is null for claude-code", () => {
-      assert.strictEqual(decodeNative("claude-code", null).ok, false);
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  void describe("defaultFileName", () => {
-    void it("returns path for canonical", () => {
-      assert.strictEqual(
-        defaultFileName("canonical"),
-        ".agents/permissions.json",
-      );
-    });
-
-    void it("returns path for claude-code", () => {
-      assert.strictEqual(
-        defaultFileName("claude-code"),
-        ".claude/settings.json",
-      );
-    });
-
-    void it("returns path for opencode", () => {
-      assert.strictEqual(defaultFileName("opencode"), "opencode.json");
-    });
-
-    void it("returns path for codex", () => {
-      assert.strictEqual(defaultFileName("codex"), "codex.toml");
-    });
-
-    void it("returns path for kiro", () => {
-      assert.strictEqual(defaultFileName("kiro"), ".kiro/permissions.json");
-    });
-
-    void it("returns path for crush", () => {
-      assert.strictEqual(defaultFileName("crush"), ".crush.json");
-    });
   });
 
   // -------------------------------------------------------------------------
@@ -355,85 +127,6 @@ void describe("agent-files", () => {
 });
 
 void describe("Oh My Pi config files", () => {
-  const config = [
-    "# my settings",
-    "model: fast # the quick one",
-    "tools:",
-    "  approval:",
-    "    bash: prompt",
-    "bash:",
-    "  allowCompoundCommands: true",
-    "  patterns:",
-    "    - match: old",
-    "      approval: allow",
-    "",
-  ].join("\n");
-
-  void it("is found as the project's .omp/config.yml", () => {
-    assert.strictEqual(defaultFileName("omp"), ".omp/config.yml");
-  });
-
-  void it("decodes a project config", () => {
-    const decoded = unwrap(
-      decodeNative("omp", {
-        tools: { approvalMode: "always-ask" },
-        bash: { patterns: [{ match: "rm *", approval: "deny" }] },
-      }),
-    );
-    assert.strictEqual(decoded.defaultMode, "standard");
-    assert.deepStrictEqual(decoded.rules, [
-      { tool: "Bash", pattern: "rm *", tier: "deny" },
-    ]);
-  });
-
-  void it("changes only bash.patterns and tools.approvalMode, keeping comments and other keys", () => {
-    const edited = editOmpConfig(config, {
-      bash: { patterns: [{ match: "rm *", approval: "deny" }] },
-      tools: { approvalMode: "always-ask" },
-    });
-    assert.match(edited, /# my settings/);
-    assert.match(edited, /model: fast # the quick one/);
-    assert.deepStrictEqual(unwrap(parseAgentFile("omp", edited, "x.yml")), {
-      model: "fast",
-      tools: { approval: { bash: "prompt" }, approvalMode: "always-ask" },
-      bash: {
-        allowCompoundCommands: true,
-        patterns: [{ match: "rm *", approval: "deny" }],
-      },
-    });
-  });
-
-  void it("leaves an approval mode in place when the policy sets none", () => {
-    const edited = editOmpConfig("tools:\n  approvalMode: always-ask\n", {});
-    assert.deepStrictEqual(unwrap(parseAgentFile("omp", edited, "x.yml")), {
-      tools: { approvalMode: "always-ask" },
-    });
-  });
-
-  void it("removes bash.patterns when the policy has no Bash rule", () => {
-    const edited = editOmpConfig(config, {});
-    const parsed = unwrap(parseAgentFile("omp", edited, "x.yml"));
-    assert.deepStrictEqual(parsed, {
-      model: "fast",
-      tools: { approval: { bash: "prompt" } },
-      bash: { allowCompoundCommands: true },
-    });
-  });
-
-  void it("starts a new file when there is none", () => {
-    const edited = editOmpConfig(null, {
-      bash: { patterns: [{ match: "rm *", approval: "deny" }] },
-    });
-    assert.deepStrictEqual(unwrap(parseAgentFile("omp", edited, "x.yml")), {
-      bash: { patterns: [{ match: "rm *", approval: "deny" }] },
-    });
-  });
-
-  void it("refuses a file that is not a YAML mapping instead of replacing it", () => {
-    assert.throws(() => editOmpConfig("model: [unclosed\n", {}), /YAML/);
-    assert.throws(() => editOmpConfig("- a list\n", {}), /mapping/);
-  });
-
   void it("takes the global config from the agent directory, preferring config.yml", () => {
     const dir = mkdtempSync(join(tmpdir(), "omp-agent-"));
     try {
@@ -445,13 +138,5 @@ void describe("Oh My Pi config files", () => {
     } finally {
       rmSync(dir, { recursive: true });
     }
-  });
-
-  void it("takes the agent directory from PI_CODING_AGENT_DIR, else under the home directory", () => {
-    assert.strictEqual(
-      ompAgentDir({ PI_CODING_AGENT_DIR: "/somewhere/agent" }, "/home/me"),
-      "/somewhere/agent",
-    );
-    assert.strictEqual(ompAgentDir({}, "/home/me"), "/home/me/.omp/agent");
   });
 });

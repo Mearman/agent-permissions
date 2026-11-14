@@ -1,0 +1,7150 @@
+{
+  "cases": [
+    {
+      "id": "confine.001",
+      "from": "confine.test.ts: confine > produces a valid canonical policy",
+      "kind": "function",
+      "module": "api",
+      "function": "validate",
+      "args": [
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["valid"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "confine.002",
+      "from": "confine.test.ts: confine > allows Read, Edit and Write on the root and everything under it",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.003",
+      "from": "confine.test.ts: confine > allows Read, Edit and Write on the root and everything under it",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app/src/index.ts",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.004",
+      "from": "confine.test.ts: confine > allows Read, Edit and Write on the root and everything under it",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "read",
+        "/work/app/a/b/c",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.005",
+      "from": "confine.test.ts: confine > allows Read, Edit and Write on the root and everything under it",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work/app",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.006",
+      "from": "confine.test.ts: confine > allows Read, Edit and Write on the root and everything under it",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work/app/src/index.ts",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.007",
+      "from": "confine.test.ts: confine > allows Read, Edit and Write on the root and everything under it",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "edit",
+        "/work/app/a/b/c",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.008",
+      "from": "confine.test.ts: confine > allows Read, Edit and Write on the root and everything under it",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/work/app",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.009",
+      "from": "confine.test.ts: confine > allows Read, Edit and Write on the root and everything under it",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/work/app/src/index.ts",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.010",
+      "from": "confine.test.ts: confine > allows Read, Edit and Write on the root and everything under it",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "write",
+        "/work/app/a/b/c",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.011",
+      "from": "confine.test.ts: confine > does not allow a sibling that shares the root as a string prefix",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app-secrets/key",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.012",
+      "from": "confine.test.ts: confine > does not allow a sibling that shares the root as a string prefix",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app-secrets",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.013",
+      "from": "confine.test.ts: confine > does not allow a sibling that shares the root as a string prefix",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/application",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.014",
+      "from": "confine.test.ts: confine > does not allow a sibling that shares the root as a string prefix",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work/app-secrets/key",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.015",
+      "from": "confine.test.ts: confine > does not allow a sibling that shares the root as a string prefix",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work/app-secrets",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.016",
+      "from": "confine.test.ts: confine > does not allow a sibling that shares the root as a string prefix",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work/application",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.017",
+      "from": "confine.test.ts: confine > does not allow a sibling that shares the root as a string prefix",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/work/app-secrets/key",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.018",
+      "from": "confine.test.ts: confine > does not allow a sibling that shares the root as a string prefix",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/work/app-secrets",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.019",
+      "from": "confine.test.ts: confine > does not allow a sibling that shares the root as a string prefix",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/work/application",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.020",
+      "from": "confine.test.ts: confine > does not allow paths outside the roots",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/etc/passwd",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.021",
+      "from": "confine.test.ts: confine > does not allow paths outside the roots",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.022",
+      "from": "confine.test.ts: confine > does not allow paths outside the roots",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.023",
+      "from": "confine.test.ts: confine > does not allow paths outside the roots",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/etc/passwd",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.024",
+      "from": "confine.test.ts: confine > does not allow paths outside the roots",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.025",
+      "from": "confine.test.ts: confine > does not allow paths outside the roots",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.026",
+      "from": "confine.test.ts: confine > does not allow paths outside the roots",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/etc/passwd",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.027",
+      "from": "confine.test.ts: confine > does not allow paths outside the roots",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/work",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.028",
+      "from": "confine.test.ts: confine > does not allow paths outside the roots",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.029",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app/../secret",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.030",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app/src/../../secret",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.031",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app/..",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.032",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "../secret",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.033",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "..",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.034",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work/app/../secret",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.035",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work/app/src/../../secret",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.036",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work/app/..",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.037",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "../secret",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.038",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "..",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.039",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/work/app/../secret",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.040",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/work/app/src/../../secret",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.041",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "/work/app/..",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.042",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "../secret",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.043",
+      "from": "confine.test.ts: confine > denies traversal out of a root",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Write",
+        "..",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.044",
+      "from": "confine.test.ts: confine > allows dot-prefixed names that are not traversal",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app/..hidden/file",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.045",
+      "from": "confine.test.ts: confine > allows dot-prefixed names that are not traversal",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app/a..b",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.046",
+      "from": "confine.test.ts: confine > asks about outside paths by default",
+      "kind": "function",
+      "module": "confine",
+      "function": "confine",
+      "args": [
+        {
+          "roots": ["/work/app"],
+          "cwd": "/work/app"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "restricted"
+        }
+      ]
+    },
+    {
+      "id": "confine.047",
+      "from": "confine.test.ts: confine > asks about outside paths by default",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/etc/passwd",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "ask"
+        }
+      ]
+    },
+    {
+      "id": "confine.048",
+      "from": "confine.test.ts: confine > denies outside paths when asked to",
+      "kind": "function",
+      "module": "confine",
+      "function": "confine",
+      "args": [
+        {
+          "roots": ["/work/app"],
+          "cwd": "/work/app",
+          "outside": "deny"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "readonly"
+        }
+      ]
+    },
+    {
+      "id": "confine.049",
+      "from": "confine.test.ts: confine > denies outside paths when asked to",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/etc/passwd",
+        {
+          "defaultMode": "readonly",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.050",
+      "from": "confine.test.ts: confine > denies outside paths when asked to",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work/app-secrets/key",
+        {
+          "defaultMode": "readonly",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.051",
+      "from": "confine.test.ts: confine > denies outside paths when asked to",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Edit",
+        "/work/app/src/a.ts",
+        {
+          "defaultMode": "readonly",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.052",
+      "from": "confine.test.ts: confine > covers several roots and lists those other than the working directory",
+      "kind": "function",
+      "module": "confine",
+      "function": "confine",
+      "args": [
+        {
+          "roots": ["/work/app", "/work/shared", "/work/app/"],
+          "cwd": "/work/app"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions", "additionalDirectories"],
+          "equals": ["/work/shared"]
+        }
+      ]
+    },
+    {
+      "id": "confine.053",
+      "from": "confine.test.ts: confine > covers several roots and lists those other than the working directory",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/shared/lib.ts",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/work/shared"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.054",
+      "from": "confine.test.ts: confine > covers several roots and lists those other than the working directory",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app/x",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/work/shared"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.055",
+      "from": "confine.test.ts: confine > covers several roots and lists those other than the working directory",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/shared-old/x",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/work/shared"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.056",
+      "from": "confine.test.ts: confine > leaves additionalDirectories out when every root is the working directory",
+      "kind": "function",
+      "module": "confine",
+      "function": "confine",
+      "args": [
+        {
+          "roots": ["/work/app"],
+          "cwd": "/work/app"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions"],
+          "absent": true
+        }
+      ]
+    },
+    {
+      "id": "confine.057",
+      "from": "confine.test.ts: confine > normalises relative roots and dot segments against the working directory",
+      "kind": "function",
+      "module": "confine",
+      "function": "confine",
+      "args": [
+        {
+          "roots": [".", "../shared/./lib"],
+          "cwd": "/work/app"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["permissions", "additionalDirectories"],
+          "equals": ["/work/shared/lib"]
+        }
+      ]
+    },
+    {
+      "id": "confine.058",
+      "from": "confine.test.ts: confine > normalises relative roots and dot segments against the working directory",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/app/a",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/lib",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/lib/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/lib",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/lib/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/lib",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/lib/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/work/shared/lib"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.059",
+      "from": "confine.test.ts: confine > normalises relative roots and dot segments against the working directory",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/shared/lib/a",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/lib",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/lib/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/lib",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/lib/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/lib",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/lib/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/work/shared/lib"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.060",
+      "from": "confine.test.ts: confine > normalises relative roots and dot segments against the working directory",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/shared/other",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/lib",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/shared/lib/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/lib",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/shared/lib/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/lib",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/shared/lib/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/work/shared/lib"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.061",
+      "from": "confine.test.ts: confine > confines the filesystem root without producing a double slash",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/etc/passwd",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.062",
+      "from": "confine.test.ts: confine > confines the filesystem root without producing a double slash",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/etc/../passwd",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ],
+          "permissions": {
+            "additionalDirectories": ["/"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "confine.063",
+      "from": "confine.test.ts: confine > treats glob characters in a root literally",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/a*b/file",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/a\\*b",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/a\\*b/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/a\\*b",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/a\\*b/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/a\\*b",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/a\\*b/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.064",
+      "from": "confine.test.ts: confine > treats glob characters in a root literally",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/aXb/file",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/a\\*b",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/a\\*b/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/a\\*b",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/a\\*b/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/a\\*b",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/a\\*b/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.065",
+      "from": "confine.test.ts: confine > treats glob characters in a root literally",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "/work/aXYb/file",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/a\\*b",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/a\\*b/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/a\\*b",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/a\\*b/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/a\\*b",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/a\\*b/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.066",
+      "from": "confine.test.ts: confine > does not grant other tools",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "cat /work/app/x",
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Read",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app",
+              "tier": "allow"
+            },
+            {
+              "tool": "Write",
+              "pattern": "/work/app/*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "pattern": "*/../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "../*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/..",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "*/../*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "notEquals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "confine.067",
+      "from": "confine.test.ts: confine > requires at least one root",
+      "kind": "function",
+      "module": "confine",
+      "function": "confine",
+      "args": [
+        {
+          "roots": [],
+          "cwd": "/work/app"
+        }
+      ],
+      "throws": {
+        "message": ["root"]
+      }
+    }
+  ]
+}

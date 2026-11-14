@@ -1,0 +1,935 @@
+{
+  "cases": [
+    {
+      "id": "api.001",
+      "from": "api.test.ts: detectFormat > detects Claude Code from allow/deny/ask string arrays",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "allow": ["Read", "Bash(git status)"]
+        }
+      ],
+      "expect": "claude-code"
+    },
+    {
+      "id": "api.002",
+      "from": "api.test.ts: detectFormat > detects Claude Code from allow/deny/ask string arrays",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "deny": ["Bash(sudo:*)"]
+        }
+      ],
+      "expect": "claude-code"
+    },
+    {
+      "id": "api.003",
+      "from": "api.test.ts: detectFormat > detects Claude Code from allow/deny/ask string arrays",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "ask": ["Write"]
+        }
+      ],
+      "expect": "claude-code"
+    },
+    {
+      "id": "api.004",
+      "from": "api.test.ts: detectFormat > detects Crush from allowed_tools",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "allowed_tools": ["view", "bash"]
+        }
+      ],
+      "expect": "crush"
+    },
+    {
+      "id": "api.005",
+      "from": "api.test.ts: detectFormat > detects Kiro from allowedTools",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "allowedTools": ["view"]
+        }
+      ],
+      "expect": "kiro"
+    },
+    {
+      "id": "api.006",
+      "from": "api.test.ts: detectFormat > detects Kiro from toolsSettings",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "toolsSettings": {}
+        }
+      ],
+      "expect": "kiro"
+    },
+    {
+      "id": "api.007",
+      "from": "api.test.ts: detectFormat > detects Codex from approval_policy",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "approval_policy": "on-failure"
+        }
+      ],
+      "expect": "codex"
+    },
+    {
+      "id": "api.008",
+      "from": "api.test.ts: detectFormat > detects Codex from sandbox_mode",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "sandbox_mode": "read-only"
+        }
+      ],
+      "expect": "codex"
+    },
+    {
+      "id": "api.009",
+      "from": "api.test.ts: detectFormat > detects Codex from default_permissions",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "default_permissions": {}
+        }
+      ],
+      "expect": "codex"
+    },
+    {
+      "id": "api.010",
+      "from": "api.test.ts: detectFormat > detects OpenCode from bare allow string",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": ["allow"],
+      "expect": "opencode"
+    },
+    {
+      "id": "api.011",
+      "from": "api.test.ts: detectFormat > detects OpenCode from bare deny string",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": ["deny"],
+      "expect": "opencode"
+    },
+    {
+      "id": "api.012",
+      "from": "api.test.ts: detectFormat > detects OpenCode from object with tool keys",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "bash": "allow",
+          "read": "deny"
+        }
+      ],
+      "expect": "opencode"
+    },
+    {
+      "id": "api.013",
+      "from": "api.test.ts: detectFormat > detects canonical from rules[] with {tool, tier} objects",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": "canonical"
+    },
+    {
+      "id": "api.014",
+      "from": "api.test.ts: detectFormat > detects canonical from top-level sandbox",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "sandbox": {}
+        }
+      ],
+      "expect": "canonical"
+    },
+    {
+      "id": "api.015",
+      "from": "api.test.ts: detectFormat > detects canonical from top-level profiles",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "profiles": {}
+        }
+      ],
+      "expect": "canonical"
+    },
+    {
+      "id": "api.016",
+      "from": "api.test.ts: detectFormat > detects canonical from top-level delegation",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "delegation": {}
+        }
+      ],
+      "expect": "canonical"
+    },
+    {
+      "id": "api.017",
+      "from": "api.test.ts: detectFormat > detects canonical from top-level network",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "network": {}
+        }
+      ],
+      "expect": "canonical"
+    },
+    {
+      "id": "api.018",
+      "from": "api.test.ts: detectFormat > detects canonical from permissions.allow/deny",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Read"]
+          }
+        }
+      ],
+      "expect": "canonical"
+    },
+    {
+      "id": "api.019",
+      "from": "api.test.ts: detectFormat > detects canonical from defaultMode",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "defaultMode": "standard"
+        }
+      ],
+      "expect": "canonical"
+    },
+    {
+      "id": "api.020",
+      "from": "api.test.ts: detectFormat > returns undefined for unrecognised input",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [
+        {
+          "foo": "bar"
+        }
+      ],
+      "expectUndefined": true
+    },
+    {
+      "id": "api.021",
+      "from": "api.test.ts: detectFormat > returns undefined for unrecognised input",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": ["unknown"],
+      "expectUndefined": true
+    },
+    {
+      "id": "api.022",
+      "from": "api.test.ts: detectFormat > returns undefined for unrecognised input",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [null],
+      "expectUndefined": true
+    },
+    {
+      "id": "api.023",
+      "from": "api.test.ts: detectFormat > returns undefined for unrecognised input",
+      "kind": "function",
+      "module": "api",
+      "function": "detectFormat",
+      "args": [42],
+      "expectUndefined": true
+    },
+    {
+      "id": "api.024",
+      "from": "api.test.ts: convert > converts canonical to crush with explicit from",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        "canonical",
+        "crush",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "output": {
+          "allowed_tools": []
+        },
+        "from": "canonical",
+        "ruleCount": 1,
+        "companions": []
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "api.025",
+      "from": "api.test.ts: convert > converts canonical to canonical (identity)",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        "canonical",
+        "canonical",
+        {
+          "rules": [
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["from"],
+          "equals": "canonical"
+        },
+        {
+          "at": ["ruleCount"],
+          "equals": 1
+        }
+      ]
+    },
+    {
+      "id": "api.026",
+      "from": "api.test.ts: convert > throws ConvertError on invalid canonical input",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        "canonical",
+        "crush",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "invalid"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "ConvertError",
+        "checks": [
+          {
+            "at": ["errors"],
+            "subset": [
+              {
+                "path": "rules.0.tier",
+                "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "api.027",
+      "from": "api.test.ts: convert > throws TypeError on unknown from format",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": ["phantom", "canonical", {}],
+      "throws": {
+        "name": "TypeError"
+      }
+    },
+    {
+      "id": "api.028",
+      "from": "api.test.ts: convert > throws TypeError on unknown to format",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": ["canonical", "phantom", {}],
+      "throws": {
+        "name": "TypeError"
+      }
+    },
+    {
+      "id": "api.029",
+      "from": "api.test.ts: convert > includes validation errors in ConvertError",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        "canonical",
+        "crush",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "maybe"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "ConvertError",
+        "checks": [
+          {
+            "at": ["errors"],
+            "subset": [
+              {
+                "path": "rules.0.tier",
+                "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "api.030",
+      "from": "api.test.ts: check explanation > returns the steps behind the decision",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "git status && rm x",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "ask"
+            }
+          ]
+        },
+        {}
+      ],
+      "expect": {
+        "decision": "ask",
+        "steps": [
+          {
+            "command": "git status",
+            "decision": "allow",
+            "reason": "rule",
+            "rule": {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            }
+          },
+          {
+            "command": "rm x",
+            "decision": "ask",
+            "reason": "rule",
+            "rule": {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "ask"
+            }
+          }
+        ],
+        "hidden": false
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "api.031",
+      "from": "api.test.ts: check with a hidden rule > refuses the call and reports the tool as hidden",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "sudo ls",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny",
+              "hidden": true
+            }
+          ]
+        },
+        {}
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        },
+        {
+          "at": ["hidden"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "api.032",
+      "from": "api.test.ts: check with a hidden rule > refuses the call and reports the tool as hidden",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "ls",
+        {
+          "defaultMode": "autonomous"
+        },
+        {}
+      ],
+      "checks": [
+        {
+          "at": ["hidden"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "api.033",
+      "from": "api.test.ts: check with delegation > applies the delegation limits to a call that carries a depth",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "sudo ls",
+        {
+          "delegation": {
+            "maxDepth": 1,
+            "nonDelegable": ["Bash(sudo:*)"]
+          },
+          "defaultMode": "autonomous"
+        },
+        {
+          "depth": 1
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "api.034",
+      "from": "api.test.ts: check with delegation > applies the delegation limits to a call that carries a depth",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "sudo ls",
+        {
+          "delegation": {
+            "maxDepth": 1,
+            "nonDelegable": ["Bash(sudo:*)"]
+          },
+          "defaultMode": "autonomous"
+        },
+        {
+          "depth": 0
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "api.035",
+      "from": "api.test.ts: check with delegation > applies the delegation limits to a call that carries a depth",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Read",
+        "./a",
+        {
+          "delegation": {
+            "maxDepth": 1,
+            "nonDelegable": ["Bash(sudo:*)"]
+          },
+          "defaultMode": "autonomous"
+        },
+        {
+          "depth": 2
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "api.036",
+      "from": "api.test.ts: convert to Codex > fails instead of dropping a command rule it cannot enforce",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        "canonical",
+        "codex",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git * --force",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git * --force",
+                  "tier": "ask"
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "api.037",
+      "from": "api.test.ts: validate > returns valid for a correct policy",
+      "kind": "function",
+      "module": "api",
+      "function": "validate",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["valid"],
+          "equals": true
+        },
+        {
+          "at": ["errors", "length"],
+          "equals": 0
+        }
+      ]
+    },
+    {
+      "id": "api.038",
+      "from": "api.test.ts: validate > returns invalid for a bad policy",
+      "kind": "function",
+      "module": "api",
+      "function": "validate",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "maybe"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "valid": false,
+        "errors": [
+          {
+            "path": "rules.0.tier",
+            "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "api.039",
+      "from": "api.test.ts: validate > returns invalid for empty object",
+      "kind": "function",
+      "module": "api",
+      "function": "validate",
+      "args": [{}],
+      "checks": [
+        {
+          "at": ["valid"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "api.040",
+      "from": "api.test.ts: validate > includes path and message in errors",
+      "kind": "function",
+      "module": "api",
+      "function": "validate",
+      "args": [
+        {
+          "rules": "not an array"
+        }
+      ],
+      "expect": {
+        "valid": false,
+        "errors": [
+          {
+            "path": "rules",
+            "message": "Invalid input: expected array, received string"
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "api.041",
+      "from": "api.test.ts: check > allows a matching rule",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "git status",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "api.042",
+      "from": "api.test.ts: check > denies a matching deny rule",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "sudo rm -rf /",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "api.043",
+      "from": "api.test.ts: check > falls back to defaultMode",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "unknown command",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            }
+          ],
+          "defaultMode": "readonly"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "api.044",
+      "from": "api.test.ts: check > passes context through",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "npm publish",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm publish",
+              "tier": "deny",
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        },
+        {
+          "branch": "main"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "api.045",
+      "from": "api.test.ts: check > skips conditional rules when context doesn't match",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "npm publish",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm publish",
+              "tier": "deny",
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        },
+        {
+          "branch": "feature"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "ask"
+        }
+      ]
+    },
+    {
+      "id": "api.046",
+      "from": "api.test.ts: check > throws on invalid policy",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "test",
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "maybe"
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "ConvertError",
+        "checks": [
+          {
+            "at": ["errors"],
+            "subset": [
+              {
+                "path": "rules.0.tier",
+                "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

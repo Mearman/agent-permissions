@@ -1,0 +1,524 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-trilean-patterns.001",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"git *\" vs \"git\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "git *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "git",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.002",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"git *\" vs \"git add file\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "git *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "git add file",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.003",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"git * *\" vs \"git\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "git * *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "git",
+      "expect": "ask",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.004",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"git * *\" vs \"git add file\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "git * *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "git add file",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.005",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"echo \\\\*\" vs \"echo *\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "echo \\*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "echo *",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.006",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"echo \\\\*\" vs \"echo hello\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "echo \\*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "echo hello",
+      "expect": "ask",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.007",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"find \\\\\\\\\" vs \"find \\\\\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "find \\\\",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "find \\",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.008",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"npm run *\" vs \"npm run build\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "npm run *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "npm run build",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.009",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"deploy *\" vs \"deploy prod\\n--force\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "deploy *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "deploy prod\n--force",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.010",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"a.b*\" vs \"a.bc\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "a.b*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "a.bc",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.011",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > wildcard \"a.b*\" vs \"axbc\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "a.b*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "axbc",
+      "expect": "ask",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.012",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > prefix \"git\" vs \"git\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "git:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "git",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.013",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > prefix \"git\" vs \"git status\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "git:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "git status",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.014",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > prefix \"git\" vs \"gitk\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "git:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "gitk",
+      "expect": "ask",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.015",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > prefix \"npm run\" vs \"npm run build\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "npm run:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "npm run build",
+      "expect": "allow",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.016",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > prefix \"a.b\" vs \"axb\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Custom",
+            "pattern": "a.b:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "custom",
+      "input": "axb",
+      "expect": "ask",
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.017",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > cwd glob \"/repo/*\" vs \"/repo/pkg\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow",
+            "when": {
+              "cwd": "/repo/*"
+            }
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "anything",
+      "expect": "allow",
+      "context": {
+        "cwd": "/repo/pkg"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.018",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > cwd glob \"/repo/*\" vs \"/repo/pkg/src\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow",
+            "when": {
+              "cwd": "/repo/*"
+            }
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "anything",
+      "expect": "ask",
+      "context": {
+        "cwd": "/repo/pkg/src"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.019",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > cwd glob \"/repo/**\" vs \"/repo/pkg/src\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow",
+            "when": {
+              "cwd": "/repo/**"
+            }
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "anything",
+      "expect": "allow",
+      "context": {
+        "cwd": "/repo/pkg/src"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.020",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > cwd glob \"/repo/?\" vs \"/repo/a\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow",
+            "when": {
+              "cwd": "/repo/?"
+            }
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "anything",
+      "expect": "allow",
+      "context": {
+        "cwd": "/repo/a"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.021",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > cwd glob \"/repo/?\" vs \"/repo/ab\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow",
+            "when": {
+              "cwd": "/repo/?"
+            }
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "anything",
+      "expect": "ask",
+      "context": {
+        "cwd": "/repo/ab"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.022",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > decisions follow the builder's own compiled regex > cwd glob \"/repo/a.b/**\" vs \"/repo/axb/src\"",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow",
+            "when": {
+              "cwd": "/repo/a.b/**"
+            }
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "anything",
+      "expect": "ask",
+      "context": {
+        "cwd": "/repo/axb/src"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.023",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > outcomes the previous local compiler could not produce > `**` spans a line terminator, matching the flat wildcard dialect",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow",
+            "when": {
+              "cwd": "/repo/**"
+            }
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "anything",
+      "expect": "allow",
+      "context": {
+        "cwd": "/repo/a\nb"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.024",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > outcomes the previous local compiler could not produce > a glob containing the previous compiler's own placeholder text matches literally",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow",
+            "when": {
+              "cwd": "⟪DOUBLESTAR⟫/*"
+            }
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "anything",
+      "expect": "ask",
+      "context": {
+        "cwd": "/etc/passwd"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-trilean-patterns.025",
+      "from": "evaluate-trilean-patterns.test.ts: trilean pattern-builder delegation > outcomes the previous local compiler could not produce > a glob containing the previous compiler's own placeholder text matches literally",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "tier": "allow",
+            "when": {
+              "cwd": "⟪DOUBLESTAR⟫/*"
+            }
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "anything",
+      "expect": "allow",
+      "context": {
+        "cwd": "⟪DOUBLESTAR⟫/x"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    }
+  ]
+}

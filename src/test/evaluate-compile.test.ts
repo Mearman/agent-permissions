@@ -1,9 +1,9 @@
 /** A compiled policy parses its patterns once and decides exactly as `evaluate` does. */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 
-import { compile, evaluate, type PermissionPolicy } from "../evaluate.ts";
+import { compile, type PermissionPolicy } from "../evaluate.ts";
 
 const policy: PermissionPolicy = {
   defaultMode: "standard",
@@ -45,17 +45,6 @@ const calls: [string, string, { cwd?: string; branch?: string }?][] = [
 ];
 
 void describe("compile", () => {
-  void it("decides exactly as evaluate does", () => {
-    const compiled = compile(policy);
-    for (const [tool, input, ctx] of calls) {
-      assert.equal(
-        compiled.evaluate(tool, input, ctx),
-        evaluate(policy, tool, input, ctx),
-        `${tool} ${input}`,
-      );
-    }
-  });
-
   void it("explains exactly as explain does", () => {
     const compiled = compile(policy);
     assert.deepEqual(

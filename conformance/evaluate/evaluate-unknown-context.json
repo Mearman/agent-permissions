@@ -1,0 +1,192 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-unknown-context.001",
+      "from": "evaluate-unknown-context.test.ts: conditions on an unknown context field > does not let a conditional allow rule apply when the field is missing",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run build",
+      "expect": "ask",
+      "context": {}
+    },
+    {
+      "id": "evaluate-unknown-context.002",
+      "from": "evaluate-unknown-context.test.ts: conditions on an unknown context field > does not let a conditional allow rule apply when the field is missing",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run build",
+      "expect": "ask",
+      "context": {
+        "branch": "main"
+      }
+    },
+    {
+      "id": "evaluate-unknown-context.003",
+      "from": "evaluate-unknown-context.test.ts: conditions on an unknown context field > does not let a conditional allow rule apply when the field is missing",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run build",
+      "expect": "allow",
+      "context": {
+        "cwd": "./packages/a"
+      }
+    },
+    {
+      "id": "evaluate-unknown-context.004",
+      "from": "evaluate-unknown-context.test.ts: conditions on an unknown context field > still applies a conditional deny rule when the field is missing",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "deny",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm publish --tag x",
+      "expect": "deny",
+      "context": {}
+    },
+    {
+      "id": "evaluate-unknown-context.005",
+      "from": "evaluate-unknown-context.test.ts: conditions on an unknown context field > still applies a conditional deny rule when the field is missing",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "deny",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm publish --tag x",
+      "expect": "allow",
+      "context": {
+        "branch": "dev"
+      }
+    },
+    {
+      "id": "evaluate-unknown-context.006",
+      "from": "evaluate-unknown-context.test.ts: conditions on an unknown context field > still applies a conditional ask rule when the field is missing",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Write",
+            "pattern": "./config/**",
+            "tier": "ask",
+            "when": {
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "tool": "write",
+      "input": "./config/app.yaml",
+      "expect": "ask",
+      "context": {}
+    },
+    {
+      "id": "evaluate-unknown-context.007",
+      "from": "evaluate-unknown-context.test.ts: conditions on an unknown context field > lets a known mismatch settle the rule even if another condition is unknown",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm publish:*",
+            "tier": "deny",
+            "when": {
+              "cwd": "./packages/core",
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm publish",
+      "expect": "allow",
+      "context": {
+        "cwd": "./packages/utils"
+      }
+    },
+    {
+      "id": "evaluate-unknown-context.008",
+      "from": "evaluate-unknown-context.test.ts: conditions on an unknown context field > does not let a known match satisfy an allow rule while another condition is unknown",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "npm run *",
+            "tier": "allow",
+            "when": {
+              "cwd": "./packages/*",
+              "branch": "main"
+            }
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm run build",
+      "expect": "ask",
+      "context": {
+        "cwd": "./packages/a"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1077 @@
+{
+  "cases": [
+    {
+      "id": "replay.001",
+      "from": "replay.test.ts: parseTranscript > reads each tool call with its subject, context and recorded outcome",
+      "kind": "function",
+      "module": "replay",
+      "function": "parseTranscript",
+      "args": [
+        "{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"git status\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t2\",\"name\":\"Bash\",\"input\":{\"command\":\"rm -rf build\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t2\",\"content\":\"Permission to use Bash with command rm -rf build has been denied.\",\"is_error\":true}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t3\",\"name\":\"Bash\",\"input\":{\"command\":\"curl https://example.com\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t3\",\"content\":\"The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.\",\"is_error\":true}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t4\",\"name\":\"Read\",\"input\":{\"file_path\":\"/work/example/a.ts\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t4\",\"content\":[{\"type\":\"text\",\"text\":\"contents\"}]}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t5\",\"name\":\"mcp__example__lookup\",\"input\":{\"query\":\"q\"}}]}}\n"
+      ],
+      "expect": [
+        {
+          "tool": "Bash",
+          "subject": "git status",
+          "context": {
+            "cwd": "/work/example",
+            "branch": "main"
+          },
+          "outcome": "ran"
+        },
+        {
+          "tool": "Bash",
+          "subject": "rm -rf build",
+          "context": {
+            "cwd": "/work/example",
+            "branch": "main"
+          },
+          "outcome": "denied"
+        },
+        {
+          "tool": "Bash",
+          "subject": "curl https://example.com",
+          "context": {
+            "cwd": "/work/example",
+            "branch": "main"
+          },
+          "outcome": "rejected"
+        },
+        {
+          "tool": "Read",
+          "subject": "/work/example/a.ts",
+          "context": {
+            "cwd": "/work/example",
+            "branch": "main"
+          },
+          "outcome": "ran"
+        },
+        {
+          "tool": "mcp__example__lookup",
+          "context": {
+            "cwd": "/work/example",
+            "branch": "main"
+          }
+        }
+      ]
+    },
+    {
+      "id": "replay.002",
+      "from": "replay.test.ts: parseTranscript > reads a rejection recorded as a list of text blocks",
+      "kind": "function",
+      "module": "replay",
+      "function": "parseTranscript",
+      "args": [
+        "{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Write\",\"input\":{\"file_path\":\"/work/example/b.ts\",\"content\":\"x\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":[{\"type\":\"text\",\"text\":\"The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.\"}],\"is_error\":true}]}}\n"
+      ],
+      "checks": [
+        {
+          "at": [0, "outcome"],
+          "equals": "rejected"
+        }
+      ]
+    },
+    {
+      "id": "replay.003",
+      "from": "replay.test.ts: parseTranscript > treats a failed call that was not refused as having run",
+      "kind": "function",
+      "module": "replay",
+      "function": "parseTranscript",
+      "args": [
+        "{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"false\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":\"Exit code 1\",\"is_error\":true}]}}\n"
+      ],
+      "checks": [
+        {
+          "at": [0, "outcome"],
+          "equals": "ran"
+        }
+      ]
+    },
+    {
+      "id": "replay.004",
+      "from": "replay.test.ts: parseTranscript > leaves out context the transcript does not record",
+      "kind": "function",
+      "module": "replay",
+      "function": "parseTranscript",
+      "args": [
+        "{\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"ls\"}}]}}\n{\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":\"ok\"}]}}\n"
+      ],
+      "expect": [
+        {
+          "tool": "Bash",
+          "subject": "ls",
+          "context": {},
+          "outcome": "ran"
+        }
+      ]
+    },
+    {
+      "id": "replay.005",
+      "from": "replay.test.ts: parseTranscript > rejects a line that is not JSON, naming the line",
+      "kind": "function",
+      "module": "replay",
+      "function": "parseTranscript",
+      "args": [
+        "{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"ls\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":\"ok\"}]}}\n{oops\n"
+      ],
+      "throws": {
+        "message": ["line 3"]
+      }
+    },
+    {
+      "id": "replay.006",
+      "from": "replay.test.ts: replayCalls > counts decisions and lists the calls the transcript recorded differently",
+      "kind": "function",
+      "module": "replay",
+      "function": "replayCalls",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "curl:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "npm test",
+              "tier": "allow",
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        },
+        [
+          {
+            "tool": "Bash",
+            "subject": "git status",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "npm test",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "rm -rf build",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "curl https://example.com",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "rejected"
+          },
+          {
+            "tool": "Bash",
+            "subject": "ls",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "rejected"
+          },
+          {
+            "tool": "Bash",
+            "subject": "git log",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "denied"
+          },
+          {
+            "tool": "Bash",
+            "subject": "make",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            }
+          }
+        ]
+      ],
+      "expect": {
+        "counts": {
+          "allow": 4,
+          "ask": 2,
+          "deny": 1
+        },
+        "differing": [
+          {
+            "call": {
+              "tool": "Bash",
+              "subject": "rm -rf build",
+              "context": {
+                "cwd": "/work/example",
+                "branch": "main"
+              },
+              "outcome": "ran"
+            },
+            "decision": "deny",
+            "steps": [
+              {
+                "command": "rm -rf build",
+                "decision": "deny",
+                "reason": "rule",
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny"
+                }
+              },
+              {
+                "command": "rm -rf build",
+                "decision": "deny",
+                "reason": "rule",
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          },
+          {
+            "call": {
+              "tool": "Bash",
+              "subject": "curl https://example.com",
+              "context": {
+                "cwd": "/work/example",
+                "branch": "main"
+              },
+              "outcome": "rejected"
+            },
+            "decision": "allow",
+            "steps": [
+              {
+                "command": "curl https://example.com",
+                "decision": "allow",
+                "reason": "rule",
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "curl:*",
+                  "tier": "allow"
+                }
+              }
+            ]
+          },
+          {
+            "call": {
+              "tool": "Bash",
+              "subject": "git log",
+              "context": {
+                "cwd": "/work/example",
+                "branch": "main"
+              },
+              "outcome": "denied"
+            },
+            "decision": "allow",
+            "steps": [
+              {
+                "command": "git log",
+                "decision": "allow",
+                "reason": "rule",
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git:*",
+                  "tier": "allow"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "replay.007",
+      "from": "replay.test.ts: replayCalls > judges a conditional rule by the context recorded with the call",
+      "kind": "function",
+      "module": "replay",
+      "function": "replayCalls",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "curl:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "npm test",
+              "tier": "allow",
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        },
+        [
+          {
+            "tool": "Bash",
+            "subject": "npm test",
+            "context": {
+              "branch": "feature"
+            }
+          },
+          {
+            "tool": "Bash",
+            "subject": "npm test",
+            "context": {}
+          }
+        ]
+      ],
+      "checks": [
+        {
+          "at": ["counts"],
+          "equals": {
+            "allow": 0,
+            "ask": 2,
+            "deny": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "replay.008",
+      "from": "replay.test.ts: replayCalls > judges each command of a shell line",
+      "kind": "function",
+      "module": "replay",
+      "function": "replayCalls",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "curl:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "npm test",
+              "tier": "allow",
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        },
+        [
+          {
+            "tool": "Bash",
+            "subject": "git status && rm x",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          }
+        ]
+      ],
+      "expect": {
+        "counts": {
+          "allow": 0,
+          "ask": 0,
+          "deny": 1
+        },
+        "differing": [
+          {
+            "call": {
+              "tool": "Bash",
+              "subject": "git status && rm x",
+              "context": {
+                "cwd": "/work/example",
+                "branch": "main"
+              },
+              "outcome": "ran"
+            },
+            "decision": "deny",
+            "steps": [
+              {
+                "command": "git status",
+                "decision": "allow",
+                "reason": "rule",
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git:*",
+                  "tier": "allow"
+                }
+              },
+              {
+                "command": "rm x",
+                "decision": "deny",
+                "reason": "rule",
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "replay.009",
+      "from": "replay.test.ts: suggestRules > proposes an exact rule for a command approved repeatedly",
+      "kind": "function",
+      "module": "replay",
+      "function": "suggestRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "subject": "git status",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "git status",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "ls",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          }
+        ],
+        {
+          "defaultMode": "standard",
+          "rules": []
+        },
+        2
+      ],
+      "expect": [
+        {
+          "rule": {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          },
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "replay.010",
+      "from": "replay.test.ts: suggestRules > proposes the longest shared prefix for varied commands",
+      "kind": "function",
+      "module": "replay",
+      "function": "suggestRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "subject": "npm run build",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "npm run test --watch",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "npm run lint",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          }
+        ],
+        {
+          "defaultMode": "standard",
+          "rules": []
+        },
+        2
+      ],
+      "expect": [
+        {
+          "rule": {
+            "tool": "Bash",
+            "pattern": "npm run:*",
+            "tier": "allow"
+          },
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "replay.011",
+      "from": "replay.test.ts: suggestRules > counts each command of a shell line on its own",
+      "kind": "function",
+      "module": "replay",
+      "function": "suggestRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "subject": "git status && ls",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "ls | wc -l",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          }
+        ],
+        {
+          "defaultMode": "standard",
+          "rules": []
+        },
+        2
+      ],
+      "expect": [
+        {
+          "rule": {
+            "tool": "Bash",
+            "pattern": "ls",
+            "tier": "allow"
+          },
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "replay.012",
+      "from": "replay.test.ts: suggestRules > never proposes a command that shared a line with a command a rule denied",
+      "kind": "function",
+      "module": "replay",
+      "function": "suggestRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "subject": "ls",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "ls",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "ls && rm -rf build",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            }
+          },
+          {
+            "tool": "Bash",
+            "subject": "pwd",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "pwd",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          }
+        ],
+        {
+          "defaultMode": "standard",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            }
+          ]
+        },
+        2
+      ],
+      "expect": [
+        {
+          "rule": {
+            "tool": "Bash",
+            "pattern": "pwd",
+            "tier": "allow"
+          },
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "replay.013",
+      "from": "replay.test.ts: suggestRules > never proposes a command the transcript recorded as refused",
+      "kind": "function",
+      "module": "replay",
+      "function": "suggestRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "subject": "cat a.txt",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "cat a.txt",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "cat b.txt",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "cat c.txt && echo x",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "rejected"
+          },
+          {
+            "tool": "Bash",
+            "subject": "echo x",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "echo x",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          }
+        ],
+        {
+          "defaultMode": "standard",
+          "rules": []
+        },
+        2
+      ],
+      "expect": [
+        {
+          "rule": {
+            "tool": "Bash",
+            "pattern": "cat a.txt",
+            "tier": "allow"
+          },
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "replay.014",
+      "from": "replay.test.ts: suggestRules > leaves out what the policy already allows",
+      "kind": "function",
+      "module": "replay",
+      "function": "suggestRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "subject": "git status",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "git status",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          }
+        ],
+        {
+          "defaultMode": "standard",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git:*",
+              "tier": "allow"
+            }
+          ]
+        },
+        2
+      ],
+      "expect": []
+    },
+    {
+      "id": "replay.015",
+      "from": "replay.test.ts: suggestRules > proposes exact rules for other tools, and bare rules for tools with no subject",
+      "kind": "function",
+      "module": "replay",
+      "function": "suggestRules",
+      "args": [
+        [
+          {
+            "tool": "Read",
+            "subject": "/work/example/a.ts",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Read",
+            "subject": "/work/example/a.ts",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Read",
+            "subject": "/work/example/b.ts",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "mcp__example__lookup",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "mcp__example__lookup",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          }
+        ],
+        {
+          "defaultMode": "standard",
+          "rules": []
+        },
+        2
+      ],
+      "expect": [
+        {
+          "rule": {
+            "tool": "Read",
+            "pattern": "/work/example/a.ts",
+            "tier": "allow"
+          },
+          "count": 2
+        },
+        {
+          "rule": {
+            "tool": "mcp__example__lookup",
+            "tier": "allow"
+          },
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "replay.016",
+      "from": "replay.test.ts: suggestRules > escapes pattern syntax so the rule matches the command literally",
+      "kind": "function",
+      "module": "replay",
+      "function": "suggestRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "subject": "ls *.ts",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "ls *.ts",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          }
+        ],
+        {
+          "defaultMode": "standard",
+          "rules": []
+        },
+        2
+      ],
+      "expect": [
+        {
+          "rule": {
+            "tool": "Bash",
+            "pattern": "ls \\*.ts",
+            "tier": "allow"
+          },
+          "count": 2
+        }
+      ],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "replay.017",
+      "from": "replay.test.ts: suggestRules > skips shell lines the splitter cannot model",
+      "kind": "function",
+      "module": "replay",
+      "function": "suggestRules",
+      "args": [
+        [
+          {
+            "tool": "Bash",
+            "subject": "(cd x && ls)",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          },
+          {
+            "tool": "Bash",
+            "subject": "(cd x && ls)",
+            "context": {
+              "cwd": "/work/example",
+              "branch": "main"
+            },
+            "outcome": "ran"
+          }
+        ],
+        {
+          "defaultMode": "standard",
+          "rules": []
+        },
+        2
+      ],
+      "expect": []
+    },
+    {
+      "id": "replay.018",
+      "from": "replay.test.ts: api replay and suggest > replays a canonical policy over a transcript",
+      "kind": "function",
+      "module": "api",
+      "function": "replay",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(git:*)"],
+            "deny": ["Bash(sudo:*)"]
+          }
+        },
+        "{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"git status\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t2\",\"name\":\"Bash\",\"input\":{\"command\":\"git status\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t2\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t3\",\"name\":\"Bash\",\"input\":{\"command\":\"sudo reboot\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t3\",\"content\":\"ok\"}]}}\n"
+      ],
+      "expect": {
+        "counts": {
+          "allow": 2,
+          "ask": 0,
+          "deny": 1
+        },
+        "differing": [
+          {
+            "call": {
+              "tool": "Bash",
+              "subject": "sudo reboot",
+              "context": {
+                "cwd": "/work/example",
+                "branch": "main"
+              },
+              "outcome": "ran"
+            },
+            "decision": "deny",
+            "steps": [
+              {
+                "command": "sudo reboot",
+                "decision": "deny",
+                "reason": "rule",
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "sudo:*",
+                  "tier": "deny"
+                }
+              },
+              {
+                "command": "sudo reboot",
+                "decision": "deny",
+                "reason": "rule",
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "sudo:*",
+                  "tier": "deny"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "replay.019",
+      "from": "replay.test.ts: api replay and suggest > suggests rules with or without a policy",
+      "kind": "function",
+      "module": "api",
+      "function": "suggest",
+      "args": [
+        "{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"git status\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t2\",\"name\":\"Bash\",\"input\":{\"command\":\"git status\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t2\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t3\",\"name\":\"Bash\",\"input\":{\"command\":\"sudo reboot\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t3\",\"content\":\"ok\"}]}}\n",
+        {
+          "minCount": 2
+        }
+      ],
+      "expect": [
+        {
+          "rule": {
+            "tool": "Bash",
+            "pattern": "git status",
+            "tier": "allow"
+          },
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "replay.020",
+      "from": "replay.test.ts: api replay and suggest > suggests rules with or without a policy",
+      "kind": "function",
+      "module": "api",
+      "function": "suggest",
+      "args": [
+        "{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"Bash\",\"input\":{\"command\":\"git status\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t1\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t2\",\"name\":\"Bash\",\"input\":{\"command\":\"git status\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t2\",\"content\":\"ok\"}]}}\n{\"type\":\"assistant\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t3\",\"name\":\"Bash\",\"input\":{\"command\":\"sudo reboot\",\"description\":\"d\"}}]}}\n{\"type\":\"user\",\"cwd\":\"/work/example\",\"gitBranch\":\"main\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"t3\",\"content\":\"ok\"}]}}\n",
+        {
+          "minCount": 2,
+          "policy": {
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "expect": []
+    }
+  ]
+}

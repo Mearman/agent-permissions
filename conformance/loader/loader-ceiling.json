@@ -1,0 +1,112 @@
+{
+  "cases": [
+    {
+      "id": "loader-ceiling.001",
+      "from": "loader-ceiling.test.ts: ceiling layers > let a deeper layer tighten the default mode",
+      "kind": "function",
+      "module": "loader",
+      "function": "mergeLayerPolicies",
+      "args": [
+        [
+          {
+            "source": "org",
+            "policy": {
+              "ceiling": true,
+              "defaultMode": "restricted",
+              "rules": [
+                {
+                  "tool": "Bash",
+                  "pattern": "git:*",
+                  "tier": "allow"
+                },
+                {
+                  "tool": "Bash",
+                  "pattern": "curl:*",
+                  "tier": "deny"
+                }
+              ]
+            },
+            "ceiling": true
+          },
+          {
+            "source": "repo",
+            "policy": {
+              "defaultMode": "readonly"
+            }
+          }
+        ]
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "readonly"
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.002",
+      "from": "loader-ceiling.test.ts: ceiling layers > leave the default mode to the innermost layer when nothing is a ceiling",
+      "kind": "function",
+      "module": "loader",
+      "function": "mergeLayerPolicies",
+      "args": [
+        [
+          {
+            "source": "user",
+            "policy": {
+              "defaultMode": "restricted"
+            }
+          },
+          {
+            "source": "repo",
+            "policy": {
+              "defaultMode": "autonomous"
+            }
+          }
+        ]
+      ],
+      "checks": [
+        {
+          "at": ["defaultMode"],
+          "equals": "autonomous"
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.003",
+      "from": "loader-ceiling.test.ts: ceiling in the schema > is a boolean",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "ceiling": true
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.004",
+      "from": "loader-ceiling.test.ts: ceiling in the schema > is a boolean",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "ceiling": "yes"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    }
+  ]
+}

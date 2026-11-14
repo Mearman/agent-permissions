@@ -1,0 +1,1039 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-predicate.001",
+      "from": "evaluate-predicate.test.ts: when.predicate > an OR of remotes > applies when either remote matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "or",
+                "left": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/api"
+                  }
+                },
+                "right": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/web"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "allow",
+      "context": {
+        "remote": "git@github.com:Acme/API.git"
+      }
+    },
+    {
+      "id": "evaluate-predicate.002",
+      "from": "evaluate-predicate.test.ts: when.predicate > an OR of remotes > applies when either remote matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "or",
+                "left": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/api"
+                  }
+                },
+                "right": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/web"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "allow",
+      "context": {
+        "remote": "https://github.com/acme/web"
+      }
+    },
+    {
+      "id": "evaluate-predicate.003",
+      "from": "evaluate-predicate.test.ts: when.predicate > an OR of remotes > does not apply when neither remote matches",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "or",
+                "left": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/api"
+                  }
+                },
+                "right": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/web"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "ask",
+      "context": {
+        "remote": "https://github.com/acme/other"
+      }
+    },
+    {
+      "id": "evaluate-predicate.004",
+      "from": "evaluate-predicate.test.ts: when.predicate > an OR of remotes > is unknown without a remote, so an allow does not apply but a deny does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "or",
+                "left": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/api"
+                  }
+                },
+                "right": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/web"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "ask",
+      "context": {}
+    },
+    {
+      "id": "evaluate-predicate.005",
+      "from": "evaluate-predicate.test.ts: when.predicate > an OR of remotes > is unknown without a remote, so an allow does not apply but a deny does",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "predicate": {
+                "kind": "or",
+                "left": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/api"
+                  }
+                },
+                "right": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/web"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "deny",
+      "context": {}
+    },
+    {
+      "id": "evaluate-predicate.006",
+      "from": "evaluate-predicate.test.ts: when.predicate > an OR of remotes > lets a definite match settle an OR whose other side is unknown",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "or",
+                "left": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/api"
+                  }
+                },
+                "right": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "env:STAGE"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "prod"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "allow",
+      "context": {
+        "remote": "github.com/acme/api"
+      }
+    },
+    {
+      "id": "evaluate-predicate.007",
+      "from": "evaluate-predicate.test.ts: when.predicate > unless a variable has a value > applies when the variable has another value",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "not",
+                "operand": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "env:STAGE"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "prod"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy dev",
+      "expect": "allow",
+      "context": {
+        "env": {
+          "STAGE": "dev"
+        }
+      }
+    },
+    {
+      "id": "evaluate-predicate.008",
+      "from": "evaluate-predicate.test.ts: when.predicate > unless a variable has a value > does not apply when the variable has that value",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "not",
+                "operand": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "env:STAGE"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "prod"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy dev",
+      "expect": "ask",
+      "context": {
+        "env": {
+          "STAGE": "prod"
+        }
+      }
+    },
+    {
+      "id": "evaluate-predicate.009",
+      "from": "evaluate-predicate.test.ts: when.predicate > unless a variable has a value > is unknown when the variable is unset, so it never grants",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "not",
+                "operand": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "env:STAGE"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "prod"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy dev",
+      "expect": "ask",
+      "context": {
+        "env": {}
+      }
+    },
+    {
+      "id": "evaluate-predicate.010",
+      "from": "evaluate-predicate.test.ts: when.predicate > unless a variable has a value > is unknown when the variable is unset, so it never grants",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "predicate": {
+                "kind": "not",
+                "operand": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "env:STAGE"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "prod"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy dev",
+      "expect": "deny",
+      "context": {
+        "env": {}
+      }
+    },
+    {
+      "id": "evaluate-predicate.011",
+      "from": "evaluate-predicate.test.ts: when.predicate > roles > holds when the actor has the role and not when the roles are known and lack it",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "compare",
+                "op": "eq",
+                "left": {
+                  "kind": "reference",
+                  "key": "role:admin"
+                },
+                "right": {
+                  "kind": "booleanLiteral",
+                  "value": true
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "allow",
+      "context": {
+        "roles": ["admin"]
+      }
+    },
+    {
+      "id": "evaluate-predicate.012",
+      "from": "evaluate-predicate.test.ts: when.predicate > roles > holds when the actor has the role and not when the roles are known and lack it",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "compare",
+                "op": "eq",
+                "left": {
+                  "kind": "reference",
+                  "key": "role:admin"
+                },
+                "right": {
+                  "kind": "booleanLiteral",
+                  "value": true
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "ask",
+      "context": {
+        "roles": ["dev"]
+      }
+    },
+    {
+      "id": "evaluate-predicate.013",
+      "from": "evaluate-predicate.test.ts: when.predicate > roles > is unknown when the host reports no roles",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "not",
+                "operand": {
+                  "kind": "compare",
+                  "op": "eq",
+                  "left": {
+                    "kind": "reference",
+                    "key": "role:admin"
+                  },
+                  "right": {
+                    "kind": "booleanLiteral",
+                    "value": true
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "ask",
+      "context": {}
+    },
+    {
+      "id": "evaluate-predicate.014",
+      "from": "evaluate-predicate.test.ts: when.predicate > roles > is unknown when the host reports no roles",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "predicate": {
+                "kind": "not",
+                "operand": {
+                  "kind": "compare",
+                  "op": "eq",
+                  "left": {
+                    "kind": "reference",
+                    "key": "role:admin"
+                  },
+                  "right": {
+                    "kind": "booleanLiteral",
+                    "value": true
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "deny",
+      "context": {}
+    },
+    {
+      "id": "evaluate-predicate.015",
+      "from": "evaluate-predicate.test.ts: when.predicate > combines with the other conditions by AND",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "branch": "main",
+              "predicate": {
+                "kind": "or",
+                "left": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/api"
+                  }
+                },
+                "right": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/web"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy x",
+      "expect": "allow",
+      "context": {
+        "branch": "main",
+        "remote": "github.com/acme/api"
+      }
+    },
+    {
+      "id": "evaluate-predicate.016",
+      "from": "evaluate-predicate.test.ts: when.predicate > combines with the other conditions by AND",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "branch": "main",
+              "predicate": {
+                "kind": "or",
+                "left": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/api"
+                  }
+                },
+                "right": {
+                  "kind": "textCompare",
+                  "op": "equals",
+                  "left": {
+                    "kind": "reference",
+                    "key": "remote"
+                  },
+                  "right": {
+                    "kind": "textLiteral",
+                    "value": "github.com/acme/web"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy x",
+      "expect": "ask",
+      "context": {
+        "branch": "dev",
+        "remote": "github.com/acme/api"
+      }
+    },
+    {
+      "id": "evaluate-predicate.017",
+      "from": "evaluate-predicate.test.ts: when.predicate > gives two rules that differ only in their predicate different identities",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "textCompare",
+                "op": "equals",
+                "left": {
+                  "kind": "reference",
+                  "key": "remote"
+                },
+                "right": {
+                  "kind": "textLiteral",
+                  "value": "a"
+                }
+              }
+            }
+          },
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "predicate": {
+                "kind": "textCompare",
+                "op": "equals",
+                "left": {
+                  "kind": "reference",
+                  "key": "remote"
+                },
+                "right": {
+                  "kind": "textLiteral",
+                  "value": "b"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy x",
+      "expect": "deny",
+      "context": {
+        "remote": "b"
+      }
+    },
+    {
+      "id": "evaluate-predicate.018",
+      "from": "evaluate-predicate.test.ts: when.predicate > gives two rules that differ only in their predicate different identities",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "allow",
+            "when": {
+              "predicate": {
+                "kind": "textCompare",
+                "op": "equals",
+                "left": {
+                  "kind": "reference",
+                  "key": "remote"
+                },
+                "right": {
+                  "kind": "textLiteral",
+                  "value": "a"
+                }
+              }
+            }
+          },
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "predicate": {
+                "kind": "textCompare",
+                "op": "equals",
+                "left": {
+                  "kind": "reference",
+                  "key": "remote"
+                },
+                "right": {
+                  "kind": "textLiteral",
+                  "value": "b"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy x",
+      "expect": "allow",
+      "context": {
+        "remote": "a"
+      }
+    },
+    {
+      "id": "evaluate-predicate.019",
+      "from": "evaluate-predicate.test.ts: when.predicate > refuses to evaluate a policy built in code with a node it cannot judge soundly",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "evaluate",
+      "args": [
+        {
+          "defaultMode": "restricted",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "deploy:*",
+              "tier": "allow",
+              "when": {
+                "predicate": {
+                  "kind": "not",
+                  "operand": {
+                    "kind": "exists",
+                    "operand": {
+                      "kind": "reference",
+                      "key": "env:CI"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Bash",
+        "deploy x",
+        {}
+      ],
+      "throws": {
+        "message": ["exists"]
+      }
+    },
+    {
+      "id": "evaluate-predicate.020",
+      "from": "evaluate-predicate.test.ts: when.predicate > schema > accepts a predicate tree",
+      "kind": "function",
+      "module": "schema",
+      "function": "Rule.safeParse",
+      "args": [
+        {
+          "tool": "Bash",
+          "tier": "allow",
+          "when": {
+            "predicate": {
+              "kind": "or",
+              "left": {
+                "kind": "textCompare",
+                "op": "equals",
+                "left": {
+                  "kind": "reference",
+                  "key": "remote"
+                },
+                "right": {
+                  "kind": "textLiteral",
+                  "value": "github.com/acme/api"
+                }
+              },
+              "right": {
+                "kind": "textCompare",
+                "op": "equals",
+                "left": {
+                  "kind": "reference",
+                  "key": "remote"
+                },
+                "right": {
+                  "kind": "textLiteral",
+                  "value": "github.com/acme/web"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "evaluate-predicate.021",
+      "from": "evaluate-predicate.test.ts: when.predicate > schema > rejects a tree that is not a predicate node",
+      "kind": "function",
+      "module": "schema",
+      "function": "Rule.safeParse",
+      "args": [
+        {
+          "tool": "Bash",
+          "tier": "allow",
+          "when": {
+            "predicate": {
+              "kind": "nonsense"
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-predicate.022",
+      "from": "evaluate-predicate.test.ts: when.predicate > schema > rejects nodes that would read an unknown field as absent or empty",
+      "kind": "function",
+      "module": "schema",
+      "function": "Rule.safeParse",
+      "args": [
+        {
+          "tool": "Bash",
+          "tier": "allow",
+          "when": {
+            "predicate": {
+              "kind": "not",
+              "operand": {
+                "kind": "exists",
+                "operand": {
+                  "kind": "reference",
+                  "key": "env:CI"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-predicate.023",
+      "from": "evaluate-predicate.test.ts: when.predicate > schema > rejects nodes that would read an unknown field as absent or empty",
+      "kind": "function",
+      "module": "schema",
+      "function": "Rule.safeParse",
+      "args": [
+        {
+          "tool": "Bash",
+          "tier": "allow",
+          "when": {
+            "predicate": {
+              "kind": "every",
+              "collection": "roles",
+              "item": {
+                "kind": "textCompare",
+                "op": "equals",
+                "left": {
+                  "kind": "reference",
+                  "key": "remote"
+                },
+                "right": {
+                  "kind": "textLiteral",
+                  "value": "x"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-predicate.024",
+      "from": "evaluate-predicate.test.ts: when.predicate > schema > parses inside a whole policy",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "allow",
+              "when": {
+                "predicate": {
+                  "kind": "or",
+                  "left": {
+                    "kind": "textCompare",
+                    "op": "equals",
+                    "left": {
+                      "kind": "reference",
+                      "key": "remote"
+                    },
+                    "right": {
+                      "kind": "textLiteral",
+                      "value": "github.com/acme/api"
+                    }
+                  },
+                  "right": {
+                    "kind": "textCompare",
+                    "op": "equals",
+                    "left": {
+                      "kind": "reference",
+                      "key": "remote"
+                    },
+                    "right": {
+                      "kind": "textLiteral",
+                      "value": "github.com/acme/web"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    }
+  ]
+}

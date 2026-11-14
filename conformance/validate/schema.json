@@ -1,0 +1,1044 @@
+{
+  "cases": [
+    {
+      "id": "schema.001",
+      "from": "schema.test.ts: AgentPermissionPolicy > example files > validates full.json",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "$schema": "./agent-permissions.schema.json",
+          "defaultMode": "standard",
+          "activeProfile": "development",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git log:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git diff:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "npm run lint",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "npm run test:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Grep",
+              "tier": "allow"
+            },
+            {
+              "tool": "WebFetch",
+              "pattern": "domain:docs.example.com",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm -rf /",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "curl * | bash",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push --force:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "./.env",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "pattern": "./secrets/**",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "npm publish:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./production/**",
+              "tier": "ask"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "npm run *",
+              "tier": "allow",
+              "when": {
+                "cwd": "./packages/*"
+              }
+            },
+            {
+              "tool": "Write",
+              "pattern": "./config/**",
+              "tier": "ask",
+              "when": {
+                "branch": "main"
+              }
+            }
+          ],
+          "profiles": {
+            "development": {
+              "allow": [
+                "Read",
+                "Write",
+                "Edit",
+                "Bash(git:*)",
+                "Bash(npm:*)",
+                "Grep",
+                "Glob"
+              ],
+              "deny": ["Bash(sudo:*)", "Bash(rm -rf /)"]
+            },
+            "review": {
+              "allow": [
+                "Read",
+                "Grep",
+                "Glob",
+                "Bash(git diff:*)",
+                "Bash(git log:*)"
+              ],
+              "deny": ["Write", "Edit", "Bash"]
+            },
+            "ci": {
+              "allow": [
+                "Read",
+                "Write",
+                "Edit",
+                "Bash(npm run:*)",
+                "Bash(git checkout:*)"
+              ],
+              "deny": ["Bash(sudo:*)"],
+              "defaultMode": "autonomous"
+            }
+          },
+          "delegation": {
+            "maxDepth": 2,
+            "nonDelegable": ["Bash(sudo:*)", "Write(./.agents/**)"],
+            "bubbleUp": true,
+            "agents": {
+              "review": {
+                "deny": ["Write", "Edit", "Bash"],
+                "allow": ["Read", "Grep"]
+              },
+              "docs": {
+                "allow": ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"]
+              }
+            }
+          },
+          "sandbox": {
+            "mode": "workspace-write",
+            "writableRoots": ["/tmp/build-cache"],
+            "networkAccess": true
+          },
+          "network": {
+            "enabled": true,
+            "domains": {
+              "api.example.com": "allow",
+              "evil.com": "deny"
+            }
+          },
+          "env": {
+            "NODE_ENV": "development",
+            "DISABLE_TELEMETRY": "1"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.002",
+      "from": "schema.test.ts: AgentPermissionPolicy > example files > validates minimal.json",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "$schema": "./agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git status",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git diff:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Grep",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "pattern": "./.env",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.003",
+      "from": "schema.test.ts: AgentPermissionPolicy > example files > validates personal-overrides.json",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "python3:*",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "docker:*",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.004",
+      "from": "schema.test.ts: AgentPermissionPolicy > minimal policy > accepts an empty object",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [{}],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.005",
+      "from": "schema.test.ts: AgentPermissionPolicy > minimal policy > accepts only permissions.allow",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Read", "Grep"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.006",
+      "from": "schema.test.ts: AgentPermissionPolicy > minimal policy > accepts only permissions.deny",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Bash(sudo:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.007",
+      "from": "schema.test.ts: AgentPermissionPolicy > minimal policy > accepts only defaultMode",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "defaultMode": "readonly"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.008",
+      "from": "schema.test.ts: AgentPermissionPolicy > minimal policy > accepts only env",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "env": {
+            "FOO": "bar"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.009",
+      "from": "schema.test.ts: AgentPermissionPolicy > full policy > accepts all fields populated",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "$schema": "./agent-permissions.schema.json",
+          "defaultMode": "standard",
+          "permissions": {
+            "allow": ["Bash(git status)", "Read"],
+            "deny": ["Bash(sudo:*)"],
+            "ask": ["Bash(git push:*)"],
+            "additionalDirectories": ["../shared-libs/"]
+          },
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm run *",
+              "tier": "allow",
+              "when": {
+                "cwd": "./packages/*"
+              }
+            }
+          ],
+          "profiles": {
+            "strict": {
+              "deny": ["Write", "Edit", "Bash"],
+              "allow": ["Read", "Grep"]
+            }
+          },
+          "activeProfile": "strict",
+          "delegation": {
+            "maxDepth": 2,
+            "nonDelegable": ["Bash(sudo:*)"],
+            "bubbleUp": true,
+            "agents": {
+              "review": {
+                "deny": ["Write", "Edit", "Bash"],
+                "allow": ["Read", "Grep"]
+              }
+            }
+          },
+          "sandbox": {
+            "mode": "workspace-write",
+            "writableRoots": ["/tmp/build-cache"],
+            "networkAccess": true
+          },
+          "network": {
+            "enabled": true,
+            "domains": {
+              "api.example.com": "allow",
+              "evil.com": "deny"
+            }
+          },
+          "env": {
+            "NODE_ENV": "development"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.010",
+      "from": "schema.test.ts: AgentPermissionPolicy > conditional rules > accepts a rule without when",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm run *",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.011",
+      "from": "schema.test.ts: AgentPermissionPolicy > conditional rules > accepts a rule with partial when (cwd only)",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "./config/**",
+              "tier": "ask",
+              "when": {
+                "cwd": "./packages/*"
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.012",
+      "from": "schema.test.ts: AgentPermissionPolicy > conditional rules > accepts a rule with partial when (branch only)",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Write",
+              "pattern": "./config/**",
+              "tier": "deny",
+              "when": {
+                "branch": "main"
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.013",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects unknown permission mode",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "defaultMode": "yolo"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.014",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects unknown top-level key",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "unknownField": true
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.015",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects non-string permission rules",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": [123]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.016",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects rule without required tool field",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "pattern": "npm run *",
+              "tier": "allow"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.017",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects rule with invalid tier",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm run *",
+              "tier": "maybe"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.018",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects negative maxDepth",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "delegation": {
+            "maxDepth": -1
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.019",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects non-string env values",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "env": {
+            "PORT": 3000
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.020",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects unknown sandbox mode",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "sandbox": {
+            "mode": "containerised"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.021",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects unknown keys in sandbox",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "sandbox": {
+            "mode": "workspace-write",
+            "container": "docker"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.022",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects unknown keys in network",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "network": {
+            "proxy": "http://localhost:8080"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.023",
+      "from": "schema.test.ts: AgentPermissionPolicy > validation failures > rejects invalid domain action",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "network": {
+            "domains": {
+              "example.com": "block"
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.024",
+      "from": "schema.test.ts: AgentPermissionPolicy > sandbox configuration > accepts sandbox with mode only",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "sandbox": {
+            "mode": "readonly"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.025",
+      "from": "schema.test.ts: AgentPermissionPolicy > sandbox configuration > accepts sandbox with writableRoots",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "sandbox": {
+            "mode": "workspace-write",
+            "writableRoots": ["/tmp/cache", "../libs"],
+            "networkAccess": false
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.026",
+      "from": "schema.test.ts: AgentPermissionPolicy > sandbox configuration > accepts sandbox with networkAccess disabled",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "sandbox": {
+            "mode": "full-access",
+            "networkAccess": false
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.027",
+      "from": "schema.test.ts: AgentPermissionPolicy > named profiles > accepts profiles with activeProfile",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "profiles": {
+            "strict": {
+              "deny": ["Write", "Edit", "Bash"],
+              "allow": ["Read", "Grep"]
+            },
+            "relaxed": {
+              "allow": ["Read", "Write", "Edit", "Bash(git:*)"]
+            }
+          },
+          "activeProfile": "strict"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.028",
+      "from": "schema.test.ts: AgentPermissionPolicy > named profiles > accepts profiles without activeProfile",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "profiles": {
+            "default": {
+              "allow": ["Read"]
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.029",
+      "from": "schema.test.ts: AgentPermissionPolicy > named profiles > accepts profile with all tier fields",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "profiles": {
+            "full": {
+              "allow": ["Read"],
+              "deny": ["Bash(sudo:*)"],
+              "ask": ["Bash(git push:*)"],
+              "additionalDirectories": ["../shared"],
+              "defaultMode": "standard"
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.030",
+      "from": "schema.test.ts: AgentPermissionPolicy > network controls > accepts network enabled only",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "network": {
+            "enabled": false
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.031",
+      "from": "schema.test.ts: AgentPermissionPolicy > network controls > accepts network with domain rules",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "network": {
+            "enabled": true,
+            "domains": {
+              "api.example.com": "allow",
+              "evil.com": "deny"
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.032",
+      "from": "schema.test.ts: AgentPermissionPolicy > per-agent delegation overrides > accepts delegation with agents",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "delegation": {
+            "maxDepth": 3,
+            "agents": {
+              "review": {
+                "deny": ["Write", "Edit", "Bash"],
+                "allow": ["Read", "Grep"]
+              },
+              "docs": {
+                "allow": ["Read", "Write(./docs/**)", "Bash(mdbook build:*)"]
+              }
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.033",
+      "from": "schema.test.ts: AgentPermissionPolicy > per-agent delegation overrides > accepts empty agents record",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "delegation": {
+            "agents": {}
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "schema.034",
+      "from": "schema.test.ts: a rule's unknown keys > rejects a misspelled condition instead of dropping it",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "allow",
+              "when": {
+                "brnach": "main"
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.035",
+      "from": "schema.test.ts: a rule's unknown keys > rejects an unknown key on a rule",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "allow",
+              "whn": {
+                "branch": "main"
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "schema.036",
+      "from": "schema.test.ts: a rule's unknown keys > accepts the env and remote conditions",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "allow",
+              "when": {
+                "env": {
+                  "CI": "true"
+                },
+                "remote": "github.com/exadev/*"
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    }
+  ]
+}

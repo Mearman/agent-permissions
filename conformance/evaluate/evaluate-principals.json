@@ -1,0 +1,1895 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-principals.001",
+      "from": "evaluate-principals.test.ts: when.role > applies to an actor who holds the role",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "allow",
+            "when": {
+              "role": "maintainer"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "allow",
+      "context": {
+        "actor": "ada",
+        "roles": ["maintainer", "reviewer"]
+      }
+    },
+    {
+      "id": "evaluate-principals.002",
+      "from": "evaluate-principals.test.ts: when.role > does not apply to an actor who does not",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "allow",
+            "when": {
+              "role": "maintainer"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "ask",
+      "context": {
+        "actor": "bob",
+        "roles": ["reviewer"]
+      }
+    },
+    {
+      "id": "evaluate-principals.003",
+      "from": "evaluate-principals.test.ts: when.role > is unknown when the host gives no roles, so an allow does not apply",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "allow",
+            "when": {
+              "role": "maintainer"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "ask",
+      "context": {
+        "actor": "ada"
+      }
+    },
+    {
+      "id": "evaluate-principals.004",
+      "from": "evaluate-principals.test.ts: when.role > is unknown when the host gives no roles, so an allow does not apply",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "allow",
+            "when": {
+              "role": "maintainer"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "ask",
+      "context": {}
+    },
+    {
+      "id": "evaluate-principals.005",
+      "from": "evaluate-principals.test.ts: when.role > is unknown when the host gives no roles, so a deny still applies",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "deny",
+            "when": {
+              "role": "contractor"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "deny",
+      "context": {}
+    },
+    {
+      "id": "evaluate-principals.006",
+      "from": "evaluate-principals.test.ts: when.role > is unknown when the host gives no roles, so a deny still applies",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "deny",
+            "when": {
+              "role": "contractor"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "allow",
+      "context": {
+        "roles": ["maintainer"]
+      }
+    },
+    {
+      "id": "evaluate-principals.007",
+      "from": "evaluate-principals.test.ts: when.role > an empty role list is known: the actor holds nothing",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "restricted",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "git push:*",
+            "tier": "allow",
+            "when": {
+              "role": "maintainer"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "git push origin",
+      "expect": "ask",
+      "context": {
+        "roles": []
+      }
+    },
+    {
+      "id": "evaluate-principals.008",
+      "from": "evaluate-principals.test.ts: when.actor > matches the actor as a glob",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "actor": "contractor-*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "deny",
+      "context": {
+        "actor": "contractor-7"
+      }
+    },
+    {
+      "id": "evaluate-principals.009",
+      "from": "evaluate-principals.test.ts: when.actor > matches the actor as a glob",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "actor": "contractor-*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "allow",
+      "context": {
+        "actor": "ada"
+      }
+    },
+    {
+      "id": "evaluate-principals.010",
+      "from": "evaluate-principals.test.ts: when.actor > is unknown without an actor, so a deny still applies",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [
+          {
+            "tool": "Bash",
+            "pattern": "deploy:*",
+            "tier": "deny",
+            "when": {
+              "actor": "contractor-*"
+            }
+          }
+        ]
+      },
+      "tool": "Bash",
+      "input": "deploy prod",
+      "expect": "deny",
+      "context": {}
+    },
+    {
+      "id": "evaluate-principals.011",
+      "from": "evaluate-principals.test.ts: roles > write rules that apply to the actors holding the role",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "collectRules",
+      "args": [
+        {
+          "roles": {
+            "maintainer": {
+              "allow": ["Bash(git push:*)"],
+              "ask": ["Bash(npm publish:*)"]
+            },
+            "contractor": {
+              "deny": ["Bash(git push:*)"]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "tool": "Bash",
+          "pattern": "npm publish:*",
+          "tier": "ask",
+          "when": {
+            "role": "maintainer"
+          }
+        },
+        {
+          "tool": "Bash",
+          "pattern": "git push:*",
+          "tier": "allow",
+          "when": {
+            "role": "maintainer"
+          }
+        },
+        {
+          "tool": "Bash",
+          "pattern": "git push:*",
+          "tier": "deny",
+          "when": {
+            "role": "contractor"
+          }
+        }
+      ],
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "evaluate-principals.012",
+      "from": "evaluate-principals.test.ts: roles > decide through check",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "git push origin",
+        {
+          "roles": {
+            "maintainer": {
+              "allow": ["Bash(git push:*)"],
+              "ask": ["Bash(npm publish:*)"]
+            },
+            "contractor": {
+              "deny": ["Bash(git push:*)"]
+            }
+          },
+          "defaultMode": "restricted"
+        },
+        {
+          "roles": ["maintainer"]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "allow"
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.013",
+      "from": "evaluate-principals.test.ts: roles > decide through check",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "git push origin",
+        {
+          "roles": {
+            "maintainer": {
+              "allow": ["Bash(git push:*)"],
+              "ask": ["Bash(npm publish:*)"]
+            },
+            "contractor": {
+              "deny": ["Bash(git push:*)"]
+            }
+          },
+          "defaultMode": "restricted"
+        },
+        {
+          "roles": ["contractor"]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.014",
+      "from": "evaluate-principals.test.ts: roles > decide through check",
+      "kind": "function",
+      "module": "api",
+      "function": "check",
+      "args": [
+        "Bash",
+        "git push origin",
+        {
+          "roles": {
+            "maintainer": {
+              "allow": ["Bash(git push:*)"],
+              "ask": ["Bash(npm publish:*)"]
+            },
+            "contractor": {
+              "deny": ["Bash(git push:*)"]
+            }
+          },
+          "defaultMode": "restricted"
+        },
+        {}
+      ],
+      "checks": [
+        {
+          "at": ["decision"],
+          "equals": "deny"
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.015",
+      "from": "evaluate-principals.test.ts: roles > must be named with letters, digits, dots, dashes and underscores",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "roles": {
+            "team*": {
+              "allow": ["Read"]
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.016",
+      "from": "evaluate-principals.test.ts: roles > must be named with letters, digits, dots, dashes and underscores",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "roles": {
+            "team-a.b_c": {
+              "allow": ["Read"]
+            }
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.017",
+      "from": "evaluate-principals.test.ts: approvers > are reported on the step that asks",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"],
+                "actors": ["ada", "grace"],
+                "timeoutSeconds": 300
+              }
+            }
+          ]
+        },
+        "Bash",
+        "git push origin",
+        {
+          "actor": "bob"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["steps", 0, "decision"],
+          "equals": "ask"
+        },
+        {
+          "at": ["steps", 0, "approvers"],
+          "equals": {
+            "roles": ["maintainer"],
+            "actors": ["ada", "grace"],
+            "timeoutSeconds": 300
+          }
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.018",
+      "from": "evaluate-principals.test.ts: approvers > never include the requester",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"],
+                "actors": ["ada", "grace"],
+                "timeoutSeconds": 300
+              }
+            }
+          ]
+        },
+        "Bash",
+        "git push origin",
+        {
+          "actor": "ada"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["steps", 0, "approvers", "actors"],
+          "equals": ["grace"]
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.019",
+      "from": "evaluate-principals.test.ts: approvers > are absent when the rule names none or the decision is not an ask",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "x:*",
+              "tier": "ask"
+            }
+          ]
+        },
+        "Bash",
+        "x y"
+      ],
+      "checks": [
+        {
+          "at": ["steps", 0, "approvers"],
+          "absent": true
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.020",
+      "from": "evaluate-principals.test.ts: approvers > are absent when the rule names none or the decision is not an ask",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"],
+                "actors": ["ada", "grace"],
+                "timeoutSeconds": 300
+              }
+            }
+          ]
+        },
+        "Bash",
+        "ls"
+      ],
+      "checks": [
+        {
+          "at": ["steps", 0, "approvers"],
+          "absent": true
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.021",
+      "from": "evaluate-principals.test.ts: approvers > are valid only on an ask rule and must name someone",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["m"]
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.022",
+      "from": "evaluate-principals.test.ts: approvers > are valid only on an ask rule and must name someone",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "allow",
+              "approvers": {
+                "roles": ["m"]
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.023",
+      "from": "evaluate-principals.test.ts: approvers > are valid only on an ask rule and must name someone",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "deny",
+              "approvers": {
+                "roles": ["m"]
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.024",
+      "from": "evaluate-principals.test.ts: approvers > are valid only on an ask rule and must name someone",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "ask",
+              "approvers": {}
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.025",
+      "from": "evaluate-principals.test.ts: approvers > are valid only on an ask rule and must name someone",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["m"],
+                "timeoutSeconds": 0
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "evaluate-principals.026",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.claude-code.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny",
+              "when": {
+                "role": "contractor"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "claude-code"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.027",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.codex.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny",
+              "when": {
+                "role": "contractor"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.028",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny",
+              "when": {
+                "role": "contractor"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "kiro"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.029",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.opencode.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny",
+              "when": {
+                "role": "contractor"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "opencode"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.030",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.crush.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny",
+              "when": {
+                "role": "contractor"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "crush"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.031",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.omp.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny",
+              "when": {
+                "role": "contractor"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.032",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.claude-code.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask",
+              "when": {
+                "actor": "bob"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "claude-code"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "ask",
+                  "when": {
+                    "actor": "bob"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.033",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.codex.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask",
+              "when": {
+                "actor": "bob"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "ask",
+                  "when": {
+                    "actor": "bob"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.034",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask",
+              "when": {
+                "actor": "bob"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "kiro"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "ask",
+                  "when": {
+                    "actor": "bob"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.035",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.opencode.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask",
+              "when": {
+                "actor": "bob"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "opencode"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "ask",
+                  "when": {
+                    "actor": "bob"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.036",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.crush.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask",
+              "when": {
+                "actor": "bob"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "crush"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "ask",
+                  "when": {
+                    "actor": "bob"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.037",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a deny or ask rule limited to a role or an actor rather than widening it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.omp.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask",
+              "when": {
+                "actor": "bob"
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "git push:*",
+                  "tier": "ask",
+                  "when": {
+                    "actor": "bob"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.038",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a role's deny rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.claude-code.encode",
+      "args": [
+        {
+          "roles": {
+            "contractor": {
+              "deny": ["Bash(rm:*)"]
+            }
+          }
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "claude-code"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.039",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a role's deny rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.codex.encode",
+      "args": [
+        {
+          "roles": {
+            "contractor": {
+              "deny": ["Bash(rm:*)"]
+            }
+          }
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.040",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a role's deny rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "roles": {
+            "contractor": {
+              "deny": ["Bash(rm:*)"]
+            }
+          }
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "kiro"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.041",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a role's deny rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.opencode.encode",
+      "args": [
+        {
+          "roles": {
+            "contractor": {
+              "deny": ["Bash(rm:*)"]
+            }
+          }
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "opencode"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.042",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a role's deny rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.crush.encode",
+      "args": [
+        {
+          "roles": {
+            "contractor": {
+              "deny": ["Bash(rm:*)"]
+            }
+          }
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "crush"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.043",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse a role's deny rule",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.omp.encode",
+      "args": [
+        {
+          "roles": {
+            "contractor": {
+              "deny": ["Bash(rm:*)"]
+            }
+          }
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "rm:*",
+                  "tier": "deny",
+                  "when": {
+                    "role": "contractor"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.044",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse an ask that names approvers rather than let anyone approve it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.claude-code.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm publish:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"]
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "claude-code"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "npm publish:*",
+                  "tier": "ask",
+                  "approvers": {
+                    "roles": ["maintainer"]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.045",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse an ask that names approvers rather than let anyone approve it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.codex.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm publish:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"]
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "codex"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "npm publish:*",
+                  "tier": "ask",
+                  "approvers": {
+                    "roles": ["maintainer"]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.046",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse an ask that names approvers rather than let anyone approve it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm publish:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"]
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "kiro"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "npm publish:*",
+                  "tier": "ask",
+                  "approvers": {
+                    "roles": ["maintainer"]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.047",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse an ask that names approvers rather than let anyone approve it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.opencode.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm publish:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"]
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "opencode"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "npm publish:*",
+                  "tier": "ask",
+                  "approvers": {
+                    "roles": ["maintainer"]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.048",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse an ask that names approvers rather than let anyone approve it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.crush.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm publish:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"]
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "crush"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "npm publish:*",
+                  "tier": "ask",
+                  "approvers": {
+                    "roles": ["maintainer"]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.049",
+      "from": "evaluate-principals.test.ts: principals in codecs > refuse an ask that names approvers rather than let anyone approve it",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.omp.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "npm publish:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"]
+              }
+            }
+          ]
+        }
+      ],
+      "throws": {
+        "name": "UnsupportedCapabilityError",
+        "checks": [
+          {
+            "at": ["agent"],
+            "subset": "omp"
+          },
+          {
+            "at": ["unsupported"],
+            "subset": [
+              {
+                "rule": {
+                  "tool": "Bash",
+                  "pattern": "npm publish:*",
+                  "tier": "ask",
+                  "approvers": {
+                    "roles": ["maintainer"]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "at": ["settings"],
+            "subset": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "evaluate-principals.050",
+      "from": "evaluate-principals.test.ts: principals in codecs > leave out an allow limited to a role, which is stricter",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.claude-code.encode",
+      "args": [{}],
+      "expect": {}
+    },
+    {
+      "id": "evaluate-principals.051",
+      "from": "evaluate-principals.test.ts: principals in codecs > leave out an allow limited to a role, which is stricter",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.codex.encode",
+      "args": [{}],
+      "expect": {}
+    },
+    {
+      "id": "evaluate-principals.052",
+      "from": "evaluate-principals.test.ts: principals in codecs > leave out an allow limited to a role, which is stricter",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.kiro.encode",
+      "args": [{}],
+      "expect": {}
+    },
+    {
+      "id": "evaluate-principals.053",
+      "from": "evaluate-principals.test.ts: principals in codecs > leave out an allow limited to a role, which is stricter",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.opencode.encode",
+      "args": [{}],
+      "expect": {
+        "bash": "ask"
+      }
+    },
+    {
+      "id": "evaluate-principals.054",
+      "from": "evaluate-principals.test.ts: principals in codecs > leave out an allow limited to a role, which is stricter",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.crush.encode",
+      "args": [{}],
+      "expect": {
+        "allowed_tools": []
+      }
+    },
+    {
+      "id": "evaluate-principals.055",
+      "from": "evaluate-principals.test.ts: principals in codecs > leave out an allow limited to a role, which is stricter",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "CODECS.omp.encode",
+      "args": [{}],
+      "expect": {}
+    }
+  ]
+}

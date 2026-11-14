@@ -1,0 +1,1067 @@
+{
+  "cases": [
+    {
+      "id": "claude-code-compat.001",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > real settings.json permissions > accepts the full permissions block from a real .claude/settings.json",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": [
+              "Bash(du:*)",
+              "Bash(python3:*)",
+              "Bash(claude plugin:*)",
+              "Bash(*rm* -rf */cache/*)"
+            ],
+            "deny": ["Bash(*rm* /)", "Bash(sudo *rm*)", "Bash(git add -A*)"],
+            "ask": ["Bash(*rm\\* -r*)", "Write(eslint.config.ts)"],
+            "defaultMode": "dontAsk"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.002",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > real settings.json permissions > accepts a real .claude/settings.local.json permissions block",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(git push:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.003",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > plain tool names (no parentheses) > accepts 'Read' as a bare tool name",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Read"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.004",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > plain tool names (no parentheses) > accepts 'Write' as a bare tool name",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Write"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.005",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > plain tool names (no parentheses) > accepts 'Edit' as a bare tool name",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Edit"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.006",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > plain tool names (no parentheses) > accepts 'Bash' as a bare tool name",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.007",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > plain tool names (no parentheses) > accepts 'Grep' as a bare tool name",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Grep"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.008",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > plain tool names (no parentheses) > accepts 'WebSearch' as a bare tool name",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["WebSearch"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.009",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > plain tool names (no parentheses) > accepts 'WebFetch' as a bare tool name",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["WebFetch"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.010",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > plain tool names (no parentheses) > accepts 'Agent' as a bare tool name",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Agent"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.011",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — prefix :* syntax (legacy) > accepts 'Bash(git:*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(git:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.012",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — prefix :* syntax (legacy) > accepts 'Bash(npm:*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(npm:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.013",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — prefix :* syntax (legacy) > accepts 'Bash(python3:*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(python3:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.014",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — prefix :* syntax (legacy) > accepts 'Bash(brew uninstall:*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(brew uninstall:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.015",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — prefix :* syntax (legacy) > accepts 'Bash(kill:*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(kill:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.016",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — prefix :* syntax (legacy) > accepts 'Bash(find:*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(find:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.017",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — prefix :* syntax (legacy) > accepts 'Bash(du:*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(du:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.018",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — prefix :* syntax (legacy) > accepts 'Bash(claude plugin:*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(claude plugin:*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.019",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — wildcard patterns > accepts 'Bash(npm run *)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Bash(npm run *)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.020",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — wildcard patterns > accepts 'Bash(*rm* -rf */cache/*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Bash(*rm* -rf */cache/*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.021",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — wildcard patterns > accepts 'Bash(*rm* /)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Bash(*rm* /)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.022",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — wildcard patterns > accepts 'Bash(sudo *rm*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Bash(sudo *rm*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.023",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — wildcard patterns > accepts 'Bash(git add -A*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Bash(git add -A*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.024",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — wildcard patterns > accepts 'Bash(git add . *)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Bash(git add . *)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.025",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — wildcard patterns > accepts 'Bash(git commit.*--no-verify)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Bash(git commit.*--no-verify)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.026",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — escaped characters > accepts 'Bash(*rm\\* -r*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "ask": ["Bash(*rm\\* -r*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.027",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — escaped characters > accepts 'Bash(rm \\*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "ask": ["Bash(rm \\*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.028",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — escaped characters > accepts 'Bash(rm -f \\*)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "ask": ["Bash(rm -f \\*)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.029",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > Bash rules — escaped characters > accepts 'Bash(python -c \"print\\(1\\)\")'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "ask": ["Bash(python -c \"print\\(1\\)\")"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.030",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > file tool rules — path patterns > accepts 'Read(./.env)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Read(./.env)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.031",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > file tool rules — path patterns > accepts 'Read(./secrets/**)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Read(./secrets/**)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.032",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > file tool rules — path patterns > accepts 'Write(eslint.config.ts)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Write(eslint.config.ts)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.033",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > file tool rules — path patterns > accepts 'Write(./production/**)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Write(./production/**)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.034",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > file tool rules — path patterns > accepts 'Edit(eslint.config.ts)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Edit(eslint.config.ts)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.035",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > file tool rules — path patterns > accepts 'Edit(eslint.base.config.ts)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Edit(eslint.base.config.ts)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.036",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > file tool rules — path patterns > accepts 'Write(./config/**)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "deny": ["Write(./config/**)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.037",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > WebFetch rules — domain patterns > accepts 'WebFetch(domain:example.com)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["WebFetch(domain:example.com)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.038",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > WebFetch rules — domain patterns > accepts 'WebFetch(domain:docs.example.com)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["WebFetch(domain:docs.example.com)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.039",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > WebFetch rules — domain patterns > accepts 'WebFetch(domain:martinalderson.com)'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["WebFetch(domain:martinalderson.com)"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.040",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > MCP rules > accepts 'mcp__github'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["mcp__github"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.041",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > MCP rules > accepts 'mcp__github__*'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["mcp__github__*"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.042",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > MCP rules > accepts 'mcp__github__create_issue'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["mcp__github__create_issue"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.043",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > MCP rules > accepts 'mcp__filesystem__read_file'",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["mcp__filesystem__read_file"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.044",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > defaultMode — Claude Code's mode values > accepts 'plan' (Claude Code mode)",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "defaultMode": "plan"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.045",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > defaultMode — Claude Code's mode values > accepts 'dontAsk' (Claude Code mode)",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "defaultMode": "dontAsk"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.046",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > defaultMode — Claude Code's mode values > accepts 'acceptEdits' (Claude Code mode)",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "defaultMode": "acceptEdits"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.047",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > defaultMode — Claude Code's mode values > accepts 'bypassPermissions' (Claude Code mode)",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "defaultMode": "bypassPermissions"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.048",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > defaultMode — Claude Code's mode values > accepts 'default' (Claude Code mode)",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "defaultMode": "default"
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.049",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > additionalDirectories > accepts relative and absolute paths",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "additionalDirectories": ["../shared-libs/", "/tmp/build-cache"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.050",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > env block (Claude Code compatibility) > accepts the same env structure as .claude/settings.json",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "env": {
+            "FOO": "bar",
+            "BAZ": "qux"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.051",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > top-level defaultMode vs Claude Code permissions.defaultMode > accepts defaultMode at the top level (our format)",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "defaultMode": "standard",
+          "permissions": {
+            "allow": ["Read"]
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.052",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > top-level defaultMode vs Claude Code permissions.defaultMode > accepts defaultMode inside permissions (Claude Code's placement)",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Read"],
+            "defaultMode": "plan"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "claude-code-compat.053",
+      "from": "claude-code-compat.test.ts: Claude Code compatibility > migration: jq '.permissions' produces valid input > accepts the exact output of extracting Claude Code's permissions block",
+      "kind": "function",
+      "module": "schema",
+      "function": "AgentPermissionPolicy.safeParse",
+      "args": [
+        {
+          "permissions": {
+            "allow": ["Bash(git status)", "Read"],
+            "deny": ["Bash(sudo:*)"],
+            "defaultMode": "dontAsk"
+          }
+        }
+      ],
+      "checks": [
+        {
+          "at": ["success"],
+          "equals": true
+        }
+      ]
+    }
+  ]
+}

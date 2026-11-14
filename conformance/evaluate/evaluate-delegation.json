@@ -1,0 +1,489 @@
+{
+  "cases": [
+    {
+      "id": "evaluate-delegation.001",
+      "from": "evaluate-delegation.test.ts: delegation.nonDelegable > denies a listed tool to a subagent",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [],
+        "delegation": {
+          "maxDepth": 2,
+          "nonDelegable": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./.agents/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      },
+      "tool": "Bash",
+      "input": "sudo ls",
+      "expect": "deny",
+      "context": {
+        "depth": 1
+      }
+    },
+    {
+      "id": "evaluate-delegation.002",
+      "from": "evaluate-delegation.test.ts: delegation.nonDelegable > denies a listed tool to a subagent",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [],
+        "delegation": {
+          "maxDepth": 2,
+          "nonDelegable": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./.agents/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      },
+      "tool": "Write",
+      "input": "./.agents/permissions.json",
+      "expect": "deny",
+      "context": {
+        "depth": 2
+      }
+    },
+    {
+      "id": "evaluate-delegation.003",
+      "from": "evaluate-delegation.test.ts: delegation.nonDelegable > leaves the top-level agent alone, whether depth is 0 or not given",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [],
+        "delegation": {
+          "maxDepth": 2,
+          "nonDelegable": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./.agents/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      },
+      "tool": "Bash",
+      "input": "sudo ls",
+      "expect": "allow",
+      "context": {
+        "depth": 0
+      }
+    },
+    {
+      "id": "evaluate-delegation.004",
+      "from": "evaluate-delegation.test.ts: delegation.nonDelegable > leaves the top-level agent alone, whether depth is 0 or not given",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [],
+        "delegation": {
+          "maxDepth": 2,
+          "nonDelegable": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./.agents/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      },
+      "tool": "Bash",
+      "input": "sudo ls",
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-delegation.005",
+      "from": "evaluate-delegation.test.ts: delegation.nonDelegable > leaves other calls of a subagent alone",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [],
+        "delegation": {
+          "maxDepth": 2,
+          "nonDelegable": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./.agents/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      },
+      "tool": "Bash",
+      "input": "ls",
+      "expect": "allow",
+      "context": {
+        "depth": 1
+      }
+    },
+    {
+      "id": "evaluate-delegation.006",
+      "from": "evaluate-delegation.test.ts: delegation.nonDelegable > judges each command of a shell line",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [],
+        "delegation": {
+          "maxDepth": 2,
+          "nonDelegable": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./.agents/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      },
+      "tool": "Bash",
+      "input": "ls && sudo rm x",
+      "expect": "deny",
+      "context": {
+        "depth": 1
+      }
+    },
+    {
+      "id": "evaluate-delegation.007",
+      "from": "evaluate-delegation.test.ts: delegation.nonDelegable > judges each command of a shell line",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [],
+        "delegation": {
+          "maxDepth": 2,
+          "nonDelegable": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./.agents/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      },
+      "tool": "Bash",
+      "input": "ls && sudo rm x",
+      "expect": "allow",
+      "context": {
+        "depth": 0
+      }
+    },
+    {
+      "id": "evaluate-delegation.008",
+      "from": "evaluate-delegation.test.ts: delegation.nonDelegable > says which rule and why",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [],
+          "delegation": {
+            "maxDepth": 2,
+            "nonDelegable": [
+              {
+                "tool": "Bash",
+                "pattern": "sudo:*",
+                "tier": "deny"
+              },
+              {
+                "tool": "Write",
+                "pattern": "./.agents/**",
+                "tier": "deny"
+              }
+            ]
+          }
+        },
+        "Bash",
+        "sudo ls",
+        {
+          "depth": 1
+        }
+      ],
+      "checks": [
+        {
+          "at": ["steps", 0, "reason"],
+          "equals": "delegation"
+        },
+        {
+          "at": ["steps", 0, "rule", "pattern"],
+          "equals": "sudo:*"
+        }
+      ]
+    },
+    {
+      "id": "evaluate-delegation.009",
+      "from": "evaluate-delegation.test.ts: delegation.maxDepth > denies every call from an agent nested deeper than the limit",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [],
+        "delegation": {
+          "maxDepth": 2,
+          "nonDelegable": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./.agents/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      },
+      "tool": "Read",
+      "input": "./a",
+      "expect": "deny",
+      "context": {
+        "depth": 3
+      }
+    },
+    {
+      "id": "evaluate-delegation.010",
+      "from": "evaluate-delegation.test.ts: delegation.maxDepth > denies every call from an agent nested deeper than the limit",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "explain",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [],
+          "delegation": {
+            "maxDepth": 2,
+            "nonDelegable": [
+              {
+                "tool": "Bash",
+                "pattern": "sudo:*",
+                "tier": "deny"
+              },
+              {
+                "tool": "Write",
+                "pattern": "./.agents/**",
+                "tier": "deny"
+              }
+            ]
+          }
+        },
+        "Read",
+        "./a",
+        {
+          "depth": 3
+        }
+      ],
+      "checks": [
+        {
+          "at": ["steps", 0, "reason"],
+          "equals": "delegation"
+        }
+      ]
+    },
+    {
+      "id": "evaluate-delegation.011",
+      "from": "evaluate-delegation.test.ts: delegation.maxDepth > allows an agent at the limit",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "rules": [],
+        "delegation": {
+          "maxDepth": 2,
+          "nonDelegable": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Write",
+              "pattern": "./.agents/**",
+              "tier": "deny"
+            }
+          ]
+        }
+      },
+      "tool": "Read",
+      "input": "./a",
+      "expect": "allow",
+      "context": {
+        "depth": 2
+      }
+    },
+    {
+      "id": "evaluate-delegation.012",
+      "from": "evaluate-delegation.test.ts: delegation.maxDepth > has no limit when maxDepth is not set",
+      "kind": "evaluate",
+      "policy": {
+        "defaultMode": "autonomous",
+        "delegation": {}
+      },
+      "tool": "Read",
+      "input": "./a",
+      "expect": "allow",
+      "context": {
+        "depth": 50
+      }
+    },
+    {
+      "id": "evaluate-delegation.013",
+      "from": "evaluate-delegation.test.ts: checkSpawn > allows spawning while the child would stay within maxDepth",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "checkSpawn",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [],
+          "delegation": {
+            "maxDepth": 2,
+            "nonDelegable": [
+              {
+                "tool": "Bash",
+                "pattern": "sudo:*",
+                "tier": "deny"
+              },
+              {
+                "tool": "Write",
+                "pattern": "./.agents/**",
+                "tier": "deny"
+              }
+            ]
+          }
+        },
+        0
+      ],
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-delegation.014",
+      "from": "evaluate-delegation.test.ts: checkSpawn > allows spawning while the child would stay within maxDepth",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "checkSpawn",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [],
+          "delegation": {
+            "maxDepth": 2,
+            "nonDelegable": [
+              {
+                "tool": "Bash",
+                "pattern": "sudo:*",
+                "tier": "deny"
+              },
+              {
+                "tool": "Write",
+                "pattern": "./.agents/**",
+                "tier": "deny"
+              }
+            ]
+          }
+        },
+        1
+      ],
+      "expect": "allow"
+    },
+    {
+      "id": "evaluate-delegation.015",
+      "from": "evaluate-delegation.test.ts: checkSpawn > denies spawning past maxDepth",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "checkSpawn",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "rules": [],
+          "delegation": {
+            "maxDepth": 2,
+            "nonDelegable": [
+              {
+                "tool": "Bash",
+                "pattern": "sudo:*",
+                "tier": "deny"
+              },
+              {
+                "tool": "Write",
+                "pattern": "./.agents/**",
+                "tier": "deny"
+              }
+            ]
+          }
+        },
+        2
+      ],
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-delegation.016",
+      "from": "evaluate-delegation.test.ts: checkSpawn > denies all spawning when maxDepth is 0",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "checkSpawn",
+      "args": [
+        {
+          "defaultMode": "autonomous",
+          "delegation": {
+            "maxDepth": 0
+          }
+        },
+        0
+      ],
+      "expect": "deny"
+    },
+    {
+      "id": "evaluate-delegation.017",
+      "from": "evaluate-delegation.test.ts: checkSpawn > allows spawning when maxDepth is not set",
+      "kind": "function",
+      "module": "evaluate",
+      "function": "checkSpawn",
+      "args": [
+        {
+          "defaultMode": "standard"
+        },
+        10
+      ],
+      "expect": "allow"
+    }
+  ]
+}
