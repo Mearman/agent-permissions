@@ -644,7 +644,83 @@
     },
     {
       "id": "sync-text-edit.014",
-      "from": "sync-text-edit.test.ts: OpenCode's two config file names > edits opencode.jsonc, which OpenCode ranks above opencode.json, and warns that both apply",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > edits opencode.jsonc in place, keeping its comments, and never creates opencode.json beside it",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": true,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/.claude/settings.json",
+            "agent": "claude-code",
+            "kind": "create",
+            "current": null,
+            "proposed": "{\n  \"permissions\": {\n    \"allow\": [\n      \"Read\"\n    ],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n"
+          },
+          {
+            "path": "$DIR0/.kiro/permissions.json",
+            "agent": "kiro",
+            "kind": "create",
+            "current": null,
+            "proposed": "{\n  \"allowedTools\": [\n    \"read\"\n  ],\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n"
+          },
+          {
+            "path": "$DIR0/opencode.jsonc",
+            "agent": "opencode",
+            "kind": "update",
+            "current": "{\n  // my editor settings\n  \"model\": \"x\", /* inline */\n  \"permission\": {\n    \"read\": \"allow\",\n  },\n}\n",
+            "proposed": "{\n  // my editor settings\n  \"model\": \"x\", /* inline */\n  \"permission\": {\n    \"read\": \"allow\",\n    \"bash\": {\n      \"rm *\": \"deny\"\n    },\n  },\n}\n"
+          },
+          {
+            "path": "$DIR0/.omp/config.yml",
+            "agent": "omp",
+            "kind": "create",
+            "current": null,
+            "proposed": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.jsonc": "{\n  // my editor settings\n  \"model\": \"x\", /* inline */\n  \"permission\": {\n    \"read\": \"allow\",\n  },\n}\n"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [\n      \"Read\"\n    ],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
+        "$DIR0/.kiro/permissions.json": "{\n  \"allowedTools\": [\n    \"read\"\n  ],\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
+        "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
+        "$DIR0/opencode.jsonc": "{\n  // my editor settings\n  \"model\": \"x\", /* inline */\n  \"permission\": {\n    \"read\": \"allow\",\n    \"bash\": {\n      \"rm *\": \"deny\"\n    },\n  },\n}\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync-text-edit.015",
+      "from": "sync-text-edit.test.ts: bytes outside the owned keys survive an edit > accepts comments in opencode.json",
       "kind": "function",
       "module": "sync",
       "function": "sync",
@@ -665,26 +741,64 @@
       ],
       "checks": [
         {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.agents/permissions.json",
-                "agent": "canonical",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/opencode.jsonc",
-                "agent": "opencode",
-                "kind": "update"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
+          "at": ["then"],
+          "absent": true
         }
       ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/opencode.json": "{\n  // keep me\n  \"permission\": { \"read\": \"allow\" }\n}\n"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/opencode.json": "{\n  // keep me\n  \"permission\": { \"read\": \"allow\", \"bash\": {\"rm *\":\"deny\"} }\n}\n"
+      }
+    },
+    {
+      "id": "sync-text-edit.016",
+      "from": "sync-text-edit.test.ts: OpenCode's two config file names > edits opencode.jsonc, which OpenCode ranks above opencode.json, and warns that both apply",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Edit\",\"tier\":\"ask\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/opencode.jsonc",
+            "agent": "opencode",
+            "kind": "update",
+            "current": "{\n  // mine\n  \"permission\": {\"edit\": \"ask\"}\n}\n",
+            "proposed": "{\n  // mine\n  \"permission\": {\"edit\": \"ask\", \"read\": \"allow\", \"bash\": {\"rm *\":\"deny\"}}\n}\n"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "includes": ["opencode.jsonc and ", "opencode.json both exist"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/opencode.json": "{\"permission\": {\"read\": \"allow\"}}\n",

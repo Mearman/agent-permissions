@@ -21,38 +21,6 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "create"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.claude/settings.json": ""
@@ -62,8 +30,7 @@
         "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.002",
@@ -86,17 +53,15 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
         "$DIR0/.claude/settings.json": ""
@@ -124,38 +89,6 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "create"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.claude/settings.json": "  \n\t\n"
@@ -165,8 +98,7 @@
         "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.004",
@@ -189,17 +121,15 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
         "$DIR0/.claude/settings.json": "  \n\t\n"
@@ -227,49 +157,16 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "create"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
-        "$DIR0/.claude/settings.json": ""
+        "$DIR0/.claude/settings.json": "﻿"
       },
       "expectFiles": {
         "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
         "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.006",
@@ -292,20 +189,18 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
-        "$DIR0/.claude/settings.json": ""
+        "$DIR0/.claude/settings.json": "﻿"
       },
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
@@ -330,38 +225,6 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "create"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/opencode.json": ""
@@ -371,8 +234,7 @@
         "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.008",
@@ -395,17 +257,15 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
         "$DIR0/opencode.json": ""
@@ -433,38 +293,6 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "create"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/opencode.json": "  \n\t\n"
@@ -474,8 +302,7 @@
         "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.010",
@@ -498,17 +325,15 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
         "$DIR0/opencode.json": "  \n\t\n"
@@ -536,49 +361,16 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "create"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
-        "$DIR0/opencode.json": ""
+        "$DIR0/opencode.json": "﻿"
       },
       "expectFiles": {
         "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
         "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.012",
@@ -601,20 +393,18 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
-        "$DIR0/opencode.json": ""
+        "$DIR0/opencode.json": "﻿"
       },
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
@@ -639,38 +429,6 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "create"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.kiro/permissions.json": ""
@@ -680,8 +438,7 @@
         "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.014",
@@ -704,17 +461,15 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
         "$DIR0/.kiro/permissions.json": ""
@@ -742,38 +497,6 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "create"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.kiro/permissions.json": "  \n\t\n"
@@ -783,8 +506,7 @@
         "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.016",
@@ -807,17 +529,15 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
         "$DIR0/.kiro/permissions.json": "  \n\t\n"
@@ -845,49 +565,16 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "create"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
-        "$DIR0/.kiro/permissions.json": ""
+        "$DIR0/.kiro/permissions.json": "﻿"
       },
       "expectFiles": {
         "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
         "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.018",
@@ -910,20 +597,18 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
-        "$DIR0/.kiro/permissions.json": ""
+        "$DIR0/.kiro/permissions.json": "﻿"
       },
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
@@ -948,38 +633,6 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "update"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.omp/config.yml": ""
@@ -990,8 +643,7 @@
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/.omp/config.yml.bak": "",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.020",
@@ -1014,17 +666,15 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
         "$DIR0/.omp/config.yml": ""
@@ -1052,38 +702,6 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "update"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.omp/config.yml": "  \n\t\n"
@@ -1094,8 +712,7 @@
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
         "$DIR0/.omp/config.yml.bak": "  \n\t\n",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.022",
@@ -1118,17 +735,15 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
         "$DIR0/.omp/config.yml": "  \n\t\n"
@@ -1156,50 +771,17 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.kiro/permissions.json",
-                "agent": "kiro",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/opencode.json",
-                "agent": "opencode",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.omp/config.yml",
-                "agent": "omp",
-                "kind": "update"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
-        "$DIR0/.omp/config.yml": ""
+        "$DIR0/.omp/config.yml": "﻿"
       },
       "expectFiles": {
         "$DIR0/.claude/settings.json": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\n      \"Bash(rm:*)\"\n    ],\n    \"ask\": []\n  }\n}\n",
         "$DIR0/.kiro/permissions.json": "{\n  \"toolsSettings\": {\n    \"shell\": {\n      \"deniedCommands\": [\n        \"\\\\Arm:*\\\\z\"\n      ]\n    }\n  }\n}\n",
         "$DIR0/.omp/config.yml": "bash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n",
-        "$DIR0/.omp/config.yml.bak": "",
+        "$DIR0/.omp/config.yml.bak": "﻿",
         "$DIR0/opencode.json": "{\n  \"permission\": {\n    \"bash\": {\n      \"rm *\": \"deny\"\n    }\n  }\n}\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync-empty-file.024",
@@ -1222,20 +804,18 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "expect": {
+        "changes": [],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
-        "$DIR0/.omp/config.yml": ""
+        "$DIR0/.omp/config.yml": "﻿"
       },
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
@@ -1260,28 +840,9 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.agents/permissions.json",
-                "agent": "canonical",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "update"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "stderr": {
+        "absent": ["skipped", "invalid"]
+      },
       "files": {
         "$DIR0/.agents/permissions.json": " \n",
         "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"]}}"
@@ -1289,8 +850,7 @@
       "expectFiles": {
         "$DIR0/.agents/permissions.json": "{\n  \"$schema\": \"https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json\",\n  \"rules\": [\n    {\n      \"tool\": \"Bash\",\n      \"pattern\": \"rm:*\",\n      \"tier\": \"deny\"\n    }\n  ]\n}\n",
         "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm:*)\"],\"allow\":[],\"ask\":[]}}"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     }
   ]
 }

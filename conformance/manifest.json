@@ -5,11 +5,11 @@
       "skip": []
     },
     "cli/cli-output-refusal.json": {
-      "cases": 26,
+      "cases": 28,
       "skip": []
     },
     "cli/cli.json": {
-      "cases": 75,
+      "cases": 79,
       "skip": []
     },
     "codec/codec-alias-roundtrip.json": {
@@ -21,7 +21,7 @@
       "skip": []
     },
     "codec/codex-execpolicy.json": {
-      "cases": 20,
+      "cases": 23,
       "skip": []
     },
     "codec/codex-fail-closed.json": {
@@ -33,11 +33,11 @@
       "skip": []
     },
     "codec/compat.json": {
-      "cases": 90,
+      "cases": 91,
       "skip": []
     },
     "codec/omp-codec.json": {
-      "cases": 181,
+      "cases": 79,
       "skip": []
     },
     "confine/confine.json": {
@@ -97,11 +97,7 @@
       "skip": []
     },
     "files/agent-files.json": {
-      "cases": 42,
-      "skip": []
-    },
-    "files/agent-files.tree.json": {
-      "cases": 11,
+      "cases": 53,
       "skip": []
     },
     "loader/loader-ceiling.json": {
@@ -144,8 +140,12 @@
       "cases": 44,
       "skip": []
     },
-    "sync/sync-ancestor-sources.json": {
+    "sync/mcp-serial-sync.json": {
       "cases": 1,
+      "skip": []
+    },
+    "sync/sync-ancestor-sources.json": {
+      "cases": 6,
       "skip": []
     },
     "sync/sync-atomic-write.json": {
@@ -153,7 +153,7 @@
       "skip": []
     },
     "sync/sync-canonical-keys.json": {
-      "cases": 5,
+      "cases": 7,
       "skip": []
     },
     "sync/sync-duplicate-keys.json": {
@@ -165,15 +165,19 @@
       "skip": []
     },
     "sync/sync-errors.json": {
-      "cases": 6,
+      "cases": 8,
       "skip": []
     },
     "sync/sync-file-fidelity.json": {
-      "cases": 1,
+      "cases": 6,
       "skip": []
     },
     "sync/sync-modelled-paths.json": {
       "cases": 9,
+      "skip": []
+    },
+    "sync/sync-partial-apply.json": {
+      "cases": 1,
       "skip": []
     },
     "sync/sync-roundtrip.json": {
@@ -181,11 +185,15 @@
       "skip": []
     },
     "sync/sync-text-edit.json": {
-      "cases": 14,
+      "cases": 16,
+      "skip": []
+    },
+    "sync/sync-unreadable-target.json": {
+      "cases": 1,
       "skip": []
     },
     "sync/sync.json": {
-      "cases": 43,
+      "cases": 46,
       "skip": []
     },
     "validate/claude-code-compat.json": {

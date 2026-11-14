@@ -188,7 +188,8 @@
               "tier": "allow"
             }
           ]
-        }
+        },
+        "stderrIncludes": ["Decoded"]
       }
     },
     {
@@ -609,6 +610,66 @@
     },
     {
       "id": "cli.026",
+      "from": "cli.test.ts: CLI > convert to and from OMP > reads an OMP config in YAML and ignores the rest of it",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/omp-config.yml",
+        "--to",
+        "canonical",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/omp-config.yml": "model: anything\ntools:\n  approvalMode: yolo\nbash:\n  patterns:\n    - match: \"curl *\"\n      approval: prompt\n"
+      },
+      "expect": {
+        "exit": 0,
+        "stdoutJson": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "defaultMode": "autonomous",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "curl *",
+              "tier": "ask"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cli.027",
+      "from": "cli.test.ts: CLI > convert to and from OMP > fails, naming the rule, when OMP cannot enforce it",
+      "kind": "cli",
+      "args": [
+        "convert",
+        "--from",
+        "$DIR0/policy.json",
+        "--to",
+        "omp",
+        "--output",
+        "-"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Write\",\"pattern\":\"./secrets\",\"tier\":\"deny\"}]}"
+      },
+      "expect": {
+        "exit": 1,
+        "stderrIncludes": ["Write(./secrets) [deny]"]
+      }
+    },
+    {
+      "id": "cli.028",
       "from": "cli.test.ts: CLI > check > allows a matching rule",
       "kind": "cli",
       "args": [
@@ -633,7 +694,34 @@
       }
     },
     {
-      "id": "cli.027",
+      "id": "cli.029",
+      "from": "cli.test.ts: CLI > check > explains which rule decided with --explain",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "git status && curl x",
+        "--explain",
+        "--policy-file",
+        "$DIR0/policy.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"curl:*\",\"tier\":\"deny\"}]}"
+      },
+      "expect": {
+        "exit": 1,
+        "stdout": "deny\n",
+        "stderrIncludes": ["allow", "git status", "Bash(git:*)"]
+      }
+    },
+    {
+      "id": "cli.030",
       "from": "cli.test.ts: CLI > check > takes the remote and environment conditions from flags",
       "kind": "cli",
       "args": [
@@ -662,7 +750,7 @@
       }
     },
     {
-      "id": "cli.028",
+      "id": "cli.031",
       "from": "cli.test.ts: CLI > check > takes the remote and environment conditions from flags",
       "kind": "cli",
       "args": [
@@ -689,7 +777,7 @@
       }
     },
     {
-      "id": "cli.029",
+      "id": "cli.032",
       "from": "cli.test.ts: CLI > check > applies delegation limits for the depth given with --depth",
       "kind": "cli",
       "args": [
@@ -716,7 +804,7 @@
       }
     },
     {
-      "id": "cli.030",
+      "id": "cli.033",
       "from": "cli.test.ts: CLI > check > applies delegation limits for the depth given with --depth",
       "kind": "cli",
       "args": [
@@ -743,7 +831,7 @@
       }
     },
     {
-      "id": "cli.031",
+      "id": "cli.034",
       "from": "cli.test.ts: CLI > check > applies delegation limits for the depth given with --depth",
       "kind": "cli",
       "args": [
@@ -769,7 +857,34 @@
       }
     },
     {
-      "id": "cli.032",
+      "id": "cli.035",
+      "from": "cli.test.ts: CLI > check > marks a step hidden with --explain when a hidden rule decided",
+      "kind": "cli",
+      "args": [
+        "check",
+        "--tool",
+        "bash",
+        "--input",
+        "sudo ls",
+        "--explain",
+        "--policy-file",
+        "$DIR0/policy.json"
+      ],
+      "cwd": "$DIR2",
+      "env": {
+        "PI_CODING_AGENT_DIR": "$DIR1"
+      },
+      "files": {
+        "$DIR0/policy.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"sudo:*\",\"tier\":\"deny\",\"hidden\":true}]}"
+      },
+      "expect": {
+        "exit": 1,
+        "stdout": "deny\n",
+        "stderrIncludes": ["(hidden)"]
+      }
+    },
+    {
+      "id": "cli.036",
       "from": "cli.test.ts: CLI > check > takes the actor and roles from flags",
       "kind": "cli",
       "args": [
@@ -800,7 +915,7 @@
       }
     },
     {
-      "id": "cli.033",
+      "id": "cli.037",
       "from": "cli.test.ts: CLI > check > takes the actor and roles from flags",
       "kind": "cli",
       "args": [
@@ -829,7 +944,7 @@
       }
     },
     {
-      "id": "cli.034",
+      "id": "cli.038",
       "from": "cli.test.ts: CLI > check > takes the actor and roles from flags",
       "kind": "cli",
       "args": [
@@ -856,7 +971,7 @@
       }
     },
     {
-      "id": "cli.035",
+      "id": "cli.039",
       "from": "cli.test.ts: CLI > check > denies a matching deny rule",
       "kind": "cli",
       "args": [
@@ -881,7 +996,7 @@
       }
     },
     {
-      "id": "cli.036",
+      "id": "cli.040",
       "from": "cli.test.ts: CLI > check > asks when no rule matches in standard mode",
       "kind": "cli",
       "args": [
@@ -906,7 +1021,7 @@
       }
     },
     {
-      "id": "cli.037",
+      "id": "cli.041",
       "from": "cli.test.ts: CLI > check > requires --tool",
       "kind": "cli",
       "args": ["check", "--input", "cmd"],
@@ -920,7 +1035,7 @@
       }
     },
     {
-      "id": "cli.038",
+      "id": "cli.042",
       "from": "cli.test.ts: CLI > check > requires --input",
       "kind": "cli",
       "args": ["check", "--tool", "Bash"],
@@ -934,7 +1049,7 @@
       }
     },
     {
-      "id": "cli.039",
+      "id": "cli.043",
       "from": "cli.test.ts: CLI > check > passes --cwd context",
       "kind": "cli",
       "args": [
@@ -961,7 +1076,7 @@
       }
     },
     {
-      "id": "cli.040",
+      "id": "cli.044",
       "from": "cli.test.ts: CLI > check > passes --branch context",
       "kind": "cli",
       "args": [
@@ -988,7 +1103,7 @@
       }
     },
     {
-      "id": "cli.041",
+      "id": "cli.045",
       "from": "cli.test.ts: CLI > check > reports ConvertError for invalid policy",
       "kind": "cli",
       "args": [
@@ -1013,7 +1128,7 @@
       }
     },
     {
-      "id": "cli.042",
+      "id": "cli.046",
       "from": "cli.test.ts: CLI > check > handles invalid JSON in policy file",
       "kind": "cli",
       "args": [
@@ -1038,7 +1153,7 @@
       }
     },
     {
-      "id": "cli.043",
+      "id": "cli.047",
       "from": "cli.test.ts: CLI > replay > counts decisions and lists the calls recorded differently",
       "kind": "cli",
       "args": [
@@ -1062,7 +1177,7 @@
       }
     },
     {
-      "id": "cli.044",
+      "id": "cli.048",
       "from": "cli.test.ts: CLI > replay > requires --transcript",
       "kind": "cli",
       "args": ["replay", "--policy-file", "canonical"],
@@ -1076,7 +1191,7 @@
       }
     },
     {
-      "id": "cli.045",
+      "id": "cli.049",
       "from": "cli.test.ts: CLI > suggest > prints a policy of allow rules for calls approved repeatedly",
       "kind": "cli",
       "args": ["suggest", "--transcript", "$DIR0/session.jsonl"],
@@ -1101,7 +1216,7 @@
       }
     },
     {
-      "id": "cli.046",
+      "id": "cli.050",
       "from": "cli.test.ts: CLI > suggest > honours --min-count and leaves out what the policy allows",
       "kind": "cli",
       "args": [
@@ -1135,7 +1250,7 @@
       }
     },
     {
-      "id": "cli.047",
+      "id": "cli.051",
       "from": "cli.test.ts: CLI > suggest > rejects a --min-count that is not a positive integer",
       "kind": "cli",
       "args": ["suggest", "--transcript", "-", "--min-count", "0"],
@@ -1149,7 +1264,7 @@
       }
     },
     {
-      "id": "cli.048",
+      "id": "cli.052",
       "from": "cli.test.ts: CLI > sync > detects and reports no configs",
       "kind": "cli",
       "args": ["sync", "--working-dir", "$DIR0"],
@@ -1158,11 +1273,12 @@
         "PI_CODING_AGENT_DIR": "$DIR1"
       },
       "expect": {
-        "exit": 0
+        "exit": 0,
+        "stderrIncludes": ["No permission configs found"]
       }
     },
     {
-      "id": "cli.049",
+      "id": "cli.053",
       "from": "cli.test.ts: CLI > sync > syncs a single canonical file (no-op)",
       "kind": "cli",
       "args": ["sync", "--working-dir", "$DIR0", "--yes"],
@@ -1174,11 +1290,12 @@
         "$DIR0/.agents/permissions.json": "{\n  \"$schema\": \"https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json\",\n  \"defaultMode\": \"standard\"\n}\n"
       },
       "expect": {
-        "exit": 0
+        "exit": 0,
+        "stderrIncludes": ["Already in sync"]
       }
     },
     {
-      "id": "cli.050",
+      "id": "cli.054",
       "from": "cli.test.ts: CLI > sync > exits 1 and writes nothing when a native config it must edit is not valid JSON",
       "kind": "cli",
       "args": ["sync", "--working-dir", "$DIR0", "--yes", "--create"],
@@ -1195,7 +1312,7 @@
       }
     },
     {
-      "id": "cli.051",
+      "id": "cli.055",
       "from": "cli.test.ts: CLI > sync > treats the end of input at the prompt as no: prints Aborted, writes nothing and exits 1",
       "kind": "cli",
       "args": ["sync", "--working-dir", "$DIR0", "--create"],
@@ -1211,7 +1328,7 @@
       }
     },
     {
-      "id": "cli.052",
+      "id": "cli.056",
       "from": "cli.test.ts: CLI > sync > merges canonical and claude-code configs",
       "kind": "cli",
       "args": ["sync", "--working-dir", "$DIR0", "--yes", "--verbose"],
@@ -1224,7 +1341,8 @@
         "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Bash(git status)\"]}}"
       },
       "expect": {
-        "exit": 0
+        "exit": 0,
+        "stderrIncludes": ["Merged"]
       },
       "expectFiles": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Read\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"git status\",\"tier\":\"allow\"}]}",
@@ -1232,7 +1350,7 @@
       }
     },
     {
-      "id": "cli.053",
+      "id": "cli.057",
       "from": "cli.test.ts: CLI > sync > dry-run shows changes without writing",
       "kind": "cli",
       "args": ["sync", "--working-dir", "$DIR0", "--dry-run"],
@@ -1245,11 +1363,12 @@
         "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Bash(git status)\"]}}"
       },
       "expect": {
-        "exit": 0
+        "exit": 0,
+        "stderrIncludes": ["dry run"]
       }
     },
     {
-      "id": "cli.054",
+      "id": "cli.058",
       "from": "cli.test.ts: CLI > sync > rejects --with and --without together",
       "kind": "cli",
       "args": ["sync", "--with", "claude-code", "--without", "opencode"],
@@ -1263,7 +1382,7 @@
       }
     },
     {
-      "id": "cli.055",
+      "id": "cli.059",
       "from": "cli.test.ts: CLI > sync > rejects unknown --with agent",
       "kind": "cli",
       "args": ["sync", "--with", "phantom"],
@@ -1277,7 +1396,7 @@
       }
     },
     {
-      "id": "cli.056",
+      "id": "cli.060",
       "from": "cli.test.ts: CLI > sync > rejects unknown --without agent",
       "kind": "cli",
       "args": ["sync", "--without", "phantom"],
@@ -1291,7 +1410,7 @@
       }
     },
     {
-      "id": "cli.057",
+      "id": "cli.061",
       "from": "cli.test.ts: CLI > sync > rejects invalid --up value",
       "kind": "cli",
       "args": ["sync", "--up", "abc"],
@@ -1305,7 +1424,7 @@
       }
     },
     {
-      "id": "cli.058",
+      "id": "cli.062",
       "from": "cli.test.ts: CLI > sync > accepts --up numeric value",
       "kind": "cli",
       "args": ["sync", "--working-dir", "$DIR0", "--up", "0", "--yes"],
@@ -1321,7 +1440,7 @@
       }
     },
     {
-      "id": "cli.059",
+      "id": "cli.063",
       "from": "cli.test.ts: CLI > sync > writes backup files with --backup",
       "kind": "cli",
       "args": ["sync", "--working-dir", "$DIR0", "--yes", "--backup"],
@@ -1344,7 +1463,7 @@
       }
     },
     {
-      "id": "cli.060",
+      "id": "cli.064",
       "from": "cli.test.ts: CLI > sync > creates missing config files with --create",
       "kind": "cli",
       "args": [
@@ -1371,7 +1490,7 @@
       }
     },
     {
-      "id": "cli.061",
+      "id": "cli.065",
       "from": "cli.test.ts: CLI > confine > prints a canonical policy that confines to the roots",
       "kind": "cli",
       "args": ["confine", "--root", "/work/app", "--root", "/work/shared"],
@@ -1512,7 +1631,7 @@
       }
     },
     {
-      "id": "cli.062",
+      "id": "cli.066",
       "from": "cli.test.ts: CLI > confine > prints a canonical policy that confines to the roots",
       "kind": "cli",
       "args": [
@@ -1535,7 +1654,7 @@
       }
     },
     {
-      "id": "cli.063",
+      "id": "cli.067",
       "from": "cli.test.ts: CLI > confine > prints a canonical policy that confines to the roots",
       "kind": "cli",
       "args": [
@@ -1558,7 +1677,7 @@
       }
     },
     {
-      "id": "cli.064",
+      "id": "cli.068",
       "from": "cli.test.ts: CLI > confine > lists roots other than the working directory as additional directories",
       "kind": "cli",
       "args": ["confine", "--root", ".", "--root", "/work/shared"],
@@ -1699,7 +1818,7 @@
       }
     },
     {
-      "id": "cli.065",
+      "id": "cli.069",
       "from": "cli.test.ts: CLI > confine > denies outside paths with --outside deny",
       "kind": "cli",
       "args": ["confine", "--root", "/work/app", "--outside", "deny"],
@@ -1810,7 +1929,7 @@
       }
     },
     {
-      "id": "cli.066",
+      "id": "cli.070",
       "from": "cli.test.ts: CLI > confine > writes to --output instead of stdout",
       "kind": "cli",
       "args": [
@@ -1832,7 +1951,7 @@
       }
     },
     {
-      "id": "cli.067",
+      "id": "cli.071",
       "from": "cli.test.ts: CLI > confine > fails without a root",
       "kind": "cli",
       "args": ["confine"],
@@ -1846,7 +1965,7 @@
       }
     },
     {
-      "id": "cli.068",
+      "id": "cli.072",
       "from": "cli.test.ts: CLI > confine > rejects an unknown --outside value",
       "kind": "cli",
       "args": ["confine", "--root", "/w", "--outside", "allow"],
@@ -1860,7 +1979,7 @@
       }
     },
     {
-      "id": "cli.069",
+      "id": "cli.073",
       "from": "cli.test.ts: CLI > confine > is described in the usage text",
       "kind": "cli",
       "args": ["--help"],
@@ -1874,7 +1993,7 @@
       }
     },
     {
-      "id": "cli.070",
+      "id": "cli.074",
       "from": "cli.test.ts: CLI > usage and routing > shows usage with --help",
       "kind": "cli",
       "args": ["--help"],
@@ -1888,7 +2007,7 @@
       }
     },
     {
-      "id": "cli.071",
+      "id": "cli.075",
       "from": "cli.test.ts: CLI > usage and routing > shows usage with -h",
       "kind": "cli",
       "args": ["-h"],
@@ -1902,7 +2021,7 @@
       }
     },
     {
-      "id": "cli.072",
+      "id": "cli.076",
       "from": "cli.test.ts: CLI > usage and routing > shows usage for unknown command",
       "kind": "cli",
       "args": ["bogus"],
@@ -1916,7 +2035,7 @@
       }
     },
     {
-      "id": "cli.073",
+      "id": "cli.077",
       "from": "cli.test.ts: CLI > usage and routing > shows usage with no args",
       "kind": "cli",
       "args": [],
@@ -1930,7 +2049,7 @@
       }
     },
     {
-      "id": "cli.074",
+      "id": "cli.078",
       "from": "cli.test.ts: CLI and Oh My Pi's config > sync writes the global config only with --omp-global",
       "kind": "cli",
       "args": ["sync", "--working-dir", "$DIR0/project", "--up", "0", "--yes"],
@@ -1950,7 +2069,7 @@
       }
     },
     {
-      "id": "cli.075",
+      "id": "cli.079",
       "from": "cli.test.ts: CLI and Oh My Pi's config > sync writes the global config only with --omp-global",
       "kind": "cli",
       "args": [

@@ -3222,6 +3222,52 @@
         ]
       },
       "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "compat.091",
+      "from": "compat.test.ts: opencodeCodec > encode (canonical → OpenCode) > converts canonical rules to OpenCode granular format",
+      "kind": "function",
+      "module": "compat/codecs",
+      "function": "opencodeCodec.encode",
+      "args": [
+        {
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "git status *",
+              "tier": "allow"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "rm *",
+              "tier": "deny"
+            },
+            {
+              "tool": "Edit",
+              "tier": "deny"
+            },
+            {
+              "tool": "Bash",
+              "pattern": "git push *",
+              "tier": "ask"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "read": "allow",
+        "edit": "deny",
+        "bash": {
+          "git status *": "allow",
+          "rm *": "deny",
+          "git push *": "ask"
+        }
+      },
+      "notes": "The original asserted that the result is an object with an object under bash; the case records the whole result."
     }
   ]
 }

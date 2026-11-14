@@ -1,7 +1,7 @@
-import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { chmod, mkdir, readFile } from "node:fs/promises";
+import { chmod, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { after, describe, it } from "node:test";
 import { readIfPresent } from "../agent-files.ts";
 import { sync, SyncRefusedError } from "../sync.ts";
 import {
@@ -15,22 +15,6 @@ import {
 after(cleanup);
 
 void describe("a target that cannot be read stops the sync before any write", () => {
-  void it("refuses a directory at the path of a native config, writing nothing", async () => {
-    const cwd = await project({ rules: [denyRm] });
-    await mkdir(join(cwd, ".claude", "settings.json"), { recursive: true });
-    const canonical = await readFile(
-      join(cwd, ".agents", "permissions.json"),
-      "utf-8",
-    );
-
-    await assert.rejects(sync(options(cwd)), /settings\.json: cannot be read/u);
-
-    assert.equal(
-      await readFile(join(cwd, ".agents", "permissions.json"), "utf-8"),
-      canonical,
-    );
-  });
-
   void it("refuses a file it is not allowed to read instead of treating it as new", async (t) => {
     if (process.getuid?.() === 0) {
       t.skip("root can read any file");

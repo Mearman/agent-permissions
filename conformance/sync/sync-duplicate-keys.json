@@ -23,6 +23,7 @@
       ],
       "throws": {
         "name": "SyncRefusedError",
+        "message": ["permissions", "at 1:2 and 1:35"],
         "checks": [
           {
             "at": ["path"],
@@ -62,6 +63,7 @@
       ],
       "throws": {
         "name": "SyncRefusedError",
+        "message": ["deny", "at 3:5 and 4:5"],
         "checks": [
           {
             "at": ["path"],
@@ -101,6 +103,7 @@
       ],
       "throws": {
         "name": "SyncRefusedError",
+        "message": ["deny"],
         "checks": [
           {
             "at": ["path"],

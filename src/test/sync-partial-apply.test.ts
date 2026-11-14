@@ -1,9 +1,8 @@
-import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { chmod, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { after, describe, it } from "node:test";
 import { sync, SyncWriteError } from "../sync.ts";
-import { writeFileAtomic } from "../agent-files.ts";
 import {
   cleanup,
   denyRm,
@@ -51,23 +50,5 @@ void describe("a failure part way through applying", () => {
     assert.match(failure.message, /Written: .*permissions\.json/u);
     assert.match(failure.message, /Not written: .*settings\.json/u);
     assert.equal(await readFile(settings, "utf-8"), '{"model": "x"}\n');
-  });
-
-  void it("names the target, not the temporary file, when a bare write fails", async () => {
-    const cwd = await project({});
-    const path = await put(cwd, "a.json", "{}\n");
-
-    await assert.rejects(
-      writeFileAtomic(path, "{}\n", "{}\n", {
-        renameFile: () =>
-          Promise.reject(
-            Object.assign(new Error("disk on fire"), { code: "EIO" }),
-          ),
-      }),
-      (error: unknown) =>
-        error instanceof Error &&
-        error.message.startsWith(`${path}: could not be written`) &&
-        !error.message.includes(".tmp"),
-    );
   });
 });

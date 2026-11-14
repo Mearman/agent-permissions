@@ -1,0 +1,37 @@
+{
+  "cases": [
+    {
+      "id": "sync-partial-apply.001",
+      "from": "sync-partial-apply.test.ts: a failure part way through applying > names the target, not the temporary file, when a bare write fails",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeFileAtomic",
+      "args": [
+        "$DIR0/a.json",
+        "{}\n",
+        "{}\n",
+        {
+          "renameFile": {
+            "$reject": "EIO"
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}",
+        "$DIR0/a.json": "{}\n"
+      },
+      "expectFiles": {
+        "$DIR0/a.json": "{}\n"
+      },
+      "throws": {
+        "message": ["$DIR0/a.json: could not be written"],
+        "checks": [
+          {
+            "at": ["message"],
+            "excludes": [".tmp"]
+          }
+        ]
+      }
+    }
+  ]
+}

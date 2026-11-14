@@ -332,6 +332,7 @@
         "aborted": false
       },
       "files": {
+        "$DIR0/project/": "",
         "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Bash(npm run build:*)\"]}}"
       },
       "expectFiles": {
@@ -705,36 +706,16 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.agents/permissions.json",
-                "agent": "canonical",
-                "kind": "create"
-              },
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "update"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
+      "stderr": {
+        "includes": ["Detected config", "Merged"]
+      },
       "files": {
         "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"]}}"
       },
       "expectFiles": {
         "$DIR0/.agents/permissions.json": "{\n  \"$schema\": \"https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json\",\n  \"rules\": [\n    {\n      \"tool\": \"Read\",\n      \"tier\": \"allow\"\n    }\n  ]\n}\n",
         "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Read\"],\"deny\":[],\"ask\":[]}}"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
       "id": "sync.017",
@@ -922,6 +903,60 @@
     },
     {
       "id": "sync.022",
+      "from": "sync.test.ts: sync of Oh My Pi's config > writes the merged bash.patterns and approval mode into the project file, keeping everything else",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0/project",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR0/home/.omp/agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/project/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/project/.omp/config.yml",
+            "agent": "omp",
+            "kind": "update",
+            "current": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n",
+            "proposed": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\ntools:\n  approvalMode: always-ask\n"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/home/.omp/agent/": "",
+        "$DIR0/project/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
+      },
+      "expectFiles": {
+        "$DIR0/project/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"}]}",
+        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\ntools:\n  approvalMode: always-ask\n",
+        "$DIR0/project/.omp/config.yml.bak": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync.023",
       "from": "sync.test.ts: sync of Oh My Pi's config > backs the file up before writing it",
       "kind": "function",
       "module": "sync",
@@ -941,29 +976,8 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/project/.agents/permissions.json",
-                "agent": "canonical",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/project/.omp/config.yml",
-                "agent": "omp",
-                "kind": "update"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
+        "$DIR0/home/.omp/agent/": "",
         "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
       },
@@ -971,11 +985,10 @@
         "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"}]}",
         "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n",
         "$DIR0/project/.omp/config.yml.bak": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
-      "id": "sync.023",
+      "id": "sync.024",
       "from": "sync.test.ts: sync of Oh My Pi's config > leaves a stricter approval mode in place for an autonomous policy",
       "kind": "function",
       "module": "sync",
@@ -1013,6 +1026,7 @@
         }
       ],
       "files": {
+        "$DIR0/home/.omp/agent/": "",
         "$DIR0/project/.agents/permissions.json": "{\"defaultMode\":\"autonomous\"}",
         "$DIR0/project/.omp/config.yml": "tools:\n  approvalMode: always-ask\n"
       },
@@ -1022,7 +1036,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.024",
+      "id": "sync.025",
       "from": "sync.test.ts: sync of Oh My Pi's config > does not create the project file unless asked",
       "kind": "function",
       "module": "sync",
@@ -1054,12 +1068,13 @@
         }
       ],
       "files": {
+        "$DIR0/home/.omp/agent/": "",
         "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
       },
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.025",
+      "id": "sync.026",
       "from": "sync.test.ts: sync of Oh My Pi's config > does not create the project file unless asked",
       "kind": "function",
       "module": "sync",
@@ -1112,6 +1127,7 @@
         }
       ],
       "files": {
+        "$DIR0/home/.omp/agent/": "",
         "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}"
       },
       "expectFiles": {
@@ -1123,8 +1139,117 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.026",
+      "id": "sync.027",
       "from": "sync.test.ts: sync of Oh My Pi's config > reads the global file into the merge but writes it only when asked",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0/project",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR0/home/.omp/agent",
+          "ompGlobal": false
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/project/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"}]}"
+          },
+          {
+            "path": "$DIR0/project/.omp/config.yml",
+            "agent": "omp",
+            "kind": "update",
+            "current": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n",
+            "proposed": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: sudo\n      approval: deny\n    - match: sudo *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/home/.omp/agent/config.yml": "# global\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+        "$DIR0/project/.agents/permissions.json": "{}",
+        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
+      },
+      "expectFiles": {
+        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"}]}",
+        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: sudo\n      approval: deny\n    - match: sudo *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n",
+        "$DIR0/project/.omp/config.yml.bak": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync.028",
+      "from": "sync.test.ts: sync of Oh My Pi's config > reads the global file into the merge but writes it only when asked",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0/project",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR0/home/.omp/agent",
+          "ompGlobal": true
+        }
+      ],
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/project/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"sudo\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/home/.omp/agent/config.yml",
+            "agent": "omp",
+            "kind": "update",
+            "current": "# global\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+            "proposed": "# global\nbash:\n  patterns:\n    - match: sudo\n      approval: deny\n    - match: sudo *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n"
+          }
+        ],
+        "applied": true,
+        "refused": [],
+        "aborted": false
+      },
+      "files": {
+        "$DIR0/home/.omp/agent/config.yml": "# global\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"}]}",
+        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: sudo\n      approval: deny\n    - match: sudo *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n",
+        "$DIR0/project/.omp/config.yml.bak": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
+      },
+      "expectFiles": {
+        "$DIR0/home/.omp/agent/config.yml": "# global\nbash:\n  patterns:\n    - match: sudo\n      approval: deny\n    - match: sudo *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n",
+        "$DIR0/home/.omp/agent/config.yml.bak": "# global\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
+        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"sudo\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git\",\"tier\":\"allow\"}]}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync.029",
+      "from": "sync.test.ts: sync of Oh My Pi's config > writes nothing when the Oh My Pi codec refuses the policy",
       "kind": "function",
       "module": "sync",
       "function": "sync",
@@ -1145,79 +1270,39 @@
       ],
       "checks": [
         {
-          "at": ["then"],
-          "absent": true
-        }
-      ],
-      "files": {
-        "$DIR0/home/.omp/agent/config.yml": "# global\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
-        "$DIR0/project/.agents/permissions.json": "{}",
-        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
-      },
-      "expectFiles": {
-        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"}]}",
-        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: sudo\n      approval: deny\n    - match: sudo *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n",
-        "$DIR0/project/.omp/config.yml.bak": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
-      }
-    },
-    {
-      "id": "sync.027",
-      "from": "sync.test.ts: sync of Oh My Pi's config > reads the global file into the merge but writes it only when asked",
-      "kind": "function",
-      "module": "sync",
-      "function": "sync",
-      "args": [
-        {
-          "cwd": "$DIR0/project",
-          "up": 0,
-          "with": [],
-          "without": [],
-          "yes": true,
-          "dryRun": false,
-          "create": false,
-          "verbose": false,
-          "backup": false,
-          "ompAgentDir": "$DIR0/home/.omp/agent",
-          "ompGlobal": true
-        }
-      ],
-      "checks": [
-        {
           "at": [],
           "subset": {
-            "changes": [
+            "changes": [],
+            "applied": false,
+            "refused": [
               {
-                "path": "$DIR0/project/.agents/permissions.json",
-                "agent": "canonical",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/home/.omp/agent/config.yml",
+                "name": "UnsupportedCapabilityError",
                 "agent": "omp",
-                "kind": "update"
+                "unsupported": [
+                  {
+                    "rule": {
+                      "tool": "Write",
+                      "pattern": "./secrets",
+                      "tier": "deny"
+                    }
+                  }
+                ],
+                "settings": []
               }
             ],
-            "applied": true,
-            "refused": [],
             "aborted": false
           }
         }
       ],
       "files": {
-        "$DIR0/home/.omp/agent/config.yml": "# global\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
-        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"}]}",
-        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: sudo\n      approval: deny\n    - match: sudo *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n",
-        "$DIR0/project/.omp/config.yml.bak": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
-      },
-      "expectFiles": {
-        "$DIR0/home/.omp/agent/config.yml": "# global\nbash:\n  patterns:\n    - match: sudo\n      approval: deny\n    - match: sudo *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n",
-        "$DIR0/home/.omp/agent/config.yml.bak": "# global\nbash:\n  patterns:\n    - match: sudo *\n      approval: deny\n",
-        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"sudo *\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"sudo\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git\",\"tier\":\"allow\"}]}"
+        "$DIR0/home/.omp/agent/": "",
+        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Write\",\"pattern\":\"./secrets\",\"tier\":\"deny\"}]}",
+        "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
       },
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.028",
+      "id": "sync.030",
       "from": "sync.test.ts: sync of Oh My Pi's config > fails on an Oh My Pi file it cannot read instead of overwriting it",
       "kind": "function",
       "module": "sync",
@@ -1251,12 +1336,13 @@
         ]
       },
       "files": {
+        "$DIR0/home/.omp/agent/": "",
         "$DIR0/project/.agents/permissions.json": "{}",
         "$DIR0/project/.omp/config.yml": "bash:\n  patterns:\n    - match: rm *\n      approval: forbid\n"
       }
     },
     {
-      "id": "sync.029",
+      "id": "sync.031",
       "from": "sync.test.ts: sync of Oh My Pi's config > leaves Oh My Pi alone when it is left out",
       "kind": "function",
       "module": "sync",
@@ -1295,7 +1381,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.030",
+      "id": "sync.032",
       "from": "sync.test.ts: sync of Oh My Pi's config > writes nothing on a dry run",
       "kind": "function",
       "module": "sync",
@@ -1315,36 +1401,36 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/project/.agents/permissions.json",
-                "agent": "canonical",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/project/.omp/config.yml",
-                "agent": "omp",
-                "kind": "update"
-              }
-            ],
-            "applied": false,
-            "refused": [],
-            "aborted": false
+      "expect": {
+        "changes": [
+          {
+            "path": "$DIR0/project/.agents/permissions.json",
+            "agent": "canonical",
+            "kind": "update",
+            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"}]}"
+          },
+          {
+            "path": "$DIR0/project/.omp/config.yml",
+            "agent": "omp",
+            "kind": "update",
+            "current": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n",
+            "proposed": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n"
           }
-        }
-      ],
+        ],
+        "applied": false,
+        "refused": [],
+        "aborted": false
+      },
       "files": {
+        "$DIR0/home/.omp/agent/": "",
         "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
       },
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.031",
+      "id": "sync.033",
       "from": "sync.test.ts: sync of Oh My Pi's config > leaves the file alone once it is in step",
       "kind": "function",
       "module": "sync",
@@ -1364,29 +1450,8 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/project/.agents/permissions.json",
-                "agent": "canonical",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/project/.omp/config.yml",
-                "agent": "omp",
-                "kind": "update"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
+        "$DIR0/home/.omp/agent/": "",
         "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
       },
@@ -1394,11 +1459,10 @@
         "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"}]}",
         "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n",
         "$DIR0/project/.omp/config.yml.bak": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
-      "id": "sync.032",
+      "id": "sync.034",
       "from": "sync.test.ts: sync of Oh My Pi's config > leaves the file alone once it is in step",
       "kind": "function",
       "module": "sync",
@@ -1436,6 +1500,7 @@
         }
       ],
       "files": {
+        "$DIR0/home/.omp/agent/": "",
         "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git *\",\"tier\":\"allow\"}]}",
         "$DIR0/project/.omp/config.yml": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: rm\n      approval: deny\n    - match: rm *\n      approval: deny\n    - match: git\n      approval: allow\n    - match: git *\n      approval: allow\n",
         "$DIR0/project/.omp/config.yml.bak": "# project settings\nmodel: fast # the quick one\nbash:\n  patterns:\n    - match: git *\n      approval: allow\n"
@@ -1446,7 +1511,44 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.033",
+      "id": "sync.035",
+      "from": "sync.test.ts: sync of native JSON configs that hold other settings > keeps every other key of .claude/settings.json, in order",
+      "kind": "function",
+      "module": "sync",
+      "function": "sync",
+      "args": [
+        {
+          "cwd": "$DIR0",
+          "up": 0,
+          "with": [],
+          "without": [],
+          "yes": true,
+          "dryRun": false,
+          "create": false,
+          "verbose": false,
+          "backup": false,
+          "ompAgentDir": "$DIR1/no-omp-agent",
+          "ompGlobal": false
+        }
+      ],
+      "checks": [
+        {
+          "at": ["then"],
+          "absent": true
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\":{\"allow\":[\"Read\"]},\"env\":{\"A\":\"1\"},\"hooks\":{\"PreToolUse\":[{\"matcher\":\"Bash\",\"hooks\":[{\"type\":\"command\"}]}]}}"
+      },
+      "expectFiles": {
+        "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}",
+        "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\":{\"allow\":[\"Read\"],\"deny\":[\"Bash(rm:*)\"],\"ask\":[]},\"env\":{\"A\":\"1\"},\"hooks\":{\"PreToolUse\":[{\"matcher\":\"Bash\",\"hooks\":[{\"type\":\"command\"}]}]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "sync.036",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > replaces the permissions key rather than merging into it",
       "kind": "function",
       "module": "sync",
@@ -1498,7 +1600,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.034",
+      "id": "sync.037",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > adds permissions after the existing keys when the file has none",
       "kind": "function",
       "module": "sync",
@@ -1566,7 +1668,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.035",
+      "id": "sync.038",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > keeps every other key of opencode.json",
       "kind": "function",
       "module": "sync",
@@ -1618,7 +1720,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.036",
+      "id": "sync.039",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > keeps the other keys of .kiro/permissions.json and the settings it merges into",
       "kind": "function",
       "module": "sync",
@@ -1670,7 +1772,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.037",
+      "id": "sync.040",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > creates a file that is absent holding only the permissions",
       "kind": "function",
       "module": "sync",
@@ -1737,7 +1839,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.038",
+      "id": "sync.041",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > reports no change when the file already holds the permissions and other keys",
       "kind": "function",
       "module": "sync",
@@ -1769,7 +1871,7 @@
       }
     },
     {
-      "id": "sync.039",
+      "id": "sync.042",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > reports no change when the file already holds the permissions and other keys",
       "kind": "function",
       "module": "sync",
@@ -1807,7 +1909,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "sync.040",
+      "id": "sync.043",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > shows the kept keys in a dry run and writes nothing",
       "kind": "function",
       "module": "sync",
@@ -1827,35 +1929,23 @@
           "ompGlobal": false
         }
       ],
-      "expect": {
-        "changes": [
-          {
-            "path": "$DIR0/.agents/permissions.json",
-            "agent": "canonical",
-            "kind": "update",
-            "current": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
-            "proposed": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"},{\"tool\":\"Read\",\"tier\":\"allow\"}]}"
-          },
-          {
-            "path": "$DIR0/.claude/settings.json",
-            "agent": "claude-code",
-            "kind": "update",
-            "current": "{\"model\":\"opus\",\"permissions\":{\"allow\":[\"Read\"]}}",
-            "proposed": "{\"model\":\"opus\",\"permissions\":{\"allow\":[\"Read\"],\"deny\":[\"Bash(rm:*)\"],\"ask\":[]}}"
-          }
-        ],
-        "applied": false,
-        "refused": [],
-        "aborted": false
-      },
+      "checks": [
+        {
+          "at": ["changes", 1],
+          "present": true
+        },
+        {
+          "at": ["changes", 1, "proposed"],
+          "contains": ["\"model\":", "\"opus\""]
+        }
+      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\":{\"allow\":[\"Read\"]}}"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
-      "id": "sync.041",
+      "id": "sync.044",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > backs up the file as it was when asked",
       "kind": "function",
       "module": "sync",
@@ -1875,28 +1965,6 @@
           "ompGlobal": false
         }
       ],
-      "checks": [
-        {
-          "at": [],
-          "subset": {
-            "changes": [
-              {
-                "path": "$DIR0/.agents/permissions.json",
-                "agent": "canonical",
-                "kind": "update"
-              },
-              {
-                "path": "$DIR0/.claude/settings.json",
-                "agent": "claude-code",
-                "kind": "update"
-              }
-            ],
-            "applied": true,
-            "refused": [],
-            "aborted": false
-          }
-        }
-      ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\":{\"allow\":[\"Read\"]}}"
@@ -1906,11 +1974,10 @@
         "$DIR0/.agents/permissions.json.bak": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.claude/settings.json": "{\"model\":\"opus\",\"permissions\":{\"allow\":[\"Read\"],\"deny\":[\"Bash(rm:*)\"],\"ask\":[]}}",
         "$DIR0/.claude/settings.json.bak": "{\"model\":\"opus\",\"permissions\":{\"allow\":[\"Read\"]}}"
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
+      }
     },
     {
-      "id": "sync.042",
+      "id": "sync.045",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > refuses an existing file holding invalid JSON and writes nothing",
       "kind": "function",
       "module": "sync",
@@ -1949,7 +2016,7 @@
       }
     },
     {
-      "id": "sync.043",
+      "id": "sync.046",
       "from": "sync.test.ts: sync of native JSON configs that hold other settings > refuses an existing file holding a top level that is not an object and writes nothing",
       "kind": "function",
       "module": "sync",

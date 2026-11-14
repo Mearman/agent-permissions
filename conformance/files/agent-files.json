@@ -535,6 +535,103 @@
     },
     {
       "id": "agent-files.032",
+      "from": "agent-files.test.ts: agent-files > findDefaultFile > finds file in current directory",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "findDefaultFile",
+      "args": ["canonical", "$DIR0"],
+      "expect": "$DIR0/.agents/permissions.json",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{}"
+      }
+    },
+    {
+      "id": "agent-files.033",
+      "from": "agent-files.test.ts: agent-files > findDefaultFile > walks up to parent directory",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "findDefaultFile",
+      "args": ["canonical", "$DIR0/sub/deep"],
+      "expect": "$DIR0/.agents/permissions.json",
+      "files": {
+        "$DIR0/sub/deep/": "",
+        "$DIR0/.agents/permissions.json": "{}"
+      }
+    },
+    {
+      "id": "agent-files.034",
+      "from": "agent-files.test.ts: agent-files > findDefaultFile > returns default path when no file found",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "findDefaultFile",
+      "args": ["canonical", "$DIR0/sub"],
+      "expect": "$DIR0/sub/.agents/permissions.json",
+      "files": {
+        "$DIR0/sub/": ""
+      }
+    },
+    {
+      "id": "agent-files.035",
+      "from": "agent-files.test.ts: agent-files > findDefaultFile > finds claude-code settings",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "findDefaultFile",
+      "args": ["claude-code", "$DIR0"],
+      "expect": "$DIR0/.claude/settings.json",
+      "files": {
+        "$DIR0/.claude/settings.json": "{}"
+      }
+    },
+    {
+      "id": "agent-files.036",
+      "from": "agent-files.test.ts: agent-files > findDefaultFile > finds opencode.json",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "findDefaultFile",
+      "args": ["opencode", "$DIR0"],
+      "expect": "$DIR0/opencode.json",
+      "files": {
+        "$DIR0/opencode.json": "{}"
+      }
+    },
+    {
+      "id": "agent-files.037",
+      "from": "agent-files.test.ts: agent-files > writeJsonFile > writes to existing directory",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeJsonFile",
+      "args": ["$DIR0/output.json", "{\"test\": true}"],
+      "expectFiles": {
+        "$DIR0/output.json": "{\"test\": true}"
+      }
+    },
+    {
+      "id": "agent-files.038",
+      "from": "agent-files.test.ts: agent-files > writeJsonFile > creates parent directories",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeJsonFile",
+      "args": ["$DIR0/sub/dir/output.json", "{\"nested\": true}"],
+      "expectFiles": {
+        "$DIR0/sub/dir/output.json": "{\"nested\": true}"
+      }
+    },
+    {
+      "id": "agent-files.039",
+      "from": "agent-files.test.ts: agent-files > writeJsonFile > overwrites existing file",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "writeJsonFile",
+      "args": ["$DIR0/output.json", "new content"],
+      "files": {
+        "$DIR0/output.json": "old content"
+      },
+      "expectFiles": {
+        "$DIR0/output.json": "new content"
+      }
+    },
+    {
+      "id": "agent-files.040",
       "from": "agent-files.test.ts: Oh My Pi config files > is found as the project's .omp/config.yml",
       "kind": "function",
       "module": "agent-files",
@@ -543,7 +640,7 @@
       "expect": ".omp/config.yml"
     },
     {
-      "id": "agent-files.033",
+      "id": "agent-files.041",
       "from": "agent-files.test.ts: Oh My Pi config files > decodes a project config",
       "kind": "function",
       "module": "agent-files",
@@ -582,7 +679,7 @@
       ]
     },
     {
-      "id": "agent-files.034",
+      "id": "agent-files.042",
       "from": "agent-files.test.ts: Oh My Pi config files > changes only bash.patterns and tools.approvalMode, keeping comments and other keys",
       "kind": "function",
       "module": "agent-files",
@@ -615,7 +712,7 @@
       ]
     },
     {
-      "id": "agent-files.035",
+      "id": "agent-files.043",
       "from": "agent-files.test.ts: Oh My Pi config files > changes only bash.patterns and tools.approvalMode, keeping comments and other keys",
       "kind": "function",
       "module": "agent-files",
@@ -650,7 +747,7 @@
       ]
     },
     {
-      "id": "agent-files.036",
+      "id": "agent-files.044",
       "from": "agent-files.test.ts: Oh My Pi config files > leaves an approval mode in place when the policy sets none",
       "kind": "function",
       "module": "agent-files",
@@ -668,7 +765,7 @@
       ]
     },
     {
-      "id": "agent-files.037",
+      "id": "agent-files.045",
       "from": "agent-files.test.ts: Oh My Pi config files > removes bash.patterns when the policy has no Bash rule",
       "kind": "function",
       "module": "agent-files",
@@ -696,7 +793,7 @@
       ]
     },
     {
-      "id": "agent-files.038",
+      "id": "agent-files.046",
       "from": "agent-files.test.ts: Oh My Pi config files > starts a new file when there is none",
       "kind": "function",
       "module": "agent-files",
@@ -723,7 +820,7 @@
       ]
     },
     {
-      "id": "agent-files.039",
+      "id": "agent-files.047",
       "from": "agent-files.test.ts: Oh My Pi config files > refuses a file that is not a YAML mapping instead of replacing it",
       "kind": "function",
       "module": "agent-files",
@@ -734,7 +831,7 @@
       }
     },
     {
-      "id": "agent-files.040",
+      "id": "agent-files.048",
       "from": "agent-files.test.ts: Oh My Pi config files > refuses a file that is not a YAML mapping instead of replacing it",
       "kind": "function",
       "module": "agent-files",
@@ -745,7 +842,41 @@
       }
     },
     {
-      "id": "agent-files.041",
+      "id": "agent-files.049",
+      "from": "agent-files.test.ts: Oh My Pi config files > takes the global config from the agent directory, preferring config.yml",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "ompGlobalConfigPath",
+      "args": ["$DIR0"],
+      "expect": "$DIR0/config.yml"
+    },
+    {
+      "id": "agent-files.050",
+      "from": "agent-files.test.ts: Oh My Pi config files > takes the global config from the agent directory, preferring config.yml",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "ompGlobalConfigPath",
+      "args": ["$DIR0"],
+      "expect": "$DIR0/config.yaml",
+      "files": {
+        "$DIR0/config.yaml": "model: x\n"
+      }
+    },
+    {
+      "id": "agent-files.051",
+      "from": "agent-files.test.ts: Oh My Pi config files > takes the global config from the agent directory, preferring config.yml",
+      "kind": "function",
+      "module": "agent-files",
+      "function": "ompGlobalConfigPath",
+      "args": ["$DIR0"],
+      "expect": "$DIR0/config.yml",
+      "files": {
+        "$DIR0/config.yaml": "model: x\n",
+        "$DIR0/config.yml": "model: y\n"
+      }
+    },
+    {
+      "id": "agent-files.052",
       "from": "agent-files.test.ts: Oh My Pi config files > takes the agent directory from PI_CODING_AGENT_DIR, else under the home directory",
       "kind": "function",
       "module": "agent-files",
@@ -759,7 +890,7 @@
       "expect": "/somewhere/agent"
     },
     {
-      "id": "agent-files.042",
+      "id": "agent-files.053",
       "from": "agent-files.test.ts: Oh My Pi config files > takes the agent directory from PI_CODING_AGENT_DIR, else under the home directory",
       "kind": "function",
       "module": "agent-files",
