@@ -45,19 +45,6 @@ const calls: [string, string, { cwd?: string; branch?: string }?][] = [
 ];
 
 void describe("compile", () => {
-  void it("explains exactly as explain does", () => {
-    const compiled = compile(policy);
-    assert.deepEqual(
-      compiled
-        .explain("Bash", "git status && curl x")
-        .steps.map((s) => [s.command, s.decision]),
-      [
-        ["git status", "allow"],
-        ["curl x", "deny"],
-      ],
-    );
-  });
-
   void it("builds no regular expression after each rule has been used once", () => {
     const compiled = compile(policy);
     const warmUp = (): void => {

@@ -49,7 +49,7 @@
       "skip": []
     },
     "evaluate/evaluate-compile.json": {
-      "cases": 17,
+      "cases": 18,
       "skip": []
     },
     "evaluate/evaluate-compound.json": {
@@ -69,7 +69,7 @@
       "skip": []
     },
     "evaluate/evaluate-explain.json": {
-      "cases": 13,
+      "cases": 15,
       "skip": []
     },
     "evaluate/evaluate-hidden.json": {
@@ -105,11 +105,11 @@
       "skip": []
     },
     "loader/loader-ceiling.json": {
-      "cases": 4,
+      "cases": 15,
       "skip": []
     },
     "loader/loader.json": {
-      "cases": 19,
+      "cases": 25,
       "skip": []
     },
     "profiles/profiles.json": {

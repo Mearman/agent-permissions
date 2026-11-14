@@ -107,6 +107,517 @@
           "equals": false
         }
       ]
+    },
+    {
+      "id": "loader-ceiling.005",
+      "from": "loader-ceiling.test.ts: ceiling layers > let a deeper allow take effect where the ceiling also allows",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "org",
+          "policy": {
+            "ceiling": true,
+            "defaultMode": "restricted",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "curl:*",
+                "tier": "deny"
+              }
+            ]
+          },
+          "ceiling": true
+        },
+        {
+          "source": "repo",
+          "policy": {
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git status",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "git status",
+          "expect": "allow"
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.006",
+      "from": "loader-ceiling.test.ts: ceiling layers > ignore a deeper allow the ceiling does not cover",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "org",
+          "policy": {
+            "ceiling": true,
+            "defaultMode": "restricted",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "curl:*",
+                "tier": "deny"
+              }
+            ]
+          },
+          "ceiling": true
+        },
+        {
+          "source": "repo",
+          "policy": {
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "npm run *",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "npm run build",
+          "expect": "ask"
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.007",
+      "from": "loader-ceiling.test.ts: ceiling layers > still allow what the ceiling layer itself allows",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "org",
+          "policy": {
+            "ceiling": true,
+            "defaultMode": "restricted",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "curl:*",
+                "tier": "deny"
+              }
+            ]
+          },
+          "ceiling": true
+        },
+        {
+          "source": "repo",
+          "policy": {}
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "git log",
+          "expect": "allow"
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.008",
+      "from": "loader-ceiling.test.ts: ceiling layers > do not stop a deeper layer adding a deny or an ask",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "org",
+          "policy": {
+            "ceiling": true,
+            "defaultMode": "restricted",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "curl:*",
+                "tier": "deny"
+              }
+            ]
+          },
+          "ceiling": true
+        },
+        {
+          "source": "repo",
+          "policy": {
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git push:*",
+                "tier": "ask"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "git reset:*",
+                "tier": "deny"
+              }
+            ]
+          }
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "git push origin",
+          "expect": "ask"
+        },
+        {
+          "tool": "Bash",
+          "input": "git reset --hard",
+          "expect": "deny"
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.009",
+      "from": "loader-ceiling.test.ts: ceiling layers > do not bound a layer shallower than themselves",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "user",
+          "policy": {
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "npm run *",
+                "tier": "allow"
+              }
+            ]
+          }
+        },
+        {
+          "source": "org",
+          "policy": {
+            "ceiling": true,
+            "defaultMode": "restricted",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "curl:*",
+                "tier": "deny"
+              }
+            ]
+          },
+          "ceiling": true
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "npm run build",
+          "expect": "allow"
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.010",
+      "from": "loader-ceiling.test.ts: ceiling layers > bound nothing when the ceiling layer allows nothing",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "org",
+          "policy": {
+            "ceiling": true,
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "curl:*",
+                "tier": "deny"
+              }
+            ]
+          },
+          "ceiling": true
+        },
+        {
+          "source": "repo",
+          "policy": {
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "npm run *",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "npm run build",
+          "expect": "allow"
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.011",
+      "from": "loader-ceiling.test.ts: ceiling layers > also bound a ceiling that sits below them",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "org",
+          "policy": {
+            "ceiling": true,
+            "defaultMode": "restricted",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "curl:*",
+                "tier": "deny"
+              }
+            ]
+          },
+          "ceiling": true
+        },
+        {
+          "source": "team",
+          "policy": {
+            "ceiling": true,
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "npm:*",
+                "tier": "allow"
+              }
+            ]
+          },
+          "ceiling": true
+        },
+        {
+          "source": "repo",
+          "policy": {
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "npm run *",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "npm run build",
+          "expect": "ask"
+        },
+        {
+          "tool": "Bash",
+          "input": "git status",
+          "expect": "allow"
+        }
+      ],
+      "notes": "The team's allow of npm is outside the org's ceiling, so it grants nothing, and the repo's is bounded by both."
+    },
+    {
+      "id": "loader-ceiling.012",
+      "from": "loader-ceiling.test.ts: ceiling layers > bound each command of a shell line",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "org",
+          "policy": {
+            "ceiling": true,
+            "defaultMode": "restricted",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "curl:*",
+                "tier": "deny"
+              }
+            ]
+          },
+          "ceiling": true
+        },
+        {
+          "source": "repo",
+          "policy": {
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "make:*",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "git status && make all",
+          "expect": "ask"
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.013",
+      "from": "loader-ceiling.test.ts: ceiling layers > bind through a condition that is unknown",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "org",
+          "policy": {
+            "ceiling": true,
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow",
+                "when": {
+                  "branch": "main"
+                }
+              }
+            ]
+          },
+          "ceiling": true
+        },
+        {
+          "source": "repo",
+          "policy": {
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git status",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "git status",
+          "expect": "allow",
+          "context": {
+            "branch": "main"
+          }
+        },
+        {
+          "tool": "Bash",
+          "input": "git status",
+          "expect": "ask",
+          "context": {
+            "branch": "dev"
+          }
+        },
+        {
+          "tool": "Bash",
+          "input": "git status",
+          "expect": "ask",
+          "context": {}
+        }
+      ]
+    },
+    {
+      "id": "loader-ceiling.014",
+      "from": "loader-ceiling.test.ts: ceiling layers > keep a deeper layer from loosening the default mode",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "org",
+          "policy": {
+            "ceiling": true,
+            "defaultMode": "restricted",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "git:*",
+                "tier": "allow"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "curl:*",
+                "tier": "deny"
+              }
+            ]
+          },
+          "ceiling": true
+        },
+        {
+          "source": "repo",
+          "policy": {
+            "defaultMode": "autonomous"
+          }
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Read",
+          "input": "./a",
+          "expect": "ask"
+        }
+      ],
+      "expectPolicy": {
+        "defaultMode": "restricted"
+      }
+    },
+    {
+      "id": "loader-ceiling.015",
+      "from": "loader-ceiling.test.ts: ceiling in files > bounds a nested directory's policy by an outer one",
+      "kind": "layered",
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"ceiling\":true,\"defaultMode\":\"restricted\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"curl:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/project/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"git status\",\"tier\":\"allow\"},{\"tool\":\"Bash\",\"pattern\":\"npm run *\",\"tier\":\"allow\"}]}"
+      },
+      "load": {
+        "cwd": "$DIR0/project"
+      },
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "git status",
+          "expect": "allow"
+        },
+        {
+          "tool": "Bash",
+          "input": "npm run build",
+          "expect": "ask"
+        }
+      ]
     }
   ]
 }
