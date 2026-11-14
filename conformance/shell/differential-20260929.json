@@ -2409,7 +2409,11 @@
           "ran": ["m4"]
         }
       ],
-      "notes": "The lines are what the original test's generator makes from the seed, and each ran in bash with marker functions that record their own names; the property is that every marker bash ran is a command word of the splitter's output, or the splitter declines the line."
+      "notes": "The lines are what the original test's generator makes from the seed, and each ran in bash with marker functions that record their own names; the property is that every marker bash ran is a command word of the splitter's output, or the splitter declines the line.",
+      "recordedWith": {
+        "bash": "GNU bash, version 5.3.9(1)-release (aarch64-apple-darwin24.6.0)",
+        "platform": "Darwin arm64"
+      }
     }
   ]
 }
