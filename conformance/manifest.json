@@ -117,7 +117,7 @@
       "skip": []
     },
     "prompt/prompt-tool.json": {
-      "cases": 8,
+      "cases": 18,
       "skip": []
     },
     "remote/remote.json": {

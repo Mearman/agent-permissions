@@ -266,7 +266,8 @@ export async function runCase(testCase, target) {
       };
       const result = await lib["prompt-tool"].createPermissionPrompt(options)(testCase.request, new AbortController().signal);
       const { messageIncludes, ...rest } = testCase.expect;
-      subset(result, rest);
+      if (result.behavior === "allow") same(result, rest);
+      else subset(result, rest);
       inOrder(result.message ?? "", messageIncludes ?? []);
       same(asked, testCase.asked ?? []);
     } else if (kind === "cli") {
