@@ -64,14 +64,12 @@ export function selectCorpusFiles(root) {
 }
 
 /** The value encodings a runner decodes: a single-key object whose key is `$` and letters is one of these (the value encodings of an argument, and the `$contains` and `$subset` matchers of an mcp `expect`) or a defect, since a schema without negation cannot say so. */
-const ENCODINGS = new Set([
+export const ENCODINGS = new Set([
   "$undefined",
   "$number",
   "$bytes",
-  "$signal",
   "$ref",
   "$map",
-  "$returns",
   "$reject",
   "$edit",
   "$contains",
@@ -90,19 +88,23 @@ function encodingProblems(value, id) {
     return value.flatMap((item) => encodingProblems(item, id));
   if (typeof value !== "object" || value === null) return [];
   const keys = Object.keys(value).filter((key) => key !== "as");
-  const [key] = keys;
-  const own =
-    keys.length === 1 &&
-    key !== undefined &&
-    key !== "$schema" &&
-    ENCODING_SHAPE.test(key)
-      ? [
-          !ENCODINGS.has(key) && `${id}: ${key} is not a value encoding`,
-          key === "$number" &&
-            !NUMBER_FORMS.has(Reflect.get(value, key)) &&
-            `${id}: $number is not one of -0, Infinity, -Infinity, NaN`,
-        ].filter(Boolean)
-      : [];
+  const shaped = keys.filter(
+    (key) => key !== "$schema" && ENCODING_SHAPE.test(key),
+  );
+  // An encoding is the object's single key; a `$` key beside others is refused, so a typo cannot pass as data.
+  const own = shaped
+    .flatMap((key) => [
+      keys.length > 1 &&
+        `${id}: ${key} is beside other keys, so is not an encoding`,
+      keys.length === 1 &&
+        !ENCODINGS.has(key) &&
+        `${id}: ${key} is not a value encoding`,
+      keys.length === 1 &&
+        key === "$number" &&
+        !NUMBER_FORMS.has(Reflect.get(value, key)) &&
+        `${id}: $number is not one of -0, Infinity, -Infinity, NaN`,
+    ])
+    .filter(Boolean);
   return [
     ...own,
     ...Object.values(value).flatMap((item) => encodingProblems(item, id)),
