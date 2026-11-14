@@ -99,6 +99,24 @@ fn implemented() -> Vec<(&'static str, Value, Value, Value)> {
             json!(1),
             json!("any"),
         ),
+        (
+            "pattern (anchored character class)",
+            json!({"pattern": "^[a]"}),
+            json!("abc"),
+            json!("xyz"),
+        ),
+        (
+            "pattern (negated anchored character class)",
+            json!({"pattern": "^[^$]"}),
+            json!("abc"),
+            json!("$abc"),
+        ),
+        (
+            "propertyNames",
+            json!({"propertyNames": {"pattern": "^[^$]"}}),
+            json!({"a": 1}),
+            json!({"$nope": 1}),
+        ),
     ]
 }
 
@@ -119,14 +137,12 @@ const REFUSED: &[&str] = &[
     "prefixItems",
     "contains",
     "patternProperties",
-    "propertyNames",
     "unevaluatedItems",
     "unevaluatedProperties",
     "multipleOf",
     "exclusiveMaximum",
     "exclusiveMinimum",
     "maxLength",
-    "pattern",
     "maxItems",
     "maxContains",
     "minContains",
