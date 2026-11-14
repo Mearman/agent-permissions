@@ -1,0 +1,71 @@
+{
+  "cases": [
+    {
+      "id": "mcp-background-sync.001",
+      "from": "mcp-background-sync.test.ts: the background sync reports a refusal instead of crashing > writes the error to stderr and resolves",
+      "kind": "mcp",
+      "args": [],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"sync\":{\"mode\":\"watch\"},\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
+        "$DIR0/.claude/settings.json": "{ not json"
+      },
+      "exchange": [
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+              "protocolVersion": "2025-06-18",
+              "capabilities": {},
+              "clientInfo": {
+                "name": "test-host",
+                "version": "0.0.0"
+              }
+            }
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+              "protocolVersion": "$any",
+              "capabilities": {},
+              "serverInfo": "$any",
+              "instructions": "$any"
+            }
+          }
+        },
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          }
+        },
+        {
+          "waitStderr": "settings.json"
+        },
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "ping"
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "result": {}
+          }
+        }
+      ],
+      "expectFiles": {
+        "$DIR0/.claude/settings.json": "{ not json"
+      },
+      "stderrIncludes": ["settings.json"],
+      "notes": "The server keeps answering after the refusal: a ping sent once the error is reported is answered."
+    }
+  ]
+}

@@ -1,30 +1,10 @@
-import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { syncInBackground } from "../mcp.ts";
-import { cleanup, denyRm, project, put } from "./native-config-fixture.ts";
+import { after, describe, it } from "node:test";
+import { cleanup } from "./native-config-fixture.ts";
 
 after(cleanup);
-
-void describe("the background sync reports a refusal instead of crashing", () => {
-  void it("writes the error to stderr and resolves", async () => {
-    const cwd = await project({ rules: [denyRm] });
-    await put(cwd, ".claude/settings.json", "{ not json");
-    const chunks: string[] = [];
-    const original = process.stderr.write.bind(process.stderr);
-    process.stderr.write = (data: string | Uint8Array): boolean => {
-      chunks.push(String(data));
-      return true;
-    };
-    try {
-      await syncInBackground(cwd, { mode: "watch", backup: false });
-    } finally {
-      process.stderr.write = original;
-    }
-    assert.match(chunks.join(""), /settings\.json/u);
-  });
-});
 
 void describe("no async call is left running without a catch", () => {
   /** The functions that may be called with `void` because they never reject. */
