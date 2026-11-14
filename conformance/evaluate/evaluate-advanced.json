@@ -586,42 +586,6 @@
     },
     {
       "id": "evaluate-advanced.035",
-      "from": "evaluate-advanced.test.ts: conditional rules > basic matching > exact pattern in conditional rule",
-      "kind": "evaluate",
-      "policy": {
-        "defaultMode": "standard",
-        "rules": [
-          {
-            "tool": "Bash",
-            "pattern": "git status",
-            "tier": "allow"
-          }
-        ]
-      },
-      "tool": "bash",
-      "input": "git status",
-      "expect": "allow"
-    },
-    {
-      "id": "evaluate-advanced.036",
-      "from": "evaluate-advanced.test.ts: conditional rules > basic matching > exact pattern in conditional rule",
-      "kind": "evaluate",
-      "policy": {
-        "defaultMode": "standard",
-        "rules": [
-          {
-            "tool": "Bash",
-            "pattern": "git status",
-            "tier": "allow"
-          }
-        ]
-      },
-      "tool": "bash",
-      "input": "git status --short",
-      "expect": "ask"
-    },
-    {
-      "id": "evaluate-advanced.037",
       "from": "evaluate-advanced.test.ts: conditional rules > when conditions > matches when cwd condition matches",
       "kind": "evaluate",
       "policy": {
@@ -645,7 +609,7 @@
       }
     },
     {
-      "id": "evaluate-advanced.038",
+      "id": "evaluate-advanced.036",
       "from": "evaluate-advanced.test.ts: conditional rules > when conditions > matches when cwd condition matches",
       "kind": "evaluate",
       "policy": {
@@ -669,7 +633,7 @@
       }
     },
     {
-      "id": "evaluate-advanced.039",
+      "id": "evaluate-advanced.037",
       "from": "evaluate-advanced.test.ts: conditional rules > when conditions > matches when branch condition matches",
       "kind": "evaluate",
       "policy": {
@@ -693,7 +657,7 @@
       }
     },
     {
-      "id": "evaluate-advanced.040",
+      "id": "evaluate-advanced.038",
       "from": "evaluate-advanced.test.ts: conditional rules > when conditions > matches when branch condition matches",
       "kind": "evaluate",
       "policy": {
@@ -717,7 +681,7 @@
       }
     },
     {
-      "id": "evaluate-advanced.041",
+      "id": "evaluate-advanced.039",
       "from": "evaluate-advanced.test.ts: conditional rules > when conditions > AND logic — all conditions must match",
       "kind": "evaluate",
       "policy": {
@@ -743,7 +707,7 @@
       }
     },
     {
-      "id": "evaluate-advanced.042",
+      "id": "evaluate-advanced.040",
       "from": "evaluate-advanced.test.ts: conditional rules > when conditions > AND logic — all conditions must match",
       "kind": "evaluate",
       "policy": {

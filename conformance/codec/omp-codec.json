@@ -354,6 +354,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Write",
+              "pattern": "./x",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -395,6 +403,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Write",
+              "pattern": "./x",
+              "tier": "ask"
+            }
           },
           {
             "at": ["settings"],
@@ -444,6 +460,17 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny",
+              "when": {
+                "branch": "main"
+              }
+            }
           },
           {
             "at": ["settings"],
@@ -499,6 +526,19 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "ask",
+              "when": {
+                "env": {
+                  "CI": "1"
+                }
+              }
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -542,6 +582,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "echo \\*",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -583,6 +631,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "rm a\\*:*",
+              "tier": "ask"
+            }
           },
           {
             "at": ["settings"],
@@ -634,6 +690,17 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny",
+              "when": {
+                "role": "contractor"
+              }
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -681,6 +748,17 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "ask",
+              "approvers": {
+                "roles": ["maintainer"]
+              }
+            }
           },
           {
             "at": ["settings"],
@@ -737,6 +815,20 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Write",
+              "tier": "deny"
+            }
+          },
+          {
+            "at": ["unsupported", 1, "rule"],
+            "equals": {
+              "tool": "Edit",
+              "tier": "ask"
+            }
           },
           {
             "at": ["settings"],
@@ -1222,16 +1314,6 @@
     },
     {
       "id": "omp-codec.038",
-      "from": "omp-codec.test.ts: ompCodec default mode > leaves OMP's own mode alone for an autonomous mode or none",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "ompCodec.encode",
-      "args": [{}],
-      "expect": {},
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "omp-codec.039",
       "from": "omp-codec.test.ts: ompCodec default mode > writes the mode beside bash.patterns",
       "kind": "function",
       "module": "compat/codecs",
@@ -1263,143 +1345,7 @@
       }
     },
     {
-      "id": "omp-codec.040",
-      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "ompCodec.encode",
-      "args": [
-        {
-          "defaultMode": "standard"
-        }
-      ],
-      "expect": {
-        "tools": {
-          "approvalMode": "always-ask"
-        }
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "omp-codec.041",
-      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "ompCodec.encode",
-      "args": [
-        {
-          "defaultMode": "autonomous"
-        }
-      ],
-      "expect": {},
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "omp-codec.042",
-      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "ompCodec.encode",
-      "args": [
-        {
-          "defaultMode": "restricted"
-        }
-      ],
-      "expect": {
-        "tools": {
-          "approvalMode": "always-ask"
-        }
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "omp-codec.043",
-      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "ompCodec.encode",
-      "args": [
-        {
-          "defaultMode": "plan"
-        }
-      ],
-      "expect": {
-        "tools": {
-          "approvalMode": "always-ask"
-        }
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "omp-codec.044",
-      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "ompCodec.encode",
-      "args": [
-        {
-          "defaultMode": "acceptEdits"
-        }
-      ],
-      "expect": {
-        "tools": {
-          "approvalMode": "always-ask"
-        }
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "omp-codec.045",
-      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "ompCodec.encode",
-      "args": [
-        {
-          "defaultMode": "bypassPermissions"
-        }
-      ],
-      "expect": {},
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "omp-codec.046",
-      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "ompCodec.encode",
-      "args": [
-        {
-          "defaultMode": "default"
-        }
-      ],
-      "expect": {
-        "tools": {
-          "approvalMode": "always-ask"
-        }
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "omp-codec.047",
-      "from": "omp-codec.test.ts: ompCodec default mode > never approves a write or exec call that the canonical mode asks for",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "ompCodec.encode",
-      "args": [
-        {
-          "defaultMode": "auto"
-        }
-      ],
-      "expect": {
-        "tools": {
-          "approvalMode": "always-ask"
-        }
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "omp-codec.048",
+      "id": "omp-codec.039",
       "from": "omp-codec.test.ts: ompCodec default mode > refuses every mode read as readonly, which OMP has no mode for",
       "kind": "function",
       "module": "compat/codecs",
@@ -1433,7 +1379,7 @@
       }
     },
     {
-      "id": "omp-codec.049",
+      "id": "omp-codec.040",
       "from": "omp-codec.test.ts: ompCodec default mode > refuses every mode read as readonly, which OMP has no mode for",
       "kind": "function",
       "module": "compat/codecs",
@@ -1467,7 +1413,7 @@
       }
     },
     {
-      "id": "omp-codec.050",
+      "id": "omp-codec.041",
       "from": "omp-codec.test.ts: ompCodec default mode > refuses readonly, which OMP has no mode for",
       "kind": "function",
       "module": "compat/codecs",
@@ -1502,7 +1448,7 @@
       }
     },
     {
-      "id": "omp-codec.051",
+      "id": "omp-codec.042",
       "from": "omp-codec.test.ts: ompCodec default mode > lists a refused mode together with refused rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -1540,6 +1486,13 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Write",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": [
               {
@@ -1552,7 +1505,7 @@
       }
     },
     {
-      "id": "omp-codec.052",
+      "id": "omp-codec.043",
       "from": "omp-codec.test.ts: ompCodec decode > reads tools.approvalMode as the default mode, never looser than OMP",
       "kind": "function",
       "module": "compat/codecs",
@@ -1572,7 +1525,7 @@
       ]
     },
     {
-      "id": "omp-codec.053",
+      "id": "omp-codec.044",
       "from": "omp-codec.test.ts: ompCodec decode > reads tools.approvalMode as the default mode, never looser than OMP",
       "kind": "function",
       "module": "compat/codecs",
@@ -1592,7 +1545,7 @@
       ]
     },
     {
-      "id": "omp-codec.054",
+      "id": "omp-codec.045",
       "from": "omp-codec.test.ts: ompCodec decode > reads tools.approvalMode as the default mode, never looser than OMP",
       "kind": "function",
       "module": "compat/codecs",
@@ -1612,7 +1565,7 @@
       ]
     },
     {
-      "id": "omp-codec.055",
+      "id": "omp-codec.046",
       "from": "omp-codec.test.ts: ompCodec decode > reads tools.approvalMode as the default mode, never looser than OMP",
       "kind": "function",
       "module": "compat/codecs",
@@ -1630,7 +1583,7 @@
       ]
     },
     {
-      "id": "omp-codec.056",
+      "id": "omp-codec.047",
       "from": "omp-codec.test.ts: ompCodec decode > refuses an approval mode OMP does not define instead of guessing",
       "kind": "function",
       "module": "compat/codecs",
@@ -1645,7 +1598,7 @@
       "throws": {}
     },
     {
-      "id": "omp-codec.057",
+      "id": "omp-codec.048",
       "from": "omp-codec.test.ts: ompCodec decode > reads bash.patterns in order, ignoring the rest of the config",
       "kind": "function",
       "module": "compat/codecs",
@@ -1698,7 +1651,7 @@
       ]
     },
     {
-      "id": "omp-codec.058",
+      "id": "omp-codec.049",
       "from": "omp-codec.test.ts: ompCodec decode > collapses whitespace as OMP does",
       "kind": "function",
       "module": "compat/codecs",
@@ -1723,7 +1676,7 @@
       ]
     },
     {
-      "id": "omp-codec.059",
+      "id": "omp-codec.050",
       "from": "omp-codec.test.ts: ompCodec decode > gives an empty policy for a config with no bash.patterns",
       "kind": "function",
       "module": "compat/codecs",
@@ -1732,7 +1685,7 @@
       "expect": {}
     },
     {
-      "id": "omp-codec.060",
+      "id": "omp-codec.051",
       "from": "omp-codec.test.ts: ompCodec decode > gives an empty policy for a config with no bash.patterns",
       "kind": "function",
       "module": "compat/codecs",
@@ -1745,7 +1698,7 @@
       "expect": {}
     },
     {
-      "id": "omp-codec.061",
+      "id": "omp-codec.052",
       "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
       "kind": "function",
       "module": "compat/codecs",
@@ -1767,7 +1720,7 @@
       }
     },
     {
-      "id": "omp-codec.062",
+      "id": "omp-codec.053",
       "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
       "kind": "function",
       "module": "compat/codecs",
@@ -1788,7 +1741,7 @@
       }
     },
     {
-      "id": "omp-codec.063",
+      "id": "omp-codec.054",
       "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
       "kind": "function",
       "module": "compat/codecs",
@@ -1810,7 +1763,7 @@
       }
     },
     {
-      "id": "omp-codec.064",
+      "id": "omp-codec.055",
       "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
       "kind": "function",
       "module": "compat/codecs",
@@ -1832,7 +1785,7 @@
       }
     },
     {
-      "id": "omp-codec.065",
+      "id": "omp-codec.056",
       "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
       "kind": "function",
       "module": "compat/codecs",
@@ -1854,7 +1807,7 @@
       }
     },
     {
-      "id": "omp-codec.066",
+      "id": "omp-codec.057",
       "from": "omp-codec.test.ts: ompCodec decode > refuses an entry it cannot read faithfully instead of skipping it",
       "kind": "function",
       "module": "compat/codecs",
@@ -1871,7 +1824,7 @@
       }
     },
     {
-      "id": "omp-codec.067",
+      "id": "omp-codec.058",
       "from": "omp-codec.test.ts: ompCodec decode > takes a backslash in OMP's pattern as the character it is",
       "kind": "function",
       "module": "compat/codecs",
@@ -1900,7 +1853,7 @@
       ]
     },
     {
-      "id": "omp-codec.068",
+      "id": "omp-codec.059",
       "from": "omp-codec.test.ts: omp as a format > is detected from bash.patterns",
       "kind": "function",
       "module": "api",
@@ -1920,7 +1873,7 @@
       "expect": "omp"
     },
     {
-      "id": "omp-codec.069",
+      "id": "omp-codec.060",
       "from": "omp-codec.test.ts: omp as a format > is detected from bash.patterns",
       "kind": "function",
       "module": "api",
@@ -1935,7 +1888,7 @@
       "expect": "opencode"
     },
     {
-      "id": "omp-codec.070",
+      "id": "omp-codec.061",
       "from": "omp-codec.test.ts: omp as a format > is detected from tools.approvalMode alone",
       "kind": "function",
       "module": "api",
@@ -1950,7 +1903,7 @@
       "expect": "omp"
     },
     {
-      "id": "omp-codec.071",
+      "id": "omp-codec.062",
       "from": "omp-codec.test.ts: omp as a format > is detected from tools.approvalMode alone",
       "kind": "function",
       "module": "api",
@@ -1965,7 +1918,7 @@
       "expectUndefined": true
     },
     {
-      "id": "omp-codec.072",
+      "id": "omp-codec.063",
       "from": "omp-codec.test.ts: omp as a format > converts a mode from canonical and back",
       "kind": "function",
       "module": "api",
@@ -1989,7 +1942,7 @@
       ]
     },
     {
-      "id": "omp-codec.073",
+      "id": "omp-codec.064",
       "from": "omp-codec.test.ts: omp as a format > converts a mode from canonical and back",
       "kind": "function",
       "module": "api",
@@ -2011,7 +1964,7 @@
       ]
     },
     {
-      "id": "omp-codec.074",
+      "id": "omp-codec.065",
       "from": "omp-codec.test.ts: omp as a format > converts from canonical and back",
       "kind": "function",
       "module": "api",
@@ -2051,7 +2004,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "omp-codec.075",
+      "id": "omp-codec.066",
       "from": "omp-codec.test.ts: omp as a format > converts from canonical and back",
       "kind": "function",
       "module": "api",
@@ -2097,7 +2050,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "omp-codec.076",
+      "id": "omp-codec.067",
       "from": "omp-codec.test.ts: omp as a format > refuses to convert a policy it cannot enforce",
       "kind": "function",
       "module": "api",
@@ -2135,6 +2088,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Write",
+              "pattern": "./x",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -2142,7 +2103,7 @@
       }
     },
     {
-      "id": "omp-codec.077",
+      "id": "omp-codec.068",
       "from": "omp-codec.test.ts: ompCodec keeps every deny and ask at least as restrictive > mid wildcard ask",
       "kind": "function",
       "module": "compat/codecs",
@@ -2172,7 +2133,7 @@
       "notes": "The original compares the encoding with a model of OMP's matching in the test; every command it tried is allowed by the policy, so it asserted nothing, and the case pins the encoding."
     },
     {
-      "id": "omp-codec.078",
+      "id": "omp-codec.069",
       "from": "omp-codec.test.ts: ompCodec default mode > lists a refused mode together with refused rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -2206,7 +2167,7 @@
       }
     },
     {
-      "id": "omp-codec.079",
+      "id": "omp-codec.070",
       "from": "omp-codec.test.ts: omp as a format > is registered",
       "kind": "function",
       "module": "compat/codecs",

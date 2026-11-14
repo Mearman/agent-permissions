@@ -715,6 +715,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "git * --force",
+              "tier": "ask"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }

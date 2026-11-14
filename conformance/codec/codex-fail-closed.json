@@ -37,6 +37,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -80,6 +88,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -119,6 +135,13 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "mcp__github__create_issue",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -164,6 +187,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Write",
+              "pattern": "./src/**",
+              "tier": "ask"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -207,6 +238,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "WebFetch",
+              "pattern": "domain:example.com",
+              "tier": "ask"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -246,6 +285,13 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Write",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -295,6 +341,17 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Read",
+              "pattern": "./secrets/**",
+              "tier": "deny",
+              "when": {
+                "branch": "main"
+              }
+            }
           },
           {
             "at": ["settings"],
@@ -357,6 +414,22 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            }
+          },
+          {
+            "at": ["unsupported", 1, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "git push:*",
+              "tier": "ask"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -397,6 +470,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],
@@ -440,6 +521,14 @@
                 }
               }
             ]
+          },
+          {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "rm:*",
+              "tier": "deny"
+            }
           },
           {
             "at": ["settings"],

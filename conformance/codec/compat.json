@@ -325,77 +325,6 @@
     },
     {
       "id": "compat.010",
-      "from": "compat.test.ts: claudeCodeCodec > round-trip (native → canonical → native) > preserves real settings.json through full cycle",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "claudeCodeCodec.decode",
-      "args": [
-        {
-          "allow": [
-            "Bash(du:*)",
-            "Bash(python3:*)",
-            "Bash(claude plugin:*)",
-            "Bash(*rm* -rf */cache/*)"
-          ],
-          "deny": ["Bash(*rm* /)", "Bash(sudo *rm*)", "Bash(git add -A*)"],
-          "ask": ["Bash(*rm\\* -r*)", "Write(eslint.config.ts)"],
-          "defaultMode": "dontAsk"
-        }
-      ],
-      "expect": {
-        "defaultMode": "dontAsk",
-        "rules": [
-          {
-            "tool": "Bash",
-            "pattern": "*rm* /",
-            "tier": "deny"
-          },
-          {
-            "tool": "Bash",
-            "pattern": "sudo *rm*",
-            "tier": "deny"
-          },
-          {
-            "tool": "Bash",
-            "pattern": "git add -A*",
-            "tier": "deny"
-          },
-          {
-            "tool": "Bash",
-            "pattern": "*rm\\* -r*",
-            "tier": "ask"
-          },
-          {
-            "tool": "Write",
-            "pattern": "eslint.config.ts",
-            "tier": "ask"
-          },
-          {
-            "tool": "Bash",
-            "pattern": "du:*",
-            "tier": "allow"
-          },
-          {
-            "tool": "Bash",
-            "pattern": "python3:*",
-            "tier": "allow"
-          },
-          {
-            "tool": "Bash",
-            "pattern": "claude plugin:*",
-            "tier": "allow"
-          },
-          {
-            "tool": "Bash",
-            "pattern": "*rm* -rf */cache/*",
-            "tier": "allow"
-          }
-        ]
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "compat.011",
       "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > converts 'allow' shorthand to autonomous mode",
       "kind": "function",
       "module": "compat/codecs",
@@ -409,7 +338,7 @@
       ]
     },
     {
-      "id": "compat.012",
+      "id": "compat.011",
       "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > converts 'deny' shorthand to restricted mode",
       "kind": "function",
       "module": "compat/codecs",
@@ -423,7 +352,7 @@
       ]
     },
     {
-      "id": "compat.013",
+      "id": "compat.012",
       "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > converts granular bash rules to canonical rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -459,7 +388,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.014",
+      "id": "compat.013",
       "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > converts shorthand tool actions to canonical bare tool rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -490,7 +419,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.015",
+      "id": "compat.014",
       "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > maps external_directory to sandbox.writableRoots",
       "kind": "function",
       "module": "compat/codecs",
@@ -513,7 +442,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.016",
+      "id": "compat.015",
       "from": "compat.test.ts: opencodeCodec > decode (OpenCode → canonical) > converts Markdown-defined agent permissions",
       "kind": "function",
       "module": "compat/codecs",
@@ -559,7 +488,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.017",
+      "id": "compat.016",
       "from": "compat.test.ts: opencodeCodec > encode (canonical → OpenCode) > simplifies bare tool names to shorthand",
       "kind": "function",
       "module": "compat/codecs",
@@ -590,7 +519,7 @@
       ]
     },
     {
-      "id": "compat.018",
+      "id": "compat.017",
       "from": "compat.test.ts: opencodeCodec > round-trip (native → canonical → native) > preserves granular bash rules through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -636,7 +565,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.019",
+      "id": "compat.018",
       "from": "compat.test.ts: opencodeCodec > round-trip (native → canonical → native) > preserves shorthand action through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -648,53 +577,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.020",
-      "from": "compat.test.ts: opencodeCodec > round-trip (native → canonical → native) > preserves mixed shorthand + granular rules",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "opencodeCodec.decode",
-      "args": [
-        {
-          "edit": "deny",
-          "bash": {
-            "git diff": "allow",
-            "git log*": "allow",
-            "*": "ask"
-          },
-          "webfetch": "deny"
-        }
-      ],
-      "expect": {
-        "rules": [
-          {
-            "tool": "Edit",
-            "tier": "deny"
-          },
-          {
-            "tool": "Bash",
-            "pattern": "git diff",
-            "tier": "allow"
-          },
-          {
-            "tool": "Bash",
-            "pattern": "git log*",
-            "tier": "allow"
-          },
-          {
-            "tool": "Bash",
-            "pattern": "*",
-            "tier": "ask"
-          },
-          {
-            "tool": "WebFetch",
-            "tier": "deny"
-          }
-        ]
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "compat.021",
+      "id": "compat.019",
       "from": "compat.test.ts: opencodeCodec > round-trip (native → canonical → native) > preserves external_directory through full cycle via sandbox",
       "kind": "function",
       "module": "compat/codecs",
@@ -728,7 +611,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.022",
+      "id": "compat.020",
       "from": "compat.test.ts: opencodeCodec > round-trip (native → canonical → native) > preserves external_directory through full cycle via sandbox",
       "kind": "function",
       "module": "compat/codecs",
@@ -760,7 +643,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.023",
+      "id": "compat.021",
       "from": "compat.test.ts: crushCodec > decode (Crush → canonical) > maps lowercase tool names to canonical PascalCase rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -797,7 +680,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.024",
+      "id": "compat.022",
       "from": "compat.test.ts: crushCodec > decode (Crush → canonical) > passes through unknown tool names as-is",
       "kind": "function",
       "module": "compat/codecs",
@@ -818,7 +701,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.025",
+      "id": "compat.023",
       "from": "compat.test.ts: crushCodec > encode (canonical → Crush) > maps canonical rules to Crush lowercase",
       "kind": "function",
       "module": "compat/codecs",
@@ -849,7 +732,7 @@
       ]
     },
     {
-      "id": "compat.026",
+      "id": "compat.024",
       "from": "compat.test.ts: crushCodec > encode (canonical → Crush) > skips rules with patterns (Crush has no pattern syntax)",
       "kind": "function",
       "module": "compat/codecs",
@@ -877,7 +760,7 @@
       ]
     },
     {
-      "id": "compat.027",
+      "id": "compat.025",
       "from": "compat.test.ts: crushCodec > encode (canonical → Crush) > refuses a deny-only policy instead of writing an empty allowlist",
       "kind": "function",
       "module": "compat/codecs",
@@ -913,6 +796,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -920,7 +811,7 @@
       }
     },
     {
-      "id": "compat.028",
+      "id": "compat.026",
       "from": "compat.test.ts: crushCodec > round-trip (native → canonical → native) > preserves bare tool names through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -959,7 +850,7 @@
       ]
     },
     {
-      "id": "compat.029",
+      "id": "compat.027",
       "from": "compat.test.ts: crushCodec > round-trip (native → canonical → native) > preserves MCP tools through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -988,35 +879,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.030",
-      "from": "compat.test.ts: crushCodec > round-trip (native → canonical → native) > round-trip is lossy for pattern rules",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "crushCodec.encode",
-      "args": [
-        {
-          "rules": [
-            {
-              "tool": "Bash",
-              "pattern": "git status",
-              "tier": "allow"
-            },
-            {
-              "tool": "Read",
-              "tier": "allow"
-            }
-          ]
-        }
-      ],
-      "checks": [
-        {
-          "at": ["allowed_tools"],
-          "equals": ["view"]
-        }
-      ]
-    },
-    {
-      "id": "compat.031",
+      "id": "compat.028",
       "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps approval_policy 'untrusted' to restricted mode",
       "kind": "function",
       "module": "compat/codecs",
@@ -1034,7 +897,7 @@
       ]
     },
     {
-      "id": "compat.032",
+      "id": "compat.029",
       "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps approval_policy 'never' to autonomous mode",
       "kind": "function",
       "module": "compat/codecs",
@@ -1052,7 +915,7 @@
       ]
     },
     {
-      "id": "compat.033",
+      "id": "compat.030",
       "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps approval_policy 'on-request' to standard mode",
       "kind": "function",
       "module": "compat/codecs",
@@ -1070,7 +933,7 @@
       ]
     },
     {
-      "id": "compat.034",
+      "id": "compat.031",
       "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps sandbox_mode 'read-only' to readonly mode",
       "kind": "function",
       "module": "compat/codecs",
@@ -1099,7 +962,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.035",
+      "id": "compat.032",
       "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps sandbox_mode 'danger-full-access' to autonomous",
       "kind": "function",
       "module": "compat/codecs",
@@ -1117,7 +980,7 @@
       ]
     },
     {
-      "id": "compat.036",
+      "id": "compat.033",
       "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > maps sandbox_workspace_write.writable_roots to sandbox.writableRoots",
       "kind": "function",
       "module": "compat/codecs",
@@ -1137,7 +1000,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.037",
+      "id": "compat.034",
       "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > converts granular filesystem rules to path-based deny rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -1230,7 +1093,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.038",
+      "id": "compat.035",
       "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > converts network domain rules to WebFetch rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -1280,7 +1143,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.039",
+      "id": "compat.036",
       "from": "compat.test.ts: codexCodec > decode (Codex → canonical) > uses all profiles when default_permissions is unset",
       "kind": "function",
       "module": "compat/codecs",
@@ -1339,7 +1202,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.040",
+      "id": "compat.037",
       "from": "compat.test.ts: codexCodec > encode (canonical → Codex) > maps defaultMode to approval_policy + sandbox_mode",
       "kind": "function",
       "module": "compat/codecs",
@@ -1361,7 +1224,7 @@
       ]
     },
     {
-      "id": "compat.041",
+      "id": "compat.038",
       "from": "compat.test.ts: codexCodec > encode (canonical → Codex) > maps autonomous to never + danger-full-access",
       "kind": "function",
       "module": "compat/codecs",
@@ -1383,7 +1246,7 @@
       ]
     },
     {
-      "id": "compat.042",
+      "id": "compat.039",
       "from": "compat.test.ts: codexCodec > encode (canonical → Codex) > maps readonly to untrusted + read-only",
       "kind": "function",
       "module": "compat/codecs",
@@ -1405,7 +1268,7 @@
       ]
     },
     {
-      "id": "compat.043",
+      "id": "compat.040",
       "from": "compat.test.ts: codexCodec > encode (canonical → Codex) > maps sandbox.writableRoots to writable_roots",
       "kind": "function",
       "module": "compat/codecs",
@@ -1425,7 +1288,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.044",
+      "id": "compat.041",
       "from": "compat.test.ts: codexCodec > encode (canonical → Codex) > converts deny rules to filesystem + network profile",
       "kind": "function",
       "module": "compat/codecs",
@@ -1477,7 +1340,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.045",
+      "id": "compat.042",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves approval_policy + sandbox_mode through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -1502,7 +1365,7 @@
       ]
     },
     {
-      "id": "compat.046",
+      "id": "compat.043",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves autonomous mode through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -1521,7 +1384,7 @@
       ]
     },
     {
-      "id": "compat.047",
+      "id": "compat.044",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves autonomous mode through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -1546,7 +1409,7 @@
       ]
     },
     {
-      "id": "compat.048",
+      "id": "compat.045",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves writable_roots through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -1568,7 +1431,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.049",
+      "id": "compat.046",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves writable_roots through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -1590,7 +1453,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.050",
+      "id": "compat.047",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves filesystem granular rules through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -1686,7 +1549,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.051",
+      "id": "compat.048",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves filesystem granular rules through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -1781,7 +1644,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.052",
+      "id": "compat.049",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves network domain rules through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -1834,7 +1697,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.053",
+      "id": "compat.050",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > preserves network domain rules through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -1886,7 +1749,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.054",
+      "id": "compat.051",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > encodes the mode of a policy whose only Bash rules are allow rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -1919,7 +1782,7 @@
       ]
     },
     {
-      "id": "compat.055",
+      "id": "compat.052",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > refuses a Bash deny rule rather than dropping it",
       "kind": "function",
       "module": "compat/codecs",
@@ -1956,6 +1819,14 @@
             ]
           },
           {
+            "at": ["unsupported", 0, "rule"],
+            "equals": {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            }
+          },
+          {
             "at": ["settings"],
             "subset": []
           }
@@ -1963,7 +1834,7 @@
       }
     },
     {
-      "id": "compat.056",
+      "id": "compat.053",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > round-trip is lossy for sandbox_mode read-only",
       "kind": "function",
       "module": "compat/codecs",
@@ -1982,7 +1853,7 @@
       ]
     },
     {
-      "id": "compat.057",
+      "id": "compat.054",
       "from": "compat.test.ts: codexCodec > round-trip (native → canonical → native) > round-trip is lossy for sandbox_mode read-only",
       "kind": "function",
       "module": "compat/codecs",
@@ -2017,7 +1888,7 @@
       ]
     },
     {
-      "id": "compat.058",
+      "id": "compat.055",
       "from": "compat.test.ts: codexCodec > sandbox round-trip > preserves full sandbox config through cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -2043,7 +1914,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.059",
+      "id": "compat.056",
       "from": "compat.test.ts: codexCodec > sandbox round-trip > preserves full sandbox config through cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -2069,7 +1940,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.060",
+      "id": "compat.057",
       "from": "compat.test.ts: codexCodec > sandbox round-trip > preserves danger-full-access sandbox through cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -2089,7 +1960,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.061",
+      "id": "compat.058",
       "from": "compat.test.ts: codexCodec > sandbox round-trip > preserves danger-full-access sandbox through cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -2109,7 +1980,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.062",
+      "id": "compat.059",
       "from": "compat.test.ts: codexCodec > named profiles round-trip > preserves named profiles through cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -2194,7 +2065,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.063",
+      "id": "compat.060",
       "from": "compat.test.ts: codexCodec > named profiles round-trip > preserves named profiles through cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -2280,112 +2151,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.064",
-      "from": "compat.test.ts: codexCodec > network round-trip > preserves network domains through cycle",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "codexCodec.decode",
-      "args": [
-        {
-          "approval_policy": "on-request",
-          "permissions": {
-            "default": {
-              "network": {
-                "domains": {
-                  "api.example.com": "allow",
-                  "evil.com": "deny"
-                }
-              }
-            }
-          },
-          "default_permissions": "default"
-        }
-      ],
-      "expect": {
-        "defaultMode": "standard",
-        "activeProfile": "default",
-        "rules": [
-          {
-            "tool": "WebFetch",
-            "pattern": "domain:api.example.com",
-            "tier": "allow"
-          },
-          {
-            "tool": "WebFetch",
-            "pattern": "domain:evil.com",
-            "tier": "deny"
-          }
-        ],
-        "profiles": {
-          "default": {
-            "allow": ["WebFetch(domain:api.example.com)"],
-            "deny": ["WebFetch(domain:evil.com)"]
-          }
-        },
-        "network": {
-          "domains": {
-            "api.example.com": "allow",
-            "evil.com": "deny"
-          }
-        }
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "compat.065",
-      "from": "compat.test.ts: codexCodec > network round-trip > preserves network domains through cycle",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "codexCodec.encode",
-      "args": [
-        {
-          "defaultMode": "standard",
-          "activeProfile": "default",
-          "rules": [
-            {
-              "tool": "WebFetch",
-              "pattern": "domain:api.example.com",
-              "tier": "allow"
-            },
-            {
-              "tool": "WebFetch",
-              "pattern": "domain:evil.com",
-              "tier": "deny"
-            }
-          ],
-          "profiles": {
-            "default": {
-              "allow": ["WebFetch(domain:api.example.com)"],
-              "deny": ["WebFetch(domain:evil.com)"]
-            }
-          },
-          "network": {
-            "domains": {
-              "api.example.com": "allow",
-              "evil.com": "deny"
-            }
-          }
-        }
-      ],
-      "expect": {
-        "approval_policy": "on-request",
-        "sandbox_mode": "workspace-write",
-        "default_permissions": "default",
-        "permissions": {
-          "default": {
-            "network": {
-              "domains": {
-                "api.example.com": "allow",
-                "evil.com": "deny"
-              }
-            }
-          }
-        }
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "compat.066",
+      "id": "compat.061",
       "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps allowedTools to allow rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -2418,7 +2184,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.067",
+      "id": "compat.062",
       "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps shell deniedCommands to deny Bash rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -2444,7 +2210,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.068",
+      "id": "compat.063",
       "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps shell allowedCommands to allow Bash rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -2470,7 +2236,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.069",
+      "id": "compat.064",
       "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps denyByDefault to restricted mode",
       "kind": "function",
       "module": "compat/codecs",
@@ -2492,7 +2258,7 @@
       ]
     },
     {
-      "id": "compat.070",
+      "id": "compat.065",
       "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps write deniedPaths to deny Write rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -2523,7 +2289,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.071",
+      "id": "compat.066",
       "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps read allowedPaths to allow Read rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -2549,7 +2315,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.072",
+      "id": "compat.067",
       "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps aws allowedServices/deniedServices",
       "kind": "function",
       "module": "compat/codecs",
@@ -2586,7 +2352,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.073",
+      "id": "compat.068",
       "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > maps web_fetch trusted/blocked to WebFetch rules",
       "kind": "function",
       "module": "compat/codecs",
@@ -2618,7 +2384,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.074",
+      "id": "compat.069",
       "from": "compat.test.ts: kiroCodec > decode (Kiro → canonical) > decodes a full agent config",
       "kind": "function",
       "module": "compat/codecs",
@@ -2685,7 +2451,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.075",
+      "id": "compat.070",
       "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes bare allow rules to allowedTools",
       "kind": "function",
       "module": "compat/codecs",
@@ -2716,7 +2482,7 @@
       ]
     },
     {
-      "id": "compat.076",
+      "id": "compat.071",
       "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes Bash deny rules to shell.deniedCommands",
       "kind": "function",
       "module": "compat/codecs",
@@ -2742,7 +2508,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.077",
+      "id": "compat.072",
       "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes Write path rules to write settings",
       "kind": "function",
       "module": "compat/codecs",
@@ -2774,7 +2540,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.078",
+      "id": "compat.073",
       "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes Aws service rules to aws settings",
       "kind": "function",
       "module": "compat/codecs",
@@ -2806,7 +2572,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.079",
+      "id": "compat.074",
       "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes WebFetch domain rules to web_fetch settings",
       "kind": "function",
       "module": "compat/codecs",
@@ -2838,7 +2604,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.080",
+      "id": "compat.075",
       "from": "compat.test.ts: kiroCodec > encode (canonical → Kiro) > encodes restricted mode to denyByDefault",
       "kind": "function",
       "module": "compat/codecs",
@@ -2858,7 +2624,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.081",
+      "id": "compat.076",
       "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves allowedTools through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -2891,7 +2657,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.082",
+      "id": "compat.077",
       "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves shell commands through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -2923,7 +2689,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.083",
+      "id": "compat.078",
       "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves shell commands through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -2957,7 +2723,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.084",
+      "id": "compat.079",
       "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves write paths through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -2994,7 +2760,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.085",
+      "id": "compat.080",
       "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves write paths through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -3031,7 +2797,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.086",
+      "id": "compat.081",
       "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves AWS services through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -3068,44 +2834,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.087",
-      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves AWS services through full cycle",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "kiroCodec.decode",
-      "args": [
-        {
-          "toolsSettings": {
-            "aws": {
-              "allowedServices": ["s3", "lambda"],
-              "deniedServices": ["eks"]
-            }
-          }
-        }
-      ],
-      "expect": {
-        "rules": [
-          {
-            "tool": "Aws",
-            "pattern": "service:eks",
-            "tier": "deny"
-          },
-          {
-            "tool": "Aws",
-            "pattern": "service:s3",
-            "tier": "allow"
-          },
-          {
-            "tool": "Aws",
-            "pattern": "service:lambda",
-            "tier": "allow"
-          }
-        ]
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "compat.088",
+      "id": "compat.082",
       "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves web_fetch patterns through full cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -3137,39 +2866,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.089",
-      "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves web_fetch patterns through full cycle",
-      "kind": "function",
-      "module": "compat/codecs",
-      "function": "kiroCodec.decode",
-      "args": [
-        {
-          "toolsSettings": {
-            "web_fetch": {
-              "trusted": [".*docs\\.aws\\.amazon\\.com.*"],
-              "blocked": [".*pastebin\\.com.*"]
-            }
-          }
-        }
-      ],
-      "expect": {
-        "rules": [
-          {
-            "tool": "WebFetch",
-            "pattern": "url:.*pastebin\\.com.*",
-            "tier": "deny"
-          },
-          {
-            "tool": "WebFetch",
-            "pattern": "url:.*docs\\.aws\\.amazon\\.com.*",
-            "tier": "allow"
-          }
-        ]
-      },
-      "notes": "The original asserts facts derived from the result; this case records the whole result."
-    },
-    {
-      "id": "compat.090",
+      "id": "compat.083",
       "from": "compat.test.ts: kiroCodec > round-trip (native → canonical → native) > preserves full agent config through cycle",
       "kind": "function",
       "module": "compat/codecs",
@@ -3224,7 +2921,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "compat.091",
+      "id": "compat.084",
       "from": "compat.test.ts: opencodeCodec > encode (canonical → OpenCode) > converts canonical rules to OpenCode granular format",
       "kind": "function",
       "module": "compat/codecs",

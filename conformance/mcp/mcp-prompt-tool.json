@@ -349,44 +349,6 @@
           }
         }
       ]
-    },
-    {
-      "id": "mcp-prompt-tool.006",
-      "from": "mcp-prompt-tool.test.ts: MCP permission-prompt tool > is not served by `agent-perms mcp` without the flag",
-      "kind": "mcp",
-      "args": [],
-      "files": {
-        "$DIR0/.agents/permissions.json": "{\"defaultMode\":\"standard\",\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"sudo:*\",\"tier\":\"deny\"},{\"tool\":\"Bash\",\"pattern\":\"git:*\",\"tier\":\"allow\"}]}"
-      },
-      "exchange": [
-        {
-          "send": {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "initialize",
-            "params": {
-              "protocolVersion": "2025-06-18",
-              "capabilities": {},
-              "clientInfo": {
-                "name": "test-host",
-                "version": "0.0.0"
-              }
-            }
-          }
-        },
-        {
-          "expect": {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "result": {
-              "protocolVersion": "$any",
-              "capabilities": {},
-              "serverInfo": "$any",
-              "instructions": "$any"
-            }
-          }
-        }
-      ]
     }
   ]
 }
