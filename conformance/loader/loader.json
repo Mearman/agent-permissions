@@ -187,6 +187,90 @@
     },
     {
       "id": "loader.008",
+      "from": "loader.test.ts: loadPolicy > layer merging > merges all three tiers across layers",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "defaultMode": "standard",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "rm *",
+                "tier": "deny"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "git *",
+                "tier": "allow"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "curl *",
+                "tier": "ask"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "npm *",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"permissions\":{\"deny\":[\"Bash(rm *)\"],\"allow\":[\"Bash(git *)\"]}}",
+        "$DIR0/.agents/permissions.local.json": "{\"permissions\":{\"ask\":[\"Bash(curl *)\"],\"allow\":[\"Bash(npm *)\"]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "loader.009",
+      "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > loads Claude Code settings when with includes claude-code",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "defaultMode": "standard",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "rm -rf *",
+                "tier": "deny"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "git *",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"with\":[\"claude-code\"]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Bash(git *)\"],\"deny\":[\"Bash(rm -rf *)\"]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "loader.010",
       "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > ignores Claude Code settings when with does not include it",
       "kind": "function",
       "module": "loader",
@@ -208,7 +292,46 @@
       }
     },
     {
-      "id": "loader.009",
+      "id": "loader.011",
+      "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > loads OpenCode config when with includes opencode",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0"
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "defaultMode": "standard",
+            "rules": [
+              {
+                "tool": "Read",
+                "tier": "allow"
+              },
+              {
+                "tool": "Edit",
+                "tier": "deny"
+              },
+              {
+                "tool": "Bash",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"with\":[\"opencode\"]}",
+        "$DIR0/opencode.json": "{\"permission\":{\"bash\":\"allow\",\"edit\":\"deny\",\"read\":\"allow\"}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "loader.012",
       "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > excludes agent when without lists it",
       "kind": "function",
       "module": "loader",
@@ -230,7 +353,7 @@
       }
     },
     {
-      "id": "loader.010",
+      "id": "loader.013",
       "from": "loader.test.ts: loadPolicy > native source loading via with/without/up > skips codex (TOML not supported)",
       "kind": "function",
       "module": "loader",
@@ -252,7 +375,7 @@
       }
     },
     {
-      "id": "loader.011",
+      "id": "loader.014",
       "from": "loader.test.ts: loadPolicy > walk-up discovery > respects up: 0 from outermost canonical file",
       "kind": "function",
       "module": "loader",
@@ -273,7 +396,7 @@
       }
     },
     {
-      "id": "loader.012",
+      "id": "loader.015",
       "from": "loader.test.ts: loadPolicy > walk-up discovery > respects up: N limiting parent traversal",
       "kind": "function",
       "module": "loader",
@@ -294,7 +417,45 @@
       }
     },
     {
-      "id": "loader.013",
+      "id": "loader.016",
+      "from": "loader.test.ts: loadPolicy > walk-up discovery > merges native configs from parent and child directories",
+      "kind": "function",
+      "module": "loader",
+      "function": "loadPolicy",
+      "args": [
+        {
+          "cwd": "$DIR0/subproject"
+        }
+      ],
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "defaultMode": "standard",
+            "rules": [
+              {
+                "tool": "Bash",
+                "pattern": "rm *",
+                "tier": "deny"
+              },
+              {
+                "tool": "Bash",
+                "pattern": "git *",
+                "tier": "allow"
+              }
+            ]
+          }
+        }
+      ],
+      "files": {
+        "$DIR0/.agents/permissions.json": "{\"with\":[\"claude-code\"]}",
+        "$DIR0/.claude/settings.json": "{\"permissions\":{\"deny\":[\"Bash(rm *)\"]}}",
+        "$DIR0/subproject/.claude/settings.json": "{\"permissions\":{\"allow\":[\"Bash(git *)\"]}}"
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "loader.017",
       "from": "loader.test.ts: loadPolicy > mode mapping > maps bypassPermissions to autonomous",
       "kind": "function",
       "module": "loader",
@@ -315,7 +476,7 @@
       }
     },
     {
-      "id": "loader.014",
+      "id": "loader.018",
       "from": "loader.test.ts: loadPolicy > mode mapping > maps plan to restricted",
       "kind": "function",
       "module": "loader",
@@ -336,7 +497,7 @@
       }
     },
     {
-      "id": "loader.015",
+      "id": "loader.019",
       "from": "loader.test.ts: loadPolicy > with/without mutual exclusivity > schema rejects both with and without",
       "kind": "function",
       "module": "loader",

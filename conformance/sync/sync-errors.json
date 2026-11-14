@@ -174,17 +174,17 @@
           "verbose": false,
           "backup": false,
           "ompAgentDir": "$DIR1/no-omp-agent",
-          "ompGlobal": false
+          "ompGlobal": false,
+          "readFile": {
+            "$readError": {
+              "$DIR0/.claude/settings.json": "EIO"
+            }
+          }
         }
       ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.claude/settings.json": "{\"model\": \"opus\"}\n"
-      },
-      "faults": {
-        "readError": {
-          "$DIR0/.claude/settings.json": "EIO"
-        }
       },
       "throws": {
         "name": "SyncRefusedError",
@@ -221,17 +221,17 @@
           "verbose": false,
           "backup": false,
           "ompAgentDir": "$DIR1/no-omp-agent",
-          "ompGlobal": false
+          "ompGlobal": false,
+          "readFile": {
+            "$readError": {
+              "$DIR0/.claude/settings.json": "EMFILE"
+            }
+          }
         }
       ],
       "files": {
         "$DIR0/.agents/permissions.json": "{\"rules\":[{\"tool\":\"Bash\",\"pattern\":\"rm:*\",\"tier\":\"deny\"}]}",
         "$DIR0/.claude/settings.json": "{\"model\": \"opus\"}\n"
-      },
-      "faults": {
-        "readError": {
-          "$DIR0/.claude/settings.json": "EMFILE"
-        }
       },
       "throws": {
         "name": "SyncRefusedError",

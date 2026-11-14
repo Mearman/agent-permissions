@@ -7,6 +7,7 @@
 //! side reads the same files, selected the same way and validated by the same schemas, as the TypeScript runner
 //! does. Every case kind in the schema is validated in full, and a kind the schema does not define is refused.
 
+mod keywords;
 mod schema;
 mod selection;
 
@@ -329,6 +330,7 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    keywords::check(&mut failures);
     check_selection_fixture(&mut failures);
     check_pairs(
         "cases/invalid",

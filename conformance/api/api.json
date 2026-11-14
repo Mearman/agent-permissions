@@ -289,6 +289,43 @@
     },
     {
       "id": "api.024",
+      "from": "api.test.ts: convert > converts claude-code to canonical with auto-detect",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        {
+          "$undefined": true
+        },
+        "canonical",
+        {
+          "allow": ["Read"],
+          "deny": ["Bash(sudo:*)"]
+        }
+      ],
+      "expect": {
+        "output": {
+          "$schema": "https://github.com/ExaDev/agent-permissions/releases/latest/download/agent-permissions.schema.json",
+          "rules": [
+            {
+              "tool": "Bash",
+              "pattern": "sudo:*",
+              "tier": "deny"
+            },
+            {
+              "tool": "Read",
+              "tier": "allow"
+            }
+          ]
+        },
+        "from": "claude-code",
+        "ruleCount": 2,
+        "companions": []
+      },
+      "notes": "The original asserts facts derived from the result; this case records the whole result."
+    },
+    {
+      "id": "api.025",
       "from": "api.test.ts: convert > converts canonical to crush with explicit from",
       "kind": "function",
       "module": "api",
@@ -317,7 +354,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "api.025",
+      "id": "api.026",
       "from": "api.test.ts: convert > converts canonical to canonical (identity)",
       "kind": "function",
       "module": "api",
@@ -346,7 +383,7 @@
       ]
     },
     {
-      "id": "api.026",
+      "id": "api.027",
       "from": "api.test.ts: convert > throws ConvertError on invalid canonical input",
       "kind": "function",
       "module": "api",
@@ -379,7 +416,7 @@
       "notes": "The original did not assert message text, so the case leaves it out."
     },
     {
-      "id": "api.027",
+      "id": "api.028",
       "from": "api.test.ts: convert > throws TypeError on unknown from format",
       "kind": "function",
       "module": "api",
@@ -390,7 +427,7 @@
       }
     },
     {
-      "id": "api.028",
+      "id": "api.029",
       "from": "api.test.ts: convert > throws TypeError on unknown to format",
       "kind": "function",
       "module": "api",
@@ -401,7 +438,26 @@
       }
     },
     {
-      "id": "api.029",
+      "id": "api.030",
+      "from": "api.test.ts: convert > throws on undetectable format",
+      "kind": "function",
+      "module": "api",
+      "function": "convert",
+      "args": [
+        {
+          "$undefined": true
+        },
+        "canonical",
+        {
+          "foo": "bar"
+        }
+      ],
+      "throws": {
+        "name": "Error"
+      }
+    },
+    {
+      "id": "api.031",
       "from": "api.test.ts: convert > includes validation errors in ConvertError",
       "kind": "function",
       "module": "api",
@@ -434,7 +490,7 @@
       "notes": "The original did not assert message text, so the case leaves it out."
     },
     {
-      "id": "api.030",
+      "id": "api.032",
       "from": "api.test.ts: check explanation > returns the steps behind the decision",
       "kind": "function",
       "module": "api",
@@ -487,7 +543,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "api.031",
+      "id": "api.033",
       "from": "api.test.ts: check with a hidden rule > refuses the call and reports the tool as hidden",
       "kind": "function",
       "module": "api",
@@ -519,7 +575,7 @@
       ]
     },
     {
-      "id": "api.032",
+      "id": "api.034",
       "from": "api.test.ts: check with a hidden rule > refuses the call and reports the tool as hidden",
       "kind": "function",
       "module": "api",
@@ -540,7 +596,7 @@
       ]
     },
     {
-      "id": "api.033",
+      "id": "api.035",
       "from": "api.test.ts: check with delegation > applies the delegation limits to a call that carries a depth",
       "kind": "function",
       "module": "api",
@@ -567,7 +623,7 @@
       ]
     },
     {
-      "id": "api.034",
+      "id": "api.036",
       "from": "api.test.ts: check with delegation > applies the delegation limits to a call that carries a depth",
       "kind": "function",
       "module": "api",
@@ -594,7 +650,7 @@
       ]
     },
     {
-      "id": "api.035",
+      "id": "api.037",
       "from": "api.test.ts: check with delegation > applies the delegation limits to a call that carries a depth",
       "kind": "function",
       "module": "api",
@@ -621,7 +677,7 @@
       ]
     },
     {
-      "id": "api.036",
+      "id": "api.038",
       "from": "api.test.ts: convert to Codex > fails instead of dropping a command rule it cannot enforce",
       "kind": "function",
       "module": "api",
@@ -666,7 +722,7 @@
       }
     },
     {
-      "id": "api.037",
+      "id": "api.039",
       "from": "api.test.ts: validate > returns valid for a correct policy",
       "kind": "function",
       "module": "api",
@@ -693,7 +749,7 @@
       ]
     },
     {
-      "id": "api.038",
+      "id": "api.040",
       "from": "api.test.ts: validate > returns invalid for a bad policy",
       "kind": "function",
       "module": "api",
@@ -724,7 +780,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "api.039",
+      "id": "api.041",
       "from": "api.test.ts: validate > returns invalid for empty object",
       "kind": "function",
       "module": "api",
@@ -738,7 +794,7 @@
       ]
     },
     {
-      "id": "api.040",
+      "id": "api.042",
       "from": "api.test.ts: validate > includes path and message in errors",
       "kind": "function",
       "module": "api",
@@ -764,7 +820,7 @@
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
-      "id": "api.041",
+      "id": "api.043",
       "from": "api.test.ts: check > allows a matching rule",
       "kind": "function",
       "module": "api",
@@ -790,7 +846,7 @@
       ]
     },
     {
-      "id": "api.042",
+      "id": "api.044",
       "from": "api.test.ts: check > denies a matching deny rule",
       "kind": "function",
       "module": "api",
@@ -816,7 +872,7 @@
       ]
     },
     {
-      "id": "api.043",
+      "id": "api.045",
       "from": "api.test.ts: check > falls back to defaultMode",
       "kind": "function",
       "module": "api",
@@ -843,7 +899,7 @@
       ]
     },
     {
-      "id": "api.044",
+      "id": "api.046",
       "from": "api.test.ts: check > passes context through",
       "kind": "function",
       "module": "api",
@@ -875,7 +931,7 @@
       ]
     },
     {
-      "id": "api.045",
+      "id": "api.047",
       "from": "api.test.ts: check > skips conditional rules when context doesn't match",
       "kind": "function",
       "module": "api",
@@ -907,7 +963,7 @@
       ]
     },
     {
-      "id": "api.046",
+      "id": "api.048",
       "from": "api.test.ts: check > throws on invalid policy",
       "kind": "function",
       "module": "api",

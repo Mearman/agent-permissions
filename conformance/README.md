@@ -47,7 +47,7 @@ A case comes from an existing test, with the same inputs and the same expectatio
 
 ### Values
 
-A case holds JSON, so a value JSON cannot hold is written the way JSON holds it: a member whose value is `undefined` is absent, and a result that is `undefined` is `expectUndefined`. A runner compares a result after dropping its `undefined` members, and refuses a result JSON cannot hold (a function, a `Map`, a class instance) rather than comparing it loosely. Object key order is never part of an expectation; array order is, except where a case says `unordered`.
+A case holds JSON, so a value JSON cannot hold is written the way JSON holds it: a member whose value is `undefined` is absent, and a result that is `undefined` is `expectUndefined`. Arguments may carry encodings for what JSON cannot: `{"$undefined": true}`, `{"$number": "-0"}` (also `Infinity`, `-Infinity`, `NaN`), `{"$bytes": "<base64>"}`, `{"$signal": true}` (an abort signal), `{"$map": [[key, value]]}` (a `Map`, which `"as": "<name>"` names and `{"$ref": "<name>"}` reuses in a later step of the same case), and the functions `{"$returns": value}` (resolves to the value), `{"$reject": "EIO"}` (rejects with that error code), `{"$edit": {"path", "text"}}` (writes a file when called, the concurrent edit of a fault case) and `{"$readError": {"<path>": "EIO"}}` (reads a file, failing for those paths). Fault-injection cases are never skipped: a runner produces them through the seam of the call, or through a real tree for what a file system can make by itself. A runner compares a result after dropping its `undefined` members, and refuses a result JSON cannot hold (a function, a `Map`, a class instance) rather than comparing it loosely. Object key order is never part of an expectation; array order is, except where a case says `unordered`.
 
 ### Kinds
 
@@ -72,7 +72,17 @@ A case holds JSON, so a value JSON cannot hold is written the way JSON holds it:
 - `checks`: a list of checks on values read from the result by `at`, a list of keys and indices (a final `"length"` of a list or string is its length). A check says exactly one of `equals`, `notEquals`, `contains` (a list of fragments that occur in the string, each after the end of the one before), `subset` (every member of the value is in the result and equal; lists have the same length and match element by element) or `absent` (nothing is there).
 - `throws`: the call throws. `name` is the error's `name`, `message` is a list of fragments of its message, `checks` are read from the error object.
 
-`unordered` compares lists without regard to order, for a call whose order is not part of its contract.
+`unordered` compares lists without regard to order, for a call whose order is not part of its contract. A `function` case without `args` reads a constant export. `stderr` (`includes`, `absent`) checks what the call wrote to standard error.
+
+`steps`: ordered calls over one set of files, each with the expectations of a `function` case and optionally its own `expectFiles`, so a relation between calls (a second run changing nothing, a warning repeated only when a file changes) is a case. `$map` with `as` and `$ref` carry state between steps.
+
+`layered`: `{ layers | load, files?, calls }`. The policy is `mergeLayerPolicies(layers)` (each layer `{ source, policy, ceiling? }`) or `loadPolicy(load)` over the case's files, and every call is decided through `evaluate`, `explain` and a compiled policy, which must agree; `layer` is the source `explain` names for the first step.
+
+`prompt`: `{ policy, root, context?, request, approval?, expect, asked? }`. The permission-prompt handler for the policy answers `request`; `approval` is the answer the host's approval handler gives, and `asked` lists the calls it was asked about (`<tool> <subject> <decision>`), none when the policy settled the call. `expect` is the answer, with `messageIncludes` as ordered fragments of a deny message.
+
+`mcp`: `{ args, files?, exchange, stderrIncludes? }`. The MCP server of the command line is started in the first directory with `args` after `mcp`, and `exchange` is played in order: `send` writes one JSON-RPC message as a line, `expect` reads the next line of output and matches it (the string `"$any"` matches anything, objects match key for key), `waitStderr` waits until the standard error holds a text, and `writeFile` changes a file under the server. An `expect` states the ordering the server must keep, and ids are those the sends use.
+
+`watch`: `{ cwd, files?, steps }`. A policy watch starts over the files; each step may `close` it, change `files` (a path to its text, or null to remove it), and states the `reports` that follow: `decisions` (`[tool, input, decision]` each) of a reported policy, or an `error` with ordered message fragments. A step without reports states that nothing is reported. The first step states the initial report.
 
 `evaluate`: `{ policy, tool, input, context?, expect }`, with `expect` one of `allow`, `ask` or `deny`. The runner asks `evaluate`, `explain` and a compiled policy, and all three must agree.
 

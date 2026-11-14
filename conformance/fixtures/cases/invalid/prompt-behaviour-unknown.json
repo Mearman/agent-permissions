@@ -1,0 +1,20 @@
+{
+  "cases": [
+    {
+      "id": "a.006",
+      "from": "recorded: prompt",
+      "kind": "prompt",
+      "policy": {},
+      "root": "/work",
+      "request": {
+        "tool_name": "Bash",
+        "input": {
+          "command": "ls"
+        }
+      },
+      "expect": {
+        "behavior": "maybe"
+      }
+    }
+  ]
+}

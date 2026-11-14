@@ -1,0 +1,26 @@
+{
+  "cases": [
+    {
+      "id": "a.007",
+      "from": "recorded: mcp",
+      "kind": "mcp",
+      "args": [],
+      "exchange": [
+        {
+          "send": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "ping"
+          }
+        },
+        {
+          "expect": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {}
+          }
+        }
+      ]
+    }
+  ]
+}
