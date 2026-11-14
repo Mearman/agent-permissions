@@ -148,14 +148,26 @@ void describe("when.remote", () => {
     }
   });
 
-  void it("treats a remote it cannot interpret as matching no pattern, without throwing", () => {
-    const anywhere: PermissionPolicy = {
-      defaultMode: "restricted",
+  void it("treats a remote it cannot interpret as unknown: an allow does not apply, an ask or deny does", () => {
+    const scoped = (pattern: string, tier: "allow" | "ask" | "deny") =>
+      ({
+        defaultMode: tier === "deny" ? "autonomous" : "restricted",
+        rules: [
+          {
+            tool: "Bash",
+            pattern: "git push:*",
+            tier,
+            when: { remote: pattern },
+          },
+        ],
+      }) satisfies PermissionPolicy;
+    const askWhenRemote: PermissionPolicy = {
+      defaultMode: "autonomous",
       rules: [
         {
           tool: "Bash",
           pattern: "git push:*",
-          tier: "allow",
+          tier: "ask",
           when: { remote: "*" },
         },
       ],
@@ -165,15 +177,26 @@ void describe("when.remote", () => {
       "https://github.com\\@SEKRET/exadev/agent-perms",
       "https://user@",
     ]) {
+      for (const pattern of ["github.com/exadev/*", "*"]) {
+        assert.equal(
+          evaluate(scoped(pattern, "allow"), "Bash", "git push origin", {
+            remote,
+          }),
+          "ask",
+          `allow ${pattern} ${remote}`,
+        );
+        assert.equal(
+          evaluate(scoped(pattern, "deny"), "Bash", "git push origin", {
+            remote,
+          }),
+          "deny",
+          `deny ${pattern} ${remote}`,
+        );
+      }
       assert.equal(
-        evaluate(onOrg, "Bash", "git push origin", { remote }),
+        evaluate(askWhenRemote, "Bash", "git push origin", { remote }),
         "ask",
-        remote,
-      );
-      assert.equal(
-        evaluate(anywhere, "Bash", "git push origin", { remote }),
-        "ask",
-        remote,
+        `ask ${remote}`,
       );
     }
   });
