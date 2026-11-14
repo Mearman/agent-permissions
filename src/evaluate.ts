@@ -403,7 +403,9 @@ function remoteCondition(
     if (ctx.remote === undefined) {
       return indeterminate("not-found", "the context has no remote");
     }
-    return definite(matches(normaliseRemote(ctx.remote)));
+    // A remote that cannot be interpreted (the empty string) matches no pattern, `*` included.
+    const remote = normaliseRemote(ctx.remote);
+    return definite(remote !== "" && matches(remote));
   };
 }
 

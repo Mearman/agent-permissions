@@ -122,4 +122,59 @@ void describe("when.remote", () => {
   void it("is unknown without a remote, so an allow does not apply", () => {
     assert.equal(evaluate(onOrg, "Bash", "git push origin", {}), "ask");
   });
+
+  void it("matches a local path as the path it is, whatever characters it holds", () => {
+    const onPath: PermissionPolicy = {
+      defaultMode: "restricted",
+      rules: [
+        {
+          tool: "Bash",
+          pattern: "git push:*",
+          tier: "allow",
+          when: { remote: "/srv/git/**" },
+        },
+      ],
+    };
+    for (const remote of [
+      "/srv/git/a@b/repo.git",
+      "/srv/git/my#repo.git",
+      "/srv/git/my?repo.git",
+    ]) {
+      assert.equal(
+        evaluate(onPath, "Bash", "git push origin", { remote }),
+        "allow",
+        remote,
+      );
+    }
+  });
+
+  void it("treats a remote it cannot interpret as matching no pattern, without throwing", () => {
+    const anywhere: PermissionPolicy = {
+      defaultMode: "restricted",
+      rules: [
+        {
+          tool: "Bash",
+          pattern: "git push:*",
+          tier: "allow",
+          when: { remote: "*" },
+        },
+      ],
+    };
+    for (const remote of [
+      "https://user:p/ss@github.com/exadev/agent-perms",
+      "https://github.com\\@SEKRET/exadev/agent-perms",
+      "https://user@",
+    ]) {
+      assert.equal(
+        evaluate(onOrg, "Bash", "git push origin", { remote }),
+        "ask",
+        remote,
+      );
+      assert.equal(
+        evaluate(anywhere, "Bash", "git push origin", { remote }),
+        "ask",
+        remote,
+      );
+    }
+  });
 });

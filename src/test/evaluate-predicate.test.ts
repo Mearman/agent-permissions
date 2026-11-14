@@ -65,6 +65,15 @@ void describe("when.predicate", () => {
       );
     });
 
+    void it("is unknown for a remote it cannot interpret, without throwing", () => {
+      const remote = "https://user:p/ss@github.com/acme/api";
+      assert.equal(evaluate(policy, "Bash", "deploy prod", { remote }), "ask");
+      assert.equal(
+        evaluate(denyDeployOn(eitherRemote), "Bash", "deploy prod", { remote }),
+        "deny",
+      );
+    });
+
     void it("is unknown without a remote, so an allow does not apply but a deny does", () => {
       assert.equal(evaluate(policy, "Bash", "deploy prod", {}), "ask");
       assert.equal(
