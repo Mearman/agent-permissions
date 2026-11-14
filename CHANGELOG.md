@@ -1,3 +1,15 @@
+## [6.6.6](https://github.com/ExaDev/agent-permissions/compare/v6.6.5...v6.6.6) (2026-11-14)
+
+### CI
+
+* add an aggregating Required Checks job ([f2da53b](https://github.com/ExaDev/agent-permissions/commit/f2da53b55968b8cc0454f1f437bc70c54ada59ab))
+* format the aggregate and pinning tests with the project's lint rules ([b529c23](https://github.com/ExaDev/agent-permissions/commit/b529c23dc5ec304efa6d7396d0255e26c9083bf6))
+* leave a job out of the aggregate only on an exact push-only condition ([7eb4bba](https://github.com/ExaDev/agent-permissions/commit/7eb4bba193ef3b92c20933aaea103266b54c2e28))
+* match status functions in a job condition without regard to case ([01f0de4](https://github.com/ExaDev/agent-permissions/commit/01f0de42108f1292688f8b1b2077a0c7cf25bf54))
+* pin every action and downloaded script to an immutable commit ([c9c02ce](https://github.com/ExaDev/agent-permissions/commit/c9c02ceae85f0438363f553331372bad40372387))
+* state what the aggregate does with skipped jobs ([bdece5c](https://github.com/ExaDev/agent-permissions/commit/bdece5c0bf133c2b6129b6628a7501be9cfd65a7))
+* verify the actionlint release archive against a fixed SHA-256 ([28cec54](https://github.com/ExaDev/agent-permissions/commit/28cec545c964c15772301218daf1257ad7efa691))
+
 ## [6.6.5](https://github.com/ExaDev/agent-permissions/compare/v6.6.4...v6.6.5) (2026-11-12)
 
 ### Documentation
