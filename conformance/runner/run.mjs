@@ -1,7 +1,6 @@
 // Runs one conformance case against a target that maps module names to the exports under test. No policy logic lives here (conformance/README.md).
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { spawn, spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -138,7 +137,6 @@ function decoder(refs) {
       $returns: () => () => Promise.resolve(decode(x)),
       $reject: () => () => Promise.reject(bad(x)),
       $edit: () => async () => writeFileSync(x.path, x.text),
-      $readError: () => async (path) => (x[path] ? Promise.reject(bad(x[path])) : readFile(path)),
     }[key];
     if (forms === undefined) throw new Error(`${key}: not one of the value encodings this runner knows`);
     const value = forms();

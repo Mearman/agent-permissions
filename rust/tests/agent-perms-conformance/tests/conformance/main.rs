@@ -54,7 +54,7 @@ fn utf16_key(text: &str) -> Vec<u16> {
 
 /// The problems of a corpus file: the schema, then the rules the schema cannot express.
 /// The value encodings a runner decodes: a single-key object whose key is `$` and letters is one of these (the value encodings of an argument, and the `$contains` and `$subset` matchers of an mcp `expect`) or a defect, since a schema without negation cannot say so.
-const ENCODINGS: [&str; 12] = [
+const ENCODINGS: [&str; 11] = [
     "$undefined",
     "$number",
     "$bytes",
@@ -64,7 +64,6 @@ const ENCODINGS: [&str; 12] = [
     "$returns",
     "$reject",
     "$edit",
-    "$readError",
     "$contains",
     "$subset",
 ];

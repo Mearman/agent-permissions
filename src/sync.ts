@@ -94,11 +94,6 @@ export interface SyncOptions {
    * source is written once per change of that file's content, not on every run.
    */
   warned?: Map<string, string>;
-  /**
-   * The call that reads a config file's bytes, `fs.readFile` unless a library caller injects one to
-   * make a read fail as a disk does. Neither the command line nor the MCP server sets it.
-   */
-  readFile?: (path: string) => Promise<Buffer>;
 }
 
 export interface SyncResult {
@@ -224,8 +219,6 @@ interface ReadContext {
   writePaths: ReadonlySet<string>;
   /** Report a source that was left out, once per change of its content. */
   note: (path: string, reason: string, content?: string) => void;
-  /** Reads a file's bytes; see `SyncOptions.readFile`. */
-  read: ((path: string) => Promise<Buffer>) | undefined;
 }
 
 /** A reporter that writes each warning to stderr, once per change when given a memory. */
@@ -289,7 +282,7 @@ async function readAndDecode(
 
   let content: string;
   try {
-    content = await readFileRequired(file.path, context.read);
+    content = await readFileRequired(file.path);
   } catch (error) {
     if (writes) throw error;
     note(
@@ -350,11 +343,8 @@ async function readAndDecode(
 }
 
 /** A file's text; one that exists and cannot be read is an error naming it. */
-async function readFileRequired(
-  path: string,
-  read: ReadContext["read"],
-): Promise<string> {
-  const content = await readIfPresent(path, read);
+async function readFileRequired(path: string): Promise<string> {
+  const content = await readIfPresent(path);
   if (content === null) {
     throw new SyncRefusedError(
       path,
@@ -802,7 +792,6 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
       agentFilter,
       writePaths,
       note,
-      read: options.readFile,
     });
     if (decoded) {
       sources.push(decoded);
@@ -858,9 +847,7 @@ export async function sync(options: SyncOptions): Promise<SyncResult> {
   // 5. Build changes
   const changes: FileChange[] = [];
   for (const target of targets) {
-    const current = target.exists
-      ? await readIfPresent(target.path, options.readFile)
-      : null;
+    const current = target.exists ? await readIfPresent(target.path) : null;
 
     let proposed: string;
     try {

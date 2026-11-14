@@ -74,7 +74,6 @@ const ENCODINGS = new Set([
   "$returns",
   "$reject",
   "$edit",
-  "$readError",
   "$contains",
   "$subset",
 ]);
