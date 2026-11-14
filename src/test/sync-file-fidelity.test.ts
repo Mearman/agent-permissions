@@ -159,3 +159,47 @@ void describe("a symbolic link at the path", () => {
     assert.equal((await lstat(linkPath)).isSymbolicLink(), true);
   });
 });
+
+void describe("a file owned by another user", () => {
+  void it("gets the new content through a temporary file given the owner of the original", async () => {
+    const cwd = await project({});
+    const path = await put(cwd, "a.json", '{"a": 1}\n');
+    const info = await stat(path);
+    const calls: [number, number][] = [];
+
+    await writeFileAtomic(path, '{"a": 2}\n', '{"a": 1}\n', {
+      uid: info.uid + 1,
+      chownFile: (_file, uid, gid) => {
+        calls.push([uid, gid]);
+        return Promise.resolve();
+      },
+    });
+
+    assert.deepEqual(calls, [[info.uid, info.gid]]);
+    assert.equal(await readFile(path, "utf-8"), '{"a": 2}\n');
+  });
+
+  void it("is refused, leaving the file and no temporary file, when the owner cannot be kept", async () => {
+    const cwd = await project({});
+    const path = await put(cwd, "a.json", '{"a": 1}\n');
+    const info = await stat(path);
+
+    await assert.rejects(
+      writeFileAtomic(path, '{"a": 2}\n', '{"a": 1}\n', {
+        uid: info.uid + 1,
+        chownFile: () =>
+          Promise.reject(
+            Object.assign(new Error("not permitted"), { code: "EPERM" }),
+          ),
+      }),
+      (error: unknown) =>
+        error instanceof Error &&
+        "reason" in error &&
+        error.reason === "owner" &&
+        error.message.startsWith(`${path}: `),
+    );
+
+    assert.equal(await readFile(path, "utf-8"), '{"a": 1}\n');
+    assert.deepEqual(await temporaries(cwd), []);
+  });
+});
