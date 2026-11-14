@@ -15,7 +15,7 @@ conformance/
   runner/                    the shared runner, in JavaScript
 ```
 
-The files are UTF-8 (a loader refuses a file that is not, rather than reading replacement characters) and formatted by prettier, which the repository's lint requires.
+The files are UTF-8, with no byte order mark (a loader refuses a file that is not, or that opens with one, rather than reading replacement characters or stripping it silently) and formatted by prettier, which the repository's lint requires.
 
 ### Which files are corpus files
 
@@ -86,7 +86,7 @@ A case holds JSON, so a value JSON cannot hold is written the way JSON holds it:
 
 `evaluate`: `{ policy, tool, input, context?, expect, steps?, layer? }`, with `expect` one of `allow`, `ask` or `deny`. The runner asks `evaluate`, `explain` and a compiled policy, and all three must agree; `steps` is `[command, decision]` for each command of the line, which `explain` and a compiled policy's `explain` must both give.
 
-`shell-differential`: the lines of the shell splitter's differential test with what real bash ran for each (`ran`, the marker functions it called). For every line the splitter does not decline, every marker bash ran must be a command word of the splitter's output, and the share of lines it does not decline is at least `minimumSplittableShare`. The lines are what the original test's generator makes from `seed`, so a port that ports the generator can check that its lines equal these.
+`shell-differential`: the lines of the shell splitter's differential test with what real bash ran for each (`ran`, the marker functions it called). For every line the splitter does not decline, every marker bash ran must be a command word of the splitter's output, and the share of lines it does not decline is at least `minimumSplittableShare`. The lines are what the original test's generator makes from `seed`, so a port that ports the generator can check that its lines equal these. `recordedWith` names the bash version and platform the lines were recorded against, since another bash could in principle disagree with these `ran` sets; a later item ports the generator to Rust and checks its own lines against these.
 
 `case.schema.json` is the format. A loader accepts no document the schema rejects, and accepts every document the schema accepts for the kinds it validates in full, except one that breaks a rule below; it refuses any other kind rather than passing it unchecked. A corpus file holds at least one case.
 

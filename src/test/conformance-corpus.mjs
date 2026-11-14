@@ -25,7 +25,9 @@ const messages = (validate) =>
 /** @param {string} path @returns {unknown} */
 export function readJson(path) {
   return JSON.parse(
-    new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(path)),
+    new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
+      readFileSync(path),
+    ),
   );
 }
 
@@ -40,7 +42,7 @@ export function selectCorpusFiles(root) {
       const path = relative === "" ? entry.name : `${relative}/${entry.name}`;
       if (
         entry.name.startsWith(".") ||
-        ["fixtures", "runner"].includes(entry.name)
+        (entry.isDirectory() && ["fixtures", "runner"].includes(entry.name))
       )
         continue;
       if (entry.isDirectory() && depth === 0 && NAME.test(entry.name))
