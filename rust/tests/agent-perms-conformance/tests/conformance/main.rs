@@ -53,6 +53,66 @@ fn utf16_key(text: &str) -> Vec<u16> {
 }
 
 /// The problems of a corpus file: the schema, then the rules the schema cannot express.
+/// The value encodings a runner decodes: a single-key object whose key is `$` and letters is one of these (the value encodings of an argument, and the `$contains` and `$subset` matchers of an mcp `expect`) or a defect, since a schema without negation cannot say so.
+const ENCODINGS: [&str; 12] = [
+    "$undefined",
+    "$number",
+    "$bytes",
+    "$signal",
+    "$ref",
+    "$map",
+    "$returns",
+    "$reject",
+    "$edit",
+    "$readError",
+    "$contains",
+    "$subset",
+];
+
+/// The strings `$number` accepts.
+const NUMBER_FORMS: [&str; 4] = ["-0", "Infinity", "-Infinity", "NaN"];
+
+/// What an encoding key looks like: a `$` and letters only, which leaves out the `$DIRn/path` keys of a file map.
+fn is_encoding_shape(key: &str) -> bool {
+    key.strip_prefix('$')
+        .is_some_and(|rest| !rest.is_empty() && rest.chars().all(|c| c.is_ascii_alphabetic()))
+}
+
+/// The value encoding problems anywhere inside `value`, named by the case `id`.
+fn encoding_problems(value: &Value, id: &str, found: &mut Vec<String>) {
+    match value {
+        Value::Array(items) => items
+            .iter()
+            .for_each(|item| encoding_problems(item, id, found)),
+        Value::Object(members) => {
+            let keys: Vec<&String> = members.keys().filter(|key| *key != "as").collect();
+            if let [key] = keys
+                .as_slice()
+                .iter()
+                .filter(|key| key.as_str() != "$schema" && is_encoding_shape(key))
+                .collect::<Vec<_>>()
+                .as_slice()
+            {
+                if !ENCODINGS.contains(&key.as_str()) {
+                    found.push(format!("{id}: {key} is not a value encoding"));
+                } else if key.as_str() == "$number"
+                    && !members[key.as_str()]
+                        .as_str()
+                        .is_some_and(|form| NUMBER_FORMS.contains(&form))
+                {
+                    found.push(format!(
+                        "{id}: $number is not one of -0, Infinity, -Infinity, NaN"
+                    ));
+                }
+            }
+            members
+                .values()
+                .for_each(|item| encoding_problems(item, id, found));
+        }
+        _ => {}
+    }
+}
+
 fn file_problems(schemas: &Schemas, document: &Value) -> Result<Vec<String>, String> {
     let mut found = schema::problems(&schemas.case, &schemas.case, document)?;
     if !found.is_empty() {
@@ -67,6 +127,7 @@ fn file_problems(schemas: &Schemas, document: &Value) -> Result<Vec<String>, Str
         if !ids.insert(id.to_owned()) {
             found.push(format!("id {id} is used twice"));
         }
+        encoding_problems(case, id, &mut found);
         let from = case["from"].as_str().unwrap_or_default();
         let no_newline = !from.contains('\n');
         let original = no_newline
