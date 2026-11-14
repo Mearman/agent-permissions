@@ -1,288 +1,65 @@
-// Loads the conformance corpus, checks it against its format and runs its cases through a target that maps a module name to the exports under test. A case names what to call, with what, and what it must give; no policy logic lives here (conformance/README.md).
+// Runs one conformance case against a target that maps module names to the exports under test. No policy logic lives here (conformance/README.md).
 import assert from "node:assert/strict";
-import { TextDecoder } from "node:util";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
-import Ajv2020 from "ajv/dist/2020.js";
 
-const NAME = /^[a-z0-9][a-z0-9._-]*$/u;
-const FROM = /^(?:[a-z0-9._-]+\.test\.ts: .+|recorded: .+)$/u;
-const ROOT_FILES = [
-  "README.md",
-  "case.schema.json",
-  "manifest.json",
-  "manifest.schema.json",
-];
 const TOKEN = /\$DIR(\d+)/g;
-const utf16 = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
-const messages = (validate) =>
-  (validate.errors ?? []).map(
-    (error) => `${error.instancePath || "/"} ${error.message}`,
-  );
+const QUIET_MS = 600;
+const is = (value) => value !== null && typeof value === "object";
+const same = (a, b, unordered) => assert.deepStrictEqual(unordered ? [...a].sort() : a, unordered ? [...b].sort() : b);
 
 /**
  * @typedef {{ id: string, from: string, kind: string, skip?: "ts" | "rust", [field: string]: unknown }} Case
- * @typedef {{ files: Record<string, { cases: number, skip: string[] }> }} Manifest
  * @typedef {{ lib: Record<string, object>, cli?: string[] }} Target
  */
 
-/**
- * Parses a UTF-8 JSON file, refusing bytes that are not UTF-8.
- * @param {string} path
- * @returns {unknown}
- */
-export function readJson(path) {
-  return JSON.parse(
-    new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(path)),
-  );
-}
-
-/**
- * The corpus files under a root (`<area>/<name>.json`, dot names ignored, `fixtures` and `runner` skipped) and the entries that are neither.
- * @param {string} root
- * @returns {{ selected: string[], problems: string[] }}
- */
-export function selectCorpusFiles(root) {
-  const selected = [];
-  const problems = [];
-  const scan = (relative, depth) => {
-    const entries = readdirSync(join(root, relative), {
-      withFileTypes: true,
-    }).sort((a, b) => utf16(a.name, b.name));
-    for (const entry of entries) {
-      const path = relative === "" ? entry.name : `${relative}/${entry.name}`;
-      if (
-        entry.name.startsWith(".") ||
-        ["fixtures", "runner"].includes(entry.name)
-      )
-        continue;
-      if (entry.isDirectory() && depth === 0 && NAME.test(entry.name))
-        scan(path, 1);
-      else if (entry.isFile() && depth === 0 && ROOT_FILES.includes(entry.name))
-        continue;
-      else if (
-        entry.isFile() &&
-        depth === 1 &&
-        entry.name.endsWith(".json") &&
-        NAME.test(entry.name)
-      )
-        selected.push(path);
-      else problems.push(path);
-    }
-  };
-  scan("", 0);
-  return { selected, problems };
-}
-
-/**
- * The problems of a parsed corpus file: the case schema, then the rules the schema cannot express.
- * @param {import("ajv").ValidateFunction<unknown>} validate
- * @param {unknown} document
- * @returns {string[]}
- */
-export function fileProblems(validate, document) {
-  if (!validate(document)) return messages(validate);
-  const ids = new Set();
-  return document.cases.flatMap(({ id, from }) => {
-    const found = [
-      !NAME.test(id) && `id ${id} is not a name`,
-      ids.has(id) && `id ${id} is used twice`,
-      !FROM.test(from) &&
-        `${id}: from is neither a test title nor a recorded behaviour`,
-    ];
-    ids.add(id);
-    return found.filter(Boolean);
-  });
-}
-
-/**
- * Compiles the case and manifest schemas in strict mode, so a keyword Ajv does not know is an error.
- * @param {unknown} caseSchema
- * @param {unknown} manifestSchema
- * @returns {{ validateFile: import("ajv").ValidateFunction<unknown>, validateManifest: import("ajv").ValidateFunction<unknown> }}
- */
-export function compileSchemas(caseSchema, manifestSchema) {
-  const ajv = new Ajv2020({ strict: true, allErrors: true });
-  return {
-    validateFile: ajv.compile(/** @type {object} */ (caseSchema)),
-    validateManifest: ajv.compile(/** @type {object} */ (manifestSchema)),
-  };
-}
-
-/**
- * The problems of a manifest: the schema, file names at the corpus depth, and each `skip` list in ascending order.
- * @param {import("ajv").ValidateFunction<unknown>} validate
- * @param {unknown} manifest
- * @returns {string[]}
- */
-export function manifestProblems(validate, manifest) {
-  if (!validate(manifest)) return messages(validate);
-  return Object.entries(/** @type {Manifest} */ (manifest).files).flatMap(
-    ([name, { skip }]) => [
-      ...(name.split("/").length === 2 &&
-      name.split("/").every((part) => NAME.test(part)) &&
-      name.endsWith(".json")
-        ? []
-        : [`${name} is not <area>/<name>.json`]),
-      ...(skip.every((id) => NAME.test(id))
-        ? []
-        : [`${name}: a skipped id is not a name`]),
-      ...(JSON.stringify(skip) === JSON.stringify([...skip].sort(utf16))
-        ? []
-        : [`${name}: skip is not in ascending order`]),
-    ],
-  );
-}
-
-/**
- * Loads a corpus root and checks it against its manifest: every file valid, ids unique across files, and each file's case count and skipped ids as recorded.
- * @param {string} root
- * @param {ReturnType<typeof compileSchemas>} schemas
- * @returns {{ files: { name: string, cases: Case[] }[], manifest: Manifest, problems: string[] }}
- */
-export function loadCorpus(root, schemas) {
-  const { selected, problems } = selectCorpusFiles(root);
-  const files = [];
-  const owner = new Map();
-  /** @type {Manifest} */
-  let manifest = { files: {} };
-  for (const name of selected) {
-    try {
-      const document = readJson(join(root, name));
-      for (const problem of fileProblems(schemas.validateFile, document))
-        problems.push(`${name}: ${problem}`);
-      if (!Array.isArray(document.cases)) continue;
-      for (const { id } of document.cases) {
-        if (owner.has(id) && owner.get(id) !== name)
-          problems.push(`${name}: case id ${id} is used by ${owner.get(id)}`);
-        owner.set(id, name);
-      }
-      files.push({ name, cases: document.cases });
-    } catch (error) {
-      problems.push(`${name}: ${error.message}`);
-    }
-  }
-  try {
-    manifest = /** @type {Manifest} */ (readJson(join(root, "manifest.json")));
-    const found = manifestProblems(schemas.validateManifest, manifest);
-    problems.push(...found.map((problem) => `manifest.json: ${problem}`));
-    for (const name of found.length > 0
-      ? []
-      : new Set([
-          ...Object.keys(manifest.files),
-          ...files.map((file) => file.name),
-        ])) {
-      const file = files.find((candidate) => candidate.name === name);
-      const entry = manifest.files[name];
-      const skip = file?.cases
-        .filter((c) => c.skip !== undefined)
-        .map((c) => c.id)
-        .sort(utf16);
-      if (
-        entry === undefined ||
-        file === undefined ||
-        file.cases.length !== entry.cases ||
-        JSON.stringify(skip) !== JSON.stringify(entry.skip)
-      )
-        problems.push(`manifest.json does not match ${name}`);
-    }
-  } catch (error) {
-    problems.push(`manifest.json: ${error.message}`);
-  }
-  return { files, manifest, problems };
-}
-
-/** A value as JSON holds it: absent and undefined are the same, and anything JSON cannot hold is refused. */
 function plain(value) {
   if (Array.isArray(value)) return value.map(plain);
-  if (value === null || typeof value !== "object") {
-    assert.ok(
-      !["function", "symbol", "bigint"].includes(typeof value),
-      `not JSON: ${typeof value}`,
-    );
+  if (!is(value)) {
+    assert.ok(!["function", "symbol", "bigint"].includes(typeof value), `not JSON: ${typeof value}`);
     return value;
   }
-  assert.ok(
-    [Object.prototype, null].includes(Object.getPrototypeOf(value)),
-    `not JSON: ${value.constructor?.name}`,
-  );
+  assert.ok([Object.prototype, null].includes(Object.getPrototypeOf(value)), `not JSON: ${value.constructor?.name}`);
   return Object.fromEntries(
     Object.entries(value)
-      .filter(([, member]) => member !== undefined)
-      .map(([key, member]) => [key, plain(member)]),
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => [k, plain(v)]),
   );
 }
 
-const mapStrings = (value, f) =>
-  typeof value === "string"
-    ? f(value)
-    : Array.isArray(value)
-      ? value.map((item) => mapStrings(item, f))
-      : value !== null && typeof value === "object"
-        ? Object.fromEntries(
-            Object.entries(value).map(([key, member]) => [
-              key,
-              mapStrings(member, f),
-            ]),
-          )
-        : value;
-const walk = (value, path) =>
-  path.reduce(
-    (at, key) =>
-      key === "length" && (Array.isArray(at) || typeof at === "string")
-        ? at.length
-        : at?.[key],
-    value,
-  );
+const mapStrings = (v, f) =>
+  typeof v === "string"
+    ? f(v)
+    : Array.isArray(v)
+      ? v.map((x) => mapStrings(x, f))
+      : is(v)
+        ? Object.fromEntries(Object.entries(v).map(([k, x]) => [f(k), mapStrings(x, f)]))
+        : v;
+const walk = (v, path) => path.reduce((at, key) => (key === "length" && (Array.isArray(at) || typeof at === "string") ? at.length : at?.[key]), v);
+const bad = (code) => Object.assign(new Error(`${code}: injected`), { code });
 
 const inOrder = (text, fragments) => {
   let from = 0;
   for (const fragment of fragments) {
     const at = text.indexOf(fragment, from);
-    assert.notEqual(
-      at,
-      -1,
-      `${JSON.stringify(text)} lacks ${JSON.stringify(fragment)} after offset ${from}`,
-    );
+    assert.notEqual(at, -1, `${JSON.stringify(text)} lacks ${JSON.stringify(fragment)} after offset ${from}`);
     from = at + fragment.length;
   }
 };
 
-/** Every member of `expected` is in `actual` and equal; lists have the same length and match element by element. */
 const subset = (actual, expected, at = "") => {
-  if (expected === null || typeof expected !== "object")
-    return assert.equal(actual, expected, at);
-  assert.ok(
-    actual !== null && typeof actual === "object",
-    `${at}: not an object`,
-  );
-  if (Array.isArray(expected))
-    assert.equal(actual.length, expected.length, `${at}: length`);
-  for (const key of Object.keys(expected))
-    subset(actual[key], expected[key], `${at}/${key}`);
+  if (!is(expected)) return assert.equal(actual, expected, at);
+  assert.ok(is(actual), `${at}: not an object`);
+  if (Array.isArray(expected)) assert.equal(actual.length, expected.length, `${at}: length`);
+  for (const key of Object.keys(expected)) subset(actual[key], expected[key], `${at}/${key}`);
 };
 
-const same = (actual, expected, unordered) =>
-  assert.deepStrictEqual(
-    unordered ? [...actual].sort() : actual,
-    unordered ? [...expected].sort() : expected,
-  );
-
-/** One check of a value read from a result (or an error): `equals`, `notEquals`, `contains`, `subset` or `absent`. */
 const verify = (root, check, unordered, back) => {
-  const value = back(plain(walk(root, check.at)));
+  const raw = walk(root, check.at);
+  const value = "subset" in check ? back(raw) : back(plain(raw));
   if ("absent" in check) assert.equal(value, undefined);
   else if ("equals" in check) same(value, check.equals, unordered);
   else if ("contains" in check) inOrder(value, check.contains);
@@ -290,173 +67,238 @@ const verify = (root, check, unordered, back) => {
   else assert.notDeepStrictEqual(value, check.notEquals);
 };
 
-/**
- * The directories a case names with `$DIRn` tokens, made fresh and holding the case's `files`. `place` turns a token into a path, `back` a path into its token, `files` reads the case's `expectFiles` out of the directories, and `done` removes them.
- * @param {Case} testCase
- */
+const matches = (a, e) =>
+  e === "$any"
+    ? true
+    : is(e)
+      ? is(a) && Object.keys(e).length === Object.keys(a).length && Object.keys(e).every((k) => matches(a[k], e[k]))
+      : a === e;
+
 function directories(testCase) {
   const dirs = [];
-  for (const [, n] of JSON.stringify(testCase).matchAll(TOKEN))
-    dirs[n] ??= realpathSync(mkdtempSync(join(tmpdir(), "conformance-")));
+  for (const [, n] of JSON.stringify(testCase).matchAll(TOKEN)) dirs[n] ??= realpathSync(mkdtempSync(join(tmpdir(), "conformance-")));
   const place = (text) => text.replace(TOKEN, (_, n) => dirs[n]);
-  for (const [name, text] of Object.entries(testCase.files ?? {})) {
+  const put = (name, text) => {
     mkdirSync(dirname(place(name)), { recursive: true });
-    writeFileSync(place(name), place(text));
-  }
-  const back = (value) =>
-    mapStrings(value, (text) =>
-      dirs.reduce((at, path, n) => at.split(path).join(`$DIR${n}`), text),
-    );
-  return {
-    dirs,
-    place,
-    back,
-    files: () =>
-      Object.fromEntries(
-        Object.keys(testCase.expectFiles ?? {}).map((name) => [
-          name,
-          existsSync(place(name))
-            ? back(readFileSync(place(name), "utf8"))
-            : null,
-        ]),
-      ),
-    done: () =>
-      dirs.forEach((path) => rmSync(path, { recursive: true, force: true })),
+    if (text === null) rmSync(place(name), { force: true });
+    else writeFileSync(place(name), text.$bytes === undefined ? place(text) : Buffer.from(text.$bytes, "base64"));
   };
+  for (const [name, text] of Object.entries(testCase.files ?? {})) put(name, text);
+  const back = (v) => mapStrings(v, (t) => dirs.reduce((at, path, n) => at.split(path).join(`$DIR${n}`), t));
+  const files = (expected) =>
+    Object.fromEntries(Object.keys(expected ?? {}).map((n) => [n, existsSync(place(n)) ? back(readFileSync(place(n), "utf8")) : null]));
+  return { dirs, place, put, back, files, done: () => dirs.forEach((p) => rmSync(p, { recursive: true, force: true })) };
 }
 
-/** Calls `module.function` (a dotted path into the module's exports), awaiting a promise; returns the result or the error it threw. */
-async function call({ lib }, { module, function: name }, args) {
+function decoder(refs) {
+  const decode = (v) => {
+    if (Array.isArray(v)) return v.map(decode);
+    if (!is(v)) return v;
+    const [key] = Object.keys(v);
+    const one = Object.keys(v).filter((k) => k !== "as").length === 1;
+    if (!one || !key.startsWith("$")) return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, decode(x)]));
+    const x = v[key];
+    const value = {
+      $undefined: () => undefined,
+      $number: () => Number(x),
+      $bytes: () => Buffer.from(x, "base64"),
+      $signal: () => new AbortController().signal,
+      $ref: () => refs[x],
+      $map: () => new Map(x.map(([k, val]) => [decode(k), decode(val)])),
+      $returns: () => () => Promise.resolve(decode(x)),
+      $reject: () => () => Promise.reject(bad(x)),
+      $edit: () => async () => writeFileSync(x.path, x.text),
+      $readError: () => async (path) => (x[path] ? Promise.reject(bad(x[path])) : readFile(path)),
+    }[key]();
+    if (v.as !== undefined) refs[v.as] = value;
+    return value;
+  };
+  return decode;
+}
+
+async function call({ lib }, { module, function: name, args }, argv) {
   const [head, ...rest] = name.split(".");
-  const holder = rest
-    .slice(0, -1)
-    .reduce((at, key) => at[key], lib[module][head]);
+  const holder = rest.slice(0, -1).reduce((at, key) => at[key], lib[module][head]);
   const method = rest.length === 0 ? lib[module][head] : holder[rest.at(-1)];
-  assert.equal(
-    typeof method,
-    "function",
-    `${module}.${name} is not a function`,
-  );
+  if (args === undefined) return { result: method };
+  assert.equal(typeof method, "function", `${module}.${name} is not a function`);
   try {
-    return {
-      result: await method.apply(rest.length === 0 ? undefined : holder, args),
-    };
+    return { result: await method.apply(rest.length === 0 ? undefined : holder, argv) };
   } catch (error) {
     return { error };
   }
 }
 
+async function step(target, s, tree, decode) {
+  const written = [];
+  const real = process.stderr.write;
+  process.stderr.write = (chunk) => (written.push(String(chunk)), true);
+  const run = await call(target, s, decode(mapStrings(s.args ?? [], tree.place))).finally(() => (process.stderr.write = real));
+  const { result, error } = run;
+  const text = written.join("");
+  if (s.throws !== undefined) {
+    assert.ok(error !== undefined, "expected a throw");
+    if (s.throws.name !== undefined) assert.equal(error.name, s.throws.name);
+    inOrder(error.message, s.throws.message ?? []);
+    for (const check of s.throws.checks ?? []) verify(error, check, false, tree.back);
+  } else {
+    if (error !== undefined) throw error;
+    if (s.expectUndefined) assert.equal(result, undefined);
+    else if (s.expect !== undefined) same(tree.back(plain(result)), s.expect, s.unordered);
+    for (const check of s.checks ?? []) verify(result, check, s.unordered, tree.back);
+  }
+  inOrder(text, s.stderr?.includes ?? []);
+  for (const absent of s.stderr?.absent ?? []) assert.ok(!text.includes(absent), `stderr holds ${absent}`);
+}
+
+function decide(lib, policy, c, back) {
+  const args = c.context === undefined ? [c.tool, c.input] : [c.tool, c.input, c.context];
+  const { evaluate, explain, compile } = lib.evaluate;
+  const explained = explain(policy, ...args);
+  assert.equal(evaluate(policy, ...args), c.expect, "evaluate");
+  assert.equal(explained.decision, c.expect, "explain");
+  assert.equal(compile(policy).evaluate(...args), c.expect, "compile");
+  if (c.layer !== undefined) assert.equal(back(explained.steps[0].layer), c.layer, "layer");
+}
+
+function process_(command, argv, options) {
+  const child = spawn(command, argv, options);
+  let out = "";
+  let err = "";
+  let ended = false;
+  const waiters = [];
+  const poke = () => waiters.splice(0).forEach((w) => w());
+  child.stdout.on("data", (d) => ((out += d), poke()));
+  child.stderr.on("data", (d) => ((err += d), poke()));
+  child.on("close", () => ((ended = true), poke()));
+  const until = (ready, what) =>
+    new Promise((resolve, reject) => {
+      const check = () => (ready() ? resolve() : ended ? reject(new Error(`ended before ${what}`)) : waiters.push(check));
+      check();
+    });
+  return { child, until, out: () => out, err: () => err, ended: () => ended };
+}
+
+const lineAt = (text, n) => (text.endsWith("\n") || text.split("\n").length > n + 1 ? text.split("\n")[n] : undefined);
+
+async function mcp(tc, tree, target) {
+  const [command, ...flags] = target.cli;
+  const p = process_(command, [...flags, "mcp", ...tc.args.map(tree.place)], {
+    cwd: tree.dirs[0],
+    env: { ...process.env, ...mapStrings(tc.env ?? {}, tree.place) },
+  });
+  let seen = 0;
+  try {
+    for (const s of tc.exchange) {
+      if (s.send !== undefined) p.child.stdin.write(`${JSON.stringify(s.send)}\n`);
+      else if (s.expect !== undefined) {
+        await p.until(() => lineAt(p.out(), seen) !== undefined, `line ${seen}`);
+        const actual = JSON.parse(lineAt(p.out(), seen++));
+        assert.ok(matches(tree.back(actual), s.expect), `line ${seen - 1}: ${JSON.stringify(actual)}`);
+      } else if (s.waitStderr !== undefined) await p.until(() => p.err().includes(s.waitStderr), s.waitStderr);
+      else tree.put(s.writeFile.path, s.writeFile.text);
+    }
+  } finally {
+    p.child.stdin.end();
+    p.child.kill();
+    await p.until(() => p.ended(), "exit").catch(() => undefined);
+  }
+  inOrder(tree.back(p.err()), tc.stderrIncludes ?? []);
+}
+
+async function watch(tc, tree, { lib }) {
+  const reports = [];
+  const watcher = lib.loader.watchPolicy(
+    { cwd: tree.place(tc.cwd) },
+    (policy) => reports.push({ policy }),
+    (error) => reports.push({ error }),
+  );
+  let closed = false;
+  try {
+    for (const s of tc.steps) {
+      reports.length = 0;
+      if (s.close) (watcher.close(), (closed = true));
+      for (const [name, text] of Object.entries(s.files ?? {})) tree.put(name, text);
+      const want = s.reports ?? [];
+      for (let waited = 0; reports.length < want.length && !closed && waited < 400; waited++) await new Promise((r) => setTimeout(r, 25));
+      if (want.length === 0) await new Promise((r) => setTimeout(r, QUIET_MS));
+      assert.equal(reports.length, want.length, `reports: ${reports.map((r) => Object.keys(r)[0])}`);
+      want.forEach((w, i) => {
+        if (w.error) inOrder(reports[i].error.message, w.error.message ?? []);
+        else
+          for (const [tool, input, expect] of w.decisions)
+            assert.equal(lib.evaluate.evaluate(reports[i].policy, tool, input), expect, `${tool} ${input}`);
+      });
+    }
+  } finally {
+    watcher.close();
+  }
+}
+
 /**
- * Runs one case against a target, throwing on the first difference. `target.cli` is the command that starts the CLI, for `cli` cases.
- * @param {Case} testCase
- * @param {Target} target
- * @returns {Promise<void>}
+ * Runs one case against a target, throwing on the first difference.
+ * @param {Case} testCase @param {Target} target @returns {Promise<void>}
  */
 export async function runCase(testCase, target) {
   const tree = directories(testCase);
+  const { lib } = target;
   try {
-    if (testCase.kind === "function") {
-      const args = mapStrings(testCase.args, tree.place);
-      // `faults.readError` maps a path to the code its read fails with, through the read seam of the call.
-      const failing = Object.fromEntries(
-        Object.entries(testCase.faults?.readError ?? {}).map(([path, code]) => [
-          tree.place(path),
-          code,
-        ]),
-      );
-      if (testCase.faults?.readError)
-        args[0].readFile = async (path) => {
-          if (failing[path])
-            throw Object.assign(new Error(`${failing[path]}: injected`), {
-              code: failing[path],
-            });
-          return readFile(path);
-        };
-      const { result, error } = await call(target, testCase, args);
-      if (testCase.throws !== undefined) {
-        assert.ok(error !== undefined, "expected a throw");
-        if (testCase.throws.name !== undefined)
-          assert.equal(error.name, testCase.throws.name);
-        inOrder(error.message, testCase.throws.message ?? []);
-        for (const check of testCase.throws.checks ?? [])
-          verify(error, check, false, tree.back);
-      } else {
-        if (error !== undefined) throw error;
-        if (testCase.expectUndefined) assert.equal(result, undefined);
-        else if (testCase.expect !== undefined)
-          same(tree.back(plain(result)), testCase.expect, testCase.unordered);
-        for (const check of testCase.checks ?? [])
-          verify(result, check, testCase.unordered, tree.back);
+    const kind = testCase.kind;
+    if (kind === "function" || kind === "steps") {
+      const decode = decoder({});
+      for (const s of testCase.steps ?? [testCase]) {
+        await step(target, s, tree, decode);
+        if (s !== testCase && s.expectFiles) same(tree.files(s.expectFiles), s.expectFiles);
       }
-    } else if (testCase.kind === "evaluate") {
-      const { policy, tool, input, context } = testCase;
-      const args =
-        context === undefined ? [tool, input] : [tool, input, context];
-      const { evaluate, explain, compile } = target.lib.evaluate;
-      assert.equal(evaluate(policy, ...args), testCase.expect, "evaluate");
-      assert.equal(
-        explain(policy, ...args).decision,
-        testCase.expect,
-        "explain",
-      );
-      assert.equal(
-        compile(policy).evaluate(...args),
-        testCase.expect,
-        "compile",
-      );
-    } else if (testCase.kind === "cli") {
+    } else if (kind === "evaluate") decide(lib, testCase.policy, testCase, tree.back);
+    else if (kind === "layered") {
+      const load = testCase.load && { ...testCase.load, cwd: tree.place(testCase.load.cwd) };
+      const policy = testCase.layers ? lib.loader.mergeLayerPolicies(testCase.layers) : await lib.loader.loadPolicy(load);
+      for (const c of testCase.calls) decide(lib, policy, c, tree.back);
+    } else if (kind === "prompt") {
+      const asked = [];
+      const onAsk = async (ask) => (asked.push(`${ask.request.tool_name} ${ask.subject} ${ask.explanation.decision}`), testCase.approval);
+      const options = {
+        loadPolicy: async () => testCase.policy,
+        root: testCase.root,
+        context: testCase.context,
+        ...(testCase.approval && { onAsk }),
+      };
+      const result = await lib["prompt-tool"].createPermissionPrompt(options)(testCase.request, new AbortController().signal);
+      const { messageIncludes, ...rest } = testCase.expect;
+      subset(result, rest);
+      inOrder(result.message ?? "", messageIncludes ?? []);
+      same(asked, testCase.asked ?? []);
+    } else if (kind === "cli") {
       const [command, ...flags] = target.cli;
-      const run = spawnSync(
-        command,
-        [...flags, ...testCase.args.map(tree.place)],
-        {
-          cwd:
-            testCase.cwd === undefined ? undefined : tree.place(testCase.cwd),
-          input: testCase.stdin ?? "",
-          encoding: "utf8",
-          env: {
-            ...process.env,
-            ...mapStrings(testCase.env ?? {}, tree.place),
-          },
-        },
-      );
+      const cwd = testCase.cwd === undefined ? undefined : tree.place(testCase.cwd);
+      const run = spawnSync(command, [...flags, ...testCase.args.map(tree.place)], {
+        cwd,
+        input: testCase.stdin ?? "",
+        encoding: "utf8",
+        env: { ...process.env, ...mapStrings(testCase.env ?? {}, tree.place) },
+      });
       const { exit, stdout, stdoutJson, stderrIncludes } = testCase.expect;
       assert.equal(run.status, exit, run.stderr);
       if (stdout !== undefined) assert.equal(tree.back(run.stdout), stdout);
-      if (stdoutJson !== undefined)
-        assert.deepStrictEqual(
-          plain(tree.back(JSON.parse(run.stdout))),
-          stdoutJson,
-        );
+      if (stdoutJson !== undefined) same(plain(tree.back(JSON.parse(run.stdout))), stdoutJson);
       inOrder(tree.back(run.stderr), stderrIncludes ?? []);
-    } else if (testCase.kind === "shell-differential") {
+    } else if (kind === "mcp") await mcp(testCase, tree, target);
+    else if (kind === "watch") await watch(testCase, tree, target);
+    else if (kind === "shell-differential") {
       const missed = [];
       let splittable = 0;
       for (const { line, ran } of testCase.lines) {
-        const commands = target.lib.shell.splitShellCommand(line);
+        const commands = lib.shell.splitShellCommand(line);
         if (commands === undefined) continue;
         splittable += 1;
-        const words = new Set(
-          commands.map((command) =>
-            command
-              .split(/\s+/)
-              .find(
-                (word) => word !== "" && !/^[A-Za-z_][A-Za-z0-9_]*=/.test(word),
-              ),
-          ),
-        );
-        for (const marker of ran)
-          if (!words.has(marker))
-            missed.push(`${JSON.stringify(line)} ran ${marker}`);
+        const words = new Set(commands.map((c) => c.split(/\s+/).find((w) => w !== "" && !/^[A-Za-z_][A-Za-z0-9_]*=/.test(w))));
+        for (const marker of ran) if (!words.has(marker)) missed.push(`${JSON.stringify(line)} ran ${marker}`);
       }
       assert.deepEqual(missed.slice(0, 5), [], `seed ${testCase.seed}`);
-      assert.ok(
-        splittable / testCase.lines.length >= testCase.minimumSplittableShare,
-        `only ${splittable} lines were splittable`,
-      );
+      assert.ok(splittable / testCase.lines.length >= testCase.minimumSplittableShare, `only ${splittable} lines were splittable`);
     }
-    if (testCase.expectFiles !== undefined)
-      assert.deepStrictEqual(tree.files(), testCase.expectFiles);
+    if (testCase.expectFiles !== undefined) same(tree.files(testCase.expectFiles), testCase.expectFiles);
   } finally {
     tree.done();
   }

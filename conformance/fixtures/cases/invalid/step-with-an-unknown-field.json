@@ -1,0 +1,17 @@
+{
+  "cases": [
+    {
+      "id": "a.004",
+      "from": "recorded: steps",
+      "kind": "steps",
+      "steps": [
+        {
+          "module": "m",
+          "function": "f",
+          "expect": 1,
+          "kind": "x"
+        }
+      ]
+    }
+  ]
+}

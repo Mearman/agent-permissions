@@ -13,9 +13,9 @@ import {
   loadCorpus,
   manifestProblems,
   readJson,
-  runCase,
   selectCorpusFiles,
-} from "../../conformance/runner/run.mjs";
+} from "./conformance-corpus.mjs";
+import { runCase } from "../../conformance/runner/run.mjs";
 import * as agentFiles from "../agent-files.ts";
 import * as api from "../api.ts";
 import * as codecs from "../compat/codecs.ts";

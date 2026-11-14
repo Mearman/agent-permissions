@@ -1,7 +1,7 @@
 {
   "files": {
     "api/api.json": {
-      "cases": 46,
+      "cases": 48,
       "skip": []
     },
     "cli/cli-output-refusal.json": {
@@ -109,7 +109,7 @@
       "skip": []
     },
     "loader/loader.json": {
-      "cases": 15,
+      "cases": 19,
       "skip": []
     },
     "profiles/profiles.json": {

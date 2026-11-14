@@ -1,0 +1,16 @@
+{
+  "cases": [
+    {
+      "id": "a.007",
+      "from": "recorded: mcp",
+      "kind": "mcp",
+      "args": [],
+      "exchange": [
+        {
+          "send": {},
+          "expect": {}
+        }
+      ]
+    }
+  ]
+}

@@ -79,7 +79,13 @@ export default defineConfig(
       prettier: eslintPluginPrettier,
     },
     languageOptions: {
-      globals: { process: "readonly", console: "readonly", Buffer: "readonly" },
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        Buffer: "readonly",
+        AbortController: "readonly",
+        setTimeout: "readonly",
+      },
     },
     rules: {
       "prettier/prettier": "error",

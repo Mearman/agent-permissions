@@ -1,0 +1,14 @@
+{
+  "cases": [
+    {
+      "id": "a.006",
+      "from": "recorded: prompt",
+      "kind": "prompt",
+      "policy": {},
+      "root": "/work",
+      "expect": {
+        "behavior": "deny"
+      }
+    }
+  ]
+}

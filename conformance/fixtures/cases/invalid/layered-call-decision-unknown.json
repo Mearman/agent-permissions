@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "a.005",
+      "from": "recorded: layered",
+      "kind": "layered",
+      "layers": [
+        {
+          "source": "org",
+          "policy": {}
+        }
+      ],
+      "calls": [
+        {
+          "tool": "Bash",
+          "input": "ls",
+          "expect": "maybe"
+        }
+      ]
+    }
+  ]
+}

@@ -29,9 +29,23 @@
     "files": {
       "type": "object",
       "additionalProperties": {
-        "type": "string"
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "$bytes": {
+                "type": "string"
+              }
+            },
+            "required": ["$bytes"]
+          }
+        ]
       },
-      "description": "Files made before the call, by path under a `$DIRn` token."
+      "description": "Files made before the case runs, by path under a `$DIRn` token; text, or `$bytes` (base64) for bytes that are not text."
     },
     "expectFiles": {
       "type": "object",
@@ -46,22 +60,7 @@
           }
         ]
       },
-      "description": "Files as they must be after the call: their text, or null for none."
-    },
-    "faults": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "readError": {
-          "type": "object",
-          "minProperties": 1,
-          "additionalProperties": {
-            "enum": ["EIO", "EMFILE", "ENFILE", "ENOMEM"]
-          },
-          "description": "Reads of these paths (under `$DIRn` tokens) fail with these error codes, through the read seam of the call."
-        }
-      },
-      "required": []
+      "description": "Files as they must be afterwards: their text, or null for none."
     },
     "check": {
       "type": "object",
@@ -140,30 +139,10 @@
         }
       ]
     },
-    "function": {
+    "step": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "id": {
-          "$ref": "#/$defs/id"
-        },
-        "from": {
-          "$ref": "#/$defs/from"
-        },
-        "kind": {
-          "const": "function"
-        },
-        "skip": {
-          "enum": ["ts", "rust"]
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 1
-        },
-        "notes": {
-          "type": "string",
-          "minLength": 1
-        },
         "module": {
           "type": "string",
           "minLength": 1
@@ -183,15 +162,6 @@
         },
         "unordered": {
           "type": "boolean"
-        },
-        "files": {
-          "$ref": "#/$defs/files"
-        },
-        "expectFiles": {
-          "$ref": "#/$defs/expectFiles"
-        },
-        "faults": {
-          "$ref": "#/$defs/faults"
         },
         "checks": {
           "type": "array",
@@ -225,9 +195,188 @@
             }
           },
           "required": []
+        },
+        "stderr": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "includes": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "absent": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": []
+        },
+        "expectFiles": {
+          "$ref": "#/$defs/expectFiles"
         }
       },
-      "required": ["id", "from", "kind", "module", "function", "args"],
+      "required": ["module", "function"],
+      "anyOf": [
+        {
+          "type": "object",
+          "required": ["expect"],
+          "properties": {
+            "expect": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["expectUndefined"],
+          "properties": {
+            "expectUndefined": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["checks"],
+          "properties": {
+            "checks": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["throws"],
+          "properties": {
+            "throws": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["expectFiles"],
+          "properties": {
+            "expectFiles": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["stderr"],
+          "properties": {
+            "stderr": {}
+          }
+        }
+      ]
+    },
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "skip": {
+          "enum": ["ts", "rust"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "function": {
+          "type": "string",
+          "minLength": 1
+        },
+        "args": {
+          "type": "array"
+        },
+        "expect": {
+          "description": "any JSON value"
+        },
+        "expectUndefined": {
+          "const": true
+        },
+        "unordered": {
+          "type": "boolean"
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "throws": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "message": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "checks": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/check"
+              }
+            }
+          },
+          "required": []
+        },
+        "stderr": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "includes": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "absent": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": []
+        },
+        "expectFiles": {
+          "$ref": "#/$defs/expectFiles"
+        },
+        "files": {
+          "$ref": "#/$defs/files"
+        },
+        "kind": {
+          "const": "function"
+        }
+      },
+      "required": ["id", "from", "kind", "module", "function"],
       "dependentRequired": {
         "skip": ["reason"],
         "reason": ["skip"]
@@ -267,10 +416,17 @@
           "properties": {
             "expectFiles": {}
           }
+        },
+        {
+          "type": "object",
+          "required": ["stderr"],
+          "properties": {
+            "stderr": {}
+          }
         }
       ]
     },
-    "cli": {
+    "steps": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -279,9 +435,6 @@
         },
         "from": {
           "$ref": "#/$defs/from"
-        },
-        "kind": {
-          "const": "cli"
         },
         "skip": {
           "enum": ["ts", "rust"]
@@ -294,17 +447,317 @@
           "type": "string",
           "minLength": 1
         },
-        "args": {
+        "files": {
+          "$ref": "#/$defs/files"
+        },
+        "expectFiles": {
+          "$ref": "#/$defs/expectFiles"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "kind": {
+          "const": "steps"
+        }
+      },
+      "required": ["id", "from", "kind", "steps"],
+      "dependentRequired": {
+        "skip": ["reason"],
+        "reason": ["skip"]
+      }
+    },
+    "evaluate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "skip": {
+          "enum": ["ts", "rust"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy": {
+          "type": "object"
+        },
+        "tool": {
+          "type": "string"
+        },
+        "input": {
+          "type": "string"
+        },
+        "context": {
+          "type": "object"
+        },
+        "expect": {
+          "enum": ["allow", "ask", "deny"]
+        },
+        "kind": {
+          "const": "evaluate"
+        }
+      },
+      "required": ["id", "from", "kind", "policy", "tool", "input", "expect"],
+      "dependentRequired": {
+        "skip": ["reason"],
+        "reason": ["skip"]
+      }
+    },
+    "layered": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "skip": {
+          "enum": ["ts", "rust"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "files": {
+          "$ref": "#/$defs/files"
+        },
+        "layers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "type": "string",
+                "minLength": 1
+              },
+              "policy": {
+                "type": "object"
+              },
+              "ceiling": {
+                "const": true
+              }
+            },
+            "required": ["source", "policy"]
+          }
+        },
+        "load": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cwd": {
+              "type": "string",
+              "minLength": 1
+            },
+            "with": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": ["cwd"]
+        },
+        "calls": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "tool": {
+                "type": "string"
+              },
+              "input": {
+                "type": "string"
+              },
+              "context": {
+                "type": "object"
+              },
+              "expect": {
+                "enum": ["allow", "ask", "deny"]
+              },
+              "layer": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["tool", "input", "expect"]
+          }
+        },
+        "kind": {
+          "const": "layered"
+        }
+      },
+      "required": ["id", "from", "kind", "calls"],
+      "dependentRequired": {
+        "skip": ["reason"],
+        "reason": ["skip"]
+      },
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["layers"],
+          "properties": {
+            "layers": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["load"],
+          "properties": {
+            "load": {}
+          }
+        }
+      ]
+    },
+    "prompt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "skip": {
+          "enum": ["ts", "rust"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy": {
+          "type": "object"
+        },
+        "root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "context": {
+          "type": "object"
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tool_name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "input": {
+              "type": "object"
+            },
+            "tool_use_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["tool_name", "input"]
+        },
+        "approval": {
+          "type": "object"
+        },
+        "asked": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           }
+        },
+        "expect": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "behavior": {
+              "enum": ["allow", "deny"]
+            },
+            "updatedInput": {
+              "type": "object"
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            },
+            "messageIncludes": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": ["behavior"]
+        },
+        "kind": {
+          "const": "prompt"
+        }
+      },
+      "required": ["id", "from", "kind", "policy", "root", "request", "expect"],
+      "dependentRequired": {
+        "skip": ["reason"],
+        "reason": ["skip"]
+      }
+    },
+    "cli": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "skip": {
+          "enum": ["ts", "rust"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
         },
         "files": {
           "$ref": "#/$defs/files"
         },
         "expectFiles": {
           "$ref": "#/$defs/expectFiles"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "stdin": {
           "type": "string"
@@ -343,6 +796,9 @@
             }
           },
           "required": ["exit"]
+        },
+        "kind": {
+          "const": "cli"
         }
       },
       "required": ["id", "from", "kind", "args", "expect"],
@@ -351,7 +807,7 @@
         "reason": ["skip"]
       }
     },
-    "evaluate": {
+    "mcp": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -360,9 +816,6 @@
         },
         "from": {
           "$ref": "#/$defs/from"
-        },
-        "kind": {
-          "const": "evaluate"
         },
         "skip": {
           "enum": ["ts", "rust"]
@@ -375,23 +828,200 @@
           "type": "string",
           "minLength": 1
         },
-        "policy": {
-          "type": "object"
+        "files": {
+          "$ref": "#/$defs/files"
         },
-        "tool": {
-          "type": "string"
+        "expectFiles": {
+          "$ref": "#/$defs/expectFiles"
         },
-        "input": {
-          "type": "string"
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
-        "context": {
-          "type": "object"
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
-        "expect": {
-          "enum": ["allow", "ask", "deny"]
+        "exchange": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "send": {
+                    "description": "any JSON value"
+                  }
+                },
+                "required": ["send"]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "expect": {
+                    "description": "any JSON value"
+                  }
+                },
+                "required": ["expect"]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "waitStderr": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["waitStderr"]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "writeFile": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "text": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["path", "text"]
+                  }
+                },
+                "required": ["writeFile"]
+              }
+            ]
+          }
+        },
+        "stderrIncludes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "kind": {
+          "const": "mcp"
         }
       },
-      "required": ["id", "from", "kind", "policy", "tool", "input", "expect"],
+      "required": ["id", "from", "kind", "args", "exchange"],
+      "dependentRequired": {
+        "skip": ["reason"],
+        "reason": ["skip"]
+      }
+    },
+    "watch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "skip": {
+          "enum": ["ts", "rust"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "files": {
+          "$ref": "#/$defs/files"
+        },
+        "cwd": {
+          "type": "string",
+          "minLength": 1
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "files": {
+                "$ref": "#/$defs/files"
+              },
+              "close": {
+                "const": true
+              },
+              "reports": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "decisions": {
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "type": "array",
+                            "minItems": 3,
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "required": ["decisions"]
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "message": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            }
+                          },
+                          "required": []
+                        }
+                      },
+                      "required": ["error"]
+                    }
+                  ]
+                }
+              }
+            },
+            "required": []
+          }
+        },
+        "kind": {
+          "const": "watch"
+        }
+      },
+      "required": ["id", "from", "kind", "cwd", "steps"],
       "dependentRequired": {
         "skip": ["reason"],
         "reason": ["skip"]
@@ -481,10 +1111,25 @@
           "$ref": "#/$defs/function"
         },
         {
-          "$ref": "#/$defs/cli"
+          "$ref": "#/$defs/steps"
         },
         {
           "$ref": "#/$defs/evaluate"
+        },
+        {
+          "$ref": "#/$defs/layered"
+        },
+        {
+          "$ref": "#/$defs/prompt"
+        },
+        {
+          "$ref": "#/$defs/cli"
+        },
+        {
+          "$ref": "#/$defs/mcp"
+        },
+        {
+          "$ref": "#/$defs/watch"
         },
         {
           "$ref": "#/$defs/shell-differential"

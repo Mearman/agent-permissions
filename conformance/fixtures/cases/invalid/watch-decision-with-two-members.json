@@ -1,0 +1,24 @@
+{
+  "cases": [
+    {
+      "id": "a.008",
+      "from": "recorded: watch",
+      "kind": "watch",
+      "cwd": "$DIR0",
+      "steps": [
+        {
+          "reports": [
+            {
+              "decisions": [
+                [
+                  "Bash",
+                  "ls"
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
