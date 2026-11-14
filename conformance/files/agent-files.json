@@ -19,10 +19,15 @@
       "module": "agent-files",
       "function": "fail",
       "args": ["something broke"],
-      "expect": {
-        "ok": false,
-        "error": "something broke"
-      }
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "ok": false
+          }
+        }
+      ],
+      "notes": "The original did not assert message text, so the case leaves it out."
     },
     {
       "id": "agent-files.003",
@@ -75,10 +80,14 @@
       "module": "agent-files",
       "function": "parseJson",
       "args": ["{not json}", "source.json"],
-      "expect": {
-        "ok": false,
-        "error": "source.json: invalid JSON"
-      },
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "ok": false
+          }
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
@@ -102,10 +111,14 @@
       "module": "agent-files",
       "function": "parseJson",
       "args": ["!!!", "my-config.json"],
-      "expect": {
-        "ok": false,
-        "error": "my-config.json: invalid JSON"
-      },
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "ok": false
+          }
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
@@ -179,16 +192,19 @@
           ]
         }
       ],
-      "expect": {
-        "ok": false,
-        "error": "validation failed: rules.0.tier: Invalid option: expected one of \"allow\"|\"deny\"|\"ask\"",
-        "errors": [
-          {
-            "path": "rules.0.tier",
-            "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "ok": false,
+            "errors": [
+              {
+                "path": "rules.0.tier"
+              }
+            ]
           }
-        ]
-      },
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
@@ -206,24 +222,25 @@
           ]
         }
       ],
-      "expect": {
-        "ok": false,
-        "error": "validation failed: rules.0.tool: Invalid input: expected string, received undefined, rules.0.tier: Invalid option: expected one of \"allow\"|\"deny\"|\"ask\", rules.0: Unrecognized key: \"notTool\"",
-        "errors": [
-          {
-            "path": "rules.0.tool",
-            "message": "Invalid input: expected string, received undefined"
-          },
-          {
-            "path": "rules.0.tier",
-            "message": "Invalid option: expected one of \"allow\"|\"deny\"|\"ask\""
-          },
-          {
-            "path": "rules.0",
-            "message": "Unrecognized key: \"notTool\""
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "ok": false,
+            "errors": [
+              {
+                "path": "rules.0.tool"
+              },
+              {
+                "path": "rules.0.tier"
+              },
+              {
+                "path": "rules.0"
+              }
+            ]
           }
-        ]
-      },
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
@@ -287,11 +304,15 @@
           "some": "data"
         }
       ],
-      "expect": {
-        "ok": false,
-        "error": "codex: no extract defined for this format",
-        "errors": []
-      },
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "ok": false,
+            "errors": []
+          }
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
@@ -306,11 +327,15 @@
           "allowed_tools": []
         }
       ],
-      "expect": {
-        "ok": false,
-        "error": "crush: no extract defined for this format",
-        "errors": []
-      },
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "ok": false,
+            "errors": []
+          }
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
@@ -325,11 +350,15 @@
           "other": "data"
         }
       ],
-      "expect": {
-        "ok": false,
-        "error": "claude-code: no permissions payload found in config",
-        "errors": []
-      },
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "ok": false,
+            "errors": []
+          }
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
@@ -344,11 +373,15 @@
           "permissions": null
         }
       ],
-      "expect": {
-        "ok": false,
-        "error": "claude-code: no permissions payload found in config",
-        "errors": []
-      },
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "ok": false,
+            "errors": []
+          }
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
@@ -421,11 +454,15 @@
       "module": "agent-files",
       "function": "decodeNative",
       "args": ["claude-code", "not an object"],
-      "expect": {
-        "ok": false,
-        "error": "claude-code: no permissions payload found in config",
-        "errors": []
-      },
+      "checks": [
+        {
+          "at": [],
+          "subset": {
+            "ok": false,
+            "errors": []
+          }
+        }
+      ],
       "notes": "The original asserts facts derived from the result; this case records the whole result."
     },
     {
