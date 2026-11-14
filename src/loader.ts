@@ -239,7 +239,8 @@ async function readLayer(file: DiscoveredFile): Promise<ReadResult> {
           file.path,
           AGENT_FILES[file.agent].jsonc === true,
         );
-  if (!parsed.ok) return { failure: `${file.path}: ${parsed.error}` };
+  // The parser's error already begins with the file path, so it is the failure as it stands.
+  if (!parsed.ok) return { failure: parsed.error };
 
   const policy = decodeFile(file, parsed.value);
   if (policy === undefined) {
