@@ -255,6 +255,10 @@ The Zod schema in `src/schema.ts` is the single source of truth. The compiled JS
 3. Add round-trip tests in `src/test/compat.test.ts`
 4. Register in the `CODECS` export
 
+### Conformance corpus
+
+Behaviour that every implementation must share is pinned by language-neutral cases in `conformance/`, each with the title of the test it came from. `pnpm test` runs them against the TypeScript source, and `sh scripts/rust.sh test` loads and validates every file for the Rust harness. A change to behaviour changes its case in the same commit; the format and how to add a case are in [`conformance/README.md`](conformance/README.md).
+
 ## References
 
 - [docs/rules.md](docs/rules.md): rule syntax, evaluation order, actors and roles, shell command lines, `when` conditions, profiles; read before writing or changing a rule.
