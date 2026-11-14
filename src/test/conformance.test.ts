@@ -191,14 +191,26 @@ void describe("conformance corpus", () => {
     assert.ok(bytes <= RUNNER_BYTE_CAP, `${String(bytes)} bytes`);
   });
 
+  // Counts the `it` calls the loop below actually queues, so a mutation that drops or shortcuts the
+  // loop (deleting it, or skipping every case) is caught here rather than by a suite that silently
+  // ran nothing: this test is registered after the loop, so it runs once every case's `it` has.
+  let registered = 0;
   for (const file of corpus.files) {
     void describe(file.name, () => {
       for (const testCase of file.cases) {
         if (testCase.skip === IMPLEMENTATION) continue;
+        registered += 1;
         void it(`${testCase.id}: ${testCase.from}`, async () => {
           await runCase(testCase, target);
         });
       }
     });
   }
+
+  void it("queues one test per case the loop above registers", () => {
+    const expected = corpus.files
+      .flatMap((file) => file.cases)
+      .filter((testCase) => testCase.skip !== IMPLEMENTATION).length;
+    assert.equal(registered, expected);
+  });
 });
