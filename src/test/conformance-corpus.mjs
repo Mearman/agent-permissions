@@ -63,15 +63,64 @@ export function selectCorpusFiles(root) {
   return { selected, problems };
 }
 
+/** The value encodings a runner decodes: a single-key object whose key is `$` and letters is one of these (the value encodings of an argument, and the `$contains` and `$subset` matchers of an mcp `expect`) or a defect, since a schema without negation cannot say so. */
+const ENCODINGS = new Set([
+  "$undefined",
+  "$number",
+  "$bytes",
+  "$signal",
+  "$ref",
+  "$map",
+  "$returns",
+  "$reject",
+  "$edit",
+  "$readError",
+  "$contains",
+  "$subset",
+]);
+
+/** What an encoding key looks like: a `$` and letters only, which leaves out the `$DIRn/path` keys of a file map; `$schema` is plain data in a policy, whatever else the object holds. */
+const ENCODING_SHAPE = /^\$[A-Za-z]+$/u;
+
+/** The strings `$number` accepts. */
+const NUMBER_FORMS = new Set(["-0", "Infinity", "-Infinity", "NaN"]);
+
+/** @param {unknown} value @param {string} id @returns {string[]} */
+function encodingProblems(value, id) {
+  if (Array.isArray(value))
+    return value.flatMap((item) => encodingProblems(item, id));
+  if (typeof value !== "object" || value === null) return [];
+  const keys = Object.keys(value).filter((key) => key !== "as");
+  const [key] = keys;
+  const own =
+    keys.length === 1 &&
+    key !== undefined &&
+    key !== "$schema" &&
+    ENCODING_SHAPE.test(key)
+      ? [
+          !ENCODINGS.has(key) && `${id}: ${key} is not a value encoding`,
+          key === "$number" &&
+            !NUMBER_FORMS.has(Reflect.get(value, key)) &&
+            `${id}: $number is not one of -0, Infinity, -Infinity, NaN`,
+        ].filter(Boolean)
+      : [];
+  return [
+    ...own,
+    ...Object.values(value).flatMap((item) => encodingProblems(item, id)),
+  ];
+}
+
 /** @param {import("ajv").ValidateFunction<unknown>} validate @param {unknown} document @returns {string[]} */
 export function fileProblems(validate, document) {
   if (!validate(document)) return messages(validate);
   const ids = new Set();
-  return document.cases.flatMap(({ id, from }) => {
+  return document.cases.flatMap((testCase) => {
+    const { id, from } = testCase;
     const found = [
       !NAME.test(id) && `id ${id} is not a name`,
       ids.has(id) && `id ${id} is used twice`,
       !FROM.test(from) && `${id}: bad from`,
+      ...encodingProblems(testCase, id),
     ];
     ids.add(id);
     return found.filter(Boolean);
