@@ -14,6 +14,16 @@ async function isolate(): Promise<string> {
   return mkdtemp(join(tmpdir(), "agent-perms-test-"));
 }
 
+/** The failures a load reports, which is an error for any layer that cannot be used. */
+async function failuresOf(cwd: string): Promise<readonly string[]> {
+  const error: unknown = await loadPolicy({ cwd }).then(
+    () => undefined,
+    (caught: unknown) => caught,
+  );
+  assert.ok(error instanceof PolicyLoadError, "the load must fail");
+  return error.failures;
+}
+
 void describe("loadPolicy", () => {
   const dirs: string[] = [];
 
@@ -145,6 +155,49 @@ void describe("loadPolicy", () => {
             failure.includes("permissions.json"),
           ),
       );
+    });
+
+    void it("names the file once in the failure for invalid JSON in a canonical file", async () => {
+      const cwd = await isolate();
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      const file = join(cwd, ".agents", "permissions.json");
+      await writeFile(file, "{ nope");
+
+      assert.deepEqual(await failuresOf(cwd), [`${file}: invalid JSON`]);
+    });
+
+    void it("names the file once in the failure for invalid JSON in a native config", async () => {
+      const cwd = await isolate();
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      await mkdir(join(cwd, ".claude"), { recursive: true });
+      await writeFile(
+        join(cwd, ".agents", "permissions.json"),
+        JSON.stringify({ with: ["claude-code"] }),
+      );
+      const file = join(cwd, ".claude", "settings.json");
+      await writeFile(file, "{ nope");
+
+      assert.deepEqual(await failuresOf(cwd), [`${file}: invalid JSON`]);
+    });
+
+    void it("names the file once when a native config is strict JSON holding a comment", async () => {
+      const cwd = await isolate();
+      dirs.push(cwd);
+      await mkdir(join(cwd, ".agents"), { recursive: true });
+      await mkdir(join(cwd, ".claude"), { recursive: true });
+      await writeFile(
+        join(cwd, ".agents", "permissions.json"),
+        JSON.stringify({ with: ["claude-code"] }),
+      );
+      const file = join(cwd, ".claude", "settings.json");
+      await writeFile(file, '{ /* a comment */ "model": "opus" }');
+
+      const failures = await failuresOf(cwd);
+      assert.equal(failures.length, 1);
+      assert.match(failures[0] ?? "", /comments and trailing commas/u);
+      assert.equal((failures[0] ?? "").split(file).length, 2);
     });
 
     void it("fails on a schema-invalid canonical file", async () => {
