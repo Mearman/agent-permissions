@@ -1,3 +1,48 @@
+## [7.0.0](https://github.com/ExaDev/agent-permissions/compare/v6.6.6...v7.0.0) (2026-11-14)
+
+### ⚠ BREAKING CHANGES
+
+* sync() rejects with SyncRefusedError or SyncWriteError instead of resolving when a
+target cannot be read, decoded or written, so a caller needs a try/catch, and the sync command
+exits 1 on such a refusal and when the prompt is declined. SyncResult gains a required aborted
+field. convert --output and confine --output no longer overwrite an existing policy or agent config
+file, Oh My Pi's included, which convert --to omp used to edit in place: they refuse it, naming
+the file, and write only files that do not exist yet.
+
+### Bug Fixes
+
+* edit the canonical file in place instead of rewriting it from the merge ([8ff21d4](https://github.com/ExaDev/agent-permissions/commit/8ff21d41a07bb8f200627776b7b7777d7f1f8b2a))
+* keep a file's bytes, mode and links when sync replaces it or backs it up ([966ed42](https://github.com/ExaDev/agent-permissions/commit/966ed42f18ea54379e290376d2ab9a1f3947ab80))
+* keep a native config's other settings when sync writes permissions ([fbe805c](https://github.com/ExaDev/agent-permissions/commit/fbe805c29ad56ded36fe1467c454bdd488dddeb3)), closes [#158](https://github.com/ExaDev/agent-permissions/issues/158)
+* leave OpenCode keys the codec cannot round-trip, and stop for an unusable canonical file ([9dbf7a6](https://github.com/ExaDev/agent-permissions/commit/9dbf7a6b4c163f2fa9be3be15aab06eb65254465))
+* make convert and confine create files and refuse to overwrite an existing one ([2e46343](https://github.com/ExaDev/agent-permissions/commit/2e4634353b8e842dc07f8a7cf154c9fb8c7b044a))
+* merge confine and convert output into an existing canonical file ([eaa18c1](https://github.com/ExaDev/agent-permissions/commit/eaa18c163519b759ee09eb4ef52f152569309600))
+* merge convert and confine output into an agent's native config ([54ca58d](https://github.com/ExaDev/agent-permissions/commit/54ca58db50a775c292ddcd36ad42de48b95baf30))
+* merge convert output into every agent's config file and refuse the wrong agent's ([5eb1095](https://github.com/ExaDev/agent-permissions/commit/5eb1095055640d2f65692222cc5c8505febb52be))
+* read an empty config file as a file with no settings ([2d92155](https://github.com/ExaDev/agent-permissions/commit/2d92155ef38ba407bc93aeb53acb9ef69cbda9b6))
+* refuse a duplicated modelled path whether or not its value changes, naming each position ([aed758e](https://github.com/ExaDev/agent-permissions/commit/aed758ed258b5e7a37bf03031de4f554df7c58dc))
+* refuse an existing Oh My Pi config in convert and confine too ([2710bdf](https://github.com/ExaDev/agent-permissions/commit/2710bdf5207a78c6bfe67874566587f65b9f67a2))
+* refuse to edit a path that a file holds more than once ([067f14d](https://github.com/ExaDev/agent-permissions/commit/067f14d3cd58695a0dcf17e6999358ae8874a5b0))
+* replace only the paths a codec models, as a text edit ([fabeae6](https://github.com/ExaDev/agent-permissions/commit/fabeae6b72374b0808b651474cc9893e0321c0f9))
+* report a failed background sync instead of crashing the daemon ([d5709f5](https://github.com/ExaDev/agent-permissions/commit/d5709f5c6cc3469008335a5e8f70e827308b0949))
+* run one daemon sync at a time and re-check a file just before replacing it ([dc5d856](https://github.com/ExaDev/agent-permissions/commit/dc5d85624d74a0fd679501970229cce50c9b974a))
+* say which files were written when applying stops part way ([e66b7c7](https://github.com/ExaDev/agent-permissions/commit/e66b7c78735448cad8f00d71a4d2a7cdf13ca65f))
+* stop sync only for the files it would write ([56784c3](https://github.com/ExaDev/agent-permissions/commit/56784c311bb22ee57e819cfc8c8d510441c235a6))
+* stop sync when a file it would write exists and cannot be read ([b9bc281](https://github.com/ExaDev/agent-permissions/commit/b9bc281b4b06327e1c460860d8a2baa6f1c8b5cd))
+* sync OpenCode's preferred config file and refuse to overwrite Codex and Crush files ([3afab23](https://github.com/ExaDev/agent-permissions/commit/3afab23500c0bde4b53405fa68ef3892d2010758))
+* type sync's refusals, refuse a mismatched convert output, and treat end of input as no ([3c957fb](https://github.com/ExaDev/agent-permissions/commit/3c957fbeb613d86c45ab85be8ced59985d058b30))
+* write back a Kiro allowedTools entry the codec does not map ([4ba1a96](https://github.com/ExaDev/agent-permissions/commit/4ba1a9660dadff47f90bd4f97e5f9f446d901626))
+* write native configs atomically and only if they are unchanged since read ([335a18a](https://github.com/ExaDev/agent-permissions/commit/335a18afe94d0bfeca11cd0e4beaa1e66666f593))
+
+### Documentation
+
+* cite the OpenCode source that fixes the order of its config files ([99d3069](https://github.com/ExaDev/agent-permissions/commit/99d3069134c8d0f45f68fb7a3af783ef848dee0a))
+* say that confine and convert merge into the canonical file and where a whole write stays ([94a7a9c](https://github.com/ExaDev/agent-permissions/commit/94a7a9c217b610c68b8333eb06ad21b7a4317b69))
+
+### Tests
+
+* cover the branch that keeps a replaced file's owner ([7ac43ce](https://github.com/ExaDev/agent-permissions/commit/7ac43ce18b99cb316b11e25d0d2402b985d24a3b))
+
 ## [6.6.6](https://github.com/ExaDev/agent-permissions/compare/v6.6.5...v6.6.6) (2026-11-14)
 
 ### CI
