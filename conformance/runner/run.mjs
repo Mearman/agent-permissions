@@ -11,6 +11,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -355,11 +356,23 @@ export async function runCase(testCase, target) {
   const tree = directories(testCase);
   try {
     if (testCase.kind === "function") {
-      const { result, error } = await call(
-        target,
-        testCase,
-        mapStrings(testCase.args, tree.place),
+      const args = mapStrings(testCase.args, tree.place);
+      // `faults.readError` maps a path to the code its read fails with, through the read seam of the call.
+      const failing = Object.fromEntries(
+        Object.entries(testCase.faults?.readError ?? {}).map(([path, code]) => [
+          tree.place(path),
+          code,
+        ]),
       );
+      if (testCase.faults?.readError)
+        args[0].readFile = async (path) => {
+          if (failing[path])
+            throw Object.assign(new Error(`${failing[path]}: injected`), {
+              code: failing[path],
+            });
+          return readFile(path);
+        };
+      const { result, error } = await call(target, testCase, args);
       if (testCase.throws !== undefined) {
         assert.ok(error !== undefined, "expected a throw");
         if (testCase.throws.name !== undefined)

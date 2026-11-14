@@ -106,6 +106,14 @@ function fixturePairs(
 }
 
 void describe("conformance corpus", () => {
+  void it("runs as an ordinary user, since the permission-based fault cases cannot fail for root", () => {
+    assert.notEqual(
+      process.getuid?.(),
+      0,
+      "the conformance corpus must not run as root: a file mode cannot refuse a read to root, so its fault cases would pass or fail for the wrong reason; run as an ordinary user",
+    );
+  });
+
   void it("is valid and equals its manifest", () => {
     assert.deepEqual(corpus.problems, []);
   });
