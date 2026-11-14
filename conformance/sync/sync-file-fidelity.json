@@ -179,9 +179,7 @@
         "{\"a\": 2}\n",
         "{\"a\": 1}\n",
         {
-          "uid": {
-            "$number": "0"
-          },
+          "uid": 0,
           "chownFile": {
             "$reject": "EPERM"
           }

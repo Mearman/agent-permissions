@@ -214,3 +214,44 @@ void describe("conformance corpus", () => {
     assert.equal(registered, expected);
   });
 });
+
+void describe("the value encodings the runner decodes", () => {
+  // These are harness-internal: the decoder refusing a malformed `$number` or an unrecognised `$` key is a property of the runner itself, not of the package under test, so it is asserted here directly rather than through a corpus case (which would need a module to call that never runs, since the decoder throws before any call happens).
+  const synthetic = (args: unknown[]): Record<string, unknown> => ({
+    id: "synthetic",
+    from: "recorded: the value-encoding checks",
+    kind: "function",
+    module: "shell",
+    function: "splitShellCommand",
+    args,
+  });
+
+  void it("refuses a $number value that is not one of the four it knows", async () => {
+    await assert.rejects(
+      runCase(synthetic([{ $number: "abc" }]), target),
+      /\$number: "abc" is not one of/,
+    );
+  });
+
+  void it("accepts each of the four $number values it knows", async () => {
+    for (const form of ["-0", "Infinity", "-Infinity", "NaN"]) {
+      await assert.doesNotReject(
+        runCase(
+          { ...synthetic([{ $number: form }]), expectUndefined: true },
+          target,
+        ).catch((error: unknown) => {
+          // splitShellCommand never returns undefined for a string input; only a decode failure on $number itself is what this test refuses to let through.
+          if (error instanceof Error && error.message.includes("$number"))
+            throw error;
+        }),
+      );
+    }
+  });
+
+  void it("refuses a $ key none of the known encodings recognise", async () => {
+    await assert.rejects(
+      runCase(synthetic([{ $nope: 1 }]), target),
+      /\$nope: not one of the value encodings this runner knows/,
+    );
+  });
+});
